@@ -1,0 +1,127 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<project name="ice4j" basedir="." default="rebuild">
+    <property name="dest" value="classes"/>
+    <property name="JUnit.home" value="lib"/>
+    <property name="src" value="src"/>
+    <property name="src2" value="test"/>
+    <property name="junit.reports" value="junit-reports"/>
+    <property name="ice4j.jar" value="ice4j.jar"/>
+    <path id="project.class.path">
+        <pathelement location="${dest}"/>
+        <pathelement location="${JUnit.home}/junit.jar"/>
+    </path>
+
+    <!--Patternset to exclude files from the output directory:-->
+    <patternset id="dest.exclude">
+        <exclude name="package cache/"/>
+        <exclude name="dependency cache/"/>
+    </patternset>
+
+    <!--  ANT TARGETS -->
+
+    <!-- compiles all classes -->
+    <target name="compile" depends="init">
+        <javac classpathref="project.class.path"
+               debug="true"
+               deprecation="true"
+               destdir="${dest}"
+               nowarn="false"
+               target="1.5"
+               source="1.5">
+            <src path="${src}"/>
+            <src path="${src2}"/>
+            <compilerarg value="-Xlint"/>
+        </javac>
+    </target>
+
+    <!-- copies ressource files if any to the classes directory -->
+    <target name="resource">
+        <copy todir="${dest}">
+            <fileset dir="${src}">
+                <include name="**/*.jpe"/>
+                <include name="**/*.jpeg"/>
+                <include name="**/*.rmf"/>
+                <include name="**/*.wav"/>
+                <include name="**/*.mid"/>
+                <include name="**/*.midi"/>
+                <include name="**/*.au"/>
+                <include name="**/*.gif"/>
+                <include name="**/*.png"/>
+                <include name="**/*.jpg"/>
+                <include name="**/*.aiff"/>
+                <include name="**/*.properties"/>
+            </fileset>
+            <fileset dir="${src2}">
+                <include name="**/*.jpe"/>
+                <include name="**/*.jpeg"/>
+                <include name="**/*.rmf"/>
+                <include name="**/*.wav"/>
+                <include name="**/*.mid"/>
+                <include name="**/*.midi"/>
+                <include name="**/*.au"/>
+                <include name="**/*.gif"/>
+                <include name="**/*.png"/>
+                <include name="**/*.jpg"/>
+                <include name="**/*.aiff"/>
+                <include name="**/*.properties"/>
+            </fileset>
+        </copy>
+    </target>
+
+    <!-- creates the javadocs -->
+    <target name="javadoc">
+        <javadoc author="true" destdir="doc" package="true">
+            <fileset dir="${src}"/>
+        </javadoc>
+    </target>
+
+    <!-- delete the contents of the classes directory-->
+    <target name="clean">
+        <delete failonerror="false" includeemptydirs="true">
+            <fileset dir="${dest}"/>
+            <fileset dir="${junit.reports}"/>
+            <fileset dir="doc" />
+        </delete>
+        <delete file="${ice4j.jar}" failonerror="true" quiet="false"/>
+    </target>
+
+    <!-- make everything -->
+    <target name="make" depends="compile,resource,jar"/>
+
+    <!-- clean and make everything -->
+    <target name="rebuild" depends="clean,make" />
+
+    <!-- make javadoc -->
+    <target name="doc" depends="make,javadoc" />
+
+    <!-- create needed subdirs-->
+    <target name="init">
+        <mkdir dir="${dest}"/>
+        <mkdir dir="${junit.reports}"/>
+    </target>
+
+    <!-- create jar file-->
+    <target name="jar" depends="compile">
+        <jar compress="true" destfile="${ice4j.jar}">
+            <fileset dir="${dest}">
+                <patternset refid="dest.exclude"/>
+                <include name="**/*.*"/>
+            </fileset>
+        </jar>
+    </target>
+
+    <!-- Run the tests-->
+    <target name="test">
+        <junit haltonfailure="true">
+            <formatter type="xml"/>
+            <formatter type="brief" usefile="false"/>
+            <test name="org.ice4j.StunTestSuite" todir="${junit.reports}"/>
+            <classpath refid="project.class.path"/>
+        </junit>
+    </target>
+
+    <!-- Cruise Control Target-->
+    <target name="cc-buildloop" depends="rebuild,test"/>
+
+</project>
