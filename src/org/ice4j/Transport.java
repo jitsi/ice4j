@@ -33,7 +33,12 @@ public enum Transport
     /**
      * Represents a datagram TLS (DTLS) transport.
      */
-    DTLS("dtls");
+    DTLS("dtls"),
+
+    /**
+     * Represents an SCTP transport.
+     */
+    SCTP("sctp");
 
     /**
      * The name of this <tt>Transport</tt>.

@@ -10,7 +10,6 @@ package org.ice4j.ice;
 import java.util.*;
 
 import org.ice4j.*;
-import org.ice4j.oldice.*;
 
 /**
  * A component is a piece of a media stream requiring a single transport
@@ -41,12 +40,22 @@ public class Component
     /**
      * The component ID to use with RTP streams.
      */
-    private static final int RTP = 1;
+    public static final int RTP = 1;
 
     /**
      * The component ID to use with RTCP streams.
      */
-    private static final int RTCP = 2;
+    public static final int RTCP = 2;
+
+    /**
+     * The transport that this component is using.
+     */
+    private final Transport transport;
+
+    /**
+     * The <tt>IceMediaStream</tt> that this <tt>Component</tt> belongs to.
+     */
+    private final IceMediaStream parentStream;
 
     /**
      * The list locally gathered candidates for this media stream.
@@ -63,18 +72,23 @@ public class Component
      * as a child of the specified <tt>MediaStream</tt>.
      *
      * @param componentID the id of this component.
-     * @param transportProtocol the protocol that this component will be using (e.g.
+     * @param transport the protocol that this component will be using (e.g.
      * TCP/UDP/TLS/DTLS).
+     * @param port the port number that we'd like this component to be bound on
+     * locally.
+     * @param mediaStream the {@link IceMediaStream} instance that would be the
+     * parent of this component.
      */
-    protected Component(int componentID,
-                        String transportProtocol,
-                        TransportAddress defaultAddress,
-                        MediaStream mediaStream)
+    protected Component(int            componentID,
+                        Transport      transport,
+                        int            port,
+                        IceMediaStream mediaStream)
     {
-        this.componentID = componentID;   // the max value for componentID is 256
-        this.transportProtocol = transportProtocol;
-        this.defaultCandidate = new Candidate(defaultAddress, Component.this);
-        this.mediaStream = mediaStream;
+        // the max value for componentID is 256
+        this.componentID = componentID;
+        this.transport = transport;
+        this.parentStream = mediaStream;
+    }
 
     /**
      * Add a local candidate to this component.
@@ -127,5 +141,39 @@ public class Component
         {
             remoteCandidates.addAll(candidates);
         }
+    }
+
+    /**
+     * Returns a reference to the <tt>IceMediaStream</tt> that this
+     * <tt>Component</tt> belongs to.
+     *
+     * @return  a reference to the <tt>IceMediaStream</tt> that this
+     * <tt>Component</tt> belongs to.
+     */
+    public IceMediaStream getParentStream()
+    {
+        return parentStream;
+    }
+
+    /**
+     * Returns the ID of this <tt>Component</tt>. For RTP/RTCP flows this would
+     * be <tt>1</tt> for RTP and 2 for <tt>RTCP</tt>.
+     *
+     * @return the ID of this <tt>Component</tt>.
+     */
+    public int getComponentID()
+    {
+        return componentID;
+    }
+
+    /**
+     * Returns the transport protocol of this component
+     *
+     * @return a {@link Transport} instance representing the the transport
+     * protocol that this media stream <tt>Component</tt> uses.
+     */
+    public Transport getTransport()
+    {
+        return transport;
     }
 }

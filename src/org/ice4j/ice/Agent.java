@@ -35,12 +35,28 @@ public class Agent
      * This map preserves the insertion order of the media streams.
      */
     private Map<String, IceMediaStream> mediaStreams
-                                    = new LinkedHashMap<String, IceMediaStream>();
+                                = new LinkedHashMap<String, IceMediaStream>();
 
     /**
      * Creates an empty <tt>Agent</tt> with no streams, and no address
      */
     public Agent()
     {
+    }
+
+    /**
+     * Creates a new media stream and stores it
+     *
+     * @param mediaStreamName    the name of the media stream
+     *
+     * @return a reference to the newly created <tt>IceMediaStream</tt>.
+     */
+    public IceMediaStream createMediaStream(String mediaStreamName)
+    {
+        IceMediaStream mediaStream
+            = new IceMediaStream(Agent.this, mediaStreamName);
+        mediaStreams.put(mediaStreamName, mediaStream);
+
+        return mediaStream;
     }
 }

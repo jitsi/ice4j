@@ -223,11 +223,11 @@ public class TransportAddress
     }
 
     /**
-     * Gets the hostname.
+     * Returns the host address.
      *
-     * @return the hostname part of the address
+     * @return a String part of the address
      */
-    public String getHostName()
+    public String getHosAddress()
     {
       // do not resolve the name if exists
       return socketAddress.getAddress().getHostAddress();
