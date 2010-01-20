@@ -26,8 +26,7 @@ public class Ice
     {
         Agent agent = new Agent();
         IceMediaStream stream = agent.createMediaStream("audio");
-        Component cmp = new Component(Component.RTP,
-                        Transport.UDP, 9090, stream);
+        Component cmp = stream.createComponent(Transport.UDP, 9090);
 
     }
 

@@ -10,6 +10,8 @@ package org.ice4j.ice;
 import java.util.*;
 import java.util.logging.*;
 
+import org.ice4j.*;
+
 /**
  * The class represents a media stream from the ICE perspective, i.e. a
  * collection of components.
@@ -37,8 +39,14 @@ public class IceMediaStream
      * address; a media stream may require multiple components, each of which
      * has to work for the media stream as a whole to work.
      */
-    private LinkedHashMap<Integer, Component> components
+    private final LinkedHashMap<Integer, Component> components
                                     = new LinkedHashMap<Integer, Component>();
+
+    /**
+     * The id that was last assigned to a component. The next id that we give
+     * to a component would be lastComponendID + 1;
+     */
+    private int lastComponentID = 0;
 
     /**
      * The agent that this media stream belongs to.
@@ -56,5 +64,49 @@ public class IceMediaStream
     {
         this.name = name;
         this.parentAgent = parentAgent;
+    }
+
+    /**
+     * Creates and adds a component to this media-stream
+     * The component ID is incremented to the next integer value
+     * when creating the component
+     *
+     * @param transport the transport protocol used by the component
+     * @param port the port that local <tt>Candidate</tt>s for this
+     * <tt>Component</tt> will bind on.
+     *
+     * @return the newly created stream <tt>Component</tt> after adding it to
+     * the stream first.
+     */
+    public Component createComponent(Transport transport,
+                                     int       port)
+    {
+        lastComponentID ++;
+
+        Component component = new Component(lastComponentID, transport,
+                        port, this);
+        components.put(new Integer(lastComponentID), component);
+
+        return component;
+    }
+
+    /**
+     * Returns the name of this <tt>IceMediaStream</tt>.
+     *
+     * @return the name of this <tt>IceMediaStream</tt>.
+     */
+    public String getName()
+    {
+        return name;
+    }
+
+    /**
+     * Returns a <tt>String</tt> representation of this media stream.
+     *
+     * @return a <tt>String</tt> representation of this media stream.
+     */
+    public String toString()
+    {
+        return "media stream:" + getName();
     }
 }
