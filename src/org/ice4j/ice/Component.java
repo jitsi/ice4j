@@ -7,10 +7,125 @@
  */
 package org.ice4j.ice;
 
+import java.util.*;
+
+import org.ice4j.*;
+import org.ice4j.oldice.*;
+
 /**
+ * A component is a piece of a media stream requiring a single transport
+ * address; a media stream may require multiple components, each of which has
+ * to work for the media stream as a whole to work. For media streams based on
+ * RTP, there are two components per media stream - one for RTP, and one for
+ * RTCP.
+ * <p>
+ *
  * @author Emil Ivov
+ * @author Namal Senarathne
  */
 public class Component
 {
+    /**
+     * A component id is a positive integer between 1 and 256 which identifies
+     * the specific component of the media stream for which this is a candidate.
+     * It MUST start at 1 and MUST increment by 1 for each component of a
+     * particular candidate. For media streams based on RTP, candidates for the
+     * actual RTP media MUST have a component ID of 1, and candidates for RTCP
+     * MUST have a component ID of 2. Other types of media streams which
+     * require multiple components MUST develop specifications which define the
+     * mapping of components to component IDs. See Section 14 for additional
+     * discussion on extending ICE to new media streams.
+     */
+    private int componentID = -1;
 
+    /**
+     * The component ID to use with RTP streams.
+     */
+    private static final int RTP = 1;
+
+    /**
+     * The component ID to use with RTCP streams.
+     */
+    private static final int RTCP = 2;
+
+    /**
+     * The list locally gathered candidates for this media stream.
+     */
+    private List<Candidate> localCandidates = null;
+
+    /**
+     * The list of candidates that the peer agent sent for this stream.
+     */
+    private List<Candidate> remoteCandidates = null;
+
+    /**
+     * Creates a new <tt>Component</tt> with the specified <tt>componentID</tt>
+     * as a child of the specified <tt>MediaStream</tt>.
+     *
+     * @param componentID the id of this component.
+     * @param transportProtocol the protocol that this component will be using (e.g.
+     * TCP/UDP/TLS/DTLS).
+     */
+    protected Component(int componentID,
+                        String transportProtocol,
+                        TransportAddress defaultAddress,
+                        MediaStream mediaStream)
+    {
+        this.componentID = componentID;   // the max value for componentID is 256
+        this.transportProtocol = transportProtocol;
+        this.defaultCandidate = new Candidate(defaultAddress, Component.this);
+        this.mediaStream = mediaStream;
+
+    /**
+     * Add a local candidate to this component.
+     *
+     * @param candidate the candidate object to be added
+     */
+    public void addLocalCandidate(Candidate candidate)
+    {
+        synchronized(localCandidates)
+        {
+            localCandidates.add(candidate);
+        }
+    }
+
+    /**
+     * Adds a remote <tt>Candidate</tt>s to this media-stream component.
+     *
+     * @param candidate the <tt>Candidate</tt> instance to add.
+     */
+    public void addRemoteCandidate(Candidate candidate)
+    {
+        synchronized(remoteCandidates)
+        {
+            remoteCandidates.add(candidate);
+        }
+    }
+
+    /**
+     * Adds a list of local <tt>Candidate</tt>s to this media-stream component.
+     *
+     * @param candidates a <tt>List</tt> of candidates to be added
+     */
+    public void addLocalCandidates(List<Candidate> candidates)
+    {
+        synchronized(localCandidates)
+        {
+            localCandidates.addAll(candidates);
+        }
+    }
+
+    /**
+     * Adds a List of remote <tt>Candidate</tt>s as reported by a remote agent.
+     *
+     * @param candidates the <tt>List</tt> of <tt>Candidate</tt>s reported by
+     * the remote agent for this component.
+     */
+    public void addRemoteCandidates(List<Candidate> candidates)
+    {
+        synchronized(remoteCandidates)
+        {
+            remoteCandidates.addAll(candidates);
+        }
+    }
 }

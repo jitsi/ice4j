@@ -13,8 +13,6 @@ import java.net.*;
 /**
  * The Address class is used to define destinations to outgoing Stun Packets.
  *
- * <p>Organisation: <p> Louis Pasteur University, Strasbourg, France</p>
- * <p>Network Research Team (http://www-r2.u-strasbg.fr)</p></p>
  * @author Emil Ivov
  */
 
@@ -26,32 +24,10 @@ public class TransportAddress
     private InetSocketAddress socketAddress = null;
 
     /**
-     * A constant indicating that this address is pertaining to a TCP transport.
-     */
-    private static final String TCP = "tcp";
-
-    /**
-     * A constant indicating that this address is pertaining to a datagram (UDP)
-     * transport.
-     */
-    private static final String UDP = "udp";
-
-    /**
-     * A constant indicating that this address is pertaining to a TLS transport.
-     */
-    private static final String TLS = "tls";
-
-    /**
-     * A constant indicating that this address is pertaining to a datagram TLS
-     * (DTLS) transport.
-     */
-    private static final String DTLS = "dtls";
-
-    /**
      * The variable that we are using to store the transport that this address
      * is pertaining to.
      */
-    private String transport = UDP;
+    private final Transport transport;
 
     /**
      * Creates an address instance address from an IP address and a port number
@@ -63,14 +39,14 @@ public class TransportAddress
      * <P>
      * A <code>null</code> address will assign the <i>wildcard</i> address.
      * <p>
-     * @param	hostname	The IP address
-     * @param	port	    The port number
+     * @param    hostname    The IP address
+     * @param    port        The port number
      * @throws IllegalArgumentException if the port parameter is outside the
      * specified range of valid port values.
      */
     public TransportAddress(String hostname, int port)
     {
-        this(hostname, port, UDP);
+        this(hostname, port, Transport.UDP);
     }
 
     /**
@@ -88,10 +64,10 @@ public class TransportAddress
      * @throws IllegalArgumentException if the port parameter is outside the
      * specified range of valid port values.
      */
-    public TransportAddress(String hostname, int port, String transport)
+    public TransportAddress(String hostname, int port, Transport transport)
     {
         socketAddress = new InetSocketAddress(hostname, port);
-        this.transport = transport;
+        this.transport = Transport.UDP;
     }
 
     /**
@@ -104,8 +80,8 @@ public class TransportAddress
      * <P>
      * A <code>null</code> address will assign the <i>wildcard</i> address.
      * <p>
-     * @param	ipAddress The IP address
-     * @param	port      The port number
+     * @param    ipAddress The IP address
+     * @param    port      The port number
      * @throws IllegalArgumentException if the port parameter is outside the
      * specified range of valid port values or if ipAddress is not a valid ip
      * address.
@@ -127,6 +103,8 @@ public class TransportAddress
                                                    +(ipAddress[3]&0xFF) + ".",
                                                    port);
         }
+
+        transport = Transport.UDP;
     }
 
 
@@ -140,14 +118,15 @@ public class TransportAddress
      * A port number of <code>zero</code> will let the system pick up an
      * ephemeral port in a <code>bind</code> operation.
      * <P>
-     * @param	address the address itself
-     * @param	port	the port number
+     * @param    address the address itself
+     * @param    port    the port number
      * @throws IllegalArgumentException if the port parameter is outside the
      * range of valid port values, or if the hostname parmeter is <TT>null</TT>.
      */
     public TransportAddress(InetAddress address, int port)
     {
         socketAddress = new InetSocketAddress(address, port);
+        transport = Transport.UDP;
     }
 
     /**
@@ -159,13 +138,14 @@ public class TransportAddress
      * this constructor only if you're not going to compare the resulting
      * instance with other addresses.
      *
-     * @param	port	the port number
+     * @param    port    the port number
      * @throws IllegalArgumentException if the port parameter is outside the
          * range of valid port values, or if the hostname parmeter is <TT>null</TT>.
      */
     public TransportAddress(int port)
     {
         socketAddress = new InetSocketAddress(port);
+        transport = Transport.UDP;
     }
 
 
@@ -249,8 +229,8 @@ public class TransportAddress
      */
     public String getHostName()
     {
-      /*  return socketAddress.getHostName(); */
-      return socketAddress.getAddress().getHostAddress(); /* do not resolve the name if exists */
+      // do not resolve the name if exists
+      return socketAddress.getAddress().getHostAddress();
     }
 
     /**
@@ -259,7 +239,7 @@ public class TransportAddress
      * @return one of the transport strings (UDP/TCP/...) defined as contants
      * in this class.
      */
-    public String getTransport()
+    public Transport getTransport()
     {
         return transport;
     }
