@@ -9,11 +9,9 @@ package org.ice4j.ice.harvest;
 
 import java.io.*;
 import java.net.*;
+import java.util.logging.*;
 
-import net.java.sip.communicator.impl.netaddr.*;
-import net.java.sip.communicator.service.configuration.*;
-import net.java.sip.communicator.util.*;
-
+import org.ice4j.*;
 import org.ice4j.ice.*;
 
 /**
@@ -27,6 +25,12 @@ import org.ice4j.ice.*;
  */
 public class HostCandidateHarvester
 {
+    /**
+     * Our class logger.
+     */
+    private final Logger logger
+        = Logger.getLogger(HostCandidateHarvester.class.getName());
+
     /**
      * Gathers all candidate addresses on the local machine, binds sockets on
      * them and creates {@link HostCandidate}s. The harvester would always
@@ -126,7 +130,9 @@ public class HostCandidateHarvester
                             + ") and maxPort (" + maxPort + ")");
         }
 
-        int bindRetries =
+        int bindRetries = StackProperties.getInt(
+                        StackProperties.BIND_RETRIES_PROPERTY_NAME,
+                        StackProperties.BIND_RETRIES_DEFAULT_VALUE);
 
         int port = preferredPort;
         for (int i = 0; i < bindRetries; i++)
@@ -138,7 +144,7 @@ public class HostCandidateHarvester
             }
             catch (SocketException se)
             {
-                logger.info(
+                logger.log(Level.INFO,
                     "Retrying a bind because of a failure to bind to address "
                         + laddr + " and port " + port, se);
             }
@@ -151,11 +157,5 @@ public class HostCandidateHarvester
 
         throw new BindException("Could not bind to any port between "
                         + minPort + " and " + (port -1));
-    }
-
-    private int getBindRetries()
-    {
-        config.getInt(BIND_RETRIES_PROPERTY_NAME,
-                        BIND_RETRIES_DEFAULT_VALUE);
     }
 }

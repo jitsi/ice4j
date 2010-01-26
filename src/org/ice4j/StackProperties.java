@@ -9,8 +9,6 @@ package org.ice4j;
 
 import java.util.logging.*;
 
-import org.ice4j.ice.*;
-
 /**
  * The class contains a number of property names and their default values that
  * we use to configure the behavior of the ice4j stack.
@@ -21,7 +19,7 @@ public class StackProperties
     /**
      * Our class logger.
      */
-    private final Logger logger
+    private static final Logger logger
         = Logger.getLogger(StackProperties.class.getName());
 
     /**
@@ -52,7 +50,7 @@ public class StackProperties
      * <tt>propertyName</tt>, or the returned string had zero length or
      * contained whitespaces only.
      */
-    public String getString(String propertyName)
+    public static String getString(String propertyName)
     {
         Object propValue = System.getProperty(propertyName);
         if (propValue == null)
@@ -84,7 +82,7 @@ public class StackProperties
      * <tt>defaultValue</tt> if parsing the value of the specified property name
      * fails or no value is associated among the System properties.
      */
-    public int getInt(String propertyName, int defaultValue)
+    public static int getInt(String propertyName, int defaultValue)
     {
         String stringValue = getString(propertyName);
         int intValue = defaultValue;
