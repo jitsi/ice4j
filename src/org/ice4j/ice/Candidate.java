@@ -14,6 +14,12 @@ import org.ice4j.*;
  * contact for receipt of media. Candidates also have properties - their
  * type (server reflexive, relayed or host), priority, foundation,
  * and base.
+ * <p>
+ * At this point this class only supports UDP candidates. Implementation of
+ * support for other transport protocols should mean that this class should
+ * become abstract and some transport specific components like to socket for
+ * example should be brought down the inheritance chain.
+ * </p>
  *
  * @author Emil Ivov
  */

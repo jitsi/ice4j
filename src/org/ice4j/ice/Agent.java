@@ -79,7 +79,7 @@ public class Agent
      * @return the newly created {@link Component} and with a list containing
      * all and only local candidates.
      */
-    public Component allocateComponent(IceMediaStream stream,
+    public Component createComponent(  IceMediaStream stream,
                                        Transport      transport,
                                        int            preferredPort,
                                        int            minPort,
