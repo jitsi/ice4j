@@ -69,22 +69,19 @@ public class IceMediaStream
     /**
      * Creates and adds a component to this media-stream
      * The component ID is incremented to the next integer value
-     * when creating the component
+     * when creating the component so make sure you keep that in mind in case
+     * assigning a specific component ID is important to you.
      *
      * @param transport the transport protocol used by the component
-     * @param port the port that local <tt>Candidate</tt>s for this
-     * <tt>Component</tt> will bind on.
      *
      * @return the newly created stream <tt>Component</tt> after adding it to
      * the stream first.
      */
-    public Component createComponent(Transport transport,
-                                     int       port)
+    protected Component createComponent(Transport transport)
     {
         lastComponentID ++;
 
-        Component component = new Component(lastComponentID, transport,
-                        port, this);
+        Component component = new Component(lastComponentID, transport, this);
         components.put(new Integer(lastComponentID), component);
 
         return component;

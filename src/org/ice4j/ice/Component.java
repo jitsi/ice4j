@@ -10,6 +10,7 @@ package org.ice4j.ice;
 import java.util.*;
 
 import org.ice4j.*;
+import org.ice4j.oldice.Candidate;
 
 /**
  * A component is a piece of a media stream requiring a single transport
@@ -74,14 +75,11 @@ public class Component
      * @param componentID the id of this component.
      * @param transport the protocol that this component will be using (e.g.
      * TCP/UDP/TLS/DTLS).
-     * @param port the port number that we'd like this component to be bound on
-     * locally.
      * @param mediaStream the {@link IceMediaStream} instance that would be the
      * parent of this component.
      */
     protected Component(int            componentID,
                         Transport      transport,
-                        int            port,
                         IceMediaStream mediaStream)
     {
         // the max value for componentID is 256
