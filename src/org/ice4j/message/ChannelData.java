@@ -32,164 +32,164 @@ import org.ice4j.*;
  */
 public class ChannelData
 {
-  /**
-   * The channel number.
-   */
-  private char channelNumber = 0;
+    /**
+     * The channel number.
+     */
+    private char channelNumber = 0;
 
-  /** 
-   * The data.
-   */
-  private byte data[] = null;
+    /** 
+     * The data.
+     */
+    private byte data[] = null;
 
-  /**
-   * Size of the header.
-   */
-  public static char HEADER_LENGTH = 4;
+    /**
+     * Size of the header.
+     */
+    public static char HEADER_LENGTH = 4;
 
-  /**
-   * Constructor.
-   */
-  public ChannelData()
-  {
-  }
-
-  /**
-   * Set the channel number
-   * @param channelNumber the channel number
-   */
-  public void setChannelNumber(char channelNumber)
-  {
-    this.channelNumber = channelNumber;
-  }
-
-  /**
-   * Get the channel number.
-   * @return channel number
-   */
-  public char getChannelNumber()
-  {
-    return this.channelNumber;
-  }
-
-  /**
-   * Set the data.
-   * @param data the data
-   */
-  public void setData(byte data[])
-  {
-    this.data = data;
-  }
-
-  /**
-   * Get the data.
-   * @return data
-   */
-  public byte[] getData()
-  {
-    return this.data;
-  }
-
-  public char getDataLength()
-  {
-    char length = 0;
-    if(data == null)
+    /**
+     * Constructor.
+     */
+    public ChannelData()
     {
-      return length;
     }
 
-    /* pad to a multiple of four */
-    if((length % 4) > 0)
+    /**
+     * Set the channel number
+     * @param channelNumber the channel number
+     */
+    public void setChannelNumber(char channelNumber)
     {
-      length += (4 - (length % 4));
+        this.channelNumber = channelNumber;
     }
 
-    return (char)data.length;
-  }
-
-  private static boolean validateChannelNumber(char channelNumber)
-  {
-    if(channelNumber <= 0x3FFF)
+    /**
+     * Get the channel number.
+     * @return channel number
+     */
+    public char getChannelNumber()
     {
-      return false;
-    }
-    return true;
-  }
-
-  /**
-   * Returns a binary representation of this message.
-   * @return a binary representation of this message.
-   * @throws StunException if the channel number is invalid
-   */
-  public byte[] encode() throws StunException
-  {
-    char dataLength = getDataLength();
-    byte binMsg[] = new byte[HEADER_LENGTH + dataLength];
-    int offset = 0;
-
-    if(!validateChannelNumber(channelNumber))
-    {
-      throw new StunException(StunException.ILLEGAL_ARGUMENT, "Channel number invalid");
+        return this.channelNumber;
     }
 
-    /* channel number */
-    binMsg[offset++] = (byte)(channelNumber >> 8);
-    binMsg[offset++] = (byte)(channelNumber & 0xff);
-
-    /* length */
-    binMsg[offset++] = (byte)((data != null) ? data.length >> 8 : 0);
-    binMsg[offset++] = (byte)((data != null) ? data.length & 0xff : 0);
-
-    if(data != null)
+    /**
+     * Set the data.
+     * @param data the data
+     */
+    public void setData(byte data[])
     {
-      System.arraycopy(data, 0, binMsg, offset, data.length);
+        this.data = data;
     }
 
-    return binMsg;
-  }
-
-  /**
-   * Constructs a message from its binary representation.
-   * @param binMessage the binary array that contains the encoded message
-   * @param offset the index where the message starts.
-   * @param arrayLen the length of the message
-   * @return a Message object constructed from the binMessage array
-   * @throws StunException ILLEGAL_ARGUMENT if one or more of the arguments
-   * have invalid values.
-   */
-  public static ChannelData decode(byte binMessage[], char offset, char arrayLen) throws StunException
-  {
-    char msgLen = 0;
-    char channelNumber = 0;
-    ChannelData channelData = null;
-    byte data[] = null;
-
-    if(arrayLen < 4) 
+    /**
+     * Get the data.
+     * @return data
+     */
+    public byte[] getData()
     {
-      throw new StunException(StunException.ILLEGAL_ARGUMENT, "Size too short");
+        return this.data;
     }
 
-    channelNumber = (char)((binMessage[offset++]<<8) | (binMessage[offset++]&0xFF));
-    
-    if(!validateChannelNumber(channelNumber))
+    public char getDataLength()
     {
-      throw new StunException(StunException.ILLEGAL_ARGUMENT, "Channel number invalid");
+        char length = 0;
+        if(data == null)
+        {
+            return length;
+        }
+
+        /* pad to a multiple of four */
+        if((length % 4) > 0)
+        {
+            length += (4 - (length % 4));
+        }
+
+        return (char)data.length;
     }
 
-    msgLen = (char)((binMessage[offset++]<<8) | (binMessage[offset++]&0xFF));
-    if(msgLen != (binMessage.length - 4))
+    private static boolean validateChannelNumber(char channelNumber)
     {
-      throw new StunException(StunException.ILLEGAL_ARGUMENT, "Size mismatch");
+        if(channelNumber <= 0x3FFF)
+        {
+            return false;
+        }
+        return true;
     }
 
-    data = new byte[msgLen];
-    System.arraycopy(binMessage, offset, data, 0, msgLen);
-    
-    channelData = new ChannelData();
-    channelData.setData(data);
-    channelData.setChannelNumber(channelNumber);
+    /**
+     * Returns a binary representation of this message.
+     * @return a binary representation of this message.
+     * @throws StunException if the channel number is invalid
+     */
+    public byte[] encode() throws StunException
+    {
+        char dataLength = getDataLength();
+        byte binMsg[] = new byte[HEADER_LENGTH + dataLength];
+        int offset = 0;
 
-    return channelData;
-  }
+        if(!validateChannelNumber(channelNumber))
+        {
+            throw new StunException(StunException.ILLEGAL_ARGUMENT, "Channel number invalid");
+        }
+
+        /* channel number */
+        binMsg[offset++] = (byte)(channelNumber >> 8);
+        binMsg[offset++] = (byte)(channelNumber & 0xff);
+
+        /* length */
+        binMsg[offset++] = (byte)((data != null) ? data.length >> 8 : 0);
+        binMsg[offset++] = (byte)((data != null) ? data.length & 0xff : 0);
+
+        if(data != null)
+        {
+            System.arraycopy(data, 0, binMsg, offset, data.length);
+        }
+
+        return binMsg;
+    }
+
+    /**
+     * Constructs a message from its binary representation.
+     * @param binMessage the binary array that contains the encoded message
+     * @param offset the index where the message starts.
+     * @param arrayLen the length of the message
+     * @return a Message object constructed from the binMessage array
+     * @throws StunException ILLEGAL_ARGUMENT if one or more of the arguments
+     * have invalid values.
+     */
+    public static ChannelData decode(byte binMessage[], char offset, char arrayLen) throws StunException
+    {
+        char msgLen = 0;
+        char channelNumber = 0;
+        ChannelData channelData = null;
+        byte data[] = null;
+
+        if(arrayLen < 4) 
+        {
+            throw new StunException(StunException.ILLEGAL_ARGUMENT, "Size too short");
+        }
+
+        channelNumber = (char)((binMessage[offset++]<<8) | (binMessage[offset++]&0xFF));
+
+        if(!validateChannelNumber(channelNumber))
+        {
+            throw new StunException(StunException.ILLEGAL_ARGUMENT, "Channel number invalid");
+        }
+
+        msgLen = (char)((binMessage[offset++]<<8) | (binMessage[offset++]&0xFF));
+        if(msgLen != (binMessage.length - 4))
+        {
+            throw new StunException(StunException.ILLEGAL_ARGUMENT, "Size mismatch");
+        }
+
+        data = new byte[msgLen];
+        System.arraycopy(binMessage, offset, data, 0, msgLen);
+
+        channelData = new ChannelData();
+        channelData.setData(data);
+        channelData.setChannelNumber(channelNumber);
+
+        return channelData;
+    }
 }
 

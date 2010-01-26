@@ -9,7 +9,7 @@ package org.ice4j.attribute;
 import org.ice4j.*;
 
 /**
- * The PEER-ADDRESS attribute is given by a TURN client to
+ * The XOR-PEER-ADDRESS attribute is given by a TURN client to
  * indicates the peer destination address of its relayed packet.
  *
  * It has the same format as XOR-MAPPED-ADDRESS.
@@ -17,19 +17,19 @@ import org.ice4j.*;
  * @author Sebastien Vincent
  * @version 0.1
  */
-public class PeerAddressAttribute extends XorMappedAddressAttribute
+public class XorPeerAddressAttribute extends XorMappedAddressAttribute
 {
   /**
    * Attribute name.
    */
-  public static final String NAME = "PEER-ADDRESS";
+  public static final String NAME = "XOR-PEER-ADDRESS";
 
   /**
    * Constructor.
    */
-  PeerAddressAttribute()
+  XorPeerAddressAttribute()
   {
-    super(PEER_ADDRESS);
+    super(XOR_PEER_ADDRESS);
   }
 }
 

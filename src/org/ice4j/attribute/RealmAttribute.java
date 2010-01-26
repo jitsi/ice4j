@@ -14,143 +14,140 @@ import org.ice4j.*;
  * The REALM attribute contains a text whcih meets the grammar for 
  * "realm value" as described in RFC3261 but without the double quotes.
  *
- * <p>Copyright: Copyright (c) 2008</p>
- * <p>Organisation: Louis Pasteur University, Strasbourg, France</p>
- *                   <p>Network Research Team (http://clarinet.u-strasbg.fr)</p></p>
  * @author Sebastien Vincent
  * @version 0.1
  */
 public class RealmAttribute extends Attribute
 {
-  /**
-   * Attribute name.
-   */
-  public static final String NAME = "REALM";
+    /**
+     * Attribute name.
+     */
+    public static final String NAME = "REALM";
 
-  /**
-   * Realm value.
-   */
-  private byte realm[] = null;
+    /**
+     * Realm value.
+     */
+    private byte realm[] = null;
 
-  /**
-   * Constructor.
-   */
-  RealmAttribute()
-  {
-    super(REALM);
-  }
-
-  /**
-   * Copies the value of the realm attribute from the specified
-   * attributeValue.
-   * @param attributeValue a binary array containing this attribute's
-   *   field values and NOT containing the attribute header.
-   * @param offset the position where attribute values begin (most often
-   *   offset is equal to the index of the first byte after length)
-   * @param length the length of the binary array.
-   * @throws StunException if attributeValue contains invalid data.
-   */
-  void decodeAttributeBody(byte[] attributeValue, char offset, char length) throws
-    StunException
+    /**
+     * Constructor.
+     */
+    RealmAttribute()
     {
-      realm = new byte[length];
-      System.arraycopy(attributeValue, offset, realm, 0, length);
+        super(REALM);
     }
 
-  /**
-   * Returns a binary representation of this attribute.
-   * @return a binary representation of this attribute.
-   */
-  public byte[] encode()
-  {
-    char type = getAttributeType();
-    byte binValue[] = new byte[HEADER_LENGTH + getDataLength() + (getDataLength() % 4)];
+    /**
+     * Copies the value of the realm attribute from the specified
+     * attributeValue.
+     * @param attributeValue a binary array containing this attribute's
+     *   field values and NOT containing the attribute header.
+     * @param offset the position where attribute values begin (most often
+     *   offset is equal to the index of the first byte after length)
+     * @param length the length of the binary array.
+     * @throws StunException if attributeValue contains invalid data.
+     */
+    void decodeAttributeBody(byte[] attributeValue, char offset, char length) throws
+        StunException
+        {
+            realm = new byte[length];
+            System.arraycopy(attributeValue, offset, realm, 0, length);
+        }
 
-    //Type
-    binValue[0] = (byte)(type>>8);
-    binValue[1] = (byte)(type&0x00FF);
-
-    //Length
-    binValue[2] = (byte)(getDataLength()>>8);
-    binValue[3] = (byte)(getDataLength()&0x00FF);
-
-    /* realm */
-    System.arraycopy(realm, 0, binValue, 4, getDataLength());
-
-    return binValue;
-  }
- 
-  /**
-   * Returns the length of this attribute's body.
-   * @return the length of this attribute's value.
-   */
-  public char getDataLength()
-  {
-    return (char)realm.length;
-  }
-
-  /**
-   * Returns the human readable name of this attribute.
-   * @return this attribute's name.
-   */
-  public String getName()
-  {
-    return "REALM";
-  }
-
-  /**
-   * Returns a (cloned) byte array containg the data value of the realm
-   * attribute.
-   * @return the binary array containing the realm.
-   */
-  public byte[] getRealm()
-  {
-    if (realm == null)
-      return null;
-
-    byte[] copy = new byte[realm.length];
-    System.arraycopy(realm, 0, copy, 0, realm.length);
-    return copy;
-  }
-
-  /**
-   * Copies the specified binary array into the the data value of the realm
-   * attribute.
-   * @param realm the binary array containing the realm.
-   */
-  public void setRealm(byte[] realm)
-  {
-    if (realm == null)
+    /**
+     * Returns a binary representation of this attribute.
+     * @return a binary representation of this attribute.
+     */
+    public byte[] encode()
     {
-      this.realm = null;
-      return;
+        char type = getAttributeType();
+        byte binValue[] = new byte[HEADER_LENGTH + getDataLength() + (getDataLength() % 4)];
+
+        //Type
+        binValue[0] = (byte)(type>>8);
+        binValue[1] = (byte)(type&0x00FF);
+
+        //Length
+        binValue[2] = (byte)(getDataLength()>>8);
+        binValue[3] = (byte)(getDataLength()&0x00FF);
+
+        /* realm */
+        System.arraycopy(realm, 0, binValue, 4, getDataLength());
+
+        return binValue;
     }
 
-    this.realm = new byte[realm.length];
-    System.arraycopy(realm, 0, this.realm, 0, realm.length);
-  }
+    /**
+     * Returns the length of this attribute's body.
+     * @return the length of this attribute's value.
+     */
+    public char getDataLength()
+    {
+        return (char)realm.length;
+    }
 
-  /**
-   * Compares two STUN Attributes. Two attributes are considered equal when they
-   * have the same type length and value.
-   * @param obj the object to compare this attribute with.
-   * @return true if the attributes are equal and false otherwise.
-   */
-  public boolean equals(Object obj)
-  {
-    if (! (obj instanceof RealmAttribute) || obj == null)
-      return false;
+    /**
+     * Returns the human readable name of this attribute.
+     * @return this attribute's name.
+     */
+    public String getName()
+    {
+        return NAME;
+    }
 
-    if (obj == this)
-      return true;
+    /**
+     * Returns a (cloned) byte array containg the data value of the realm
+     * attribute.
+     * @return the binary array containing the realm.
+     */
+    public byte[] getRealm()
+    {
+        if (realm == null)
+            return null;
 
-    RealmAttribute att = (RealmAttribute) obj;
-    if (att.getAttributeType() != getAttributeType()
-        || att.getDataLength() != getDataLength()
-        || !Arrays.equals( att.realm, realm))
-      return false;
+        byte[] copy = new byte[realm.length];
+        System.arraycopy(realm, 0, copy, 0, realm.length);
+        return copy;
+    }
 
-    return true;
-  }
+    /**
+     * Copies the specified binary array into the the data value of the realm
+     * attribute.
+     * @param realm the binary array containing the realm.
+     */
+    public void setRealm(byte[] realm)
+    {
+        if (realm == null)
+        {
+            this.realm = null;
+            return;
+        }
+
+        this.realm = new byte[realm.length];
+        System.arraycopy(realm, 0, this.realm, 0, realm.length);
+    }
+
+    /**
+     * Compares two STUN Attributes. Two attributes are considered equal when they
+     * have the same type length and value.
+     * @param obj the object to compare this attribute with.
+     * @return true if the attributes are equal and false otherwise.
+     */
+    public boolean equals(Object obj)
+    {
+        if (! (obj instanceof RealmAttribute) || obj == null)
+            return false;
+
+        if (obj == this)
+            return true;
+
+        RealmAttribute att = (RealmAttribute) obj;
+        if (att.getAttributeType() != getAttributeType()
+                || att.getDataLength() != getDataLength()
+                || !Arrays.equals( att.realm, realm))
+            return false;
+
+        return true;
+    }
 }
 

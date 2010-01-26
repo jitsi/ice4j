@@ -41,8 +41,8 @@ public class Indication extends Message
     {
         if(!isIndicationType(indicationType))
             throw new StunException(StunException.ILLEGAL_ARGUMENT,
-                                    (int)(indicationType)
-                                    + " - is not a valid response type.");
+                    (int)(indicationType)
+                    + " - is not a valid response type.");
 
         super.setMessageType(indicationType);
     }

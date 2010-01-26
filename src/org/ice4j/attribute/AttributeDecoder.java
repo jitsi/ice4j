@@ -102,20 +102,20 @@ public class AttributeDecoder
                 decodedAttribute = new ChannelNumberAttribute(); break;
             case Attribute.LIFETIME:
                 decodedAttribute = new LifetimeAttribute(); break;
-            case Attribute.PEER_ADDRESS:
-                decodedAttribute = new PeerAddressAttribute(); break;
+            case Attribute.XOR_PEER_ADDRESS:
+                decodedAttribute = new XorPeerAddressAttribute(); break;
             case Attribute.DATA:
                 decodedAttribute = new DataAttribute(); break;
-            case Attribute.RELAYED_ADDRESS:
-                decodedAttribute = new RelayedAddressAttribute(); break;
-            case Attribute.REQUESTED_PROPS:
-                decodedAttribute = new RequestedPropsAttribute(); break;
+            case Attribute.XOR_RELAYED_ADDRESS:
+                decodedAttribute = new XorRelayedAddressAttribute(); break;
+            case Attribute.EVEN_PORT:
+                decodedAttribute = new EvenPortAttribute(); break;
             case Attribute.REQUESTED_TRANSPORT:
                 decodedAttribute = new RequestedTransportAttribute(); break;
+            case Attribute.DONT_FRAGMENT:
+                decodedAttribute = new DontFragmentAttribute(); break;
             case Attribute.RESERVATION_TOKEN:
                 decodedAttribute = new ReservationTokenAttribute(); break;
-            case Attribute.ICMP:
-                decodedAttribute = new IcmpAttribute(); break;
 
             //According to rfc3489 we should silently ignore unknown attributes.
             default: decodedAttribute = new OptionalAttribute(Attribute.UNKNOWN_OPTIONAL_ATTRIBUTE);

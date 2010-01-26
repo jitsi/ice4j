@@ -56,7 +56,8 @@ public class TurnMessage
 
     packet = null;
 
-    req = MessageFactory.createAllocateRequest((byte)17, false, false, false);
+    /* allocate and request an even port */
+    req = MessageFactory.createAllocateRequest((byte)17, false);
     req.setTransactionID(new byte[] {0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 12});
     msg = req.encode();
 
@@ -82,7 +83,7 @@ public class TurnMessage
     req.setTransactionID(new byte[] {0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 12});
     MessageFactory.addLongTermAuthentifcationAttribute(req, new String("username").getBytes(), new String("domain.org").getBytes(), new String("dfdsfqsddfsf").getBytes());
     System.arraycopy(req.getTransactionID(), 0, tran, 4, 12);
-    PeerAddressAttribute xorMapped = (PeerAddressAttribute)req.getAttribute(Attribute.PEER_ADDRESS);
+    XorPeerAddressAttribute xorMapped = (XorPeerAddressAttribute)req.getAttribute(Attribute.XOR_PEER_ADDRESS);
     xorMapped.setAddress(xorMapped.applyXor(tran));
         
     msg = req.encode();
@@ -92,7 +93,7 @@ public class TurnMessage
     Indication indic = MessageFactory.createSendIndication(serverAddress, data);
     indic.setTransactionID(new byte[] {0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 12});
     System.arraycopy(req.getTransactionID(), 0, tran, 4, 12);
-    xorMapped = (PeerAddressAttribute)indic.getAttribute(Attribute.PEER_ADDRESS);
+    xorMapped = (XorPeerAddressAttribute)indic.getAttribute(Attribute.XOR_PEER_ADDRESS);
     xorMapped.setAddress(xorMapped.applyXor(tran));
     msg = indic.encode();
     packet = new DatagramPacket(msg, msg.length, serverAddress.getSocketAddress());

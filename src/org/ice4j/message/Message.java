@@ -143,10 +143,13 @@ public abstract class Message
     protected static final byte SHARED_SECRET_RESPONSE_PRESENTITY_INDEX       = 4;
     protected static final byte SHARED_SECRET_ERROR_RESPONSE_PRESENTITY_INDEX = 5;
     protected static final byte ALLOCATE_REQUEST_PRESENTITY_INDEX             = 6;
-    protected static final byte REFRESH_REQUEST_PRESENTITY_INDEX              = 7;
-    protected static final byte CHANNELBIND_REQUEST_PRESENTITY_INDEX          = 8;
-    protected static final byte SEND_INDICATION_PRESENTITY_INDEX              = 9;
-    protected static final byte DATA_INDICATION_PRESENTITY_INDEX              = 10;
+    protected static final byte ALLOCATE_RESPONSE_PRESENTITY_INDEX            = 7;
+    protected static final byte REFRESH_REQUEST_PRESENTITY_INDEX              = 8;
+    protected static final byte REFRESH_RESPONSE_PRESENTITY_INDEX             = 9;
+    protected static final byte CHANNELBIND_REQUEST_PRESENTITY_INDEX          = 10;
+    protected static final byte CHANNELBIND_RESPONSE_PRESENTITY_INDEX         = 11;
+    protected static final byte SEND_INDICATION_PRESENTITY_INDEX              = 12;
+    protected static final byte DATA_INDICATION_PRESENTITY_INDEX              = 13;
 
     //Attribute indices
     protected static final byte MAPPED_ADDRESS_PRESENTITY_INDEX               =  0;
@@ -172,13 +175,13 @@ public abstract class Message
     /* TURN attributes */
     protected static final byte CHANNEL_NUMBER_PRESENTITY_INDEX               = 19;
     protected static final byte LIFETIME_PRESENTITY_INDEX                     = 20;
-    protected static final byte PEER_ADDRESS_PRESENTITY_INDEX                 = 21;
+    protected static final byte XOR_PEER_ADDRESS_PRESENTITY_INDEX             = 21;
     protected static final byte DATA_PRESENTITY_INDEX                         = 22;
-    protected static final byte RELAYED_ADDRESS_PRESENTITY_INDEX              = 23;
-    protected static final byte REQUESTED_PROPS_PRESENTITY_INDEX              = 24;
+    protected static final byte XOR_RELAYED_ADDRESS_PRESENTITY_INDEX          = 23;
+    protected static final byte EVEN_PORT_PRESENTITY_INDEX                    = 24;
     protected static final byte REQUESTED_TRANSPORT_PRESENTITY_INDEX          = 25;
-    protected static final byte RESERVATION_TOKEN_PRESENTITY_INDEX            = 26;
-    protected static final byte ICMP_PRESENTITY_INDEX                         = 27;
+    protected static final byte DONT_FRAGMENT_PRESENTITY_INDEX                = 26;
+    protected static final byte RESERVATION_TOKEN_PRESENTITY_INDEX            = 27;
 
     /* ICE attributes */
     protected static final byte PRIORITY_PRESENTITY_INDEX                     = 28;
@@ -186,45 +189,44 @@ public abstract class Message
     protected static final byte ICE_CONTROLLED_PRESENTITY_INDEX               = 30;
     protected static final byte USE_CANDIDATE_PRESENTITY_INDEX                = 31; 
 
-    /* XXX add TURN response in table */
     protected final static byte attributePresentities[][] = new byte[][]{
-    //                                            Binding   Shared   Shared   Shared  Allocate  Refresh ChnlBind Send        Data
-    //                        Binding   Binding   Error     Secret   Secret   Secret  request   request request  Indication  Indication
+    //                                            Binding   Shared   Shared   Shared  Alloc   Alloc   Rfrsh   Rfrsh   ChnlBnd  ChnlBnd Send    Data
+    //                        Binding   Binding   Error     Secret   Secret   Secret  Req.    Resp.   Req.    Resp.   Req.     Resp.   Indic.  Indic.
     //  Att.                  Req.      Resp.     Resp.     Req.     Resp.    Error
     //                                                                        Resp.
-    //  ____________________________________________________________________________________________________________________________________
-      /*MAPPED-ADDRESS*/    { N_A,      M,        N_A,      N_A,     N_A,     N_A,    N_A,      N_A,    N_A,     N_A,        N_A},
-      /*RESPONSE-ADDRESS*/  { O,        N_A,      N_A,      N_A,     N_A,     N_A,    N_A,      N_A,    N_A,     N_A,        N_A},
-      /*CHANGE-REQUEST*/    { O,        N_A,      N_A,      N_A,     N_A,     N_A,    N_A,      N_A,    N_A,     N_A,        N_A},
-      /*SOURCE-ADDRESS*/    { N_A,      M,        N_A,      N_A,     N_A,     N_A,    N_A,      N_A,    N_A,     N_A,        N_A},
-      /*CHANGED-ADDRESS*/   { N_A,      M,        N_A,      N_A,     N_A,     N_A,    N_A,      N_A,    N_A,     N_A,        N_A},
-      /*USERNAME*/          { O,        N_A,      N_A,      N_A,     M,       N_A,    O,        O,      O,       N_A,        N_A},
-      /*PASSWORD*/          { N_A,      N_A,      N_A,      N_A,     M,       N_A,    N_A,      N_A,    N_A,     N_A,        N_A},
-      /*MESSAGE-INTEGRITY*/ { O,        O,        N_A,      N_A,     N_A,     N_A,    O,        O,      O,       N_A,        N_A},
-      /*ERROR-CODE*/        { N_A,      N_A,      M,        N_A,     N_A,     M,      N_A,      N_A,    N_A,     N_A,        N_A},
-      /*UNKNOWN-ATTRIBUTES*/{ N_A,      N_A,      C,        N_A,     N_A,     C,      N_A,      N_A,    N_A,     N_A,        N_A},
-      /*REFLECTED-FROM*/    { N_A,      C,        N_A,      N_A,     N_A,     N_A,    N_A,      N_A,    N_A,     N_A,        N_A},
-      /*XOR-MAPPED-ADDRESS*/{ N_A,      M,        N_A,      N_A,     N_A,     N_A,    N_A,      N_A,    N_A,     N_A,        N_A},
-      /*XOR-ONLY*/          { O,        N_A,      N_A,      N_A,     N_A,     N_A,    N_A,      N_A,    N_A,     N_A,        N_A},
-      /*SOFTWARE*/          { N_A,      O,        O,        N_A,     O,       O,      O,        O,      O,       N_A,        N_A},
-      /*UNKNOWN_OPTIONAL*/  { O,        O,        O,        O,       O,       O,      O,        O,      O,       N_A,        N_A},
-      /*ALTERNATE_SERVER*/  { O,        O,        O,        O,       O,       O,      N_A,      N_A,    N_A,     N_A,        N_A},
-      /*REALM*/             { O,        N_A,      N_A,      N_A,     M,       N_A,    O,        O,      O,       N_A,        N_A},
-      /*NONCE*/             { O,        N_A,      N_A,      N_A,     M,       N_A,    O,        O,      O,       N_A,        N_A},
-      /*FINGERPRINT*/       { O,        O,        O,        O,       O,       O,      O,        O,      O,       N_A,        N_A},  
-      /*CHANNEL-NUMBER*/    { N_A,      N_A,      N_A,      N_A,     N_A,     N_A,    N_A,      N_A,    M,       N_A,        N_A},
-      /*LIFETIME*/          { N_A,      N_A,      N_A,      N_A,     N_A,     N_A,    O,        M,      N_A,     N_A,        N_A},
-      /*PEER-ADDRESS*/      { N_A,      N_A,      N_A,      N_A,     N_A,     N_A,    N_A,      N_A,    M,       M,          M},
-      /*DATA*/              { N_A,      N_A,      N_A,      N_A,     N_A,     N_A,    N_A,      N_A,    N_A,     O,          M},
-      /*RELAYED-ADDRESS*/   { N_A,      N_A,      N_A,      N_A,     N_A,     N_A,    N_A,      N_A,    N_A,     N_A,        N_A},
-      /*REQUESTED-PROPS*/   { N_A,      N_A,      N_A,      N_A,     N_A,     N_A,    O,        N_A,    N_A,     N_A,        N_A},
-      /*REQUESTED-TRANSPORT*/{N_A,      N_A,      N_A,      N_A,     N_A,     N_A,    M,        N_A,    N_A,     N_A,        N_A},
-      /*RESERVATION-TOKEN*/ { N_A,      N_A,      N_A,      N_A,     N_A,     N_A,    O,        N_A,    N_A,     N_A,        N_A},
-      /*ICMP*/              { N_A,      N_A,      N_A,      N_A,     N_A,     N_A,    N_A,      N_A,    N_A,     N_A,        N_A},
-      /*PRIORITY*/          { O,        N_A,      N_A,      N_A,     N_A,     N_A,    N_A,      N_A,    N_A,     N_A,        N_A},
-      /*ICE-CONTROLLING*/   { O,        N_A,      N_A,      N_A,     N_A,     N_A,    N_A,      N_A,    N_A,     N_A,        N_A},
-      /*ICE-CONTROLLED*/    { O,        N_A,      N_A,      N_A,     N_A,     N_A,    N_A,      N_A,    N_A,     N_A,        N_A},
-      /*USE-CANDIDATE*/     { O,        N_A,      N_A,      N_A,     N_A,     N_A,    N_A,      N_A,    N_A,     N_A,        N_A},
+    //  ____________________________________________________________________________________________________________________________________________
+      /*MAPPED-ADDRESS*/    { N_A,      M,        N_A,      N_A,     N_A,     N_A,    N_A,    N_A,    N_A,    N_A,    N_A,     N_A,    N_A,   N_A},
+      /*RESPONSE-ADDRESS*/  { O,        N_A,      N_A,      N_A,     N_A,     N_A,    N_A,    N_A,    N_A,    N_A,    N_A,     N_A,    N_A,   N_A},
+      /*CHANGE-REQUEST*/    { O,        N_A,      N_A,      N_A,     N_A,     N_A,    N_A,    N_A,    N_A,    N_A,    N_A,     N_A,    N_A,   N_A},
+      /*SOURCE-ADDRESS*/    { N_A,      M,        N_A,      N_A,     N_A,     N_A,    N_A,    N_A,    N_A,    N_A,    N_A,     N_A,    N_A,   N_A},
+      /*CHANGED-ADDRESS*/   { N_A,      M,        N_A,      N_A,     N_A,     N_A,    N_A,    N_A,    N_A,    N_A,    N_A,     N_A,    N_A,   N_A},
+      /*USERNAME*/          { O,        N_A,      N_A,      N_A,     M,       N_A,    O,      N_A,    O,      N_A,    O,       N_A,    N_A,   N_A},
+      /*PASSWORD*/          { N_A,      N_A,      N_A,      N_A,     M,       N_A,    N_A,    N_A,    N_A,    N_A,    N_A,     N_A,    N_A,   N_A},
+      /*MESSAGE-INTEGRITY*/ { O,        O,        N_A,      N_A,     N_A,     N_A,    O,      O,      O,      O,      O,       O,      N_A,   N_A},
+      /*ERROR-CODE*/        { N_A,      N_A,      M,        N_A,     N_A,     M,      N_A,    M,      N_A,    M,      N_A,     M,      N_A,   N_A},
+      /*UNKNOWN-ATTRIBUTES*/{ N_A,      N_A,      C,        N_A,     N_A,     C,      N_A,    C,      N_A,    C,      N_A,     C,      N_A,   N_A},
+      /*REFLECTED-FROM*/    { N_A,      C,        N_A,      N_A,     N_A,     N_A,    N_A,    N_A,    N_A,    N_A,    N_A,     N_A,    N_A,   N_A},
+      /*XOR-MAPPED-ADDRESS*/{ N_A,      M,        N_A,      N_A,     N_A,     N_A,    N_A,    M,      N_A,    N_A,    N_A,     N_A,    N_A,   N_A},
+      /*XOR-ONLY*/          { O,        N_A,      N_A,      N_A,     N_A,     N_A,    N_A,    N_A,    N_A,    N_A,    N_A,     N_A,    N_A,   N_A},
+      /*SOFTWARE*/          { N_A,      O,        O,        N_A,     O,       O,      O,      O,      O,      O,      O,       O,      O,     N_A},
+      /*UNKNOWN_OPTIONAL*/  { O,        O,        O,        O,       O,       O,      O,      O,      O,      O,      O,       O,      N_A,   N_A},
+      /*ALTERNATE_SERVER*/  { O,        O,        O,        O,       O,       O,      N_A,    N_A,    N_A,    N_A,    N_A,     N_A,    N_A,   N_A},
+      /*REALM*/             { O,        N_A,      N_A,      N_A,     M,       N_A,    O,      O,      O,      O,      O,       O,      N_A,   N_A},
+      /*NONCE*/             { O,        N_A,      N_A,      N_A,     M,       N_A,    O,      O,      O,      O,      O,       O,      N_A,   N_A},
+      /*FINGERPRINT*/       { O,        O,        O,        O,       O,       O,      O,      O,      O,      O,      O,       O,      N_A,   N_A},  
+      /*CHANNEL-NUMBER*/    { N_A,      N_A,      N_A,      N_A,     N_A,     N_A,    N_A,    N_A,    N_A,    N_A,    M,       N_A,    N_A,   N_A},
+      /*LIFETIME*/          { N_A,      N_A,      N_A,      N_A,     N_A,     N_A,    O,      N_A,    M,      N_A,    N_A,     N_A,    N_A,   N_A},
+      /*XOR-PEER-ADDRESS*/  { N_A,      N_A,      N_A,      N_A,     N_A,     N_A,    N_A,    N_A,    N_A,    N_A,    M,       N_A,    M,     M},
+      /*DATA*/              { N_A,      N_A,      N_A,      N_A,     N_A,     N_A,    N_A,    N_A,    N_A,    N_A,    N_A,     N_A,    O,     M},
+      /*XOR-RELAYED-ADDRESS*/{N_A,      N_A,      N_A,      N_A,     N_A,     N_A,    N_A,    M,      N_A,    N_A,    N_A,     N_A,    N_A,   N_A},
+      /*EVEN-PORT*/         { N_A,      N_A,      N_A,      N_A,     N_A,     N_A,    O,      N_A,    N_A,    N_A,    N_A,     N_A,    N_A,   N_A},
+      /*REQUESTED-TRANSPORT*/{N_A,      N_A,      N_A,      N_A,     N_A,     N_A,    M,      N_A,    N_A,    N_A,    N_A,     N_A,    N_A,   N_A},
+      /*DONT-FRAGMENT*/     { N_A,      N_A,      N_A,      N_A,     N_A,     N_A,    O,      N_A,    N_A,    N_A,    N_A,     N_A,    O,     N_A},
+      /*RESERVATION-TOKEN*/ { N_A,      N_A,      N_A,      N_A,     N_A,     N_A,    O,      O,      N_A,    N_A,    N_A,     N_A,    N_A,   N_A},
+      /*PRIORITY*/          { O,        N_A,      N_A,      N_A,     N_A,     N_A,    N_A,    N_A,    N_A,    N_A,    N_A,     N_A,    N_A,   N_A},
+      /*ICE-CONTROLLING*/   { O,        N_A,      N_A,      N_A,     N_A,     N_A,    N_A,    N_A,    N_A,    N_A,    N_A,     N_A,    N_A,   N_A},
+      /*ICE-CONTROLLED*/    { O,        N_A,      N_A,      N_A,     N_A,     N_A,    N_A,    N_A,    N_A,    N_A,    N_A,     N_A,    N_A,   N_A},
+      /*USE-CANDIDATE*/     { O,        N_A,      N_A,      N_A,     N_A,     N_A,    N_A,    N_A,    N_A,    N_A,    N_A,     N_A,    N_A,   N_A},
     };
 
     /**
@@ -425,13 +427,13 @@ public abstract class Message
             case Attribute.FINGERPRINT:        attributeIndex = FINGERPRINT_PRESENTITY_INDEX; break;
             case Attribute.CHANNEL_NUMBER:     attributeIndex = CHANNEL_NUMBER_PRESENTITY_INDEX; break;
             case Attribute.LIFETIME:           attributeIndex = LIFETIME_PRESENTITY_INDEX; break;
-            case Attribute.PEER_ADDRESS:       attributeIndex = PEER_ADDRESS_PRESENTITY_INDEX; break;
+            case Attribute.XOR_PEER_ADDRESS:   attributeIndex = XOR_PEER_ADDRESS_PRESENTITY_INDEX; break;
             case Attribute.DATA:               attributeIndex = DATA_PRESENTITY_INDEX; break;
-            case Attribute.RELAYED_ADDRESS:    attributeIndex = RELAYED_ADDRESS_PRESENTITY_INDEX; break;
-            case Attribute.REQUESTED_PROPS:    attributeIndex = REQUESTED_PROPS_PRESENTITY_INDEX; break;
+            case Attribute.XOR_RELAYED_ADDRESS:attributeIndex = XOR_RELAYED_ADDRESS_PRESENTITY_INDEX; break;
+            case Attribute.EVEN_PORT:          attributeIndex = EVEN_PORT_PRESENTITY_INDEX; break;
             case Attribute.REQUESTED_TRANSPORT:attributeIndex = REQUESTED_TRANSPORT_PRESENTITY_INDEX; break;
+            case Attribute.DONT_FRAGMENT:      attributeIndex = DONT_FRAGMENT_PRESENTITY_INDEX; break;
             case Attribute.RESERVATION_TOKEN:  attributeIndex = RESERVATION_TOKEN_PRESENTITY_INDEX; break;
-            case Attribute.ICMP:               attributeIndex = ICMP_PRESENTITY_INDEX; break;
             default: attributeIndex = UNKNOWN_OPTIONAL_ATTRIBUTES_PRESENTITY_INDEX; break;
         }
 

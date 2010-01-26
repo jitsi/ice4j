@@ -294,8 +294,8 @@ public class MessageFactory
 
     /**
      * Create an allocate request without attribute.
-      * @return an allocate request
-      */
+     * @return an allocate request
+     */
     public static Request createAllocateRequest() throws StunException
     {
         Request allocateRequest = new Request();
@@ -313,16 +313,14 @@ public class MessageFactory
     }
 
     /**
-     * Create an allocate request with required attributes.
+     * Create an allocate request to allocate an even port.
      * Attention this does not have attributes for long-term 
      * authentication.
      * @param protocol requested protocol number
-     * @param eFlag E flag for the REQUESTED-PROPS
-     * @param rFlag R flag for the REQUESTED-PROPS
-     * @param pFlag P flag for the REQUESTED-PROPS
+     * @param rFlag R flag for the EVEN-PORT
      * @return an allocation request
      */
-    public static Request createAllocateRequest(byte protocol, boolean eFlag, boolean rFlag, boolean pFlag) throws StunException
+    public static Request createAllocateRequest(byte protocol, boolean rFlag) throws StunException
     {
       Request allocateRequest = new Request();
       
@@ -341,8 +339,8 @@ public class MessageFactory
         RequestedTransportAttribute reqTransport = AttributeFactory.createRequestedTransportAttribute(protocol);
         allocateRequest.addAttribute(reqTransport);
         
-        /* add a REQUESTED-PROPS attribute */
-        RequestedPropsAttribute reqProps = AttributeFactory.createRequestedPropsAttribute(eFlag, rFlag, pFlag);
+        /* add EVEN-PORT attribute */
+        EvenPortAttribute reqProps = AttributeFactory.createEvenPortAttribute(rFlag);
         allocateRequest.addAttribute(reqProps);
       }
       catch(StunException ex)
@@ -418,8 +416,8 @@ public class MessageFactory
         ChannelNumberAttribute channelNumberAttribute = AttributeFactory.createChannelNumberAttribute(channelNumber);
         channelBindRequest.addAttribute(channelNumberAttribute);
 
-        /* add a PEER-ADDRESS */
-        PeerAddressAttribute peerAddressAttribute = AttributeFactory.createPeerAddressAttribute(peerAddress);
+        /* add a XOR-PEER-ADDRESS */
+        XorPeerAddressAttribute peerAddressAttribute = AttributeFactory.createXorPeerAddressAttribute(peerAddress);
         channelBindRequest.addAttribute(peerAddressAttribute);
       }
       catch(StunException ex)
@@ -444,8 +442,8 @@ public class MessageFactory
       {
         sendIndication.setMessageType(Message.SEND_INDICATION);
         
-        /* add PEER-ADDRESS attribute */
-        PeerAddressAttribute peerAddressAttribute = AttributeFactory.createPeerAddressAttribute(peerAddress);
+        /* add XOR-PEER-ADDRESS attribute */
+        XorPeerAddressAttribute peerAddressAttribute = AttributeFactory.createXorPeerAddressAttribute(peerAddress);
         sendIndication.addAttribute(peerAddressAttribute);
 
         /* add DATA if data */
@@ -468,13 +466,13 @@ public class MessageFactory
     public static Request createShareSecretRequest()
     {
         throw new UnsupportedOperationException(
-            "Shared Secret Support is not currently impolemented");
+            "Shared Secret Support is not currently implemented");
     }
 
     public static Response createSharedSecretResponse()
     {
         throw new UnsupportedOperationException(
-            "Shared Secret Support is not currently impolemented");
+            "Shared Secret Support is not currently implemented");
     }
 
     public static Response createSharedSecretErrorResponse()

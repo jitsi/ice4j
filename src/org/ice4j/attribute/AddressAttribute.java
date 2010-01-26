@@ -21,8 +21,8 @@ import org.ice4j.*;
  * CHANGED-ADDRESS <br/>
  * REFLECTED-FROM <br/>
  * ALTERNATE-SERVER <br/>
- * PEER-ADDRESS <br/>
- * RELAYED-ADDRESS <br/>
+ * XOR-PEER-ADDRESS <br/>
+ * XOR-RELAYED-ADDRESS <br/>
  *
  * The different attributes are distinguished by the attributeType of
  * org.ice4j.attribute.Attribute.
@@ -93,8 +93,8 @@ abstract class AddressAttribute extends Attribute
         return (type == MAPPED_ADDRESS || type == RESPONSE_ADDRESS
                 || type == SOURCE_ADDRESS || type == CHANGED_ADDRESS
                 || type == REFLECTED_FROM || type == XOR_MAPPED_ADDRESS
-                || type == ALTERNATE_SERVER || type == PEER_ADDRESS 
-                || type == RELAYED_ADDRESS);
+                || type == ALTERNATE_SERVER || type == XOR_PEER_ADDRESS 
+                || type == XOR_RELAYED_ADDRESS);
 
     }
 
@@ -128,15 +128,15 @@ abstract class AddressAttribute extends Attribute
             case REFLECTED_FROM:     return ReflectedFromAttribute.NAME;
             case XOR_MAPPED_ADDRESS: return XorMappedAddressAttribute.NAME;
             case ALTERNATE_SERVER:   return AlternateServerAttribute.NAME;
-            case PEER_ADDRESS:       return PeerAddressAttribute.NAME;
-            case RELAYED_ADDRESS:    return RelayedAddressAttribute.NAME;
+            case XOR_PEER_ADDRESS:   return XorPeerAddressAttribute.NAME;
+            case XOR_RELAYED_ADDRESS:return XorRelayedAddressAttribute.NAME;
         }
 
         return "UNKNOWN ATTRIBUTE";
     }
 
    /**
-    * Compares two STUN Attributes. Attributeas are considered equal when their
+    * Compares two STUN Attributes. Attributes are considered equal when their
     * type, length, and all data are the same.
     *
     * @param obj the object to compare this attribute with.

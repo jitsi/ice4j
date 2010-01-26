@@ -121,8 +121,8 @@ public class SoftwareAttribute
     {
         if (software == null)
         {
-          this.software = null;
-          return;
+            this.software = null;
+            return;
         }
 
         this.software = new byte[software.length];
@@ -140,7 +140,7 @@ public class SoftwareAttribute
     public boolean equals(Object obj)
     {
         if (! (obj instanceof SoftwareAttribute)
-            || obj == null)
+                || obj == null)
             return false;
 
         if (obj == this)
@@ -148,8 +148,8 @@ public class SoftwareAttribute
 
         SoftwareAttribute att = (SoftwareAttribute) obj;
         if (att.getAttributeType() != getAttributeType()
-            || att.getDataLength() != getDataLength()
-            || !Arrays.equals( att.software, software))
+                || att.getDataLength() != getDataLength()
+                || !Arrays.equals( att.software, software))
             return false;
 
         return true;

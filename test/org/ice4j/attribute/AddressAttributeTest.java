@@ -175,32 +175,32 @@ public class AddressAttributeTest extends TestCase {
                      expectedName, actualName);
 
 
-        /* PEER-ADDRESS */
-        addressAttribute = new PeerAddressAttribute();
+        /* XOR-PEER-ADDRESS */
+        addressAttribute = new XorPeerAddressAttribute();
 
-        expectedType = Attribute.PEER_ADDRESS;
+        expectedType = Attribute.XOR_PEER_ADDRESS;
         actualType = addressAttribute.getAttributeType();
 
-        expectedName = "PEER-ADDRESS";
+        expectedName = "XOR-PEER-ADDRESS";
         actualName = addressAttribute.getName();
 
-        assertEquals("PeerAddressAttribute does not the right type.",
+        assertEquals("XorPeerAddressAttribute does not the right type.",
                      expectedType, actualType);
-        assertEquals("PeerAddressAttribute does not the right name.",
+        assertEquals("XorPeerAddressAttribute does not the right name.",
                      expectedName, actualName);
 
-        /* RELAYED-ADDRESS */
-        addressAttribute = new RelayedAddressAttribute();
+        /* XOR-RELAYED-ADDRESS */
+        addressAttribute = new XorRelayedAddressAttribute();
 
-        expectedType = Attribute.RELAYED_ADDRESS;
+        expectedType = Attribute.XOR_RELAYED_ADDRESS;
         actualType = addressAttribute.getAttributeType();
 
-        expectedName = "RELAYED-ADDRESS";
+        expectedName = "XOR-RELAYED-ADDRESS";
         actualName = addressAttribute.getName();
 
-        assertEquals("RelayedAddressAttribute does not the right type.",
+        assertEquals("XorRelayedAddressAttribute does not the right type.",
                      expectedType, actualType);
-        assertEquals("RelayedAddressAttribute does not the right name.",
+        assertEquals("XorRelayedAddressAttribute does not the right name.",
                      expectedName, actualName);
     }
 

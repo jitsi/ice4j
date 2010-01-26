@@ -11,35 +11,39 @@ import java.lang.*;
 import org.ice4j.*;
 
 /**
- * The CHANNEL-NUMBER attribute is used to known on which 
- * channel the TURN client want to send data.
+ * The EVEN-PORT attribute is used to ask the TURN
+ * server to allocate an even port and optionnaly allocate
+ * the next higher port number.
+ *
+ * There are one flag supported : <br/>
+ * R : ask to reserve a second port.<br/>
  *
  * @author Sebastien Vincent
  * @version 0.1
  */
-public class ChannelNumberAttribute extends Attribute
+public class EvenPortAttribute extends Attribute
 {
     /**
      * Attribute name.
      */
-    public static final String NAME = "CHANNEL-NUMBER";
+    public static final String NAME = "EVEN-PORT";
 
     /**
      * The length of the data contained by this attribute.
      */
-    public static final char DATA_LENGTH = 4;
+    public static final char DATA_LENGTH = 1;
 
     /**
-     * Channel number.
+     * R flag.
      */
-    private char channelNumber = 0;
+    boolean rFlag = false;
 
     /**
      * Constructor.
      */
-    ChannelNumberAttribute()
+    EvenPortAttribute()
     {
-        super(CHANNEL_NUMBER);
+        super(EVEN_PORT);
     }
 
     /**
@@ -50,18 +54,18 @@ public class ChannelNumberAttribute extends Attribute
      */
     public boolean equals(Object obj)
     {
-        if (! (obj instanceof ChannelNumberAttribute)
+        if (! (obj instanceof EvenPortAttribute)
                 || obj == null)
             return false;
 
         if (obj == this)
             return true;
 
-        ChannelNumberAttribute att = (ChannelNumberAttribute) obj;
-        if (att.getAttributeType()   != getAttributeType()
-                || att.getDataLength()   != getDataLength()
+        EvenPortAttribute att = (EvenPortAttribute) obj;
+        if (att.getAttributeType() != getAttributeType()
+                || att.getDataLength() != getDataLength()
                 /* compare data */
-                || att.channelNumber != channelNumber
+                || att.rFlag != rFlag 
            )
             return false;
 
@@ -103,10 +107,10 @@ public class ChannelNumberAttribute extends Attribute
         binValue[2] = (byte)(getDataLength() >> 8);
         binValue[3] = (byte)(getDataLength() & 0x00FF);
         //Data
-        binValue[4] = (byte)((channelNumber >> 8) & 0xff);
-        binValue[5] = (byte)((channelNumber) & 0xff);
-        binValue[6] = 0x00;
-        binValue[7] = 0x00;
+        binValue[4] = (byte)(rFlag ? 1 << 8 : 0);
+        binValue[5] = 0x00; /* not used for the moment */
+        binValue[6] = 0x00; /* not used for the moment */
+        binValue[7] = 0x00; /* not used for the moment */
 
         return binValue;
     }
@@ -128,25 +132,25 @@ public class ChannelNumberAttribute extends Attribute
             throw new StunException("length invalid");
         }
 
-        channelNumber = ((char)((attributeValue[0] << 8 ) | (attributeValue[1]&0xFF) ));
+        rFlag = (attributeValue[0] & 0x80) > 0;
     }
 
     /**
-     * Set the channel number.
-     * @param channelNumber channel number
+     * Set the R flag.
+     * @param rFlag true of false
      */
-    public void setChannelNumber(char channelNumber)
+    public void setRFlag(boolean rFlag)
     {
-        this.channelNumber = channelNumber;
+        this.rFlag = rFlag;
     }
 
     /**
-     * Get the channel number.
-     * @return channel number
+     * Is the R flag set
+     * @return true if it is, false otherwise
      */
-    public char getChannelNumber()
+    public boolean isRFlag()
     {
-        return channelNumber;
+        return rFlag;
     }
 }
 

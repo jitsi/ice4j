@@ -11,35 +11,31 @@ import java.lang.*;
 import org.ice4j.*;
 
 /**
- * The CHANNEL-NUMBER attribute is used to known on which 
- * channel the TURN client want to send data.
+ * The DONT-FRAGMENT attribute is used to inform TURN
+ * server (if it supports this attribute) that it should set DF bit to 1 
+ * in IPv4 headers when relaying client data.
  *
  * @author Sebastien Vincent
  * @version 0.1
  */
-public class ChannelNumberAttribute extends Attribute
+public class DontFragmentAttribute extends Attribute
 {
     /**
      * Attribute name.
      */
-    public static final String NAME = "CHANNEL-NUMBER";
+    public static final String NAME = "DONT-FRAGMENT";
 
     /**
      * The length of the data contained by this attribute.
      */
-    public static final char DATA_LENGTH = 4;
-
-    /**
-     * Channel number.
-     */
-    private char channelNumber = 0;
+    public static final char DATA_LENGTH = 0;
 
     /**
      * Constructor.
      */
-    ChannelNumberAttribute()
+    DontFragmentAttribute()
     {
-        super(CHANNEL_NUMBER);
+        super(DONT_FRAGMENT);
     }
 
     /**
@@ -50,20 +46,11 @@ public class ChannelNumberAttribute extends Attribute
      */
     public boolean equals(Object obj)
     {
-        if (! (obj instanceof ChannelNumberAttribute)
+        if (! (obj instanceof DontFragmentAttribute)
                 || obj == null)
+        {
             return false;
-
-        if (obj == this)
-            return true;
-
-        ChannelNumberAttribute att = (ChannelNumberAttribute) obj;
-        if (att.getAttributeType()   != getAttributeType()
-                || att.getDataLength()   != getDataLength()
-                /* compare data */
-                || att.channelNumber != channelNumber
-           )
-            return false;
+        }
 
         return true;
     }
@@ -94,7 +81,8 @@ public class ChannelNumberAttribute extends Attribute
      */
     public byte[] encode()
     {
-        byte binValue[] = new byte[HEADER_LENGTH + DATA_LENGTH];
+        /* there is no data */
+        byte binValue[] = new byte[HEADER_LENGTH];
 
         //Type
         binValue[0] = (byte)(getAttributeType()>>8);
@@ -102,11 +90,6 @@ public class ChannelNumberAttribute extends Attribute
         //Length
         binValue[2] = (byte)(getDataLength() >> 8);
         binValue[3] = (byte)(getDataLength() & 0x00FF);
-        //Data
-        binValue[4] = (byte)((channelNumber >> 8) & 0xff);
-        binValue[5] = (byte)((channelNumber) & 0xff);
-        binValue[6] = 0x00;
-        binValue[7] = 0x00;
 
         return binValue;
     }
@@ -123,30 +106,10 @@ public class ChannelNumberAttribute extends Attribute
      */
     void decodeAttributeBody(byte[] attributeValue, char offset, char length) throws StunException
     {
-        if(length != 4)
+        if(length != 0)
         {
             throw new StunException("length invalid");
         }
-
-        channelNumber = ((char)((attributeValue[0] << 8 ) | (attributeValue[1]&0xFF) ));
-    }
-
-    /**
-     * Set the channel number.
-     * @param channelNumber channel number
-     */
-    public void setChannelNumber(char channelNumber)
-    {
-        this.channelNumber = channelNumber;
-    }
-
-    /**
-     * Get the channel number.
-     * @return channel number
-     */
-    public char getChannelNumber()
-    {
-        return channelNumber;
     }
 }
 

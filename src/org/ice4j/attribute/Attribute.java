@@ -44,13 +44,13 @@ import org.ice4j.*;
  * TURN attributes:<br/>
  *    0x000C: CHANNEL-NUMBER                                               <br/>
  *    0x000D: LIFETIME                                                     <br/>
- *    0x0012: PEER-ADDRESS                                                 <br/>
+ *    0x0012: XOR-PEER-ADDRESS                                             <br/>
  *    0x0013: DATA                                                         <br/>
- *    0x0016: RELAYED-ADDRESS                                              <br/>
- *    0x0018: REQUESTED-PROPS                                              <br/>
+ *    0x0016: XOR-RELAYED-ADDRESS                                          <br/>
+ *    0x0018: EVEN-PORT                                                    <br/>
  *    0x0019: REQUESTED-TRANSPORT                                          <br/>
+ *    0x001A: DONT-FRAGMENT                                                <br/>
  *    0x0022: RESERVATION-TOKEN                                            <br/>
- *    0x0030: ICMP                                                         <br/>
  * 
  * ICE attributes:<br/>
  *    0x0024: PRIORITY                                                     <br/>
@@ -92,13 +92,13 @@ public abstract class Attribute
     /* TURN attributes */
     public static final char CHANNEL_NUMBER = 0x000c;
     public static final char LIFETIME = 0x000d;
-    public static final char PEER_ADDRESS = 0x0012;
+    public static final char XOR_PEER_ADDRESS = 0x0012;
     public static final char DATA = 0x0013;
-    public static final char RELAYED_ADDRESS = 0x0016;
-    public static final char REQUESTED_PROPS = 0x0018;
+    public static final char XOR_RELAYED_ADDRESS = 0x0016;
+    public static final char EVEN_PORT = 0x0018;
     public static final char REQUESTED_TRANSPORT = 0x0019;
+    public static final char DONT_FRAGMENT = 0x001a;
     public static final char RESERVATION_TOKEN = 0x0022;
-    public static final char ICMP = 0x0030;
 
     /* ICE attributes */
     public static final char PRIORITY = 0x0024;

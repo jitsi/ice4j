@@ -82,7 +82,7 @@ public class ChangeRequestAttribute
     public static final String NAME = "CHANGE-REQUEST";
 
     /**
-     * Compares two STUN Attributes. Attributeas are considered equal when their
+     * Compares two STUN Attributes. Attributes are considered equal when their
      * type, length, and all data are the same.
      *
      * @param obj the object to compare this attribute with.

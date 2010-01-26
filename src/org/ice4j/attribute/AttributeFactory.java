@@ -254,31 +254,31 @@ public class AttributeFactory
         return attribute;
     };
  
-/* ------------------------------------ RELAYED-ADRESS attribute ------------------------ */
+/* ------------------------------------ XOR-RELAYED-ADRESS attribute ------------------------ */
     /**
-     * Creates a RelayedAddressAttribute of the specified type and with
+     * Creates a XorRelayedAddressAttribute of the specified type and with
      * the specified address and port
      * @param address the address value of the address attribute
      * @return the newly created address attribute.
      */
-    public static RelayedAddressAttribute createRelayedAddressAttribute(TransportAddress address)
+    public static XorRelayedAddressAttribute createXorRelayedAddressAttribute(TransportAddress address)
     {
-        RelayedAddressAttribute attribute = new RelayedAddressAttribute();
+        XorRelayedAddressAttribute attribute = new XorRelayedAddressAttribute();
 
         attribute.setAddress(address);
         return attribute;
     }
 
-/* ------------------------------------ PEER-ADRESS attribute ------------------------ */
+/* ------------------------------------ XOR-PEER-ADRESS attribute ------------------------ */
     /**
-     * Creates a PeerAddressAttribute of the specified type and with
+     * Creates a XorPeerAddressAttribute of the specified type and with
      * the specified address and port
      * @param address the address value of the address attribute
      * @return the newly created address attribute.
      */
-    public static PeerAddressAttribute createPeerAddressAttribute(TransportAddress address)
+    public static XorPeerAddressAttribute createXorPeerAddressAttribute(TransportAddress address)
     {
-        PeerAddressAttribute attribute = new PeerAddressAttribute();
+        XorPeerAddressAttribute attribute = new XorPeerAddressAttribute();
 
         attribute.setAddress(address);
         return attribute;
@@ -355,21 +355,17 @@ public class AttributeFactory
     }
 
 
-/* --------------------------------- REQUESTED-PROPS attribute ---------------- */
+/* --------------------------------- EVEN-PORT attribute ---------------- */
     /**
-     * Create a RequestedPropsAttribute.
-     * @param eFlag E flag
+     * Create a EventAttribute.
      * @param rFlag R flag
-     * @param pFlag P flag
-     * @return the newly created RequestedPropsAttribute
+     * @return the newly created EventPortAttribute
      */
-    public static RequestedPropsAttribute createRequestedPropsAttribute(boolean eFlag, boolean rFlag, boolean pFlag)
+    public static EvenPortAttribute createEvenPortAttribute(boolean rFlag)
     {
-      RequestedPropsAttribute attribute = new RequestedPropsAttribute();
+      EvenPortAttribute attribute = new EvenPortAttribute();
 
-      attribute.setEFlag(eFlag);
       attribute.setRFlag(rFlag);
-      attribute.setPFlag(pFlag);
       return attribute;
     }
 
@@ -427,22 +423,6 @@ public class AttributeFactory
       DataAttribute attribute = new DataAttribute();
 
       attribute.setData(data);
-      return attribute;
-    }
-
-/* -------------------------------- ICMP attribute -------------------------------- */
-    /**
-     * Create a IcmpAttribute
-     * @param type ICMP type
-     * @param code ICMP code
-     * @return newly created IcmpAttribute
-     */
-    public static IcmpAttribute createIcmpAttribute(byte type, byte code)
-    {
-      IcmpAttribute attribute = new IcmpAttribute();
-
-      attribute.setType(type);
-      attribute.setCode(code);
       return attribute;
     }
 
