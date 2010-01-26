@@ -27,20 +27,6 @@ import org.ice4j.ice.*;
  */
 public class HostCandidateHarvester
 {
-
-    /**
-     * The name of the property containing the number of binds that we should
-     * should execute in case a port is already bound to (each retry would be on
-     * a new random port).
-     */
-    public static final String BIND_RETRIES_PROPERTY_NAME
-        = "net.java.sip.communicator.service.netaddr.BIND_RETRIES";
-
-    /**
-     * Default STUN server port.
-     */
-    public static final int DEFAULT_STUN_SERVER_PORT = 3478;
-
     /**
      * Gathers all candidate addresses on the local machine, binds sockets on
      * them and creates {@link HostCandidate}s. The harvester would always
