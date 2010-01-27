@@ -477,10 +477,6 @@ public class NetworkUtils
         if (scopeStart == -1)
             return ipv6Address;
 
-        int scopeEnd = (ipv6Address.charAt(ipv6Address.length() -1 ) == ']')
-            ? ipv6Address.length() - 1
-            : ipv6Address.length();
-
         ipv6Address = ipv6Address.substring(0, scopeStart);
 
         //in case this was an IPv6 literal and we remove the closing bracket,
