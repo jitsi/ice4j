@@ -125,7 +125,7 @@ public class Component
             int count = 0;
             for(Candidate cand : localCandidates)
             {
-                if (cand.getCandidateType() == CandidateType.HOST_CANDIDATE
+                if (cand.getType() == CandidateType.HOST_CANDIDATE
                     && !cand.isVirtual())
                 {
                     count++;

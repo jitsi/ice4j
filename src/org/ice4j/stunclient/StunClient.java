@@ -79,7 +79,7 @@ public class StunClient
         if(mappedAttribute != null)
         {
       TransportAddress mappedAddr = mappedAttribute.getAddress();
-            System.out.println("The mapped address : " + mappedAddr.getHosAddress() +
+            System.out.println("The mapped address : " + mappedAddr.getHostAddress() +
                                 " : " + (int)mappedAddr.getPort());
         }
     }

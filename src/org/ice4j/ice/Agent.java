@@ -158,7 +158,7 @@ public class Agent
     }
 
     /**
-     * Computes and returns a foundation for the specified <tt>candidate</tt>.
+     * Computes and returns a foundation for the specified <tt>Candidate</tt>.
      * Foundations are <tt>String</tt>s (1 to 32 ICE chars) used to label
      * "similar" <tt>Candidate</tt>s within a session, which is why e generate
      * them here and not in the candidates themselves.

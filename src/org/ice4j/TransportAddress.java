@@ -227,7 +227,7 @@ public class TransportAddress
      *
      * @return a String part of the address
      */
-    public String getHosAddress()
+    public String getHostAddress()
     {
       // do not resolve the name if it exists
       return socketAddress.getAddress().getHostAddress();

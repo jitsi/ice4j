@@ -82,22 +82,43 @@ public class Candidate
     private Component parentComponent = null;
 
     /**
-     * The maximum value for a candidate's type prefence.
+     * The address of the STUN server that was used to obtain this
+     * <tt>Candidate</tt>. Will be <tt>null</tt> if this is not a server
+     * reflexive candidate.
+     */
+    private TransportAddress stunServerAddress = null;
+
+    /**
+     * The address of the TURN server that was used to obtain this
+     * <tt>Candidate</tt>. Will be <tt>null</tt> if this is not a relayed
+     * candidate.
+     */
+    private TransportAddress turnServerAddress = null;
+
+    /**
+     * The address that our TURN/STUN server returned as mapped if this is a
+     * relayed or a reflexive <tt>Candidate</tt>. Will remain <tt>null</tt> if
+     * this is a host candidate.
+     */
+    private TransportAddress mappedAddress = null;
+
+    /**
+     * The maximum value for a candidate's type preference.
      */
     public static final int MAX_TYPE_PREFERENCE = 126;
 
     /**
-     * The minimum value for a candidate's type prefence.
+     * The minimum value for a candidate's type preference.
      */
     public static final int MIN_TYPE_PREFERENCE = 0;
 
     /**
-     * The maximum value for a candidate's local prefence.
+     * The maximum value for a candidate's local preference.
      */
     public static final int MAX_LOCAL_PREFERENCE = 65535;
 
     /**
-     * The minimum value for a candidate's local prefence.
+     * The minimum value for a candidate's local preference.
      */
     public static final int MIN_LOCAL_PREFERENCE = 0;
 
@@ -126,7 +147,7 @@ public class Candidate
      * @return a <tt>CandidateType</tt> indicating the type of this
      * <tt>Candidate</tt>.
      */
-    public CandidateType getCandidateType()
+    public CandidateType getType()
     {
         return candidateType;
     }
@@ -277,7 +298,7 @@ public class Candidate
         //compare other properties
         if(getBase().equals(targetCandidate.getBase())
             && getPriority() == targetCandidate.getPriority()
-            && getCandidateType() == targetCandidate.getCandidateType()
+            && getType() == targetCandidate.getType()
             && getFoundation().equals(targetCandidate.getFoundation()))
         {
             return true;
@@ -337,7 +358,7 @@ public class Candidate
     private int getTypePreference()
     {
         int typePreference;
-        CandidateType candidateType = getCandidateType();
+        CandidateType candidateType = getType();
         if(candidateType == CandidateType.HOST_CANDIDATE)
         {
             typePreference = MAX_TYPE_PREFERENCE; // 126
@@ -461,6 +482,19 @@ public class Candidate
     }
 
     /**
+     * Sets the address of the STUN server that was used to obtain this
+     * <tt>Candidate</tt>. Only makes sense if this is a relayed candidate.
+     *
+     * @param address the address of the STUN server that was used to obtain
+     * this <tt>Candidate</tt> or <tt>null</tt> if this is not a server
+     * reflexive candidate.
+     */
+    protected void setStunServerAddress(TransportAddress address)
+    {
+        this.stunServerAddress = address;
+    }
+
+    /**
      * Returns the address of the TURN server that was used to obtain this
      * <tt>Candidate</tt> or <tt>null</tt> if this is not a relayed candidate.
      *
@@ -470,6 +504,91 @@ public class Candidate
     public TransportAddress getTurnServerAddress()
     {
         return turnServerAddress;
+    }
+
+    /**
+     * Sets the address of the TURN server that was used to obtain this
+     * <tt>Candidate</tt>. Only makes sense if this is a relayed candidate.
+     *
+     * @param address the address of the TURN server that was used to obtain
+     * this <tt>Candidate</tt> or <tt>null</tt> if this is not a relayed
+     * candidate.
+     */
+    protected void setTurnServerAddress(TransportAddress address)
+    {
+        this.turnServerAddress = address;
+    }
+
+    /**
+     * Returns the address that was returned to us a "mapped address" from a
+     * TURN or a STUN server in case this <tt>Candidate</tt> is relayed or
+     * reflexive and <tt>null</tt> otherwise. Note that the address returned by
+     * this method would be equal to the transport address for reflexive
+     * <tt>Candidate</tt>s but not for relayed ones.
+     *
+     * @return the address that our TURN/STUN server returned as mapped if this
+     * is a relayed or a reflexive <tt>Candidate</tt> or <tt>null</tt> if this
+     * is a host candidate.
+     */
+    public TransportAddress getMappedAddress()
+    {
+        return mappedAddress;
+    }
+
+    /**
+     * Sets the address that was returned to us a "mapped address" from a
+     * TURN or a STUN server in case this <tt>Candidate</tt> is relayed.
+     *
+     * @param address the address that our TURN/STUN server returned as mapped
+     * if this is a relayed or a reflexive <tt>Candidate</tt>.
+     */
+    protected void setMappedAddress(TransportAddress address)
+    {
+        this.turnServerAddress = address;
+    }
+
+    /**
+     * Returns the <tt>Transport</tt> for this <tt>Candidate</tt>. This is a
+     * convenience method only and it is equivalent to retrieving the transport
+     * of this <tt>Candidate</tt>'s transport address.
+     *
+     * @return the <tt>Transport</tt> that this <tt>Candidate</tt> was obtained
+     * for/with.
+     */
+    public Transport getTransport()
+    {
+        return getTransportAddress().getTransport();
+    }
+
+    /**
+     * Returns a <tt>TransportAddress</tt> related to this <tt>Candidate</tt>.
+     * Related addresses are present for server reflexive, peer reflexive and
+     * relayed candidates. If a candidate is server or peer reflexive,
+     * the related address is equal to the base of this <tt>Candidate</tt>.
+     * If the candidate is relayed, the returned address is equal to the mapped
+     * address. If the candidate is a host candidate then the method returns
+     * <tt>null</tt>.
+     *
+     * @return the <tt>TransportAddress</tt> of the base if this is a reflexive
+     * candidate, the mapped address in the case of a relayed candidate, and
+     * <tt>null</tt> if this is a host candidate.
+     */
+    public TransportAddress getRelatedAddress()
+    {
+        if ( getType () == CandidateType.SERVER_REFLEXIVE_CANDIDATE
+             || getType () == CandidateType.PEER_REFLEXIVE_CANDIDATE)
+        {
+            return getBase().getTransportAddress();
+        }
+        else if ( getType () == CandidateType.RELAYED_CANDIDATE)
+        {
+            return getMappedAddress();
+        }
+        else
+        {
+            //host candidate
+            return null;
+        }
     }
 
     /**
@@ -483,6 +602,22 @@ public class Candidate
     {
         StringBuffer buff
             = new StringBuffer("candidate: ");
+
+        buff.append(" ").append(getFoundation());
+        buff.append(" ").append(getParentComponent().getComponentID());
+        buff.append(" ").append(getTransport());
+        buff.append(" ").append(getPriority());
+        buff.append(" ").append(getTransportAddress().getHostAddress());
+        buff.append(" ").append(getTransportAddress().getPort());
+        buff.append(" ").append(getType());
+
+        TransportAddress relAddr = getRelatedAddress();
+
+        if(relAddr != null)
+        {
+            buff.append(" raddr ").append(relAddr.getHostAddress());
+            buff.append(" rport ").append(relAddr.getPort());
+        }
 
         return buff.toString();
     }

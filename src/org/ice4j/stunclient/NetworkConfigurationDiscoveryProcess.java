@@ -218,14 +218,14 @@ public class NetworkConfigurationDiscoveryProcess
             }
 
             logger.info("mapped address is="+mappedAddress
-                        +", name=" + mappedAddress.getHosAddress());
+                        +", name=" + mappedAddress.getHostAddress());
 
             TransportAddress backupServerAddress
                 =((ChangedAddressAttribute) evt.getMessage()
                   .getAttribute(Attribute.CHANGED_ADDRESS)).getAddress();
 
             logger.info("backup server address is="+backupServerAddress
-                        + ", name=" + backupServerAddress.getHosAddress());
+                        + ", name=" + backupServerAddress.getHostAddress());
 
             report.setPublicAddress(mappedAddress);
             if (mappedAddress.equals(apDescriptor.getAddress()))
@@ -346,7 +346,7 @@ public class NetworkConfigurationDiscoveryProcess
 
         if(evt != null)
             logger.info("TEST I res="+evt.getRemoteAddress().toString()
-                               +" - "+ evt.getRemoteAddress().getHosAddress());
+                               +" - "+ evt.getRemoteAddress().getHostAddress());
         else
             logger.info("NO RESPONSE received to TEST I.");
         return evt;
@@ -379,7 +379,7 @@ public class NetworkConfigurationDiscoveryProcess
                                                           serverAddress);
         if(evt != null)
             logger.info("Test II res="+evt.getRemoteAddress().toString()
-                            +" - "+ evt.getRemoteAddress().getHosAddress());
+                            +" - "+ evt.getRemoteAddress().getHostAddress());
         else
             logger.info("NO RESPONSE received to Test II.");
 
@@ -412,7 +412,7 @@ public class NetworkConfigurationDiscoveryProcess
             request, serverAddress);
         if(evt != null)
             logger.info("Test III res="+evt.getRemoteAddress().toString()
-                            +" - "+ evt.getRemoteAddress().getHosAddress());
+                            +" - "+ evt.getRemoteAddress().getHostAddress());
         else
             logger.info("NO RESPONSE received to Test III.");
 
