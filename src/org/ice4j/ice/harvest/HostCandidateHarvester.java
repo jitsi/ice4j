@@ -9,6 +9,7 @@ package org.ice4j.ice.harvest;
 
 import java.io.*;
 import java.net.*;
+import java.util.*;
 import java.util.logging.*;
 
 import org.ice4j.*;
@@ -63,8 +64,39 @@ public class HostCandidateHarvester
         throws IllegalArgumentException,
                IOException,
                BindException
-    {
+    {/*
+        try
+        {
+            // find a loopback interface
+            Enumeration<NetworkInterface> interfaces
+                            = NetworkInterface.getNetworkInterfaces();
 
+            while (interfaces.hasMoreElements())
+            {
+                NetworkInterface iface = interfaces.nextElement();
+
+                if (isLoopbackInterface(iface))
+                {
+                    loopback = iface;
+                    break;
+                }
+            }
+
+            // if we didn't find a loopback (unlikely but possible)
+            // return the first available interface on this machine
+            if (loopback == null)
+            {
+                loopback = NetworkInterface.getNetworkInterfaces()
+                                .nextElement();
+            }
+        }
+        catch (SocketException exc)
+        {
+            // I don't quite understand what could possibly cause this ...
+            logger.error("Could not find the loopback interface", exc);
+            return null;
+        }
+*/
     }
 
     /**
@@ -97,10 +129,10 @@ public class HostCandidateHarvester
      * <tt>minPort</tt> and <tt>maxPort</tt> before reaching the maximum allowed
      * number of retries.
      */
-    public DatagramSocket createDatagramSocket(InetAddress laddr,
-                                               int preferredPort,
-                                               int minPort,
-                                               int maxPort)
+    private DatagramSocket createDatagramSocket(InetAddress laddr,
+                                                int preferredPort,
+                                                int minPort,
+                                                int maxPort)
         throws IllegalArgumentException,
                IOException,
                BindException
