@@ -92,7 +92,7 @@ public class Agent
      *
      * @throws IllegalArgumentException if either <tt>minPort</tt> or
      * <tt>maxPort</tt> is not a valid port number or if <tt>minPort >
-     * maxPort</tt>.
+     * maxPort</tt>, or if <tt>transport</tt> is not currently supported.
      * @throws IOException if an error occurs while the underlying resolver lib
      * is using sockets.
      * @throws BindException if we couldn't find a free port between
@@ -108,6 +108,9 @@ public class Agent
                IOException,
                BindException
     {
+        if(transport != Transport.UDP)
+            throw new IllegalArgumentException("This implementation does not "
+                            +" currently support transport: " + transport);
         Component component = stream.createComponent(transport);
 
         gatherCandidates(component, preferredPort, minPort, maxPort );
@@ -152,5 +155,21 @@ public class Agent
                         component, preferredPort, minPort, maxPort);
 
         //TODO: apply STUN and TURN harvesters now.
+    }
+
+    /**
+     * Computes and returns a foundation for the specified <tt>candidate</tt>.
+     * Foundations are <tt>String</tt>s (1 to 32 ICE chars) used to label
+     * "similar" <tt>Candidate</tt>s within a session, which is why e generate
+     * them here and not in the candidates themselves.
+     *
+     * @param candidate the candidate that we'd like to assign a foundation to.
+     *
+     * @return an existing or a newly generated foundation <tt>String</tt>
+     * that should be assigned to <tt>candidate</tt>.
+     */
+    private String computeFoundation(Candidate candidate)
+    {
+
     }
 }

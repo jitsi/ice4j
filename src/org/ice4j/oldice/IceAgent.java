@@ -247,8 +247,8 @@ public class IceAgent
                     for(int i = 0; i < inetAddresses.size(); i++)
                     {
 
-
-is(inetAddresses.get(i), 0));
+                        DatagramSocket sock = new DatagramSocket(
+                                new InetSocketAddress(inetAddresses.get(i), 0));
 
                         NetAccessPointDescriptor apDes = stunStack.installNetAccessPoint(sock);
 

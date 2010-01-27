@@ -229,7 +229,7 @@ public class TransportAddress
      */
     public String getHosAddress()
     {
-      // do not resolve the name if exists
+      // do not resolve the name if it exists
       return socketAddress.getAddress().getHostAddress();
     }
 

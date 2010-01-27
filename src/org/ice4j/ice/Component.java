@@ -60,12 +60,12 @@ public class Component
     /**
      * The list locally gathered candidates for this media stream.
      */
-    private List<Candidate> localCandidates = null;
+    private List<Candidate> localCandidates = new LinkedList<Candidate>();
 
     /**
      * The list of candidates that the peer agent sent for this stream.
      */
-    private List<Candidate> remoteCandidates = null;
+    private List<Candidate> remoteCandidates = new LinkedList<Candidate>();
 
     /**
      * Creates a new <tt>Component</tt> with the specified <tt>componentID</tt>
@@ -135,6 +135,22 @@ public class Component
             return count;
         }
     }
+
+    /**
+     * Returns the number of all local candidates currently registered in this
+     * <tt>Component</tt>.
+     *
+     * @return the number of all local candidates currently registered in this
+     * <tt>Component</tt>.
+     */
+    public int countLocalCandidates()
+    {
+        synchronized(localCandidates)
+        {
+            return localCandidates.size();
+        }
+    }
+
     /**
      * Adds a remote <tt>Candidate</tt>s to this media-stream
      * <tt>Component</tt>.
@@ -188,6 +204,21 @@ public class Component
     }
 
     /**
+     * Returns the number of all remote candidates currently registered in this
+     * <tt>Component</tt>.
+     *
+     * @return the number of all remote candidates currently registered in this
+     * <tt>Component</tt>.
+     */
+    public int countRemoteCandidates()
+    {
+        synchronized(remoteCandidates)
+        {
+            return remoteCandidates.size();
+        }
+    }
+
+    /**
      * Returns a reference to the <tt>IceMediaStream</tt> that this
      * <tt>Component</tt> belongs to.
      *
@@ -219,5 +250,58 @@ public class Component
     public Transport getTransport()
     {
         return transport;
+    }
+
+    /**
+     * Returns a <tt>String</tt> representation of this <tt>Component</tt>
+     * containing its ID, parent stream name and any existing candidates.
+     *
+     * @return  a <tt>String</tt> representation of this <tt>Component</tt>
+     * containing its ID, parent stream name and any existing candidates.
+     */
+    public String toString()
+    {
+        StringBuffer buff
+            = new StringBuffer("Component id=").append(getComponentID());
+
+        buff.append(" parent stream=" + getParentStream().getName());
+
+        //local candidates
+        int localCandidatesCount = countLocalCandidates();
+
+        if(localCandidatesCount > 0)
+        {
+            buff.append("\n" + localCandidatesCount + " local candidates:");
+
+            synchronized(localCandidates)
+            {
+                for (Candidate cand : localCandidates)
+                {
+                    buff.append("\n" + cand.toString());
+                }
+            }
+        }
+        else
+        {
+            buff.append("\n no local candidates:");
+        }
+
+        //remote candidates
+        int remoteCandidatesCount = countRemoteCandidates();
+
+        if(remoteCandidatesCount > 0)
+        {
+            buff.append("\n" + remoteCandidatesCount + " rocal candidates:");
+
+            synchronized(remoteCandidates)
+            {
+                for (Candidate cand : remoteCandidates)
+                {
+                    buff.append("\n" + cand.toString());
+                }
+            }
+        }
+
+        return buff.toString();
     }
 }

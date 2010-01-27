@@ -162,11 +162,11 @@ public class Candidate
 
     /**
      * Sets this <tt>Candidate</tt>'s foundation. A foundation is an arbitrary
-     * string is alsways the same for candidates that have the same type, base
-     * IP address, protocol (UDP, TCP, etc.) and STUN or TURN server. If any of
-     * these are different then the foundation will be different. Two candidate
-     * pairs with the same foundation pairs are likely to have similar network
-     * characteristics. Foundations are used in the frozen algorithm.
+     * string that is always the same for candidates that have the same type,
+     * base IP address, protocol (UDP, TCP, etc.) and STUN or TURN server. If
+     * any of these are different then the foundation will be different. Two
+     * candidate pairs with the same foundation pairs are likely to have similar
+     * network characteristics. Foundations are used in the frozen algorithm.
      *
      * @param foundation the foundation of this <tt>Candidate</tt>.
      */
@@ -295,16 +295,6 @@ public class Candidate
     public Component getParentComponent()
     {
         return parentComponent;
-    }
-
-    /**
-     * Returns a <tt>String</tt> representation of this <tt>Candidate</tt>
-     *
-     * @return a <tt>String</tt> representation of this Candidate.
-     */
-    public String toString()
-    {
-        return "Candidate-"+getTransportAddress()+", Priority="+getPriority();
     }
 
     /**
@@ -455,4 +445,46 @@ public class Candidate
     {
         this.isVirtual = isVirtual;
     }
+
+    /**
+     * Returns the address of the STUN server that was used to obtain this
+     * <tt>Candidate</tt> or <tt>null</tt> if this is not a server reflexive
+     * candidate.
+     *
+     * @return the address of the STUN server that was used to obtain this
+     * <tt>Candidate</tt> or <tt>null</tt> if this is not a server reflexive
+     * candidate.
+     */
+    public TransportAddress getStunServerAddress()
+    {
+        return stunServerAddress;
+    }
+
+    /**
+     * Returns the address of the TURN server that was used to obtain this
+     * <tt>Candidate</tt> or <tt>null</tt> if this is not a relayed candidate.
+     *
+     * @return the address of the TURN server that was used to obtain this
+     * <tt>Candidate</tt> or <tt>null</tt> if this is not a relayed candidate.
+     */
+    public TransportAddress getTurnServerAddress()
+    {
+        return turnServerAddress;
+    }
+
+    /**
+     * Returns a <tt>String</tt> representation of this <tt>Candidate</tt>
+     * containing its <tt>TransportAddress</tt>, base, foundation, priority and
+     * whatever other properties may be relevant.
+     *
+     * @return a <tt>String</tt> representation of this <tt>Candidate</tt>.
+     */
+    public String toString()
+    {
+        StringBuffer buff
+            = new StringBuffer("candidate: ");
+
+        return buff.toString();
+    }
+
 }
