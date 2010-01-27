@@ -319,8 +319,8 @@ public class Candidate
         //           (2^8)*(local preference) +
         //           (2^0)*(256 - component ID)
 
-        this.priority = (long) getTypePreference()  << 24 +
-                        (long) getLocalPreference() << 8 +
+        this.priority = (long)( getTypePreference()  << 24 )+
+                        (long)( getLocalPreference() << 8  )+
                         (long) (256 - getParentComponent().getComponentID());
 
         return priority;
@@ -399,19 +399,23 @@ public class Candidate
 
         InetAddress addr = getTransportAddress().getInetAddress();
 
+        //the following tries to reusse precedence from RFC 3484 but that's a
+        //bit tricky since it is not meant to be used exactly the way that
+        //Johnnie seems to think.
+
         //prefer IPv6 to IPv4
         if(addr instanceof Inet6Address)
         {
             //prefer link local addresses to global ones
             if(addr.isLinkLocalAddress())
-                return 60000;
+                return 40;
             else
-                return 50000;
+                return 30;
         }
         else
         {
             //IPv4
-            return 40000;
+            return 10;
         }
 
     }
@@ -596,7 +600,7 @@ public class Candidate
         buff.append(" ").append(getPriority());
         buff.append(" ").append(getTransportAddress().getHostAddress());
         buff.append(" ").append(getTransportAddress().getPort());
-        buff.append(" ").append(getType());
+        buff.append(" typ ").append(getType());
 
         TransportAddress relAddr = getRelatedAddress();
 
