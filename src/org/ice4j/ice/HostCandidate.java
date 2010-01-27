@@ -47,9 +47,11 @@ public class HostCandidate extends Candidate
     {
         super(new TransportAddress(socket.getLocalAddress(),
                                    socket.getLocalPort()),
-              parentComponent);
+              parentComponent,
+              CandidateType.HOST_CANDIDATE);
 
         this.socket = socket;
+        setBase(this);
     }
 
     /**

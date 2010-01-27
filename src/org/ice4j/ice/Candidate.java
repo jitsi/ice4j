@@ -65,6 +65,15 @@ public class Candidate
     private long priority = 0;
 
     /**
+     * Specifies whether the address associated with this candidate belongs to
+     * a VPN interface. In many cases (e.g. when running on a 1.5 JVM) we won't
+     * be able to determine whether an interface is virtual or not. If we are
+     * however (that is when running a more recent JVM) we will reflect it in
+     * this property.
+     */
+    private boolean isVirtual = false;
+
+    /**
      * The component that this candidate was created for. Every candidate is
      * always associated with a specific component for which it is a candidate.
      */
@@ -77,12 +86,15 @@ public class Candidate
      * encapsulating.
      * @param parentComponent the <tt>Component</tt> that this candidate
      * belongs to.
+     * @param type the <tt>CandidateType</tt> for this <tt>Candidate</tt>.
      */
     public Candidate(TransportAddress transportAddress,
-                     Component        parentComponent)
+                     Component        parentComponent,
+                     CandidateType    type)
     {
         this.transportAddress = transportAddress;
         this.parentComponent = parentComponent;
+        this.candidateType = type;
     }
 
     /**
@@ -271,5 +283,104 @@ public class Candidate
     public String toString()
     {
         return "Candidate-"+getTransportAddress()+", Priority="+getPriority();
+    }
+
+    /**
+     * Computes the priority for this <tt>Candidate</tt> based on the procedures
+     * defined in the ICE specification..
+     *
+     * @return the priority for this <tt>Candidate</tt> as per the procedures
+     * defined in the ICE specification..
+     */
+    public long computePriority()
+    {
+        long priority;
+        int componentId = candidate.getParentComponent().getComponentID();
+
+        int typePreference = getTypePrefence();
+
+        priority = (long)Math.pow(2, 24)*typePreference +
+                   (long)Math.pow(2, 8)*getLocalPreference(candidate) +
+                   (long)(256 - componentId);
+
+        return priority;
+    }
+
+    /**
+     * Returns the type preference for this candidate according to its type.
+     * The type preference MUST be an integer from <tt>0</tt> to <tt>126</tt>
+     * inclusive, and represents the preference for the type of the candidate
+     * (where the types are local, server reflexive, peer reflexive and
+     * relayed). A <tt>126</tt> is the highest preference, and a <tt>0</tt> is
+     * the lowest. Setting the value to a <tt>0</tt> means that candidates of
+     * this type will only be used as a last resort.  The type preference MUST
+     * be identical for all candidates of the same type and MUST be different
+     * for candidates of different types.  The type preference for peer
+     * reflexive candidates MUST be higher than that of server reflexive
+     * candidates.
+     *
+     * @return the type preference for this <tt>Candidate</tt> as per the
+     * procedures in the ICE specification.
+     */
+    private int getTypePreference()
+    {
+        int typePreference;
+        CandidateType candidateType = getCandidateType();
+        if(candidateType == CandidateType.HOST_CANDIDATE)
+        {
+            typePreference = 126; // highest
+        }
+        else if(candidateType == CandidateType.PEER_REFLEXIVE_CANDIDATE)
+        {
+            typePreference = 110;
+        }
+        else if(candidateType == CandidateType.SERVER_REFLEXIVE_CANDIDATE)
+        {
+            typePreference = 100;
+        }
+        else // this is for relayed candidates
+        {
+            typePreference = 0;
+        }
+
+        return typePreference;
+    }
+
+    /**
+     * Determines whether the address associated with this candidate belongs to
+     * a VPN interface. In many cases (e.g. when running on a 1.5 JVM) we won't
+     * be able to determine whether an interface is virtual or not. If we are
+     * however (that is when running a more recent JVM) we will reflect it in
+     * this property. Note that the <tt>isVirtual</tt> property is not really
+     * an ICE concept. The ICE specs only mention it and give basic guidelines
+     * as to how it should be handled so other implementations maybe dealing
+     * with it differently.
+     *
+     * @return <tt>true</tt> if we were able to determine that the address
+     * associated with this <tt>Candidate</tt> comes from a virtual interface
+     * and <tt>false</tt> if otherwise.
+     */
+    public boolean isVirtual()
+    {
+        return isVirtual;
+    }
+
+    /**
+     * Specifies whether the address associated with this candidate belongs to
+     * a VPN interface. In many cases (e.g. when running on a 1.5 JVM) we won't
+     * be able to determine whether an interface is virtual or not. If we are
+     * however (that is when running a more recent JVM) we will reflect it in
+     * this property. Note that the <tt>isVirtual</tt> property is not really
+     * an ICE concept. The ICE specs only mention it and give basic guidelines
+     * as to how it should be handled so other implementations maybe dealing
+     * with it differently.
+     *
+     * @param isVirtual <tt>true</tt> if we were able to determine that the
+     * address associated with this <tt>Candidate</tt> comes from a virtual
+     * interface and <tt>false</tt> if otherwise.
+     */
+    public void setVirtual(boolean isVirtual)
+    {
+        this.isVirtual = isVirtual;
     }
 }

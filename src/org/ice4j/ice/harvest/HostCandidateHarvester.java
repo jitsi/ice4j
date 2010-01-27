@@ -90,6 +90,7 @@ public class HostCandidateHarvester
 
                 HostCandidate candidate = new HostCandidate(sock, component);
 
+                candidate.setVirtual(NetworkUtils.isInterfaceVirtual(iface));
                 component.addLocalCandidate(candidate);
             }
         }
