@@ -169,8 +169,8 @@ public class TransportAddress
     public int getPort()
     {
         return (socketAddress == null
-                   ?0
-                   :(char)socketAddress.getPort());
+                   ? 0
+                   : socketAddress.getPort());
     }
 
     /**
