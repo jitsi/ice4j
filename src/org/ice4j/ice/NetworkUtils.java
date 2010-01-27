@@ -376,7 +376,7 @@ public class NetworkUtils
      * @return true if <tt>iface</tt> contains at least one loopback address
      * and <tt>false</tt> otherwise.
      */
-    public static boolean isLoopbackInterface(NetworkInterface iface)
+    public static boolean isInterfaceLoopback(NetworkInterface iface)
     {
         try
         {
@@ -457,6 +457,6 @@ public class NetworkUtils
             //isVirtual method. returning default value.
         }
 
-        return true;
+        return false;
     }
 }
