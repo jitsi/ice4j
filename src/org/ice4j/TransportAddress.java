@@ -6,9 +6,9 @@
  */
 package org.ice4j;
 
-import java.net.InetSocketAddress;
-import java.net.InetAddress;
 import java.net.*;
+
+import org.ice4j.ice.*;
 
 /**
  * The Address class is used to define destinations to outgoing Stun Packets.
@@ -166,7 +166,7 @@ public class TransportAddress
      * Returns the port number or 0 if the addres has not been initialized.
      * @return the port number.
      */
-    public char getPort()
+    public int getPort()
     {
         return (socketAddress == null
                    ?0
@@ -229,8 +229,14 @@ public class TransportAddress
      */
     public String getHostAddress()
     {
-      // do not resolve the name if it exists
-      return socketAddress.getAddress().getHostAddress();
+        InetAddress addr = socketAddress.getAddress();
+
+        String addressStr = socketAddress.getAddress().getHostAddress();
+
+        if(addr instanceof Inet6Address)
+            addressStr = NetworkUtils.stripScopeID(addressStr);
+
+        return addressStr;
     }
 
     /**

@@ -93,9 +93,8 @@ abstract class AddressAttribute extends Attribute
         return (type == MAPPED_ADDRESS || type == RESPONSE_ADDRESS
                 || type == SOURCE_ADDRESS || type == CHANGED_ADDRESS
                 || type == REFLECTED_FROM || type == XOR_MAPPED_ADDRESS
-                || type == ALTERNATE_SERVER || type == XOR_PEER_ADDRESS 
+                || type == ALTERNATE_SERVER || type == XOR_PEER_ADDRESS
                 || type == XOR_RELAYED_ADDRESS);
-
     }
 
     /**
@@ -256,9 +255,8 @@ abstract class AddressAttribute extends Attribute
      * Returns the port associated with the address contained by the attribute.
      * @return the port associated with the address contained by the attribute.
      */
-    public char getPort()
+    public int getPort()
     {
-      System.out.println(address.getPort());
         return address.getPort();
     }
 
@@ -268,8 +266,8 @@ abstract class AddressAttribute extends Attribute
       * @param attributeValue a binary array containing this attribute's field
       *                       values and NOT containing the attribute header.
       * @param offset the position where attribute values begin (most often
-      * 				 offset is equal to the index of the first byte after
-      * 				 length)
+      *                  offset is equal to the index of the first byte after
+      *                  length)
       * @param length the length of the binary array.
       * @throws StunException if attrubteValue contains invalid data.
       */

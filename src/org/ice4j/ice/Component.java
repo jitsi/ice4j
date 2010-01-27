@@ -101,14 +101,18 @@ public class Component
     }
 
     /**
-     * Returns all local candidates currently registered in this component.
+     * Returns a copy of the list containing all local candidates currently
+     * registered in this component.
      *
-     * @return a reference to the list of local candidates currently registered
-     * in this <tt>Component</tt>.
+     * @return Returns a copy of the list containing all local candidates
+     * currently registered in this <tt>Component</tt>.
      */
     public List<Candidate> getLocalCandidates()
     {
-        return localCandidates;
+        synchronized(localCandidates)
+        {
+            return new ArrayList<Candidate>(localCandidates);
+        }
     }
 
     /**
@@ -166,14 +170,18 @@ public class Component
     }
 
     /**
-     * Returns all remote candidates currently registered in this component.
+     * Returns a copy of the list containing all remote candidates currently
+     * registered in this component.
      *
-     * @return a reference to the list of remote candidates currently registered
-     * in this <tt>Component</tt>.
+     * @return Returns a copy of the list containing all remote candidates
+     * currently registered in this <tt>Component</tt>.
      */
     public List<Candidate> getRemoteCandidates()
     {
-        return localCandidates;
+        synchronized(remoteCandidates)
+        {
+            return new ArrayList<Candidate>(remoteCandidates);
+        }
     }
 
     /**
@@ -283,7 +291,7 @@ public class Component
         }
         else
         {
-            buff.append("\n no local candidates:");
+            buff.append("\nno local candidates.");
         }
 
         //remote candidates
@@ -300,6 +308,10 @@ public class Component
                     buff.append("\n" + cand.toString());
                 }
             }
+        }
+        else
+        {
+            buff.append("\nno remote candidates.");
         }
 
         return buff.toString();

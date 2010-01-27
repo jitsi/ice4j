@@ -51,6 +51,13 @@ public class Agent
                                                 = new HostCandidateHarvester();
 
     /**
+     * We use the <tt>FoundationsRegistry</tt> to keep track of the foundations
+     * we assign within a session (i.e. the entire life time of an
+     * <tt>Agent</tt>)
+     */
+    private FoundationsRegistry foundationsRegistry = new FoundationsRegistry();
+
+    /**
      * Creates an empty <tt>Agent</tt> with no streams, and no address
      */
     public Agent()
@@ -155,21 +162,47 @@ public class Agent
                         component, preferredPort, minPort, maxPort);
 
         //TODO: apply STUN and TURN harvesters now.
+
+        computeFoundations(component);
+
+        //make sure we compute priorities only after we have all candidates
+        computePriorities(component);
     }
 
     /**
-     * Computes and returns a foundation for the specified <tt>Candidate</tt>.
-     * Foundations are <tt>String</tt>s (1 to 32 ICE chars) used to label
-     * "similar" <tt>Candidate</tt>s within a session, which is why e generate
-     * them here and not in the candidates themselves.
+     * Computes and sets the foundations foundation for all <tt>Candidate</tt>s
+     * currently found in <tt>component</tt>.
      *
-     * @param candidate the candidate that we'd like to assign a foundation to.
-     *
-     * @return an existing or a newly generated foundation <tt>String</tt>
-     * that should be assigned to <tt>candidate</tt>.
+     * @param component the component whose candidate foundations we'd like to
+     * compute and assign.
      */
-    private String computeFoundation(Candidate candidate)
+    private void computeFoundations(Component component)
     {
+        List<Candidate> candidates = component.getLocalCandidates();
+        System.out.println("foundationsRegistry=" + foundationsRegistry.size());
 
+        for (Candidate cand : candidates)
+        {
+            foundationsRegistry.assignFoundation(cand);
+        }
+    }
+
+    /**
+     * Computes and sets the priorities for all <tt>Candidate</tt>s currently
+     * found in <tt>component</tt>. This happens outside of the
+     * <tt>Candidate</tt> class because some of the decisions made about the
+     * priority of the candidates is made based on the number of candidates of
+     * a certain type.
+     *
+     * @param component the component whose candidates we'd like to prioritize.
+     */
+    private void computePriorities(Component component)
+    {
+        List<Candidate> candidates = component.getLocalCandidates();
+
+        for (Candidate cand : candidates)
+        {
+            cand.computePriority();
+        }
     }
 }

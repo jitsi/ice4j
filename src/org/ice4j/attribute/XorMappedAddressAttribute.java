@@ -76,7 +76,7 @@ public class XorMappedAddressAttribute
                                        byte[] transactionID)
     {
         byte[] addressBytes = address.getAddressBytes();
-        char port = address.getPort();
+        char port = (char)address.getPort();
 
         char portModifier = (char)( (transactionID[0] << 8 & 0x0000FF00)
                                   | (transactionID[1] & 0x000000FF));

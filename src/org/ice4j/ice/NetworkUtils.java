@@ -196,7 +196,7 @@ public class NetworkUtils
         boolean ipv6Expected = false;
         if (address.charAt(0) == '[')
         {
-            // This is supposed to be an IPv6 litteral
+            // This is supposed to be an IPv6 literal
             if (address.length() > 2
                             && address.charAt(address.length() - 1) == ']')
             {
@@ -458,5 +458,39 @@ public class NetworkUtils
         }
 
         return false;
+    }
+
+    /**
+     * Returns a <tt>String</tt> that is guaranteed not to contain an address
+     * scope specified (i.e. removes the %scopeID at the end of IPv6 addresses
+     * returned by Java. Takes into account the presence or absence of square
+     * brackets encompassing the address.
+     *
+     * @param ipv6Address the address whose scope ID we'd like to get rid of.
+     *
+     * @return the newly form address containing no scope ID.
+     */
+    public static String stripScopeID(String ipv6Address)
+    {
+        int scopeStart = ipv6Address.indexOf('%');
+
+        if (scopeStart == -1)
+            return ipv6Address;
+
+        int scopeEnd = (ipv6Address.charAt(ipv6Address.length() -1 ) == ']')
+            ? ipv6Address.length() - 1
+            : ipv6Address.length();
+
+        ipv6Address = ipv6Address.substring(0, scopeStart);
+
+        //in case this was an IPv6 literal and we remove the closing bracket,
+        //put it back in now.
+        if(ipv6Address.charAt(0) == '['
+            && ipv6Address.charAt(ipv6Address.length()-1) != ']')
+        {
+            ipv6Address += ']';
+        }
+
+        return ipv6Address;
     }
 }

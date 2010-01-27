@@ -78,4 +78,16 @@ public class FoundationsRegistry
 
         candidate.setFoundation(foundationValue);
     }
+
+    /**
+     * Returns the number of foundation <tt>String</tt>s that are currently
+     * tracked by the registry.
+     *
+     * @return the number of foundation <tt>String</tt>s that are currently
+     * tracked by this registry.
+     */
+    public int size()
+    {
+        return foundations.size();
+    }
 }

@@ -239,19 +239,6 @@ public class Candidate
     }
 
     /**
-     * Sets the priority for this candidate.
-     *
-     * @param priority A unique priority number that MUST be a positive integer
-     * between 1 and (2**32 - 1). This priority will be set and used by ICE
-     * algorithms to determine the order of the connectivity checks and the
-     * relative preference for candidates.
-     */
-    public void setPriority(long priority)
-    {
-        this.priority = priority;
-    }
-
-    /**
      * Returns the transport address that this candidate is representing.
      *
      * @return the TransportAddress encapsulated by this Candidate.
@@ -332,7 +319,7 @@ public class Candidate
         //           (2^8)*(local preference) +
         //           (2^0)*(256 - component ID)
 
-        long priority = (long) getTypePreference()  << 24 +
+        this.priority = (long) getTypePreference()  << 24 +
                         (long) getLocalPreference() << 8 +
                         (long) (256 - getParentComponent().getComponentID());
 
