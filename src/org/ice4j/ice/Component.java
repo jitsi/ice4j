@@ -10,7 +10,6 @@ package org.ice4j.ice;
 import java.util.*;
 
 import org.ice4j.*;
-import org.ice4j.oldice.Candidate;
 
 /**
  * A component is a piece of a media stream requiring a single transport

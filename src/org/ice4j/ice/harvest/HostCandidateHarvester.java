@@ -64,39 +64,36 @@ public class HostCandidateHarvester
         throws IllegalArgumentException,
                IOException,
                BindException
-    {/*
-        try
+    {
+        Enumeration<NetworkInterface> interfaces
+                        = NetworkInterface.getNetworkInterfaces();
+
+        while (interfaces.hasMoreElements())
         {
-            // find a loopback interface
-            Enumeration<NetworkInterface> interfaces
-                            = NetworkInterface.getNetworkInterfaces();
+            NetworkInterface iface = interfaces.nextElement();
 
-            while (interfaces.hasMoreElements())
+            if (NetworkUtils.isInterfaceLoopback(iface)
+                || !NetworkUtils.isInterfaceUp(iface))
             {
-                NetworkInterface iface = interfaces.nextElement();
-
-                if (isLoopbackInterface(iface))
-                {
-                    loopback = iface;
-                    break;
-                }
+                //this one is obviously not going to do
+                continue;
             }
 
-            // if we didn't find a loopback (unlikely but possible)
-            // return the first available interface on this machine
-            if (loopback == null)
+            Enumeration<InetAddress> addresses = iface.getInetAddresses();
+
+            while(addresses.hasMoreElements())
             {
-                loopback = NetworkInterface.getNetworkInterfaces()
-                                .nextElement();
+                InetAddress addr = addresses.nextElement();
+
+                DatagramSocket sock = createDatagramSocket(
+                                addr, preferredPort, minPort, maxPort);
+
+                HostCandidate candidate = new HostCandidate(sock, component);
+
+                component.addLocalCandidate(candidate);
             }
         }
-        catch (SocketException exc)
-        {
-            // I don't quite understand what could possibly cause this ...
-            logger.error("Could not find the loopback interface", exc);
-            return null;
-        }
-*/
+
     }
 
     /**
