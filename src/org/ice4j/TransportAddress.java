@@ -234,6 +234,18 @@ public class TransportAddress
     }
 
     /**
+     * Returns the <tt>InetAddress</tt> encapsulated by this
+     * <tt>TransportAddress</tt>.
+     *
+     * @return the <tt>InetAddress</tt> encapsulated by this
+     * <tt>TransportAddress</tt>.
+     */
+    public InetAddress getInetAddress()
+    {
+        return socketAddress.getAddress();
+    }
+
+    /**
      * The transport that this transport address is suggesting.
      *
      * @return one of the transport strings (UDP/TCP/...) defined as contants

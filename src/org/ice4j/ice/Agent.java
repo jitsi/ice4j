@@ -7,10 +7,14 @@
  */
 package org.ice4j.ice;
 
+import java.io.*;
+import java.net.*;
 import java.util.*;
 import java.util.logging.*;
 
 import org.ice4j.*;
+import org.ice4j.ice.harvest.*;
+import org.ice4j.oldice.*;
 
 /**
  * An IceAgent could be described as the main class (i.e. the chef d'orchestre)
@@ -38,6 +42,13 @@ public class Agent
      */
     private Map<String, IceMediaStream> mediaStreams
                                 = new LinkedHashMap<String, IceMediaStream>();
+
+    /**
+     * The candidate harvester that we use to gather candidate on the local
+     * machine.
+     */
+    private HostCandidateHarvester hostCandidateHarvester
+                                                = new HostCandidateHarvester();
 
     /**
      * Creates an empty <tt>Agent</tt> with no streams, and no address
@@ -78,15 +89,68 @@ public class Agent
      *
      * @return the newly created {@link Component} and with a list containing
      * all and only local candidates.
+     *
+     * @throws IllegalArgumentException if either <tt>minPort</tt> or
+     * <tt>maxPort</tt> is not a valid port number or if <tt>minPort >
+     * maxPort</tt>.
+     * @throws IOException if an error occurs while the underlying resolver lib
+     * is using sockets.
+     * @throws BindException if we couldn't find a free port between
+     * <tt>minPort</tt> and <tt>maxPort</tt> before reaching the maximum allowed
+     * number of retries.
      */
     public Component createComponent(  IceMediaStream stream,
                                        Transport      transport,
                                        int            preferredPort,
                                        int            minPort,
                                        int            maxPort)
+        throws IllegalArgumentException,
+               IOException,
+               BindException
     {
         Component component = stream.createComponent(transport);
 
+        gatherCandidates(component, preferredPort, minPort, maxPort );
         return component;
+    }
+
+    /**
+     * Uses all <tt>CandidateHarvester</tt>s currently registered with this
+     * <tt>Agent</tt> to obtain whatever addresses they can discover.
+     * <p>
+     * Not that the method would only use existing harvesters so make sure
+     * you've registered all harvesters that you would want to use before
+     * calling it.
+     * </p>
+     * @param component the <tt>Component</tt> that we'd like to gather
+     * candidates for.
+     * @param preferredPort the port number that should be tried first when
+     * binding local <tt>Candidate</tt> sockets for this <tt>Component</tt>.
+     * @param minPort the port number where we should first try to bind before
+     * moving to the next one (i.e. <tt>minPort + 1</tt>)
+     * @param maxPort the maximum port number where we should try binding
+     * before giving up and throwinG an exception.
+     *
+     * @throws IllegalArgumentException if either <tt>minPort</tt> or
+     * <tt>maxPort</tt> is not a valid port number or if <tt>minPort >
+     * maxPort</tt>.
+     * @throws IOException if an error occurs while the underlying resolver lib
+     * is using sockets.
+     * @throws BindException if we couldn't find a free port between
+     * <tt>minPort</tt> and <tt>maxPort</tt> before reaching the maximum allowed
+     * number of retries.
+     */
+    private void gatherCandidates( Component      component,
+                                   int            preferredPort,
+                                   int            minPort,
+                                   int            maxPort)
+        throws IllegalArgumentException,
+               IOException,
+               BindException
+    {
+        hostCandidateHarvester.harvest(
+                        component, preferredPort, minPort, maxPort);
+
+        //TODO: apply STUN and TURN harvesters now.
     }
 }

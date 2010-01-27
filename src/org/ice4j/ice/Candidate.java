@@ -7,6 +7,8 @@
  */
 package org.ice4j.ice;
 
+import java.net.*;
+
 import org.ice4j.*;
 
 /**
@@ -78,6 +80,26 @@ public class Candidate
      * always associated with a specific component for which it is a candidate.
      */
     private Component parentComponent = null;
+
+    /**
+     * The maximum value for a candidate's type prefence.
+     */
+    public static final int MAX_TYPE_PREFERENCE = 126;
+
+    /**
+     * The minimum value for a candidate's type prefence.
+     */
+    public static final int MIN_TYPE_PREFERENCE = 0;
+
+    /**
+     * The maximum value for a candidate's local prefence.
+     */
+    public static final int MAX_LOCAL_PREFERENCE = 65535;
+
+    /**
+     * The minimum value for a candidate's local prefence.
+     */
+    public static final int MIN_LOCAL_PREFERENCE = 0;
 
     /**
      * Creates a candidate for the specified transport address and properties.
@@ -294,14 +316,14 @@ public class Candidate
      */
     public long computePriority()
     {
-        long priority;
-        int componentId = candidate.getParentComponent().getComponentID();
+        //According to the ICE speck we compute priority this way:
+        //priority = (2^24)*(type preference) +
+        //           (2^8)*(local preference) +
+        //           (2^0)*(256 - component ID)
 
-        int typePreference = getTypePrefence();
-
-        priority = (long)Math.pow(2, 24)*typePreference +
-                   (long)Math.pow(2, 8)*getLocalPreference(candidate) +
-                   (long)(256 - componentId);
+        long priority = (long) getTypePreference()  << 24 +
+                        (long) getLocalPreference() << 8 +
+                        (long) (256 - getParentComponent().getComponentID());
 
         return priority;
     }
@@ -328,7 +350,7 @@ public class Candidate
         CandidateType candidateType = getCandidateType();
         if(candidateType == CandidateType.HOST_CANDIDATE)
         {
-            typePreference = 126; // highest
+            typePreference = MAX_TYPE_PREFERENCE; // 126
         }
         else if(candidateType == CandidateType.PEER_REFLEXIVE_CANDIDATE)
         {
@@ -338,12 +360,62 @@ public class Candidate
         {
             typePreference = 100;
         }
-        else // this is for relayed candidates
+        else //relayed candidates
         {
-            typePreference = 0;
+            typePreference =  MIN_TYPE_PREFERENCE; // 0
         }
 
         return typePreference;
+    }
+
+    /**
+     * Calculates and returns the local preference for this <tt>Candidate</tt>
+     * <p>
+     * The local preference MUST be an integer from <tt>0</tt> to <tt>65535</tt>
+     * inclusive. It represents a preference for the particular IP address from
+     * which the candidate was obtained, in cases where an agent is multihomed.
+     * <tt>65535</tt> represents the highest preference, and a zero, the lowest.
+     * When there is only a single IP address, this value SHOULD be set to
+     * <tt>65535</tt>. More generally, if there are multiple candidates for a
+     * particular component for a particular media stream which have the same
+     * type, the local preference MUST be unique for each one. In this
+     * specification, this only happens for multihomed hosts.  If a host is
+     * multihomed because it is dual stacked, the local preference SHOULD be
+     * set equal to the precedence value for IP addresses described in RFC 3484.
+     * </p>
+     * @return the local preference for this <tt>Candidate</tt>.
+     */
+    private int getLocalPreference()
+    {
+        //The ICE spec says: When there is only a single IP address, this value
+        //SHOULD be set to.
+        if(getParentComponent().countLocalHostCandidates() < 2)
+            return MAX_LOCAL_PREFERENCE;
+
+        //The ICE spec also says: Furthermore, if an agent is multi-homed and
+        //has multiple IP addresses, the local preference for host candidates
+        //from a VPN interface SHOULD have a priority of 0.
+        if(isVirtual())
+            return MIN_LOCAL_PREFERENCE;
+
+
+        InetAddress addr = getTransportAddress().getInetAddress();
+
+        //prefer IPv6 to IPv4
+        if(addr instanceof Inet6Address)
+        {
+            //prefer link local addresses to global ones
+            if(addr.isLinkLocalAddress())
+                return 60000;
+            else
+                return 50000;
+        }
+        else
+        {
+            //IPv4
+            return 40000;
+        }
+
     }
 
     /**

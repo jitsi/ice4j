@@ -101,7 +101,43 @@ public class Component
     }
 
     /**
-     * Adds a remote <tt>Candidate</tt>s to this media-stream component.
+     * Returns all local candidates currently registered in this component.
+     *
+     * @return a reference to the list of local candidates currently registered
+     * in this <tt>Component</tt>.
+     */
+    public List<Candidate> getLocalCandidates()
+    {
+        return localCandidates;
+    }
+
+    /**
+     * Returns the number of local host candidates currently registered in this
+     * <tt>Component</tt>.
+     *
+     * @return the number of local host candidates currently registered in this
+     * <tt>Component</tt>.
+     */
+    public int countLocalHostCandidates()
+    {
+        synchronized(localCandidates)
+        {
+            int count = 0;
+            for(Candidate cand : localCandidates)
+            {
+                if (cand.getCandidateType() == CandidateType.HOST_CANDIDATE
+                    && !cand.isVirtual())
+                {
+                    count++;
+                }
+            }
+
+            return count;
+        }
+    }
+    /**
+     * Adds a remote <tt>Candidate</tt>s to this media-stream
+     * <tt>Component</tt>.
      *
      * @param candidate the <tt>Candidate</tt> instance to add.
      */
@@ -111,6 +147,17 @@ public class Component
         {
             remoteCandidates.add(candidate);
         }
+    }
+
+    /**
+     * Returns all remote candidates currently registered in this component.
+     *
+     * @return a reference to the list of remote candidates currently registered
+     * in this <tt>Component</tt>.
+     */
+    public List<Candidate> getRemoteCandidates()
+    {
+        return localCandidates;
     }
 
     /**
