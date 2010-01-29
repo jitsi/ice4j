@@ -14,7 +14,6 @@ import java.util.logging.*;
 
 import org.ice4j.*;
 import org.ice4j.ice.harvest.*;
-import org.ice4j.oldice.*;
 
 /**
  * An IceAgent could be described as the main class (i.e. the chef d'orchestre)
