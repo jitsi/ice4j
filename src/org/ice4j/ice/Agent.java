@@ -145,18 +145,14 @@ public class Agent
      * <tt>maxPort</tt> is not a valid port number or if <tt>minPort >
      * maxPort</tt>.
      * @throws IOException if an error occurs while the underlying resolver lib
-     * is using sockets.
-     * @throws BindException if we couldn't find a free port between
-     * <tt>minPort</tt> and <tt>maxPort</tt> before reaching the maximum allowed
-     * number of retries.
+     * is gathering candidates and we end up without even a single one.
      */
     private void gatherCandidates( Component      component,
                                    int            preferredPort,
                                    int            minPort,
                                    int            maxPort)
         throws IllegalArgumentException,
-               IOException,
-               BindException
+               IOException
     {
         hostCandidateHarvester.harvest(
                         component, preferredPort, minPort, maxPort);
@@ -166,7 +162,7 @@ public class Agent
         computeFoundations(component);
 
         //make sure we compute priorities only after we have all candidates
-        computePriorities(component);
+        component.prioritizeCandidates();
     }
 
     /**
@@ -179,7 +175,6 @@ public class Agent
     private void computeFoundations(Component component)
     {
         List<Candidate> candidates = component.getLocalCandidates();
-        System.out.println("foundationsRegistry=" + foundationsRegistry.size());
 
         for (Candidate cand : candidates)
         {

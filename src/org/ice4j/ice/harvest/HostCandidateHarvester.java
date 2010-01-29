@@ -53,21 +53,18 @@ public class HostCandidateHarvester
      * maxPort</tt>.
      * @throws IOException if an error occurs while the underlying resolver lib
      * is using sockets.
-     * @throws BindException if we couldn't find a free port between
-     * <tt>minPort</tt> and <tt>maxPort</tt> before reaching the maximum allowed
-     * number of retries.
      */
     public void harvest(Component component,
                         int       preferredPort,
                         int       minPort,
                         int       maxPort)
         throws IllegalArgumentException,
-               IOException,
-               BindException
+               IOException
     {
         Enumeration<NetworkInterface> interfaces
                         = NetworkInterface.getNetworkInterfaces();
 
+        boolean boundAtLeastOneSocket = false;
         while (interfaces.hasMoreElements())
         {
             NetworkInterface iface = interfaces.nextElement();
@@ -85,16 +82,41 @@ public class HostCandidateHarvester
             {
                 InetAddress addr = addresses.nextElement();
 
-                DatagramSocket sock = createDatagramSocket(
+                DatagramSocket sock;
+                try
+                {
+                    sock = createDatagramSocket(
                                 addr, preferredPort, minPort, maxPort);
+                    boundAtLeastOneSocket = true;
+                }
+                catch(IOException exc)
+                {
+                    //there seems to be a problem with this particular address
+                    //let's just move on for now and hope we will find better
+                    if (logger.isLoggable(Level.WARNING))
+                        logger.warning("Failed to create a socket for:"
+                                        +"\naddr:" + addr
+                                        +"\npreferredPort:" + preferredPort
+                                        +"\nminPort:" + minPort
+                                        +"\nmaxPort:" + maxPort);
+                    continue;
+                }
 
                 HostCandidate candidate = new HostCandidate(sock, component);
-
                 candidate.setVirtual(NetworkUtils.isInterfaceVirtual(iface));
                 component.addLocalCandidate(candidate);
             }
         }
 
+        if(!boundAtLeastOneSocket)
+        {
+            throw new IOException(
+                "Failed to bind even a single host candidate for component:"
+                            + component
+                            + " preferredPort=" + preferredPort
+                            + " minPort=" + minPort
+                            + " maxPort=" + maxPort);
+        }
     }
 
     /**
@@ -170,7 +192,12 @@ public class HostCandidateHarvester
 
             try
             {
-                return new DatagramSocket(port, laddr);
+                DatagramSocket sock = new DatagramSocket(port, laddr);
+
+                if(logger.isLoggable(Level.FINEST))
+                    logger.log(Level.FINEST,
+                           "just bound to: " + sock.getLocalSocketAddress());
+                return sock;
             }
             catch (SocketException se)
             {

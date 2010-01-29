@@ -316,4 +316,38 @@ public class Component
 
         return buff.toString();
     }
+
+    /**
+     *
+     */
+    public void prioritizeCandidates()
+    {
+        //Arrays.sort
+        /*
+        synchronized(localCandidates)
+        {
+            TreeSet<Candidate> prioritizedCands = new TreeSet<Candidate>(new Comparator<Candidate>()
+                            {
+                                public int compare(Candidate c1, Candidate c2)
+                                {
+                                    return -1;
+                                }
+
+                                public boolean equal(Candidate c1, Candidate c2)
+                                {
+                                    return true;
+                                }
+                            });
+
+            for (Candidate cand : localCandidates)
+            {
+                cand.computePriority();
+                prioritizedCands.add(cand);
+            }
+
+            localCandidates.clear();
+            localCandidates.addAll(prioritizedCands);
+        }
+        */
+    }
 }
