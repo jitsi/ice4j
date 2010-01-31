@@ -1,18 +1,17 @@
 /*
- * Stun4j, the OpenSource Java Solution for NAT and Firewall Traversal.
+ * ice4j, the OpenSource Java Solution for NAT and Firewall Traversal.
+ * Maintained by the SIP Communicator community (http://sip-communicator.org).
  *
- * Distributable under LGPL license.
- * See terms of license at gnu.org.
+ * Distributable under LGPL license. See terms of license at gnu.org.
  */
 package org.ice4j.message;
 
-import junit.framework.*;
-
 import java.util.*;
+
+import junit.framework.*;
 
 import org.ice4j.*;
 import org.ice4j.attribute.*;
-import org.ice4j.message.*;
 
 public class MessageTest extends TestCase {
     private Message bindingRequest       = null;
@@ -52,17 +51,24 @@ public class MessageTest extends TestCase {
         bindingResponse.setMessageType(Message.BINDING_RESPONSE);
 
         mappedAddress = AttributeFactory.createMappedAddressAttribute(
-                               new TransportAddress( msgFixture.ADDRESS_ATTRIBUTE_ADDRESS, msgFixture.ADDRESS_ATTRIBUTE_PORT));
+            new TransportAddress(
+                            msgFixture.ADDRESS_ATTRIBUTE_ADDRESS,
+                            msgFixture.ADDRESS_ATTRIBUTE_PORT,
+                            Transport.UDP));
 
         bindingResponse.addAttribute(mappedAddress);
 
         sourceAddress = AttributeFactory.createSourceAddressAttribute(
-                                new TransportAddress( msgFixture.ADDRESS_ATTRIBUTE_ADDRESS_2, msgFixture.ADDRESS_ATTRIBUTE_PORT_2));
+            new TransportAddress(
+                            msgFixture.ADDRESS_ATTRIBUTE_ADDRESS_2,
+                            msgFixture.ADDRESS_ATTRIBUTE_PORT_2,
+                            Transport.UDP));
 
         bindingResponse.addAttribute(sourceAddress);
 
         changedAddress = AttributeFactory.createChangedAddressAttribute(
-                                new TransportAddress( msgFixture.ADDRESS_ATTRIBUTE_ADDRESS_3,msgFixture.ADDRESS_ATTRIBUTE_PORT_3));
+            new TransportAddress( msgFixture.ADDRESS_ATTRIBUTE_ADDRESS_3,
+                        msgFixture.ADDRESS_ATTRIBUTE_PORT_3, Transport.UDP));
 
         bindingResponse.addAttribute(changedAddress);
         bindingResponse.setTransactionID(msgFixture.TRANSACTION_ID);

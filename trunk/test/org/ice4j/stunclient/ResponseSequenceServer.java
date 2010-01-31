@@ -1,14 +1,15 @@
 /*
- * Stun4j, the OpenSource Java Solution for NAT and Firewall Traversal.
+ * ice4j, the OpenSource Java Solution for NAT and Firewall Traversal.
+ * Maintained by the SIP Communicator community (http://sip-communicator.org).
  *
- * Distributable under LGPL license.
- * See terms of license at gnu.org.
+ * Distributable under LGPL license. See terms of license at gnu.org.
  */
 package org.ice4j.stunclient;
 
-import java.util.Vector;
-import java.util.logging.*;
 import java.io.*;
+import java.net.*;
+import java.util.*;
+import java.util.logging.*;
 
 import org.ice4j.*;
 import org.ice4j.message.*;
@@ -38,8 +39,8 @@ public class ResponseSequenceServer
     private StunStack    stunStack    = null;
     private StunProvider stunProvider = null;
 
-    private TransportAddress              serverAddress       = null;
-    private NetAccessPointDescriptor apDescriptor        = null;
+    private TransportAddress serverAddress = null;
+    private DatagramSocket localSocket = null;
 
     public ResponseSequenceServer(TransportAddress bindAddress)
     {
@@ -57,10 +58,10 @@ public class ResponseSequenceServer
         stunStack    = StunStack.getInstance();
         stunProvider = stunStack.getProvider();
 
-        apDescriptor = new NetAccessPointDescriptor(serverAddress);
+        localSocket = new DatagramSocket(serverAddress);
 
-        stunStack.installNetAccessPoint(apDescriptor);
-        stunProvider.addRequestListener(apDescriptor, this);
+        stunStack.installNetAccessPoint(localSocket);
+        stunProvider.addRequestListener(serverAddress, this);
 
     }
 
@@ -70,6 +71,7 @@ public class ResponseSequenceServer
     public void shutDown()
     {
         messageSequence.removeAllElements();
+        localSocket.close();
 
         stunStack    = null;
         stunProvider = null;
@@ -111,9 +113,7 @@ public class ResponseSequenceServer
         try
         {
             stunProvider.sendResponse(evt.getMessage().getTransactionID(),
-                                      res,
-                                      apDescriptor,
-                                      evt.getRemoteAddress());
+                res, serverAddress, evt.getRemoteAddress());
         }
         catch (Exception ex)
         {

@@ -1,17 +1,16 @@
 /*
- * Stun4j, the OpenSource Java Solution for NAT and Firewall Traversal.
+ * ice4j, the OpenSource Java Solution for NAT and Firewall Traversal.
+ * Maintained by the SIP Communicator community (http://sip-communicator.org).
  *
- * Distributable under LGPL license.
- * See terms of license at gnu.org.
+ * Distributable under LGPL license. See terms of license at gnu.org.
  */
 package org.ice4j.attribute;
 
+import java.util.*;
+
 import junit.framework.*;
 
-import java.util.Arrays;
-
 import org.ice4j.*;
-import org.ice4j.attribute.*;
 
 /**
  *
@@ -211,13 +210,13 @@ public class AddressAttributeTest extends TestCase {
     {
         XorMappedAddressAttribute addressAttribute = new XorMappedAddressAttribute();
         TransportAddress testAddress =
-            new TransportAddress("130.79.95.53", 12120);
+            new TransportAddress("130.79.95.53", 12120, Transport.UDP);
 
         addressAttribute.setAddress(testAddress);
 
         //do a xor with an id equal to the v4 address itself so that we get 0000..,
-        TransportAddress xorredAddr =
-            addressAttribute.applyXor(new byte[]{(byte)130,79,95,53,0,0,0,0,0,0,0,0,0,0,0,0,0});
+        TransportAddress xorredAddr = addressAttribute.applyXor(
+                new byte[]{(byte)130,79,95,53,0,0,0,0,0,0,0,0,0,0,0,0,0});
 
         assertTrue("Xorring the address with itself didn't return 00000...",
             Arrays.equals(xorredAddr.getAddressBytes(), new byte[]{0,0,0,0}));
@@ -227,28 +226,28 @@ public class AddressAttributeTest extends TestCase {
 
         //Test xor-ing the original with the xored - should get the xor code
         addressAttribute.setAddress(testAddress);
-        xorredAddr =
-            addressAttribute.applyXor(new byte[]{21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36});
+        xorredAddr = addressAttribute.applyXor(
+                new byte[]{21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36});
 
         xorredAddr =
             addressAttribute.applyXor(xorredAddr.getAddressBytes());
 
-        assertTrue("Xorring the original with the xor-ed didn't return the code..",
-            Arrays.equals(
-                   xorredAddr.getAddressBytes(),
-                   new byte[]{21,22,23,24}));
+        assertTrue("Xorring the original with the xor-ed didn't "
+                        +"return the code..",
+                   Arrays.equals( xorredAddr.getAddressBytes(),
+                                   new byte[]{21,22,23,24}));
 
         assertTrue("Port was not xorred",
                        testAddress.getPort()  != 0xFFFF);
 
         //Test double xor-ing - should get the original
         addressAttribute.setAddress(testAddress);
-        xorredAddr =
-            addressAttribute.applyXor(new byte[]{21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36});
+        xorredAddr = addressAttribute.applyXor(
+                new byte[]{21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36});
 
         addressAttribute.setAddress(xorredAddr);
-        xorredAddr =
-            addressAttribute.applyXor(new byte[]{21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36});
+        xorredAddr = addressAttribute.applyXor(
+                new byte[]{21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36});
 
         assertEquals("Double xorring didn't give the original ...",
             testAddress, xorredAddr);
@@ -259,9 +258,10 @@ public class AddressAttributeTest extends TestCase {
      */
     public void testXorMappedAddressXoring_v6()
     {
-        XorMappedAddressAttribute addressAttribute = new XorMappedAddressAttribute();
-        TransportAddress testAddress =
-            new TransportAddress("2001:660:4701:1001:202:8aff:febe:130b", 12120);
+        XorMappedAddressAttribute addressAttribute
+            = new XorMappedAddressAttribute();
+        TransportAddress testAddress = new TransportAddress(
+                "2001:660:4701:1001:202:8aff:febe:130b", 12120, Transport.UDP);
 
         addressAttribute.setAddress(testAddress);
 
@@ -285,36 +285,36 @@ public class AddressAttributeTest extends TestCase {
 
         //Test xor-ing the original with the xored - should get the xor code
         addressAttribute.setAddress(testAddress);
-        xorredAddr =
-            addressAttribute.applyXor(new byte[]{21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36});
+        xorredAddr = addressAttribute.applyXor(
+                  new byte[]{21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36});
 
-        xorredAddr =
-            addressAttribute.applyXor(xorredAddr.getAddressBytes());
+        xorredAddr = addressAttribute.applyXor(xorredAddr.getAddressBytes());
 
         assertTrue("Xorring the original with the xor-ed didn't return the code..",
             Arrays.equals(
-                   xorredAddr.getAddressBytes(),
-                   new byte[]{21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36}));
+               xorredAddr.getAddressBytes(),
+               new byte[]{21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36}));
 
         assertTrue("Port was not xorred",
                        testAddress.getPort()  != 0xFFFF);
 
         //Test double xor-ing - should get the original
         addressAttribute.setAddress(testAddress);
-        xorredAddr =
-            addressAttribute.applyXor(new byte[]{21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36});
+        xorredAddr = addressAttribute.applyXor(
+                  new byte[]{21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36});
 
         addressAttribute.setAddress(xorredAddr);
-        xorredAddr =
-            addressAttribute.applyXor(new byte[]{21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36});
+        xorredAddr = addressAttribute.applyXor(
+                  new byte[]{21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36});
 
         assertEquals("Double xorring didn't give the original ...",
             testAddress, xorredAddr);
     }
 
     /**
-     * Test whetner sample binary arrays are correctly decoded.
-     * @throws StunException
+     * Test whether sample binary arrays are correctly decoded.
+     *
+     * @throws StunException if something goes wrong
      */
     public void testDecodeAttributeBody() throws StunException {
         byte[] attributeValue = msgFixture.mappedAddress;
@@ -324,19 +324,20 @@ public class AddressAttributeTest extends TestCase {
         addressAttribute.decodeAttributeBody(attributeValue, offset, length);
 
 
-        assertEquals("AddressAttribute.decode() did not properly decode the port field.",
-                     msgFixture.ADDRESS_ATTRIBUTE_PORT,
-                     addressAttribute.getPort());
-        assertTrue("AddressAttribute.decode() did not properly decode the address field.",
-                     Arrays.equals( msgFixture.ADDRESS_ATTRIBUTE_ADDRESS,
-                                    addressAttribute.getAddressBytes()));
+        assertEquals(
+            "AddressAttribute.decode() did not properly decode the port field.",
+            msgFixture.ADDRESS_ATTRIBUTE_PORT, addressAttribute.getPort());
+        assertTrue(
+            "AddressAttribute.decode() did not properly decode the address field.",
+            Arrays.equals( msgFixture.ADDRESS_ATTRIBUTE_ADDRESS,
+            addressAttribute.getAddressBytes()));
 
 
     }
 
     /**
      * Test whetner sample binary arrays are correctly decoded.
-     * @throws StunException
+     * @throws StunException if something goes wrong
      */
     public void testDecodeAttributeBodyv6() throws StunException {
         byte[] attributeValue = msgFixture.mappedAddressv6;
@@ -362,16 +363,18 @@ public class AddressAttributeTest extends TestCase {
      * @throws StunException java.lang.Exception if we fail
      */
     public void testEncode()
-        throws StunException
+        throws Exception
     {
         byte[] expectedReturn = msgFixture.mappedAddress;
 
         addressAttribute.setAddress(
-                            new TransportAddress(msgFixture.ADDRESS_ATTRIBUTE_ADDRESS,
-                                        msgFixture.ADDRESS_ATTRIBUTE_PORT));
+            new TransportAddress(msgFixture.ADDRESS_ATTRIBUTE_ADDRESS,
+                                 msgFixture.ADDRESS_ATTRIBUTE_PORT,
+                                 Transport.UDP));
 
         byte[] actualReturn = addressAttribute.encode();
-        assertTrue("AddressAttribute.encode() did not properly encode a sample attribute",
+        assertTrue("AddressAttribute.encode() did not "
+                     +"properly encode a sample attribute",
                      Arrays.equals( expectedReturn, actualReturn));
     }
 
@@ -381,13 +384,13 @@ public class AddressAttributeTest extends TestCase {
      * @throws StunException java.lang.Exception if we fail
      */
     public void testEncodev6()
-        throws StunException
+        throws Exception
     {
         byte[] expectedReturn = msgFixture.mappedAddressv6;
 
         addressAttribute.setAddress(
             new TransportAddress(msgFixture.ADDRESS_ATTRIBUTE_ADDRESS_V6,
-                            msgFixture.ADDRESS_ATTRIBUTE_PORT));
+                        msgFixture.ADDRESS_ATTRIBUTE_PORT, Transport.UDP));
 
         byte[] actualReturn = addressAttribute.encode();
         assertTrue("An AddressAttribute did not properly encode an IPv6 addr.",
@@ -402,7 +405,7 @@ public class AddressAttributeTest extends TestCase {
      * @throws StunException java.lang.Exception if we fail
      */
     public void testEquals()
-        throws StunException
+        throws Exception
     {
         //null test
         AddressAttribute target = null;
@@ -416,34 +419,41 @@ public class AddressAttributeTest extends TestCase {
         target = new MappedAddressAttribute();
 
         char port = (char)(msgFixture.ADDRESS_ATTRIBUTE_PORT + 1 );
-        target.setAddress(  new TransportAddress(msgFixture.ADDRESS_ATTRIBUTE_ADDRESS,
-                                        port));
+        target.setAddress(  new TransportAddress(
+            msgFixture.ADDRESS_ATTRIBUTE_ADDRESS, port, Transport.UDP));
 
-        addressAttribute.setAddress(
-                             new TransportAddress(msgFixture.ADDRESS_ATTRIBUTE_ADDRESS,
-                                msgFixture.ADDRESS_ATTRIBUTE_PORT ));
+        addressAttribute.setAddress( new TransportAddress(
+            msgFixture.ADDRESS_ATTRIBUTE_ADDRESS,
+            msgFixture.ADDRESS_ATTRIBUTE_PORT,
+            Transport.UDP));
 
         expectedReturn = false;
         actualReturn = addressAttribute.equals(target);
-        assertEquals("AddressAttribute.equals() failed against a different target.",
-                     expectedReturn, actualReturn);
+        assertEquals(
+            "AddressAttribute.equals() failed against a different target.",
+            expectedReturn, actualReturn);
 
         //equality test
-        target.setAddress( new TransportAddress( msgFixture.ADDRESS_ATTRIBUTE_ADDRESS,
-                                       msgFixture.ADDRESS_ATTRIBUTE_PORT ));
+        target.setAddress( new TransportAddress(
+            msgFixture.ADDRESS_ATTRIBUTE_ADDRESS,
+            msgFixture.ADDRESS_ATTRIBUTE_PORT, Transport.UDP ));
 
         expectedReturn = true;
         actualReturn = addressAttribute.equals(target);
-        assertEquals("AddressAttribute.equals() failed against an equal target.",
-                     expectedReturn, actualReturn);
+        assertEquals(
+                "AddressAttribute.equals() failed against an equal target.",
+                expectedReturn, actualReturn);
 
         //ipv6 equality test
-        target.setAddress(  new TransportAddress(msgFixture.ADDRESS_ATTRIBUTE_ADDRESS_V6,
-                                        msgFixture.ADDRESS_ATTRIBUTE_PORT));
+        target.setAddress(  new TransportAddress(
+            msgFixture.ADDRESS_ATTRIBUTE_ADDRESS_V6,
+            msgFixture.ADDRESS_ATTRIBUTE_PORT, Transport.UDP));
 
-        addressAttribute.setAddress(
-                             new TransportAddress(msgFixture.ADDRESS_ATTRIBUTE_ADDRESS_V6,
-                                msgFixture.ADDRESS_ATTRIBUTE_PORT ));
+        addressAttribute.setAddress(new TransportAddress(
+            msgFixture.ADDRESS_ATTRIBUTE_ADDRESS_V6,
+            msgFixture.ADDRESS_ATTRIBUTE_PORT,
+            Transport.UDP));
+
         expectedReturn = true;
         actualReturn = addressAttribute.equals(target);
         assertEquals("AddressAttribute.equals() failed for IPv6 addresses.",
@@ -456,13 +466,14 @@ public class AddressAttributeTest extends TestCase {
      * @throws StunException java.lang.Exception if we fail
      */
     public void testGetDataLength()
-        throws StunException
+        throws Exception
     {
         char expectedReturn = 8;//1-padding + 1-family + 2-port + 4-address
 
-        addressAttribute.setAddress(
-                            new TransportAddress( msgFixture.ADDRESS_ATTRIBUTE_ADDRESS,
-                                         msgFixture.ADDRESS_ATTRIBUTE_PORT));
+        addressAttribute.setAddress( new TransportAddress(
+            msgFixture.ADDRESS_ATTRIBUTE_ADDRESS,
+            msgFixture.ADDRESS_ATTRIBUTE_PORT,
+            Transport.UDP));
 
         char actualReturn = addressAttribute.getDataLength();
 
@@ -470,9 +481,9 @@ public class AddressAttributeTest extends TestCase {
                      expectedReturn, actualReturn);
 
         expectedReturn = 20;//1-padding + 1-family + 2-port + 16-address
-        addressAttribute.setAddress(
-                    new TransportAddress( msgFixture.ADDRESS_ATTRIBUTE_ADDRESS_V6,
-                                     msgFixture.ADDRESS_ATTRIBUTE_PORT));
+        addressAttribute.setAddress( new TransportAddress(
+            msgFixture.ADDRESS_ATTRIBUTE_ADDRESS_V6,
+            msgFixture.ADDRESS_ATTRIBUTE_PORT, Transport.UDP));
 
         actualReturn = addressAttribute.getDataLength();
 
@@ -483,20 +494,22 @@ public class AddressAttributeTest extends TestCase {
     /**
      * Tests that the address family is always 1.
      */
-    public void testGetFamily() {
+    public void testGetFamily()
+        throws Exception
+    {
         byte expectedReturn = 1;
-        addressAttribute.setAddress(
-                    new TransportAddress( msgFixture.ADDRESS_ATTRIBUTE_ADDRESS,
-                                     msgFixture.ADDRESS_ATTRIBUTE_PORT));
+        addressAttribute.setAddress(new TransportAddress(
+            msgFixture.ADDRESS_ATTRIBUTE_ADDRESS,
+            msgFixture.ADDRESS_ATTRIBUTE_PORT, Transport.UDP));
         byte actualReturn = addressAttribute.getFamily();
         assertEquals("Address family was not 1 for an IPv4",
                      expectedReturn, actualReturn);
 
         //ipv6
         expectedReturn = 2;
-        addressAttribute.setAddress(
-                    new TransportAddress( msgFixture.ADDRESS_ATTRIBUTE_ADDRESS_V6,
-                                     msgFixture.ADDRESS_ATTRIBUTE_PORT));
+        addressAttribute.setAddress(new TransportAddress(
+                       msgFixture.ADDRESS_ATTRIBUTE_ADDRESS_V6,
+                       msgFixture.ADDRESS_ATTRIBUTE_PORT, Transport.UDP));
         actualReturn = addressAttribute.getFamily();
         assertEquals("Address family was not 2 for an IPv6 address",
                      expectedReturn, actualReturn);

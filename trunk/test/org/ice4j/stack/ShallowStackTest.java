@@ -1,23 +1,19 @@
 /*
- * Stun4j, the OpenSource Java Solution for NAT and Firewall Traversal.
+ * ice4j, the OpenSource Java Solution for NAT and Firewall Traversal.
+ * Maintained by the SIP Communicator community (http://sip-communicator.org).
  *
- * Distributable under LGPL license.
- * See terms of license at gnu.org.
+ * Distributable under LGPL license. See terms of license at gnu.org.
  */
  package org.ice4j.stack;
 
-import junit.framework.*;
-import java.net.DatagramSocket;
-import java.net.InetAddress;
-import java.net.InetSocketAddress;
-import java.net.DatagramPacket;
-import java.io.*;
-import java.util.Arrays;
+import java.net.*;
+import java.util.*;
 import java.util.logging.*;
+
+import junit.framework.*;
 
 import org.ice4j.*;
 import org.ice4j.message.*;
-import org.ice4j.stack.*;
 
 /**
  * All unit stack tests should be provided later. I just don't have the time now.
@@ -41,7 +37,8 @@ public class ShallowStackTest extends TestCase {
 
     private DatagramCollector dgramCollector = new DatagramCollector();
 
-    private NetAccessPointDescriptor apDescriptor = null;
+    private TransportAddress localAddress = null;
+    private DatagramSocket   localSock = null;
 
     private DatagramSocket dummyImplSocket = null;
     private DatagramPacket bindingRequestPacket
@@ -58,21 +55,20 @@ public class ShallowStackTest extends TestCase {
         msgFixture = new MsgFixture();
         msgFixture.setUp();
         //Addresses
-        stun4jAddressOfDummyImpl =
-            new TransportAddress(InetAddress.getByName("127.0.0.1"), 6000);
-        socketAddressOfStun4jStack =
-            new InetSocketAddress(InetAddress.getByName("127.0.0.1"), 5000);
+        stun4jAddressOfDummyImpl = new TransportAddress(
+                    "127.0.0.1", 6000, Transport.UDP);
+        socketAddressOfStun4jStack = new TransportAddress(
+                    "127.0.0.1", 5000, Transport.UDP);
 
         //init the stack
         stunStack    = StunStack.getInstance();
-
         stunProvider = stunStack.getProvider();
 
-         //access point
-        apDescriptor = new NetAccessPointDescriptor(
-            new TransportAddress(InetAddress.getByName("127.0.0.1"), 5000));
+        //access point
+        localAddress  = new TransportAddress("127.0.0.1", 5000, Transport.UDP);
+        localSock = new DatagramSocket(localAddress);
 
-        stunStack.installNetAccessPoint(apDescriptor);
+        stunStack.installNetAccessPoint(localSock);
 
         //init the phoney stack
         dummyImplSocket = new DatagramSocket( 6000 );
@@ -106,7 +102,7 @@ public class ShallowStackTest extends TestCase {
 
         stunProvider.sendRequest(bindingRequest,
                                  stun4jAddressOfDummyImpl,
-                                 apDescriptor,
+                                 localAddress,
                                  new SimpleResponseCollector());
 
         //wait for its arrival
@@ -217,18 +213,18 @@ public class ShallowStackTest extends TestCase {
         //---------- create the response ---------------------------------------
         Response bindingResponse = MessageFactory.createBindingResponse(
             new TransportAddress( msgFixture.ADDRESS_ATTRIBUTE_ADDRESS,
-                             msgFixture.ADDRESS_ATTRIBUTE_PORT ),
+                 msgFixture.ADDRESS_ATTRIBUTE_PORT, Transport.UDP ),
             new TransportAddress( msgFixture.ADDRESS_ATTRIBUTE_ADDRESS_2,
-                             msgFixture.ADDRESS_ATTRIBUTE_PORT_2),
+                 msgFixture.ADDRESS_ATTRIBUTE_PORT_2, Transport.UDP),
             new TransportAddress( msgFixture.ADDRESS_ATTRIBUTE_ADDRESS_3,
-                             msgFixture.ADDRESS_ATTRIBUTE_PORT_3));
+                 msgFixture.ADDRESS_ATTRIBUTE_PORT_3, Transport.UDP));
 
         //---------- send & receive the response -------------------------------
         dgramCollector.startListening(dummyImplSocket);
 
         stunProvider.sendResponse(collectedRequest.getTransactionID(),
                                  bindingResponse,
-                                 apDescriptor,
+                                 localAddress,
                                  stun4jAddressOfDummyImpl);
 
         //wait for its arrival
@@ -258,7 +254,7 @@ public class ShallowStackTest extends TestCase {
 
         stunProvider.sendRequest(bindingRequest,
                                  stun4jAddressOfDummyImpl,
-                                 apDescriptor,
+                                 localAddress,
                                  collector);
 
         //wait for its arrival

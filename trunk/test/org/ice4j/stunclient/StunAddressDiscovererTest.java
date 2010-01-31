@@ -1,17 +1,15 @@
 /*
- * Stun4j, the OpenSource Java Solution for NAT and Firewall Traversal.
+ * ice4j, the OpenSource Java Solution for NAT and Firewall Traversal.
+ * Maintained by the SIP Communicator community (http://sip-communicator.org).
  *
- * Distributable under LGPL license.
- * See terms of license at gnu.org.
+ * Distributable under LGPL license. See terms of license at gnu.org.
  */
 package org.ice4j.stunclient;
 
 import junit.framework.*;
-import java.io.*;
 
 import org.ice4j.*;
 import org.ice4j.message.*;
-import org.ice4j.stunclient.*;
 
 /**
  * The StunAddressDiscovererTest_XXX set of tests were created to verify stun
@@ -27,17 +25,18 @@ public class StunAddressDiscovererTest
     extends TestCase
 {
     private NetworkConfigurationDiscoveryProcess  stunAddressDiscoverer = null;
-    private TransportAddress discovererAddress = new TransportAddress("127.0.0.1", 15555);
+    private TransportAddress discovererAddress
+        = new TransportAddress("127.0.0.1", 15555, Transport.UDP);
 
     private ResponseSequenceServer responseServer = null;
     private TransportAddress responseServerAddress
-        = new TransportAddress("127.0.0.1", 19999);
+        = new TransportAddress("127.0.0.1", 19999, Transport.UDP);
 
 
     private TransportAddress mappedClientAddress
-        = new TransportAddress("212.56.4.10", 15612);
+        = new TransportAddress("212.56.4.10", 15612, Transport.UDP);
     private TransportAddress mappedClientAddressPort2
-        = new TransportAddress("212.56.4.10", 15611);
+        = new TransportAddress("212.56.4.10", 15611, Transport.UDP);
 
     public StunAddressDiscovererTest(String name)
         throws StunException

@@ -1,16 +1,15 @@
 /*
- * Stun4j, the OpenSource Java Solution for NAT and Firewall Traversal.
+ * ice4j, the OpenSource Java Solution for NAT and Firewall Traversal.
+ * Maintained by the SIP Communicator community (http://sip-communicator.org).
  *
- * Distributable under LGPL license.
- * See terms of license at gnu.org.
+ * Distributable under LGPL license. See terms of license at gnu.org.
  */
 package org.ice4j.stunclient;
 
+import junit.framework.*;
+
 import org.ice4j.*;
 import org.ice4j.message.*;
-import org.ice4j.stunclient.*;
-
-import junit.framework.*;
 
 /**
  * Makes basic stun tests for cases where local network addresses and the public
@@ -34,27 +33,28 @@ public class StunAddressDiscovererTest_v4v6 extends TestCase {
         = null;
 
     private TransportAddress discovererAddress_v4
-            = new TransportAddress("127.0.0.1", 17555);
+            = new TransportAddress("127.0.0.1", 17555, Transport.UDP);
     private TransportAddress discovererAddress_v6
-            = new TransportAddress("::1", 17555);
+            = new TransportAddress("::1", 17555, Transport.UDP);
 
-    private ResponseSequenceServer responseServer_v6        = null;
-    private ResponseSequenceServer responseServer_v4        = null;
+    private ResponseSequenceServer responseServer_v6 = null;
+    private ResponseSequenceServer responseServer_v4 = null;
 
     private TransportAddress responseServerAddress_v6
-        = new TransportAddress("::1", 21999);
+        = new TransportAddress("::1", 21999, Transport.UDP);
     private TransportAddress responseServerAddress_v4
-        = new TransportAddress("127.0.0.1", 21999);
+        = new TransportAddress("127.0.0.1", 21999, Transport.UDP);
 
-    private TransportAddress mappedClientAddress_v6
-        = new TransportAddress("2001:660:4701:1001:ff::1", 17612);
+    private TransportAddress mappedClientAddress_v6 = new TransportAddress(
+                    "2001:660:4701:1001:ff::1", 17612, Transport.UDP);
     private TransportAddress mappedClientAddress_v6_Port2
-        = new TransportAddress("2001:660:4701:1001:ff::1", 17611);
+        = new TransportAddress(
+                        "2001:660:4701:1001:ff::1", 17611, Transport.UDP);
 
     private TransportAddress mappedClientAddress_v4
-        = new TransportAddress("130.79.99.55", 17612);
+        = new TransportAddress("130.79.99.55", 17612, Transport.UDP);
     private TransportAddress mappedClientAddress_v4_Port2
-        = new TransportAddress("130.79.99.55", 17611);
+        = new TransportAddress("130.79.99.55", 17611, Transport.UDP);
 
     public StunAddressDiscovererTest_v4v6(String name)
         throws StunException

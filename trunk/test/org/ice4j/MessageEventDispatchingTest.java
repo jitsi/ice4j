@@ -1,49 +1,102 @@
+/*
+ * ice4j, the OpenSource Java Solution for NAT and Firewall Traversal.
+ * Maintained by the SIP Communicator community (http://sip-communicator.org).
+ *
+ * Distributable under LGPL license. See terms of license at gnu.org.
+ */
 package org.ice4j;
+
+import java.net.*;
+import java.util.*;
 
 import junit.framework.*;
 
-import java.util.*;
-
-import org.ice4j.*;
 import org.ice4j.message.*;
 import org.ice4j.stack.*;
 
 /**
  * Test event dispatching for both client and server.
- * <p>Company: Net Research Team, Louis Pasteur University</p>
+ *`
  * @author Emil Ivov
  */
 public class MessageEventDispatchingTest extends TestCase
 {
+    /**
+     * The stack that we are using for the tests.
+     */
     StunStack stunStack = null;
 
-    TransportAddress clientAddress = new TransportAddress("127.0.0.1", 5216);
-    TransportAddress serverAddress = new TransportAddress("127.0.0.2", 5255);
-    TransportAddress serverAddress2 = new TransportAddress("127.0.0.2", 5259);
+    /**
+     * The address of the client.
+     */
+    TransportAddress clientAddress
+        = new TransportAddress("127.0.0.1", 5216, Transport.UDP);
 
-    NetAccessPointDescriptor  clientAccessPoint = null;
-    NetAccessPointDescriptor  serverAccessPoint = null;
-    NetAccessPointDescriptor  serverAccessPoint2 = null;
+    /**
+     * The Address of the server.
+     */
+    TransportAddress serverAddress
+        = new TransportAddress("127.0.0.2", 5255, Transport.UDP);
 
+    /**
+     * The address of the second server.
+     */
+    TransportAddress serverAddress2
+        = new TransportAddress("127.0.0.2", 5259, Transport.UDP);
+
+    /**
+     * The socket that the client is using.
+     */
+    DatagramSocket  clientSock = null;
+
+    /**
+     * The socket that the server is using
+     */
+    DatagramSocket  serverSock = null;
+
+    /**
+     * The second server socket.
+     */
+    DatagramSocket serverSock2 = null;
+
+    /**
+     * The request that we will be sending in this test.
+     */
     Request  bindingRequest = null;
+
+    /**
+     * The response that we will be sending in response to the above request.
+     */
     Response bindingResponse = null;
 
+    /**
+     * The request collector that we use to wait for requests.
+     */
     PlainRequestCollector requestCollector = null;
+
+    /**
+     * The responses collector that we use to wait for responses.
+     */
     PlainResponseCollector responseCollector = null;
 
+    /**
+     * junit setup method.
+     *
+     * @throws Exception if anything goes wrong.
+     */
     protected void setUp() throws Exception
     {
         super.setUp();
 
         stunStack = StunStack.getInstance();
 
-        clientAccessPoint = new NetAccessPointDescriptor(clientAddress);
-        serverAccessPoint = new NetAccessPointDescriptor(serverAddress);
-        serverAccessPoint2 = new NetAccessPointDescriptor(serverAddress2);
+        clientSock = new DatagramSocket(clientAddress);
+        serverSock = new DatagramSocket(clientAddress);
+        serverSock = new DatagramSocket(serverAddress2);
 
-        stunStack.installNetAccessPoint(clientAccessPoint);
-        stunStack.installNetAccessPoint(serverAccessPoint);
-        stunStack.installNetAccessPoint(serverAccessPoint2);
+        stunStack.installNetAccessPoint(clientSock);
+        stunStack.installNetAccessPoint(serverSock);
+        stunStack.installNetAccessPoint(serverSock2);
 
         bindingRequest = MessageFactory.createBindingRequest();
         bindingResponse = MessageFactory.createBindingResponse(
@@ -54,10 +107,17 @@ public class MessageEventDispatchingTest extends TestCase
 
     }
 
+    /**
+     * junit tear down method.
+     *
+     * @throws Exception if anything goes wrong.
+     */
     protected void tearDown() throws Exception
     {
-        clientAccessPoint = null;
-        serverAccessPoint = null;
+        clientSock.close();
+        serverSock.close();
+        serverSock.close();
+
         requestCollector = null;
         responseCollector = null;
 
@@ -74,9 +134,9 @@ public class MessageEventDispatchingTest extends TestCase
 
         stunStack.getProvider().sendRequest(bindingRequest,
                                             serverAddress,
-                                            clientAccessPoint,
+                                            clientAddress,
                                             responseCollector);
-        Thread.currentThread().sleep(12000);
+        Thread.sleep(12000);
 
         assertEquals(
             "No timeout was produced upon expiration of a client transaction",
@@ -99,10 +159,10 @@ public class MessageEventDispatchingTest extends TestCase
         //send
         stunStack.getProvider().sendRequest(bindingRequest,
                                             serverAddress,
-                                            clientAccessPoint,
+                                            clientAddress,
                                             responseCollector);
         //wait for retransmissions
-        Thread.currentThread().sleep(500);
+        Thread.sleep(50);
 
         //verify
         assertTrue("No MessageEvents have been dispatched",
@@ -119,20 +179,20 @@ public class MessageEventDispatchingTest extends TestCase
         throws Exception
     {
         //prepare to listen
-        stunStack.getProvider().addRequestListener(serverAccessPoint,
+        stunStack.getProvider().addRequestListener(serverAddress,
                                                    requestCollector);
 
         PlainRequestCollector requestCollector2 = new PlainRequestCollector();
-        stunStack.getProvider().addRequestListener(serverAccessPoint2,
+        stunStack.getProvider().addRequestListener(serverAddress2,
                                                    requestCollector2);
 
         //send
         stunStack.getProvider().sendRequest(bindingRequest,
                                             serverAddress2,
-                                            clientAccessPoint,
+                                            clientAddress,
                                             responseCollector);
         //wait for retransmissions
-        Thread.currentThread().sleep(500);
+        Thread.sleep(50);
 
         //verify
         assertTrue(
@@ -151,26 +211,26 @@ public class MessageEventDispatchingTest extends TestCase
     public void testServerResponseRetransmissions() throws Exception
     {
         //prepare to listen
-        stunStack.getProvider().addRequestListener(serverAccessPoint,
+        stunStack.getProvider().addRequestListener(serverAddress,
                                                    requestCollector);
         //send
         stunStack.getProvider().sendRequest(bindingRequest,
                                             serverAddress,
-                                            clientAccessPoint,
+                                            clientAddress,
                                             responseCollector);
 
         //wait for the message to arrive
-        Thread.currentThread().sleep(500);
+        Thread.sleep(50);
 
         StunMessageEvent evt = requestCollector.receivedRequests.get(0);
         byte[] tid = evt.getMessage().getTransactionID();
         stunStack.getProvider().sendResponse(tid,
                                              bindingResponse,
-                                             serverAccessPoint,
+                                             serverAddress,
                                              clientAddress);
 
         //wait for retransmissions
-        Thread.currentThread().sleep(500);
+        Thread.sleep(50);
 
         //verify that we got the response.
         assertTrue(
@@ -178,23 +238,49 @@ public class MessageEventDispatchingTest extends TestCase
             responseCollector.receivedResponses.size() == 1 );
     }
 
-    private class PlainRequestCollector implements RequestListener{
-        public Vector<StunMessageEvent> receivedRequests = new Vector<StunMessageEvent>();
+    /**
+     * A utility class we use to collect incoming requests.
+     */
+    private class PlainRequestCollector implements RequestListener
+    {
+        /** all requests we've received so far. */
+        public Vector<StunMessageEvent> receivedRequests
+            = new Vector<StunMessageEvent>();
 
-        public void requestReceived(StunMessageEvent evt){
+        /**
+         * Stores incoming requests.
+         *
+         * @param evt the event containing the incoming request.
+         */
+        public void requestReceived(StunMessageEvent evt)
+        {
             receivedRequests.add(evt);
         }
     }
 
-    private class PlainResponseCollector implements ResponseCollector{
-
+    /**
+     * A utility class we use to collect incoming responses.
+     */
+    private class PlainResponseCollector implements ResponseCollector
+    {
+        /**
+         *
+         */
         public Vector<Object> receivedResponses = new Vector<Object>();
 
+        /**
+         * Stores incoming requests.
+         *
+         * @param responseEvt the event containing the incoming request.
+         */
         public void processResponse(StunMessageEvent responseEvt)
         {
             receivedResponses.add(responseEvt);
         }
 
+        /**
+         * Indicates that no response has been received.
+         */
         public void processTimeout()
         {
             receivedResponses.add(new String("timeout"));
