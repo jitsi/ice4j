@@ -44,8 +44,13 @@ public class StunAddressDiscovererTest
         super(name);
     }
 
-    protected void setUp() throws Exception {
+    protected void setUp() throws Exception
+    {
         super.setUp();
+
+        System.setProperty("org.ice4j.MAX_WAIT_INTERVAL", "100");
+        System.setProperty("org.ice4j.MAX_RETRANSMISSIONS", "2");
+
         responseServer = new ResponseSequenceServer(responseServerAddress);
         stunAddressDiscoverer
             = new NetworkConfigurationDiscoveryProcess(discovererAddress,
@@ -55,8 +60,10 @@ public class StunAddressDiscovererTest
         responseServer.start();
     }
 
-    protected void tearDown() throws Exception {
-
+    protected void tearDown() throws Exception
+    {
+        System.clearProperty("org.ice4j.MAX_WAIT_INTERVAL");
+        System.clearProperty("org.ice4j.MAX_RETRANSMISSIONS");
         responseServer.shutDown();
         stunAddressDiscoverer.shutDown();
         stunAddressDiscoverer = null;

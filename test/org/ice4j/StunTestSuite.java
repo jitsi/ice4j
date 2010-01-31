@@ -65,7 +65,7 @@ public class StunTestSuite
 
         //event dispatching
         suite.addTestSuite(org.ice4j.MessageEventDispatchingTest.class);
-        /*
+
         //transactions
         suite.addTestSuite(org.ice4j.TransactionSupportTests.class);
 
@@ -73,7 +73,7 @@ public class StunTestSuite
         suite.addTestSuite(org.ice4j.stunclient.StunAddressDiscovererTest.class);
         suite.addTestSuite(org.ice4j.stunclient.StunAddressDiscovererTest_v6.class);
         suite.addTestSuite(org.ice4j.stunclient.StunAddressDiscovererTest_v4v6.class);
-*/
+
         return suite;
     }
 }

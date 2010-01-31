@@ -15,6 +15,8 @@ public class DatagramCollector
     DatagramPacket receivedPacket = null;
     DatagramSocket sock           = null;
 
+    boolean packetReceived = false;
+
     public DatagramCollector()
     {
     }
@@ -28,6 +30,7 @@ public class DatagramCollector
 
             synchronized (this)
             {
+                packetReceived = true;
                 notifyAll();
             }
 
@@ -51,7 +54,7 @@ public class DatagramCollector
     {
         synchronized(this)
         {
-            if(receivedPacket != null)
+            if(packetReceived)
                 return;
 
             try
@@ -72,6 +75,7 @@ public class DatagramCollector
         DatagramPacket returnValue = receivedPacket;
         receivedPacket = null;
         sock           = null;
+        packetReceived = false;
 
         //return
         return returnValue;
