@@ -7,10 +7,9 @@
 package org.ice4j.stack;
 
 
-import java.util.Hashtable;
 import java.io.*;
+import java.net.*;
 import java.util.*;
-import java.net.DatagramSocket;
 import java.util.logging.*;
 
 import org.ice4j.*;
@@ -22,32 +21,34 @@ import org.ice4j.message.*;
  * Instances that operate with the NetAccessManager are only supposed to
  * understand STUN talk and shouldn't be aware of datagrams sockets, and etc.
  *
- * <p>Organisation: Louis Pasteur University, Strasbourg, France</p>
- *                   <p>Network Research Team (http://www-r2.u-strasbg.fr)</p></p>
  * @author Emil Ivov
- * @version 0.1
  */
 
 class NetAccessManager
     implements ErrorHandler
 {
+    /**
+     * Our class logger
+     */
     private static final Logger logger =
         Logger.getLogger(NetAccessManager.class.getName());
     /**
-     * All access points currently in use. The table maps NetAccessPointDescriptor-s
-     * to NetAccessPoint-s
+     * All access points currently in use. The table maps
+     * <tt>NetAccessPointDescriptor</tt>s to <tt>NetAccessPoint</tt>s
      */
-    private Hashtable<NetAccessPointDescriptor, NetAccessPoint> netAccessPoints = new Hashtable<NetAccessPointDescriptor, NetAccessPoint>();
+    private Hashtable<NetAccessPointDescriptor, NetAccessPoint> netAccessPoints
+            = new Hashtable<NetAccessPointDescriptor, NetAccessPoint>();
 
     /**
      * A synchronized FIFO where incoming messages are stocked for processing.
      */
-    private MessageQueue messageQueue      = new MessageQueue();
+    private MessageQueue messageQueue = new MessageQueue();
 
     /**
      * A thread pool of message processors.
      */
-    private Vector<MessageProcessor>       messageProcessors = new Vector<MessageProcessor>();
+    private Vector<MessageProcessor> messageProcessors
+                                            = new Vector<MessageProcessor>();
 
     /**
      * The instance that should be notified whan an incoming message has been
@@ -81,7 +82,6 @@ class NetAccessManager
         messageEventHandler = evtHandler;
     }
 
-//------------------------ error handling -------------------------------------
     /**
      * A civilized way of not caring!
      * @param message a description of the error
@@ -96,7 +96,7 @@ class NetAccessManager
     }
 
     /**
-     * Clears the faulty thread and tries to repair the damage and instanciate
+     * Clears the faulty thread and tries to repair the damage and instantiate
      * a replacement.
      *
      * @param callingThread the thread where the error occurred.
@@ -124,7 +124,8 @@ class NetAccessManager
             {
                 //make sure nothing's left and notify user
                 removeNetAccessPoint(ap.getDescriptor());
-                logger.log(Level.WARNING, "Failed to relaunch accesspoint:" + ap,
+                logger.log(Level.WARNING, "Failed to relaunch accesspoint:"
+                           + ap,
                            ex);
             }
         }
@@ -160,7 +161,8 @@ class NetAccessManager
         if(netAccessPoints.containsKey(apDescriptor))
             return;
 
-        NetAccessPoint ap = new NetAccessPoint(apDescriptor, messageQueue, this);
+        NetAccessPoint ap
+            = new NetAccessPoint(apDescriptor, messageQueue, this);
         netAccessPoints.put(apDescriptor, ap);
         ap.start();
     }
@@ -181,13 +183,17 @@ class NetAccessManager
     {
 
         //no null check - let it through a null pointer exception
-        TransportAddress address = new TransportAddress(socket.getLocalAddress(), socket.getLocalPort());
-        NetAccessPointDescriptor apDescriptor = new NetAccessPointDescriptor(address);
+        TransportAddress address = new TransportAddress(
+                        socket.getLocalAddress(), socket.getLocalPort());
+        NetAccessPointDescriptor apDescriptor
+                        = new NetAccessPointDescriptor(address);
 
         if(netAccessPoints.containsKey(apDescriptor))
             return apDescriptor;
 
-        NetAccessPoint ap = new NetAccessPoint(apDescriptor, messageQueue, this);
+        NetAccessPoint ap
+            = new NetAccessPoint(apDescriptor, messageQueue, this);
+
         //call the useExternalSocket method to avoid closing the socket when
         //removing the accesspoint. Bug Report - Dave Stuart - SipQuest
         ap.useExternalSocket(socket);
@@ -245,8 +251,8 @@ class NetAccessManager
     }
 
     /**
-     * @throws StunException INVALID_ARGUMENT if threadPoolSize is not a
-     * valid size.
+     * Fills the thread pool with the initially specified number of message
+     * processors.
      */
     private void initThreadPool()
     {
@@ -258,7 +264,7 @@ class NetAccessManager
     /**
      * Starts all message processors
      *
-     * @param newSize the new thread poolsize
+     * @param newSize the new thread pool size
      */
     private void fillUpThreadPool(int newSize)
     {
@@ -307,7 +313,7 @@ class NetAccessManager
      */
     void sendMessage(Message                  stunMessage,
                      NetAccessPointDescriptor apDescriptor,
-                     TransportAddress                  address)
+                     TransportAddress         address)
         throws IOException, IllegalArgumentException, StunException
     {
         byte[] bytes = stunMessage.encode();

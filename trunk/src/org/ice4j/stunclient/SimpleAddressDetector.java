@@ -6,10 +6,9 @@
  */
 package org.ice4j.stunclient;
 
-import java.net.DatagramSocket;
 import java.io.*;
-import java.util.logging.*;
 import java.net.*;
+import java.util.logging.*;
 
 import org.ice4j.*;
 import org.ice4j.attribute.*;
@@ -19,18 +18,19 @@ import org.ice4j.stack.*;
 /**
  * The class provides basic means of discovering a public IP address. All it
  * does is send a binding request through a specified port and return the
- * mapped address it got back or null if there was no reponse.
+ * mapped address it got back or <tt>null</tt> if there was no reponse.
  *
- * <p>Organisation: <p> Louis Pasteur University, Strasbourg, France</p>
- * <p>Network Research Team (http://www-r2.u-strasbg.fr)</p></p>
  * @author Emil Ivov
- * @version 0.1
  */
 
 public class SimpleAddressDetector
 {
+    /**
+     * Our class logger.
+     */
     private static final Logger logger
         = Logger.getLogger(SimpleAddressDetector.class.getName());
+
     /**
      * The stack to use for STUN communication.
      */
@@ -47,7 +47,7 @@ public class SimpleAddressDetector
     private TransportAddress serverAddress = null;
 
     /**
-     * A utility used to flatten the multithreaded architecture of the Stack
+     * A utility used to flatten the multi-threaded architecture of the Stack
      * and execute the discovery process in a synchronized manner
      */
     private BlockingRequestSender requestSender = null;
@@ -98,9 +98,12 @@ public class SimpleAddressDetector
 
     /**
      * Creates a listening point from the following address and attempts to
-     * discover how it is mapped so that using inside the application is possible.
+     * discover how it is mapped so that using inside the application is
+     * possible.
+     *
      * @param address the [address]:[port] pair where ther request should be
      * sent from.
+     *
      * @return a StunAddress object containing the mapped address or null if
      * discovery failed.
      * @throws IOException if <tt>address</tt> is already bound.
@@ -153,7 +156,9 @@ public class SimpleAddressDetector
             }
 
             /* in STUN bis, the response contains a XOR-MAPPED-ADDRESS */
-            XorMappedAddressAttribute xorAtt = (XorMappedAddressAttribute)res.getAttribute(Attribute.XOR_MAPPED_ADDRESS);
+            XorMappedAddressAttribute xorAtt = (XorMappedAddressAttribute)res
+                .getAttribute(Attribute.XOR_MAPPED_ADDRESS);
+
             if(xorAtt != null)
             {
               byte xoring[] = new byte[16];
@@ -219,7 +224,8 @@ public class SimpleAddressDetector
             }
 
             /* in STUN bis, the response contains a XOR-MAPPED-ADDRESS */
-            XorMappedAddressAttribute xorAtt = (XorMappedAddressAttribute)res.getAttribute(Attribute.XOR_MAPPED_ADDRESS);
+            XorMappedAddressAttribute xorAtt = (XorMappedAddressAttribute)res
+                .getAttribute(Attribute.XOR_MAPPED_ADDRESS);
             if(xorAtt != null)
             {
               byte xoring[] = new byte[16];
@@ -250,20 +256,4 @@ public class SimpleAddressDetector
     {
         return getMappingFor(new TransportAddress(port));
     }
-
-
-/*
-    public static void main(String[] args)
-        throws Exception
-    {
-        SimpleAddressDetector detector = new SimpleAddressDetector(
-                                new StunAddress("stun01.sipphone.com", 3478));
-        detector.start();
-        StunAddress mappedAddr = detector.getMappingFor(5060);
-
-        System.out.println("address is " + mappedAddr);
-
-        detector.shutDown();
-    }
-*/
 }

@@ -17,8 +17,6 @@ import org.ice4j.stunclient.*;
  * and receive responses
  *
  * @author Namal Senarathne
- *
- * TODO : The constructor must have a reference to ICE Agent
  */
 public class StunClient
     implements ResponseCollector
@@ -44,6 +42,10 @@ public class StunClient
     */
     private HashMap<byte[], Request> requestMap = new HashMap<byte[], Request>();
 
+    /**
+     * Creates a new Instance of the ST
+     * @param stunStack
+     */
     public StunClient(StunStack stunStack)
     {
         this.stunStack = stunStack;

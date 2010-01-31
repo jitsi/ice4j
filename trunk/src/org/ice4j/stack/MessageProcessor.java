@@ -12,26 +12,43 @@ import org.ice4j.*;
 import org.ice4j.message.*;
 
 /**
- * The class is used to parse and dispatch incoming messages in a multithreaded
+ * The class is used to parse and dispatch incoming messages in a multi-thread
  * manner.
  *
- * <p>Organisation: Louis Pasteur University, Strasbourg, France</p>
- *                  <p>Network Research Team (http://www-r2.u-strasbg.fr)</p></p>
  * @author Emil Ivov
- * @version 0.1
  */
-
 class MessageProcessor
     implements Runnable
 {
-    private static final Logger logger =
-        Logger.getLogger(MessageProcessor.class.getName());
+    /**
+     * Our class logger.
+     */
+    private static final Logger logger
+        = Logger.getLogger(MessageProcessor.class.getName());
 
+    /**
+     * The queue where we store incoming messages until they are collected.
+     */
     private MessageQueue           messageQueue     = null;
+
+    /**
+     * The listener that will be retrieving <tt>MessageEvent</tt>s
+     */
     private MessageEventHandler    messageHandler   = null;
+
+    /**
+     * The listener that will be collecting error notifications.
+     */
     private ErrorHandler           errorHandler     = null;
 
-    private boolean                isRunning	    = false;
+    /**
+     * The flag that indicates whether we are still running.
+     */
+    private boolean                isRunning        = false;
+
+    /**
+     * A reference to the thread that we use to execute ourselves.
+     */
     private Thread                 runningThread    = null;
 
     /**
@@ -62,10 +79,8 @@ class MessageProcessor
             throw new IllegalArgumentException(
                 "The error handler may not be " + null);
 
-
-
         this.messageQueue    = queue;
-        this.messageHandler    = messageHandler;
+        this.messageHandler  = messageHandler;
         this.errorHandler    = errorHandler;
     }
 
@@ -74,8 +89,8 @@ class MessageProcessor
      */
     public void run()
     {
-        //add an extra try/catch block that handles uncatched errors and helps avoid
-        //having dead threads in our pools.
+        //add an extra try/catch block that handles uncatched errors and helps
+        //avoid having dead threads in our pools.
         try
         {
             while (isRunning)
@@ -89,8 +104,7 @@ class MessageProcessor
                 {
                     if(isRunning())
                         logger.log(Level.WARNING,
-                                "A net access point has gone useless:",
-                                    ex);
+                                "A net access point has gone useless:", ex);
                     //nothing to do here since we test whether we are running
                     //just beneath ...
                 }
@@ -106,10 +120,10 @@ class MessageProcessor
                 Message stunMessage = null;
                 try
                 {
-                    stunMessage =
-                        Message.decode(rawMessage.getBytes(),
-                                       (char) 0,
-                                       (char) rawMessage.getMessageLength());
+                    stunMessage
+                        = Message.decode(rawMessage.getBytes(),
+                                         (char) 0,
+                                         (char) rawMessage.getMessageLength());
                 }
                 catch (StunException ex)
                 {
