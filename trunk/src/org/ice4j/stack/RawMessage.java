@@ -61,7 +61,7 @@ class RawMessage
         this.messageLength = messageLength;
         System.arraycopy(messageBytes, 0, this.messageBytes,
                                                        0, messageBytes.length);
-
+        this.localAddress  = localAddress;
         this.remoteAddress = remoteAddress;
     }
 

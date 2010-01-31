@@ -108,7 +108,7 @@ public class UnknownAttributesAttribute extends Attribute
      * @return an iterator over the list of attribute IDs contained by this
      * attribute.
      */
-    public Iterator getAttributes()
+    public Iterator<Character> getAttributes()
     {
         return unknownAttributes.iterator();
 
@@ -205,8 +205,8 @@ public class UnknownAttributesAttribute extends Attribute
      * @param attributeValue a binary array containing this attribute's field
      *                       values and NOT containing the attribute header.
      * @param offset the position where attribute values begin (most often
-     * 				 offset is equal to the index of the first byte after
-     * 				 length)
+     *                  offset is equal to the index of the first byte after
+     *                  length)
      * @param length the length of the binary array.
      * @throws StunException if attrubteValue contains invalid data.
      */

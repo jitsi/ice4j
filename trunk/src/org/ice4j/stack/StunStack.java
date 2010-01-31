@@ -10,7 +10,6 @@ import java.io.*;
 import java.net.*;
 
 import org.ice4j.*;
-
 /**
  * The entry point to the Stun4J stack. The class is used to start, stop and
  * configure the stack.
@@ -40,8 +39,8 @@ public class StunStack
     private StunProvider stunProvider = null;
 
     /**
-     * Returns a reference to the singleton StunStack insance. If the stack
-     * had not yet been initialised, a new instance will be created.
+     * Returns a reference to the singleton StunStack instance. If the stack
+     * had not yet been initialized, a new instance will be created.
      *
      * @return a reference to the StunStack.
      */
@@ -86,7 +85,9 @@ public class StunStack
      */
     public void removeSocket(TransportAddress localAddr)
     {
-        netAccessManager.removeConnector(localAddr);
+        netAccessManager.removeSocket(localAddr);
+
+
     }
 
 
