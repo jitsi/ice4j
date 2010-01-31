@@ -109,9 +109,66 @@ public class StunStack
      */
     public void removeSocket(TransportAddress localAddr)
     {
+        //first cancel all transactions using this address.
+        cancelTransactionsForAddress(localAddr);
+
         netAccessManager.removeSocket(localAddr);
+    }
 
+    /**
+     * Stops all transactions for the specified <tt>localAddr</tt> so that they
+     * won't send messages through any longer and so that we could remove the
+     * associated socket.
+     *
+     * @param localAddr the <tt>TransportAddress</tt> that we'd like to remove
+     * transactions for.
+     */
+    private void cancelTransactionsForAddress(TransportAddress localAddr)
+    {
+        synchronized(clientTransactions)
+        {
+            Iterator<Map.Entry<TransactionID, StunClientTransaction>>
+                clientTransactionsIter = clientTransactions.entrySet()
+                    .iterator();
 
+            while (clientTransactionsIter.hasNext())
+            {
+                Map.Entry<TransactionID, StunClientTransaction> entry
+                    = clientTransactionsIter.next();
+
+                StunClientTransaction tran = entry.getValue();
+                if (tran.getLocalAddress().equals(localAddr))
+                    clientTransactionsIter.remove();
+
+                tran.cancel();
+            }
+        }
+
+        synchronized(serverTransactions)
+        {
+            Iterator<Map.Entry<TransactionID, StunServerTransaction>>
+                serverTransactionsIter = serverTransactions.entrySet()
+                    .iterator();
+
+            while (serverTransactionsIter.hasNext())
+            {
+                Map.Entry<TransactionID, StunServerTransaction> entry
+                    = serverTransactionsIter.next();
+
+                StunServerTransaction tran = entry.getValue();
+
+                TransportAddress listenAddr = tran.getLocalListeningAddress();
+                TransportAddress sendingAddr = tran.getSendingAddress();
+
+                if ( listenAddr.equals(localAddr)
+                     || (sendingAddr != null && sendingAddr.equals(localAddr)) )
+                {
+                    serverTransactionsIter.remove();
+                }
+
+                tran.expire();
+            }
+        }
     }
 
     /**
@@ -318,8 +375,8 @@ public class StunStack
             else
             {
                 logger.finest("exising transaction not found");
-                sTran =
-                    new StunServerTransaction(this, serverTid);
+                sTran = new StunServerTransaction(this, serverTid,
+                             event.getLocalAddress(), event.getRemoteAddress());
 
                 serverTransactions.put(serverTid, sTran);
                 sTran.start();

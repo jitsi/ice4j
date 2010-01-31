@@ -47,9 +47,14 @@ class StunServerTransaction
     private StunStack stackCallback  = null;
 
     /**
-     * The source of the transaction request.
+     * The address that we are sending responses to.
      */
     private TransportAddress responseDestination = null;
+
+    /**
+     * The address that we are receiving requests from.
+     */
+    private TransportAddress requestSource = null;
 
     /**
      * The response sent in response to the request.
@@ -57,9 +62,14 @@ class StunServerTransaction
     private Response response = null;
 
     /**
+     * The <tt>TransportAddress</tt> that we received our request on.
+     */
+    private TransportAddress localListeningAddress = null;
+
+    /**
      * The <tt>TransportAddress</tt> we use when sending responses
      */
-    private TransportAddress localAddress = null;
+    private TransportAddress localSendingAddress = null;
 
     /**
      * The id of the transaction.
@@ -93,13 +103,21 @@ class StunServerTransaction
      * @param stackCallback the stack that created us.
      * @param tranID the transaction id contained by the request that was the
      * cause for this transaction.
+     * @param localListeningAddress the <tt>TransportAddress</tt> that this
+     * transaction is receiving requests on.
+     * @param requestSource the <tt>TransportAddress</tt> that this
+     * transaction is receiving requests from.
      */
-    public StunServerTransaction(StunStack     stackCallback,
-                                 TransactionID tranID)
+    public StunServerTransaction(StunStack        stackCallback,
+                                 TransactionID    tranID,
+                                 TransportAddress localListeningAddress,
+                                 TransportAddress requestSource)
     {
         this.stackCallback  = stackCallback;
-
-        this.transactionID = tranID;
+        this.transactionID  = tranID;
+        this.requestSource  = requestSource;
+        this.localListeningAddress = localListeningAddress;
+        this.requestSource = requestSource;
 
         runningThread = new Thread(this);
     }
@@ -136,9 +154,9 @@ class StunServerTransaction
      * the transaction's state to retransmitting.
      *
      * @param response the response to send the transaction to.
-     * @param sendThrough the local address through which the response is to
+     * @param sendThrough the local address through which responses are to
      * be sent
-     * @param sendTo the destination of the response.
+     * @param sendTo the destination for responses of this transaction.
      *
      * @throws IOException  if an error occurs while sending message bytes
      * through the network socket.
@@ -146,7 +164,7 @@ class StunServerTransaction
      * access point that had not been installed,
      * @throws StunException if message encoding fails,
      */
-    public void sendResponse(Response response,
+    public void sendResponse(Response         response,
                              TransportAddress sendThrough,
                              TransportAddress sendTo)
         throws StunException,
@@ -158,8 +176,8 @@ class StunServerTransaction
             //the transaction id might already have been set, but its our job
             //to make sure of that
             response.setTransactionID(this.transactionID.getTransactionID());
-            this.localAddress = sendThrough;
-            this.responseDestination = sendTo;
+            this.localSendingAddress   = sendThrough;
+            this.responseDestination   = sendTo;
         }
 
         isRetransmitting = true;
@@ -187,7 +205,7 @@ class StunServerTransaction
             return;
 
         stackCallback.getNetAccessManager().sendMessage(response,
-                                                           localAddress,
+                                                           localSendingAddress,
                                                            responseDestination);
     }
 
@@ -256,5 +274,53 @@ class StunServerTransaction
     public boolean isReransmitting()
     {
         return isRetransmitting;
+    }
+
+    /**
+     * Returns the local <tt>TransportAddress</tt> that this transaction is
+     * sending responses from.
+     *
+     * @return the local <tt>TransportAddress</tt> that this transaction is
+     * sending responses from.
+     */
+    public TransportAddress getSendingAddress()
+    {
+        return localSendingAddress;
+    }
+
+    /**
+     * Returns the remote <tt>TransportAddress</tt> that this transaction is
+     * receiving requests from.
+     *
+     * @return the remote <tt>TransportAddress</tt> that this transaction is
+     * receiving requests from.
+     */
+    public TransportAddress getResponseDestinationAddress()
+    {
+        return responseDestination;
+    }
+
+    /**
+     * Returns the local <tt>TransportAddress</tt> that this transaction is
+     * receiving requests on.
+     *
+     * @return the local <tt>TransportAddress</tt> that this transaction is
+     * receiving requests on.
+     */
+    public TransportAddress getLocalListeningAddress()
+    {
+        return localListeningAddress;
+    }
+
+    /**
+     * Returns the remote <tt>TransportAddress</tt> that this transaction is
+     * receiving requests from.
+     *
+     * @return the remote <tt>TransportAddress</tt> that this transaction is
+     * receiving requests from.
+     */
+    public TransportAddress getRequestSourceAddress()
+    {
+        return requestSource;
     }
 }
