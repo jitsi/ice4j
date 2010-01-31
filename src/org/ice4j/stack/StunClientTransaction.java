@@ -393,4 +393,28 @@ class StunClientTransaction
             }
         }
     }
+
+    /**
+     * Returns the local <tt>TransportAddress</tt> that this transaction is
+     * sending requests from.
+     *
+     * @return  the local <tt>TransportAddress</tt> that this transaction is
+     * sending requests from.
+     */
+    public TransportAddress getLocalAddress()
+    {
+        return localAddress;
+    }
+
+    /**
+     * Returns the remote <tt>TransportAddress</tt> that this transaction is
+     * sending requests to.
+     *
+     * @return the remote <tt>TransportAddress</tt> that this transaction is
+     * sending requests to.
+     */
+    public TransportAddress getRemoteAddress()
+    {
+        return requestDestination;
+    }
 }
