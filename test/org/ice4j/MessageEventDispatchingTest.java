@@ -139,10 +139,8 @@ public class MessageEventDispatchingTest extends TestCase
         String oldRetransValue = System.getProperty(
                             "org.ice4j.MAX_RETRANSMISSIONS");
         System.setProperty("org.ice4j.MAX_RETRANSMISSIONS", "1");
-        stunStack.getProvider().sendRequest(bindingRequest,
-                                            serverAddress,
-                                            clientAddress,
-                                            responseCollector);
+        stunStack.sendRequest(bindingRequest, serverAddress, clientAddress,
+                        responseCollector);
         responseCollector.waitForTimeout();
 
         assertEquals(
@@ -170,11 +168,9 @@ public class MessageEventDispatchingTest extends TestCase
     public void testEventDispatchingUponIncomingRequests() throws Exception
     {
         //prepare to listen
-        stunStack.getProvider().addRequestListener(requestCollector);
+        stunStack.addRequestListener(requestCollector);
         //send
-        stunStack.getProvider().sendRequest(bindingRequest,
-                                            serverAddress,
-                                            clientAddress,
+        stunStack.sendRequest(bindingRequest, serverAddress, clientAddress,
                                             responseCollector);
         //wait for retransmissions
         requestCollector.waitForRequest();
@@ -194,17 +190,13 @@ public class MessageEventDispatchingTest extends TestCase
         throws Exception
     {
         //prepare to listen
-        stunStack.getProvider().addRequestListener(serverAddress,
-                                                   requestCollector);
+        stunStack.addRequestListener(serverAddress, requestCollector);
 
         PlainRequestCollector requestCollector2 = new PlainRequestCollector();
-        stunStack.getProvider().addRequestListener(serverAddress2,
-                                                   requestCollector2);
+        stunStack.addRequestListener(serverAddress2, requestCollector2);
 
         //send
-        stunStack.getProvider().sendRequest(bindingRequest,
-                                            serverAddress2,
-                                            clientAddress,
+        stunStack.sendRequest(bindingRequest, serverAddress2, clientAddress,
                                             responseCollector);
         //wait for retransmissions
         requestCollector.waitForRequest();
@@ -227,12 +219,9 @@ public class MessageEventDispatchingTest extends TestCase
     public void testServerResponseRetransmissions() throws Exception
     {
         //prepare to listen
-        stunStack.getProvider().addRequestListener(serverAddress,
-                                                   requestCollector);
+        stunStack.addRequestListener(serverAddress, requestCollector);
         //send
-        stunStack.getProvider().sendRequest(bindingRequest,
-                                            serverAddress,
-                                            clientAddress,
+        stunStack.sendRequest(bindingRequest, serverAddress, clientAddress,
                                             responseCollector);
 
         //wait for the message to arrive
@@ -240,9 +229,7 @@ public class MessageEventDispatchingTest extends TestCase
 
         StunMessageEvent evt = requestCollector.receivedRequests.get(0);
         byte[] tid = evt.getMessage().getTransactionID();
-        stunStack.getProvider().sendResponse(tid,
-                                             bindingResponse,
-                                             serverAddress,
+        stunStack.sendResponse(tid, bindingResponse, serverAddress,
                                              clientAddress);
 
         //wait for retransmissions

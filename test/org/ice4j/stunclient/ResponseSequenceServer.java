@@ -37,7 +37,6 @@ public class ResponseSequenceServer
     private Vector<Object> messageSequence = new Vector<Object>();
 
     private StunStack    stunStack    = null;
-    private StunProvider stunProvider = null;
 
     private TransportAddress serverAddress = null;
     private DatagramSocket localSocket = null;
@@ -56,12 +55,11 @@ public class ResponseSequenceServer
         throws IOException, StunException
     {
         stunStack    = StunStack.getInstance();
-        stunProvider = stunStack.getProvider();
 
         localSocket = new DatagramSocket(serverAddress);
 
         stunStack.addSocket(localSocket);
-        stunProvider.addRequestListener(serverAddress, this);
+        stunStack.addRequestListener(serverAddress, this);
 
     }
 
@@ -74,7 +72,6 @@ public class ResponseSequenceServer
         localSocket.close();
 
         stunStack    = null;
-        stunProvider = null;
     }
 
     /**
@@ -112,7 +109,7 @@ public class ResponseSequenceServer
 
         try
         {
-            stunProvider.sendResponse(evt.getMessage().getTransactionID(),
+            stunStack.sendResponse(evt.getMessage().getTransactionID(),
                 res, serverAddress, evt.getRemoteAddress());
         }
         catch (Exception ex)

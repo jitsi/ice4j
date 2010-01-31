@@ -25,7 +25,6 @@ public class ShallowStackTest extends TestCase {
     private static final Logger logger =
         Logger.getLogger(ShallowStackTest.class.getName());
 
-    private StunProvider stunProvider = null;
     private StunStack    stunStack  = null;
     private MsgFixture   msgFixture = null;
 
@@ -59,7 +58,6 @@ public class ShallowStackTest extends TestCase {
 
         //init the stack
         stunStack    = StunStack.getInstance();
-        stunProvider = stunStack.getProvider();
 
         //access point
         localSock = new DatagramSocket(localAddress);
@@ -99,10 +97,10 @@ public class ShallowStackTest extends TestCase {
 
         dgramCollector.startListening(dummyServerSocket);
 
-        stunProvider.sendRequest(bindingRequest,
-                                 dummyServerAddress,
-                                 localAddress,
-                                 new SimpleResponseCollector());
+        stunStack.sendRequest(bindingRequest,
+                              dummyServerAddress,
+                              localAddress,
+                              new SimpleResponseCollector());
 
         //wait for its arrival
         dgramCollector.waitForPacket();
@@ -151,7 +149,7 @@ public class ShallowStackTest extends TestCase {
         throws Exception
     {
         SimpleRequestCollector requestCollector = new SimpleRequestCollector();
-        stunProvider.addRequestListener(requestCollector);
+        stunStack.addRequestListener(requestCollector);
 
         dummyServerSocket.send(new DatagramPacket(
             msgFixture.bindingRequest2,
@@ -184,7 +182,7 @@ public class ShallowStackTest extends TestCase {
     {
         //---------- send & receive the request --------------------------------
         SimpleRequestCollector requestCollector = new SimpleRequestCollector();
-        stunProvider.addRequestListener(requestCollector);
+        stunStack.addRequestListener(requestCollector);
 
         dummyServerSocket.send(new DatagramPacket(
                                             msgFixture.bindingRequest,
@@ -213,10 +211,10 @@ public class ShallowStackTest extends TestCase {
         //---------- send & receive the response -------------------------------
         dgramCollector.startListening(dummyServerSocket);
 
-        stunProvider.sendResponse(collectedRequest.getTransactionID(),
-                                 bindingResponse,
-                                 localAddress,
-                                 dummyServerAddress);
+        stunStack.sendResponse(collectedRequest.getTransactionID(),
+                               bindingResponse,
+                               localAddress,
+                               dummyServerAddress);
 
         //wait for its arrival
         dgramCollector.waitForPacket();
@@ -243,10 +241,10 @@ public class ShallowStackTest extends TestCase {
         //--------------- send the original request ----------------------------
         Request bindingRequest = MessageFactory.createBindingRequest();
 
-        stunProvider.sendRequest(bindingRequest,
-                                 dummyServerAddress,
-                                 localAddress,
-                                 collector);
+        stunStack.sendRequest(bindingRequest,
+                              dummyServerAddress,
+                              localAddress,
+                              collector);
 
         //wait for its arrival
         collector.waitForResponse();
@@ -330,7 +328,7 @@ public class ShallowStackTest extends TestCase {
         public void requestReceived(StunMessageEvent evt)
         {
             collectedRequest = (Request)evt.getMessage();
-            stunProvider.removeRequestListener(this);
+            stunStack.removeRequestListener(this);
             logger.finest("Received request.");
 
             synchronized(this)

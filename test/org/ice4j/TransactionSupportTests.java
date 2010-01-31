@@ -122,10 +122,10 @@ public class TransactionSupportTests extends TestCase
         System.setProperty("org.ice4j.PROPAGATE_RECEIVED_RETRANSMISSIONS",
                            "true");
 
-        StunStack.getInstance().getProvider()
+        StunStack.getInstance()
             .addRequestListener(serverAddress, requestCollector);
         //send
-        StunStack.getInstance().getProvider().sendRequest(bindingRequest,
+        StunStack.getInstance().sendRequest(bindingRequest,
                          serverAddress, clientAddress, responseCollector);
         //wait for retransmissions
         Thread.sleep(12000);
@@ -149,10 +149,10 @@ public class TransactionSupportTests extends TestCase
     public void testServerRetransmissionHiding() throws Exception
     {
         //prepare to listen
-        StunStack.getInstance().getProvider().addRequestListener(
+        StunStack.getInstance().addRequestListener(
                         serverAddress, requestCollector);
         //send
-        StunStack.getInstance().getProvider().sendRequest(bindingRequest,
+        StunStack.getInstance().sendRequest(bindingRequest,
               serverAddress, clientAddress, responseCollector);
 
         //wait for retransmissions
@@ -180,10 +180,10 @@ public class TransactionSupportTests extends TestCase
         //prepare to listen
         System.setProperty("org.ice4j.KEEP_CLIENT_TRANS_AFTER_A_RESPONSE",
                            "true");
-        StunStack.getInstance().getProvider().addRequestListener(
+        StunStack.getInstance().addRequestListener(
                         serverAddress, requestCollector);
         //send
-        StunStack.getInstance().getProvider().sendRequest(
+        StunStack.getInstance().sendRequest(
             bindingRequest, serverAddress,
                 clientAddress, responseCollector);
 
@@ -196,7 +196,7 @@ public class TransactionSupportTests extends TestCase
         StunMessageEvent evt = ((StunMessageEvent)reqs.get(0));
 
         byte[] tid = evt.getMessage().getTransactionID();
-        StunStack.getInstance().getProvider().sendResponse(
+        StunStack.getInstance().sendResponse(
                         tid, bindingResponse, serverAddress, clientAddress);
 
         //wait for retransmissions
@@ -214,10 +214,10 @@ public class TransactionSupportTests extends TestCase
      */
     public void testUniqueIDs() throws Exception
     {
-        StunStack.getInstance().getProvider().addRequestListener(
+        StunStack.getInstance().addRequestListener(
                             serverAddress, requestCollector);
         //send req 1
-        StunStack.getInstance().getProvider().sendRequest(bindingRequest,
+        StunStack.getInstance().sendRequest(bindingRequest,
             serverAddress, clientAddress, responseCollector);
 
         //wait for retransmissions
@@ -230,11 +230,11 @@ public class TransactionSupportTests extends TestCase
 
         //send a response to make the other guy shut up
         byte[] tid = evt1.getMessage().getTransactionID();
-        StunStack.getInstance().getProvider().sendResponse(tid,
+        StunStack.getInstance().sendResponse(tid,
                     bindingResponse, serverAddress, clientAddress);
 
         //send req 2
-        StunStack.getInstance().getProvider().sendRequest(bindingRequest,
+        StunStack.getInstance().sendRequest(bindingRequest,
                         serverAddress, clientAddress, responseCollector);
 
         //wait for retransmissions
@@ -261,10 +261,10 @@ public class TransactionSupportTests extends TestCase
         //make sure we see retransmissions so that we may count them
         System.setProperty("org.ice4j.PROPAGATE_RECEIVED_RETRANSMISSIONS",
                            "true");
-        StunStack.getInstance().getProvider().addRequestListener(
+        StunStack.getInstance().addRequestListener(
                         serverAddress, requestCollector);
         //send
-        StunStack.getInstance().getProvider().sendRequest(
+        StunStack.getInstance().sendRequest(
             bindingRequest, serverAddress, clientAddress, responseCollector);
         //wait for retransmissions
         Thread.sleep(1600);
@@ -292,10 +292,10 @@ public class TransactionSupportTests extends TestCase
         //make sure we see retransmissions so that we may count them
         System.setProperty("org.ice4j.PROPAGATE_RECEIVED_RETRANSMISSIONS",
                            "true");
-        StunStack.getInstance().getProvider().addRequestListener(
+        StunStack.getInstance().addRequestListener(
                         serverAddress, requestCollector);
         //send
-        StunStack.getInstance().getProvider().sendRequest(bindingRequest,
+        StunStack.getInstance().sendRequest(bindingRequest,
             serverAddress, clientAddress, responseCollector);
 
         //wait a while
@@ -330,10 +330,10 @@ public class TransactionSupportTests extends TestCase
                            "true");
         System.setProperty("org.ice4j.MAX_RETRANSMISSIONS",
                            "11");
-        StunStack.getInstance().getProvider()
+        StunStack.getInstance()
             .addRequestListener(serverAddress, requestCollector);
         //send
-        StunStack.getInstance().getProvider().sendRequest(bindingRequest,
+        StunStack.getInstance().sendRequest(bindingRequest,
             serverAddress, clientAddress, responseCollector);
 
         //wait a while
