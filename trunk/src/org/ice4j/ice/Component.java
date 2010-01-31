@@ -68,6 +68,13 @@ public class Component
     private List<Candidate> remoteCandidates = new LinkedList<Candidate>();
 
     /**
+     * A <tt>Comparator</tt> that we use for sorting <tt>Candidate</tt>s by
+     * their priority.
+     */
+    private CandidatePrioritizer candidatePrioritizer
+                                              = new CandidatePrioritizer();
+
+    /**
      * Creates a new <tt>Component</tt> with the specified <tt>componentID</tt>
      * as a child of the specified <tt>MediaStream</tt>.
      *
@@ -318,36 +325,86 @@ public class Component
     }
 
     /**
-     *
+     * Computes the priorities of all <tt>Candidate</tt>s and then sorts them
+     * accordingly.
      */
     public void prioritizeCandidates()
     {
-        //Arrays.sort
-        /*
         synchronized(localCandidates)
         {
-            TreeSet<Candidate> prioritizedCands = new TreeSet<Candidate>(new Comparator<Candidate>()
-                            {
-                                public int compare(Candidate c1, Candidate c2)
-                                {
-                                    return -1;
-                                }
+            Candidate[] candidates = new Candidate[localCandidates.size()];
+            localCandidates.toArray(candidates);
 
-                                public boolean equal(Candidate c1, Candidate c2)
-                                {
-                                    return true;
-                                }
-                            });
-
-            for (Candidate cand : localCandidates)
+            //first compute the actual priorities
+            for (Candidate cand : candidates)
             {
                 cand.computePriority();
-                prioritizedCands.add(cand);
             }
 
+            //sort
+            Arrays.sort(candidates, candidatePrioritizer);
+
+            //now re-add the candidates in the order they've been sorted in.
             localCandidates.clear();
-            localCandidates.addAll(prioritizedCands);
+            for (Candidate cand : candidates)
+                localCandidates.add(cand);
         }
-        */
+    }
+
+    /**
+     * Compares candidates based on their priority.
+     */
+    private static class CandidatePrioritizer
+        implements Comparator<Candidate>
+    {
+        /**
+         * Compares the two <tt>Candidate</tt>s based on their priority and
+         * returns a negative integer, zero, or a positive integer as the first
+         * <tt>Candidate</tt> has a lower, equal, or greater priority than the
+         * second.
+         *
+         * @param c1 the first <tt>Candidate</tt> to compare.
+         * @param c2 the second <tt>Candidate</tt> to compare.
+         *
+         * @return a negative integer, zero, or a positive integer as the first
+         * <tt>Candidate</tt> has a lower, equal, or greater priority than the
+         * second.
+         */
+        public int compare(Candidate c1, Candidate c2)
+        {
+            if(c1.getPriority() < c2.getPriority())
+                return 1;
+            else if(c1.getPriority() == c2.getPriority())
+                return 0;
+            else //if(c1.getPriority() > c2.getPriority())
+                return -1;
+        }
+
+        /**
+         * Indicates whether some other object is &quot;equal to&quot; this
+         * Comparator.  This method must obey the general contract of
+         * <tt>Object.equals(Object)</tt>.  Additionally, this method can return
+         * <tt>true</tt> <i>only</i> if the specified Object is also a comparator
+         * and it imposes the same ordering as this comparator.  Thus,
+         * <code>comp1.equals(comp2)</code> implies that <tt>sgn(comp1.compare(o1,
+         * o2))==sgn(comp2.compare(o1, o2))</tt> for every object reference
+         * <tt>o1</tt> and <tt>o2</tt>.<p>
+         *
+         * Note that it is <i>always</i> safe <i>not</i> to override
+         * <tt>Object.equals(Object)</tt>.  However, overriding this method may,
+         * in some cases, improve performance by allowing programs to determine
+         * that two distinct Comparators impose the same order.
+         *
+         * @param   obj   the reference object with which to compare.
+         * @return  <code>true</code> only if the specified object is also
+         *      a comparator and it imposes the same ordering as this
+         *      comparator.
+         * @see     java.lang.Object#equals(java.lang.Object)
+         * @see java.lang.Object#hashCode()
+         */
+        public boolean equals(Object obj)
+        {
+            return (obj instanceof CandidatePrioritizer);
+        }
     }
 }

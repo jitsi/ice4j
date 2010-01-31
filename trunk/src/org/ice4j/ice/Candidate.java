@@ -408,9 +408,9 @@ public class Candidate
         {
             //prefer link local addresses to global ones
             if(addr.isLinkLocalAddress())
-                return 40;
-            else
                 return 30;
+            else
+                return 40;
         }
         else
         {
