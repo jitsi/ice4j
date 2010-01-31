@@ -1,10 +1,12 @@
 /*
- * Stun4j, the OpenSource Java Solution for NAT and Firewall Traversal.
+ * ice4j, the OpenSource Java Solution for NAT and Firewall Traversal.
+ * Maintained by the SIP Communicator community (http://sip-communicator.org).
  *
- * Distributable under LGPL license.
- * See terms of license at gnu.org.
+ * Distributable under LGPL license. See terms of license at gnu.org.
  */
 package org.ice4j.attribute;
+
+import java.net.*;
 
 import org.ice4j.*;
 
@@ -68,8 +70,10 @@ public class XorMappedAddressAttribute
     /**
      * Returns the result of applying XOR on the specified attribute's address.
      * The method may be used for both encoding and decoding XorMappedAddresses.
+     *
      * @param address the address on which XOR should be applied
      * @param transactionID the transaction id to use for the XOR
+     *
      * @return the XOR-ed address.
      */
     public static TransportAddress applyXor(TransportAddress address,
@@ -86,7 +90,16 @@ public class XorMappedAddressAttribute
         for(int i = 0; i < addressBytes.length; i++)
             addressBytes[i] ^= transactionID[i];
 
-        TransportAddress xoredAdd = new TransportAddress(addressBytes, port);
+        TransportAddress xoredAdd;
+        try
+        {
+            xoredAdd = new TransportAddress(addressBytes, port, Transport.UDP);
+        }
+        catch (UnknownHostException e)
+        {
+            //shouldn't happen so just throw an illegal arg
+            throw new IllegalArgumentException(e);
+        }
 
         return xoredAdd;
     }

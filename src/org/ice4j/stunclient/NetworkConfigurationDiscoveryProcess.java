@@ -167,8 +167,7 @@ public class NetworkConfigurationDiscoveryProcess
     {
         stunStack = StunStack.getInstance();
 
-        DatagramSocket sock
-            = new DatagramSocket(localAddress.getSocketAddress());
+        DatagramSocket sock = new DatagramSocket(localAddress);
 
         stunStack.installNetAccessPoint(sock);
 

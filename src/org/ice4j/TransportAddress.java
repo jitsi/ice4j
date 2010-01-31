@@ -76,6 +76,21 @@ public class TransportAddress
         this.transport = transport;
     }
 
+    /**
+     * Creates an address instance from an <tt>InetSocketAddress</tt>.
+     *
+     * @param    address   the address and port.
+     * @param    transport the transport to use with this address.
+     *
+     * @throws IllegalArgumentException if the port parameter is outside the
+     * range of valid port values, or if the host name parameter is
+     * <tt>null</tt>.
+     */
+    public TransportAddress(InetSocketAddress address, Transport transport)
+    {
+        super(address.getAddress(), address.getPort());
+        this.transport = transport;
+    }
 
     /**
      * Creates an address instance from a host name and a port number.
@@ -151,5 +166,28 @@ public class TransportAddress
     public Transport getTransport()
     {
         return transport;
+    }
+
+    /**
+     * Compares this object against the specified object. The result is
+     * <tt>true</tt> if and only if the argument is not <tt>null</tt> and it
+     * represents the same address.
+     * <p>
+     * Two instances of <tt>TransportAddress</tt> represent the same
+     * address if both the InetAddresses (or hostnames if it is unresolved),
+     * port numbers, and <tt>Transport</tt>s are equal.
+     *
+     * If both addresses are unresolved, then the hostname, the port & and
+     * the <tt>Transport</tt> are compared.
+     *
+     * @param   obj   the object to compare against.
+     * @return  <tt>true</tt> if the objects are the same and
+     * <tt>false</tt> otherwise.
+     * @see java.net.InetAddress#equals(java.lang.Object)
+     */
+    public boolean equalsTransportAddress(Object obj)
+    {
+        return super.equals(obj)
+            &&(  ((TransportAddress)obj).getTransport() == getTransport() );
     }
 }
