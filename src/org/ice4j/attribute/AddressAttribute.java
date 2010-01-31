@@ -226,6 +226,7 @@ abstract class AddressAttribute extends Attribute
 
     /**
      * Returns the address encapsulated by this attribute.
+     *
      * @return the address encapsulated by this attribute.
      */
     public TransportAddress getAddress()
@@ -233,6 +234,11 @@ abstract class AddressAttribute extends Attribute
         return address;
     }
 
+    /**
+     * Returns the bytes of the address.
+     *
+     * @return the <tt>byte[]</tt> array containing the address.
+     */
     public byte[] getAddressBytes()
     {
         return address.getAddressBytes();

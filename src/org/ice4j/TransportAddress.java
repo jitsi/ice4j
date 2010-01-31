@@ -17,11 +17,12 @@ import org.ice4j.ice.*;
  */
 
 public class TransportAddress
+    extends InetSocketAddress
 {
     /**
-     * The socket address instance that we use for saving address and port.
+     * our serial version UID;
      */
-    private InetSocketAddress socketAddress = null;
+    private static final long serialVersionUID = 5076001401234631237L;
 
     /**
      * The variable that we are using to store the transport that this address
@@ -46,7 +47,7 @@ public class TransportAddress
      */
     public TransportAddress(String hostname, int port, Transport transport)
     {
-        socketAddress = new InetSocketAddress(hostname, port);
+        super(hostname, port);
         this.transport = transport;
     }
 
@@ -64,36 +65,22 @@ public class TransportAddress
      * @param    port      The port number
      * @param    transport The <tt>Transport</tt> to use with this address.
      *
-     * @throws IllegalArgumentException if the port parameter is outside the
-     * specified range of valid port values or if ipAddress is not a valid IP
-     * address.
+     * @throws UnknownHostException UnknownHostException  if IP address is of
+     * illegal length
      */
     public TransportAddress(byte[] ipAddress, int port, Transport transport)
+        throws UnknownHostException
     {
-
-        try
-        {
-            socketAddress = new InetSocketAddress(InetAddress.getByAddress(
-                ipAddress), port);
-        }
-        catch (UnknownHostException ex)
-        {
-            //Unknown Host - Let's skip resolution
-            socketAddress = new InetSocketAddress((ipAddress[0]&0xFF) + "."
-                                                   +(ipAddress[1]&0xFF) + "."
-                                                   +(ipAddress[2]&0xFF) + "."
-                                                   +(ipAddress[3]&0xFF) + ".",
-                                                   port);
-        }
+        super(InetAddress.getByAddress(ipAddress), port);
 
         this.transport = transport;
     }
 
 
     /**
-     * Creates an address instance from a hostname and a port number.
+     * Creates an address instance from a host name and a port number.
      * <p>
-     * An attempt will be made to resolve the hostname into an InetAddress.
+     * An attempt will be made to resolve the host name into an InetAddress.
      * If that attempt fails, the address will be flagged as <I>unresolved</I>.
      * <p>
      * A valid port value is between 0 and 65535. A port number of zero will
@@ -104,11 +91,12 @@ public class TransportAddress
      * @param    transport the transport to use with this address.
      *
      * @throws IllegalArgumentException if the port parameter is outside the
-     * range of valid port values, or if the hostname parmeter is <TT>null</TT>.
+     * range of valid port values, or if the host name parameter is
+     * <tt>null</tt>.
      */
     public TransportAddress(InetAddress address, int port, Transport transport)
     {
-        socketAddress = new InetSocketAddress(address, port);
+        super(address, port);
         this.transport = transport;
     }
 
@@ -116,73 +104,25 @@ public class TransportAddress
      * Returns the raw IP address of this Address object. The result is in
      * network byte order: the highest order byte of the address is in
      * getAddress()[0].
+     *
      * @return the raw IP address of this object.
      */
     public byte[] getAddressBytes()
     {
-        return (socketAddress == null
-                   ?null
-                   :socketAddress.getAddress().getAddress());
-    }
-
-    /**
-     * Returns the port number or 0 if the address has not been initialized.
-     * @return the port number.
-     */
-    public int getPort()
-    {
-        return (socketAddress == null
-                   ? 0
-                   : socketAddress.getPort());
-    }
-
-    /**
-     * Returns the encapsulated InetSocketAddress instance.
-     * @return the encapsulated InetSocketAddress instance.
-     */
-    public InetSocketAddress getSocketAddress()
-    {
-        return socketAddress;
+        return getAddress().getAddress();
     }
 
     /**
      * Constructs a string representation of this InetSocketAddress. This String
      * is constructed by calling toString() on the InetAddress and concatenating
      * the port number (with a colon). If the address is unresolved then the
-     * part before the colon will only contain the hostname.
+     * part before the colon will only contain the host name.
      *
      * @return a string representation of this object.
      */
     public String toString()
     {
-        return socketAddress.toString() + " transport="+getTransport();
-    }
-
-    /**
-     * Compares this object against the specified object. The result is true if
-     * and only if the argument is not null and it represents the same address
-     * as this object.
-     * <p/>
-     * Two instances of InetSocketAddress represent the same address if both the
-     * InetAddresses (or hostnames if it is unresolved) and port numbers are
-     * equal.
-     * <p/>
-     * If both addresses are unresolved, then the hostname & the port number are
-     * compared.
-     * @param obj the object to compare against.
-     * @return true if the objects are the same; false otherwise.
-     */
-    public boolean equals(Object obj)
-    {
-        if(!(obj instanceof TransportAddress))
-            return false;
-
-        TransportAddress target = (TransportAddress)obj;
-        if(   target.socketAddress == null
-           && socketAddress ==null)
-            return true;
-
-        return socketAddress.equals(target.getSocketAddress());
+        return super.toString() + "/"+getTransport();
     }
 
     /**
@@ -192,26 +132,14 @@ public class TransportAddress
      */
     public String getHostAddress()
     {
-        InetAddress addr = socketAddress.getAddress();
+        InetAddress addr = getAddress();
 
-        String addressStr = socketAddress.getAddress().getHostAddress();
+        String addressStr = addr.getHostAddress();
 
         if(addr instanceof Inet6Address)
             addressStr = NetworkUtils.stripScopeID(addressStr);
 
         return addressStr;
-    }
-
-    /**
-     * Returns the <tt>InetAddress</tt> encapsulated by this
-     * <tt>TransportAddress</tt>.
-     *
-     * @return the <tt>InetAddress</tt> encapsulated by this
-     * <tt>TransportAddress</tt>.
-     */
-    public InetAddress getInetAddress()
-    {
-        return socketAddress.getAddress();
     }
 
     /**
