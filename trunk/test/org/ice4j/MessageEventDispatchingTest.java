@@ -94,9 +94,9 @@ public class MessageEventDispatchingTest extends TestCase
         serverSock = new DatagramSocket(clientAddress);
         serverSock = new DatagramSocket(serverAddress2);
 
-        stunStack.installNetAccessPoint(clientSock);
-        stunStack.installNetAccessPoint(serverSock);
-        stunStack.installNetAccessPoint(serverSock2);
+        stunStack.addSocket(clientSock);
+        stunStack.addSocket(serverSock);
+        stunStack.addSocket(serverSock2);
 
         bindingRequest = MessageFactory.createBindingRequest();
         bindingResponse = MessageFactory.createBindingResponse(

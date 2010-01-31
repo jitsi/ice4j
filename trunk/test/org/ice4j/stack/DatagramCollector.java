@@ -1,8 +1,8 @@
 /*
- * Stun4j, the OpenSource Java Solution for NAT and Firewall Traversal.
+ * ice4j, the OpenSource Java Solution for NAT and Firewall Traversal.
+ * Maintained by the SIP Communicator community (http://sip-communicator.org).
  *
- * Distributable under LGPL license.
- * See terms of license at gnu.org.
+ * Distributable under LGPL license. See terms of license at gnu.org.
  */
 package org.ice4j.stack;
 
@@ -23,7 +23,14 @@ public class DatagramCollector
     {
         try
         {
+
             sock.receive(receivedPacket);
+
+            synchronized (this)
+            {
+                notify();
+            }
+
         }
         catch (IOException ex)
         {
@@ -46,6 +53,22 @@ public class DatagramCollector
         }
         catch (InterruptedException ex)
         {
+        }
+    }
+
+    public void waitForPacket()
+    {
+        synchronized(this)
+        {
+            try
+            {
+                wait(1000);
+            }
+            catch (InterruptedException e)
+            {
+                // TODO Auto-generated catch block
+                e.printStackTrace();
+            }
         }
     }
 

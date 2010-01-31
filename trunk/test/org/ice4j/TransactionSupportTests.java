@@ -65,8 +65,8 @@ public class TransactionSupportTests extends TestCase
         clientSock = new DatagramSocket(clientAddress);
         serverSock = new DatagramSocket(serverAddress);
 
-        StunStack.getInstance().installNetAccessPoint(clientSock);
-        StunStack.getInstance().installNetAccessPoint(serverSock);
+        StunStack.getInstance().addSocket(clientSock);
+        StunStack.getInstance().addSocket(serverSock);
 
         bindingRequest = MessageFactory.createBindingRequest();
         bindingResponse = MessageFactory.createBindingResponse(
