@@ -42,9 +42,9 @@ class BlockingRequestSender
         = Logger.getLogger(BlockingRequestSender.class.getName());
 
     /**
-     * The provider that we are using to send requests through.
+     * The stack that we are using to send requests through.
      */
-    private StunProvider stunProvider  = null;
+    private StunStack stunStack  = null;
 
     /**
      * The transport address that we are bound on.
@@ -69,15 +69,15 @@ class BlockingRequestSender
 
     /**
      * Creates a new request sender.
-     * @param stunProvider the provider that the sender should send requests
+     * @param stunStack the stack that the sender should send requests
      * through.
      * @param localAddress the <tt>TransportAddress</tt> that requests should be
      * leaving from.
      */
-    BlockingRequestSender(StunProvider     stunProvider,
+    BlockingRequestSender(StunStack        stunStack,
                           TransportAddress localAddress)
     {
-        this.stunProvider = stunProvider;
+        this.stunStack = stunStack;
         this.localAddress = localAddress;
     }
 
@@ -128,7 +128,7 @@ class BlockingRequestSender
                    IOException
     {
         synchronized(sendLock){
-            stunProvider.sendRequest(request, serverAddress, localAddress,
+            stunStack.sendRequest(request, serverAddress, localAddress,
                                      BlockingRequestSender.this);
         }
 
