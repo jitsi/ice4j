@@ -1,12 +1,11 @@
 /*
- * Stun4j, the OpenSource Java Solution for NAT and Firewall Traversal.
+ * ice4j, the OpenSource Java Solution for NAT and Firewall Traversal.
+ * Maintained by the SIP Communicator community (http://sip-communicator.org).
  *
- * Distributable under LGPL license.
- * See terms of license at gnu.org.
+ * Distributable under LGPL license. See terms of license at gnu.org.
  */
 package org.ice4j.attribute;
 
-import java.util.Arrays;
 import java.net.*;
 
 import org.ice4j.*;
@@ -14,7 +13,7 @@ import org.ice4j.*;
 /**
  * This class is used to represent Stun attributes that contain an address. Such
  * attributes are:
- *
+ *<p>
  * MAPPED-ADDRESS <br/>
  * RESPONSE-ADDRESS <br/>
  * SOURCE-ADDRESS <br/>
@@ -23,14 +22,16 @@ import org.ice4j.*;
  * ALTERNATE-SERVER <br/>
  * XOR-PEER-ADDRESS <br/>
  * XOR-RELAYED-ADDRESS <br/>
- *
+ *</p>
+ *<p>
  * The different attributes are distinguished by the attributeType of
  * org.ice4j.attribute.Attribute.
- *
+ *</p>
+ *<p>
  * Address attributes indicate the mapped IP address and
  * port.  They consist of an eight bit address family, and a sixteen bit
  * port, followed by a fixed length value representing the IP address.
- *
+ *<code>
  *  0                   1                   2                   3          <br/>
  *  0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1        <br/>
  * +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+       <br/>
@@ -39,21 +40,26 @@ import org.ice4j.*;
  * |                             Address                           |       <br/>
  * +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+       <br/>
  *                                                                         <br/>
+ * </p>
+ * <p>
  * The port is a network byte ordered representation of the mapped port.
  * The address family is always 0x01, corresponding to IPv4.  The first
  * 8 bits of the MAPPED-ADDRESS are ignored, for the purposes of
  * aligning parameters on natural boundaries.  The IPv4 address is 32
  * bits.
- *
- *
- * <p>Organisation: Louis Pasteur University, Strasbourg, France</p>
- * <p>Network Research Team (http://www-r2.u-strasbg.fr)</p></p>
+ * </p>
  * @author Emil Ivov
- * @version 0.1
  */
 abstract class AddressAttribute extends Attribute
 {
+    /**
+     * Indicates that this attribute is transporting an IPv4 address
+     */
     static final byte ADDRESS_FAMILY_IPV4 = 0x01;
+
+    /**
+     * Indicates that this attribute is transporting an IPv6 address
+     */
     static final byte ADDRESS_FAMILY_IPV6 = 0x02;
 
      /**
@@ -105,7 +111,8 @@ abstract class AddressAttribute extends Attribute
     protected void setAttributeType(char  type)
     {
         if (!isTypeValid(type))
-            throw new IllegalArgumentException(((int)type) + "is not a valid address attribute!");
+            throw new IllegalArgumentException(((int)type)
+                                + "is not a valid address attribute!");
 
         super.setAttributeType(type);
     }
@@ -187,7 +194,8 @@ abstract class AddressAttribute extends Attribute
     {
         char type = getAttributeType();
         if (!isTypeValid(type))
-            throw new IllegalStateException(((int)type) + "is not a valid address attribute!");
+            throw new IllegalStateException(((int)type)
+                            + "is not a valid address attribute!");
         byte binValue[] = new byte[HEADER_LENGTH + getDataLength()];
 
         //Type
@@ -250,7 +258,7 @@ abstract class AddressAttribute extends Attribute
      */
     public byte getFamily()
     {
-        if ( address.getSocketAddress().getAddress() instanceof Inet6Address )
+        if ( address.getAddress() instanceof Inet6Address )
             return ADDRESS_FAMILY_IPV6;
         else
             return ADDRESS_FAMILY_IPV4;
@@ -287,7 +295,8 @@ abstract class AddressAttribute extends Attribute
         byte family = attributeValue[offset++];
 
         //port
-        char port = ((char)((attributeValue[offset++] << 8 ) | (attributeValue[offset++]&0xFF) ));
+        char port = ((char)((attributeValue[offset++] << 8 )
+                        | (attributeValue[offset++]&0xFF) ));
 
         //address
         byte address[] = null;
@@ -300,7 +309,14 @@ abstract class AddressAttribute extends Attribute
         }
 
         System.arraycopy(attributeValue, offset, address, 0, address.length);
-        setAddress(new TransportAddress(address, port));
+        try
+        {
+            setAddress(new TransportAddress(address, port, Transport.UDP));
+        }
+        catch (UnknownHostException e)
+        {
+            throw new StunException(e);
+        }
 
     }
 

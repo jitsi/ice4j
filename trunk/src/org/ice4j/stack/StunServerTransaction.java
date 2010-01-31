@@ -176,7 +176,7 @@ class StunServerTransaction
      * access point that had not been installed,
      * @throws StunException if message encoding fails,
      */
-    private void retransmitResponse()
+    protected void retransmitResponse()
         throws StunException,
                IOException,
                IllegalArgumentException

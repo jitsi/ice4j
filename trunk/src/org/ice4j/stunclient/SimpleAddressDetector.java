@@ -97,141 +97,65 @@ public class SimpleAddressDetector
 
 
     /**
-     * Creates a listening point from the following address and attempts to
-     * discover how it is mapped so that using inside the application is
-     * possible.
-     *
-     * @param address the [address]:[port] pair where ther request should be
-     * sent from.
-     *
+     * Creates a listening point for the specified socket and attempts to
+     * discover how its local address is NAT mapped.
+     * @param socket the socket whose address needs to be resolved.
      * @return a StunAddress object containing the mapped address or null if
      * discovery failed.
-     * @throws IOException if <tt>address</tt> is already bound.
+     *
+     * @throws IOException if something fails along the way.
+     * @throws BindException if we cannot bind the socket.
      */
-    public TransportAddress getMappingFor(TransportAddress address)
-        throws IOException
+    public TransportAddress getMappingFor(DatagramSocket socket)
+       throws IOException, BindException
     {
-        NetAccessPointDescriptor apDesc = new NetAccessPointDescriptor(address);
+         TransportAddress localAddress = new TransportAddress(
+              (InetSocketAddress)socket.getLocalSocketAddress(), Transport.UDP);
 
-        stunStack.installNetAccessPoint(apDesc);
+         stunStack.installNetAccessPoint(socket);
 
-        requestSender = new BlockingRequestSender(stunProvider, apDesc);
-        StunMessageEvent evt = null;
-        try
-        {
-            try
-            {
-                evt = requestSender.sendRequestAndWaitForResponse(
-                    MessageFactory.createBindingRequest(), serverAddress);
-            }
-            catch (StunException ex)
-            {
-                //a stun exception is thrown if there is a problem with
-                //the message. The message here is constructed by ourselves
-                //so we don't need to tell the user ... just log and throw
-                //a runtime exception
-                logger.log(  Level.SEVERE,
-                             "Internal Error. Apparently we did not properly "
-                              +"construct a message",
-                              ex);
-            }
-        }
-        finally
-        {
-            //free the port to allow the application to use it.
-            stunStack.removeNetAccessPoint(apDesc);
-        }
+         requestSender = new BlockingRequestSender(stunProvider, localAddress);
+         StunMessageEvent evt = null;
+         try
+         {
+             evt = requestSender.sendRequestAndWaitForResponse(
+                 MessageFactory.createBindingRequest(), serverAddress);
+         }
+         catch(StunException exc)
+         {
+             //this shouldn't be happening since we are the one that constructed
+             //the request, so let's catch it here and not oblige users to
+             //handle exception they are not responsible for.
+             logger.log(Level.SEVERE, "Internal Error. We apparently "
+                        +"constructed a faulty request.", exc);
+             return null;
+         }
+         finally
+         {
+             stunStack.removeNetAccessPoint(localAddress);
+         }
 
         if(evt != null)
         {
             Response res = (Response)evt.getMessage();
 
-            /* in classic STUN, the response contains a MAPPED-ADDRESS */
-            MappedAddressAttribute maAtt =
-                        (MappedAddressAttribute)
-                                res.getAttribute(Attribute.MAPPED_ADDRESS);
-            if(maAtt != null)
-            {
-                return maAtt.getAddress();
-            }
+             /* in classic STUN, the response contains a MAPPED-ADDRESS */
+             MappedAddressAttribute maAtt = (MappedAddressAttribute)
+                                 res.getAttribute(Attribute.MAPPED_ADDRESS);
+             if(maAtt != null)
+             {
+                  return maAtt.getAddress();
+             }
 
-            /* in STUN bis, the response contains a XOR-MAPPED-ADDRESS */
-            XorMappedAddressAttribute xorAtt = (XorMappedAddressAttribute)res
-                .getAttribute(Attribute.XOR_MAPPED_ADDRESS);
+             /* in STUN bis, the response contains a XOR-MAPPED-ADDRESS */
+             XorMappedAddressAttribute xorAtt = (XorMappedAddressAttribute)res
+                 .getAttribute(Attribute.XOR_MAPPED_ADDRESS);
+             if(xorAtt != null)
+             {
+               byte xoring[] = new byte[16];
 
-            if(xorAtt != null)
-            {
-              byte xoring[] = new byte[16];
-
-              System.arraycopy(Message.MAGIC_COOKIE, 0,  xoring, 0, 4);
-              System.arraycopy(res.getTransactionID(), 0, xoring, 4, 12);
-
-              return xorAtt.applyXor(xoring);
-            }
-        }
-
-        return null;
-    }
-
-    /**
-    * Creates a listening point for the specified socket and attempts to
-    * discover how its local address is NAT mapped.
-    * @param socket the socket whose address needs to be resolved.
-    * @return a StunAddress object containing the mapped address or null if
-    * discovery failed.
-    *
-    * @throws IOException if something fails along the way.
-    * @throws BindException if we cannot bind the socket.
-    */
-   public TransportAddress getMappingFor(DatagramSocket socket)
-       throws IOException, BindException
-   {
-        NetAccessPointDescriptor apDesc
-            = stunStack.installNetAccessPoint(socket);
-
-        requestSender = new BlockingRequestSender(stunProvider, apDesc);
-        StunMessageEvent evt = null;
-        try
-        {
-            evt = requestSender.sendRequestAndWaitForResponse(
-                MessageFactory.createBindingRequest(), serverAddress);
-        }
-        catch(StunException exc)
-        {
-            //this shouldn't be happening since we are the one that constructed
-            //the request, so let's catch it here and not oblige users to handle
-            //exception they are not responsible for.
-            logger.log(Level.SEVERE, "Internal Error. We apparently "
-                       +"constructed a faulty request.", exc);
-            return null;
-        }
-        finally
-        {
-            stunStack.removeNetAccessPoint(apDesc);
-        }
-
-       if(evt != null)
-       {
-           Response res = (Response)evt.getMessage();
-
-            /* in classic STUN, the response contains a MAPPED-ADDRESS */
-            MappedAddressAttribute maAtt =
-                        (MappedAddressAttribute)
-                                res.getAttribute(Attribute.MAPPED_ADDRESS);
-            if(maAtt != null)
-            {
-                return maAtt.getAddress();
-            }
-
-            /* in STUN bis, the response contains a XOR-MAPPED-ADDRESS */
-            XorMappedAddressAttribute xorAtt = (XorMappedAddressAttribute)res
-                .getAttribute(Attribute.XOR_MAPPED_ADDRESS);
-            if(xorAtt != null)
-            {
-              byte xoring[] = new byte[16];
-
-              System.arraycopy(Message.MAGIC_COOKIE, 0, xoring, 0, 4);
-              System.arraycopy(res.getTransactionID(), 0, xoring, 4, 12);
+               System.arraycopy(Message.MAGIC_COOKIE, 0, xoring, 0, 4);
+               System.arraycopy(res.getTransactionID(), 0, xoring, 4, 12);
 
               return xorAtt.applyXor(xoring);
             }
@@ -239,21 +163,4 @@ public class SimpleAddressDetector
 
        return null;
    }
-
-
-    /**
-     * Creates a listening point from the specified port and attempts to
-     * discover how it is being mapped.
-     *
-     * @param port the local port where to send the request from.
-     * @return a StunAddress object containing the mapped address or null if
-     * discovery failed.
-     *
-     * @throws IOException if the <tt>port</tt> is already bound.
-     */
-    public TransportAddress getMappingFor(int port)
-        throws IOException
-    {
-        return getMappingFor(new TransportAddress(port));
-    }
 }

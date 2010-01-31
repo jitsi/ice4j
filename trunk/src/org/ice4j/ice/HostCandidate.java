@@ -46,7 +46,7 @@ public class HostCandidate extends Candidate
                          Component      parentComponent)
     {
         super(new TransportAddress(socket.getLocalAddress(),
-                                   socket.getLocalPort()),
+                        socket.getLocalPort(), Transport.UDP),
               parentComponent,
               CandidateType.HOST_CANDIDATE);
 

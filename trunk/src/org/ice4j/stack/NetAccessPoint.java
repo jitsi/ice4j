@@ -194,7 +194,7 @@ class NetAccessPoint
         throws IOException
     {
         DatagramPacket datagramPacket = new DatagramPacket(
-                        message, 0, message.length, address.getSocketAddress());
+                        message, 0, message.length, address);
 
         synchronized(sock)
         {

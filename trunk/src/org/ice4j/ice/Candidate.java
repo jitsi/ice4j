@@ -397,7 +397,7 @@ public class Candidate
             return MIN_LOCAL_PREFERENCE;
 
 
-        InetAddress addr = getTransportAddress().getInetAddress();
+        InetAddress addr = getTransportAddress().getAddress();
 
         //the following tries to reusse precedence from RFC 3484 but that's a
         //bit tricky since it is not meant to be used exactly the way that
