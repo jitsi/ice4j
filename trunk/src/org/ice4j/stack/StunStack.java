@@ -241,10 +241,7 @@ public class StunStack
     public void addRequestListener( TransportAddress localAddress,
                                     RequestListener  listener)
     {
-        synchronized(eventDispatcher)
-        {
             eventDispatcher.addRequestListener(localAddress, listener);
-        }
     }
 
     /**

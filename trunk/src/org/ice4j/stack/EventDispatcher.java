@@ -25,14 +25,16 @@ public class EventDispatcher
     /**
      * All property change listeners registered so far.
      */
-    private Vector<RequestListener> requestListeners = null;
+    private Vector<RequestListener> requestListeners
+                                                = new Vector<RequestListener>();
 
     /**
      * Hashtable for managing property change listeners registered for specific
      * properties. Maps property names to PropertyChangeSupport objects.
      */
     private Hashtable<TransportAddress, EventDispatcher>
-                                        requestListenersChildren = null;
+        requestListenersChildren
+            = new Hashtable<TransportAddress, EventDispatcher>();
 
     /**
      * Constructs an <tt>EventDispatcher</tt> object.
@@ -49,13 +51,11 @@ public class EventDispatcher
      */
     public synchronized void addRequestListener(RequestListener listener)
     {
-        if (requestListeners == null)
+        synchronized(requestListeners)
         {
-            requestListeners = new Vector<RequestListener>();
+            if(!requestListeners.contains(listener))
+                requestListeners.addElement(listener);
         }
-
-        if(!requestListeners.contains(listener))
-            requestListeners.addElement(listener);
     }
 
     /**
@@ -70,18 +70,16 @@ public class EventDispatcher
     public synchronized void addRequestListener( TransportAddress localAddr,
                                                  RequestListener  listener)
     {
-        if (requestListenersChildren == null)
+        synchronized(requestListenersChildren)
         {
-            requestListenersChildren
-                        = new Hashtable<TransportAddress, EventDispatcher>();
+            EventDispatcher child = requestListenersChildren.get(localAddr);
+            if (child == null)
+            {
+                child = new EventDispatcher();
+                requestListenersChildren.put(localAddr, child);
+            }
+            child.addRequestListener(listener);
         }
-        EventDispatcher child = requestListenersChildren.get(localAddr);
-        if (child == null)
-        {
-            child = new EventDispatcher();
-            requestListenersChildren.put(localAddr, child);
-        }
-        child.addRequestListener(listener);
     }
 
     /**
@@ -95,12 +93,10 @@ public class EventDispatcher
     public synchronized void removeRequestListener(
         RequestListener listener)
     {
-
-        if (requestListeners == null)
+        synchronized(requestListeners)
         {
-            return;
+            requestListeners.removeElement(listener);
         }
-        requestListeners.removeElement(listener);
     }
 
     /**
@@ -114,17 +110,16 @@ public class EventDispatcher
     public synchronized void removeRequestListener(TransportAddress localAddr,
                                                    RequestListener  listener)
     {
-        if (requestListenersChildren == null)
+        synchronized(requestListenersChildren)
         {
-            return;
-        }
-        EventDispatcher child = requestListenersChildren.get( localAddr );
+            EventDispatcher child = requestListenersChildren.get( localAddr );
 
-        if (child == null)
-        {
-            return;
+            if (child == null)
+            {
+                return;
+            }
+            child.removeRequestListener(listener);
         }
-        child.removeRequestListener(listener);
     }
 
 
@@ -136,7 +131,7 @@ public class EventDispatcher
     public void fireMessageEvent(StunMessageEvent evt)
     {
         TransportAddress localAddr = evt.getLocalAddress();
-        if (requestListeners != null)
+        synchronized(requestListeners)
         {
             List<RequestListener> listenersCopy = null;
             synchronized(requestListeners)
@@ -154,7 +149,7 @@ public class EventDispatcher
             }
         }
 
-        if (requestListenersChildren != null && localAddr != null)
+        synchronized(requestListenersChildren)
         {
             EventDispatcher child = requestListenersChildren.get(localAddr);
 
@@ -166,29 +161,36 @@ public class EventDispatcher
     }
 
     /**
-     * Check if there are any listeners for a specific NetAccessPointDescriptor.
+     * Check if there are any listeners for a specific address.
      * (Generic listeners count as well)
      *
      * @param localAddr the NetAccessPointDescriptor.
      * @return true if there are one or more listeners for the specified
      * NetAccessPointDescriptor
      */
-    public synchronized boolean hasRequestListeners(TransportAddress localAddr)
+    public boolean hasRequestListeners(TransportAddress localAddr)
     {
-        if(requestListeners != null && !requestListeners.isEmpty())
+        synchronized(requestListeners)
         {
-            // there is a generic listener
-            return true;
-        }
-
-        if (requestListenersChildren != null)
-        {
-            EventDispatcher child = requestListenersChildren.get(localAddr);
-            if (child != null && child.requestListeners != null)
+            if(!requestListeners.isEmpty())
             {
-                return!child.requestListeners.isEmpty();
+                // there is a generic listener
+                return true;
             }
         }
+
+        synchronized(requestListenersChildren)
+        {
+            if (requestListenersChildren != null)
+            {
+                EventDispatcher child = requestListenersChildren.get(localAddr);
+                if (child != null && child.requestListeners != null)
+                {
+                    return !child.requestListeners.isEmpty();
+                }
+            }
+        }
+
         return false;
     }
 
