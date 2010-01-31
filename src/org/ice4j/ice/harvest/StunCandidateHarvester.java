@@ -8,6 +8,8 @@
 package org.ice4j.ice.harvest;
 
 import org.ice4j.ice.*;
+import org.ice4j.stack.*;
+import org.ice4j.stunclient.*;
 
 /**
  * A <tt>StunCandidateHarvester</tt> gathers STUN <tt>Candidate</tt>s for a
@@ -28,5 +30,8 @@ public class StunCandidateHarvester
     public void harvest(Component component)
     {
         //todo implement
+        StunClient client = new StunClient(stack);
+
+
     }
 }

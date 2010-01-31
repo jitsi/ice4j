@@ -38,6 +38,9 @@ public class StunStack
      */
     public static final int DEFAULT_THREAD_POOL_SIZE = 3;
 
+    /**
+     * This stack's provider.
+     */
     private StunProvider stunProvider = null;
 
     /**
@@ -54,17 +57,14 @@ public class StunStack
         return stackInstance;
     }
 
-    //----------------------- PUBLIC INTERFACE ---------------------------------
-
-
     /**
      * Sets the number of Message processors running in the same time.
      *
      * @param threadPoolSize the number of message process threads to run.
-     * @throws StunException
+     * @throws IllegalArgumentException if threadPoolSize is not a valid size.
      */
     public void setThreadPoolSize(int threadPoolSize)
-        throws StunException
+        throws IllegalArgumentException
     {
         netAccessManager.setThreadPoolSize(threadPoolSize);
     }
@@ -84,8 +84,8 @@ public class StunStack
     }
 
     /**
-     * Creates and starts the specified Network Access Point based on the specified
-     * socket and returns a relevant descriptor.
+     * Creates and starts the specified Network Access Point based on the
+     * specified socket and returns a relevant descriptor.
      *
      * @param sock The socket that the new access point should represent.
      * @throws IOException if we fail to setup the socket.
@@ -120,7 +120,6 @@ public class StunStack
         return stunProvider;
     }
 
-    //-------------------- internal stuff --------------------------------------
     /**
      * Private constructor as we want a singleton pattern.
      */

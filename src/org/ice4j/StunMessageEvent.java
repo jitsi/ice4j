@@ -6,11 +6,9 @@
  */
 package org.ice4j;
 
-import java.util.EventObject;
-import java.net.InetSocketAddress;
+import java.util.*;
 
 import org.ice4j.message.*;
-import org.ice4j.stack.*;
 
 
 /**
@@ -20,12 +18,8 @@ import org.ice4j.stack.*;
  * as well as the Descriptor of the NetAccessPoint that received it (In case the
  * stack is used on more than one ports/addresses).
  *
- * <p>Organisation: <p> Louis Pasteur University, Strasbourg, France</p>
- * <p>Network Research Team (http://www-r2.u-strasbg.fr)</p></p>
  * @author Emil Ivov
- * @version 0.1
  */
-
 public class StunMessageEvent
     extends EventObject
 {
@@ -37,12 +31,12 @@ public class StunMessageEvent
     /**
      * The message itself.
      */
-    private Message                  message       = null;
+    private Message message = null;
 
     /**
      * The sending address.
      */
-    private TransportAddress        remoteAddress = null;
+    private TransportAddress remoteAddress = null;
 
     /**
      * Constructs a StunMessageEvent according to the specified message.

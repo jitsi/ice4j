@@ -15,11 +15,7 @@ import org.ice4j.*;
  * of the host that sent it and the address and port where it was received
  * (locally).
  *
- * <p>Organisation: <p> Louis Pasteur University, Strasbourg, France</p>
- * <p>Network Research Team (http://www-r2.u-strasbg.fr)</p></p>
- *
  * @author Emil Ivov
- * @version 0.1
  */
 class RawMessage
 {
@@ -31,34 +27,29 @@ class RawMessage
     /**
      * The length of the message.
      */
-    private int    messageLength       = -1;
+    private int messageLength = -1;
+
     /**
-     * The addres and port where the message was sent from.
+     * The address and port where the message was sent from.
      */
     private InetSocketAddress remoteAddress = null;
-
-
-    /**
-     * The descriptor of the net access point that received the message.
-     */
-    private NetAccessPointDescriptor receivingAccessPoint = null;
 
     /**
      * Constructs a raw message with the specified field values. All parameters
      * are cloned before being assigned to class members.
      *
-     * @param messageBytes      the message itself.
-     * @param remoteAddress     the address where the message came from.
-     * @param remotePort        the port where the message came from.
-     * @param netApDescriptor   the access point the received the message.s
+     * @param messageBytes the message itself.
+     * @param messageLength the number of bytes currently stored in the
+     * <tt>messageBytes</tt> array.
+     * @param remoteAddress the address where the message came from.
+     * @param remotePort the port where the message came from.
      *
      * @throws NullPointerException if one or more of the parameters were null.
      */
-    RawMessage(byte[]                   messageBytes,
-               int                      messageLength,
-               InetAddress				remoteAddress,
-               int						remotePort,
-               NetAccessPointDescriptor netApDescriptor)
+    RawMessage(byte[]      messageBytes,
+               InetAddress remoteAddress,
+               int         messageLength,
+               int         remotePort)
     {
         //... don't do a null check - let it throw an NP exception
 
@@ -68,8 +59,6 @@ class RawMessage
                                                        0, messageBytes.length);
 
         this.remoteAddress = new InetSocketAddress(remoteAddress, remotePort);
-        this.receivingAccessPoint    =
-                              (NetAccessPointDescriptor)netApDescriptor.clone();
     }
 
     /**
@@ -92,7 +81,6 @@ class RawMessage
         return messageLength;
     }
 
-
     /**
      * Returns the address and port of the host that sent the message
      * @return the [address]:[port] pair that sent the message.
@@ -100,14 +88,5 @@ class RawMessage
     InetSocketAddress getRemoteAddress()
     {
         return this.remoteAddress;
-    }
-
-    /**
-     * Returns a descriptor of the access point that received the message.
-     * @return a descriptor of the access point that received the message.
-     */
-    NetAccessPointDescriptor getNetAccessPoint()
-    {
-        return this.receivingAccessPoint;
     }
 }

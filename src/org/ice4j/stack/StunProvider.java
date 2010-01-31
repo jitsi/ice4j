@@ -1,4 +1,3 @@
-
 /*
  * Stun4j, the OpenSource Java Solution for NAT and Firewall Traversal.
  *
@@ -7,9 +6,9 @@
  */
 package org.ice4j.stack;
 
+import java.io.*;
 import java.util.*;
 import java.util.logging.*;
-import java.io.*;
 
 import org.ice4j.*;
 import org.ice4j.message.*;
@@ -20,40 +19,40 @@ import org.ice4j.message.*;
  * responses. In the Stun4J implementation it is the transaction layer that
  * ensures reliable delivery.
  *
- * <p>Organisation: <p> Louis Pasteur University, Strasbourg, France</p>
- * <p>Network Research Team (http://www-r2.u-strasbg.fr)</p></p>
  * @author Emil Ivov
- * @version 0.1
  */
 
 public class StunProvider
     implements MessageEventHandler
 {
+    /**
+     * Our class logger.
+     */
     private static final Logger logger =
         Logger.getLogger(StunProvider.class.getName());
 
     /**
      * Stores active client transactions mapped against TransactionID-s.
      */
-    private Hashtable<TransactionID, StunClientTransaction> clientTransactions = new Hashtable<TransactionID, StunClientTransaction>();
+    private Hashtable<TransactionID, StunClientTransaction> clientTransactions
+                        = new Hashtable<TransactionID, StunClientTransaction>();
 
     /**
      * Currently open server transactions. The vector contains transaction ids
      * for transactions corresponding to all non-answered received requests.
      */
-    private Hashtable<TransactionID, StunServerTransaction> serverTransactions = new Hashtable<TransactionID, StunServerTransaction>();
+    private Hashtable<TransactionID, StunServerTransaction> serverTransactions
+                        = new Hashtable<TransactionID, StunServerTransaction>();
 
     /**
      * The stack that created us.
      */
-    private StunStack stunStack                  = null;
+    private StunStack stunStack = null;
 
     /**
      * A dispatcher for incoming requests event;
      */
-    private EventDispatcher  eventDispatcher    = new EventDispatcher();
-
-
+    private EventDispatcher eventDispatcher = new EventDispatcher();
 
     //------------------ public interface
     /**
@@ -88,10 +87,7 @@ public class StunProvider
         throws StunException, IOException, IllegalArgumentException
     {
         StunClientTransaction clientTransaction
-            = new StunClientTransaction(this,
-                                        request,
-                                        sendTo,
-                                        sendThrough,
+            = new StunClientTransaction(this, request, sendTo, sendThrough,
                                         collector);
 
         clientTransactions.put(clientTransaction.getTransactionID(),
@@ -120,7 +116,7 @@ public class StunProvider
     public void sendResponse(byte[]                   transactionID,
                              Response                 response,
                              NetAccessPointDescriptor sendThrough,
-                             TransportAddress                  sendTo)
+                             TransportAddress         sendTo)
         throws StunException,
                IOException,
                IllegalArgumentException
@@ -129,13 +125,15 @@ public class StunProvider
         StunServerTransaction sTran =
             serverTransactions.get(tid);
 
-        if(sTran == null || sTran.isReransmitting()){
+        if(sTran == null || sTran.isReransmitting())
+        {
             throw new StunException(StunException.TRANSACTION_DOES_NOT_EXIST,
                                     "The transaction specified in the response "
                                     + "object does not exist or has already "
                                     + "transmitted a response.");
         }
-        else{
+        else
+        {
             sTran.sendResponse(response, sendThrough, sendTo);
         }
 
@@ -178,8 +176,6 @@ public class StunProvider
     {
         eventDispatcher.addRequestListener(apDescriptor, listener);
     }
-
-
 
 //------------- stack internals ------------------------------------------------
     /**
@@ -235,7 +231,8 @@ public class StunProvider
                                     createTransactionID(msg.getTransactionID());
 
             StunServerTransaction sTran  = serverTransactions.get(serverTid);
-            if( sTran != null){
+            if( sTran != null)
+            {
 
                 //requests from this transaction have already been seen
                 //retransmit the response if there was any
@@ -255,10 +252,14 @@ public class StunProvider
 
                 String propagate = System.getProperty(
                     "org.ice4j.PROPAGATE_RECEIVED_RETRANSMISSIONS");
-                if(propagate == null || !propagate.trim().equalsIgnoreCase("true"))
+                if(propagate == null
+                    || !propagate.trim().equalsIgnoreCase("true"))
+                {
                     return;
+                }
             }
-            else{
+            else
+            {
                 logger.finest("exising transaction not found");
                 sTran =
                     new StunServerTransaction(this, serverTid);
@@ -266,13 +267,14 @@ public class StunProvider
                 serverTransactions.put(serverTid, sTran);
                 sTran.start();
             }
+
             eventDispatcher.fireMessageEvent(event);
         }
         //response
         else if(msg instanceof Response)
         {
-            TransactionID tid = TransactionID.
-                                    createTransactionID(msg.getTransactionID());
+            TransactionID tid
+                = TransactionID.createTransactionID(msg.getTransactionID());
 
             StunClientTransaction tran =
                 clientTransactions.remove(tid);
@@ -284,9 +286,11 @@ public class StunProvider
             else
             {
                 //do nothing - just drop the phantom response.
-                logger.fine("Dropped response - no matching client tran found.");
+                logger.fine("Dropped response - "
+                                            + "no matching client tran found.");
                 logger.fine("response tid was - " + tid.toString());
-                logger.fine("all tids in stock were" + clientTransactions.toString());
+                logger.fine("all tids in stock were"
+                                            + clientTransactions.toString());
             }
         }
 
@@ -299,8 +303,9 @@ public class StunProvider
     {
         eventDispatcher.removeAllListeners();
 
-        Enumeration tids = clientTransactions.keys();
-        while (tids.hasMoreElements()) {
+        Enumeration<TransactionID> tids = clientTransactions.keys();
+        while (tids.hasMoreElements())
+        {
             TransactionID item = (TransactionID)tids.nextElement();
             StunClientTransaction tran = clientTransactions.remove(item);
             if(tran != null)
@@ -309,10 +314,10 @@ public class StunProvider
         }
 
         tids = serverTransactions.keys();
-        while (tids.hasMoreElements()) {
+        while (tids.hasMoreElements())
+        {
             TransactionID item = (TransactionID)tids.nextElement();
-            StunServerTransaction tran =
-                        serverTransactions.remove(item);
+            StunServerTransaction tran = serverTransactions.remove(item);
             if(tran != null)
                 tran.expire();
 
