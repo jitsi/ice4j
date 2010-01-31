@@ -51,6 +51,9 @@ public class DatagramCollector
     {
         synchronized(this)
         {
+            if(receivedPacket != null)
+                return;
+
             try
             {
                 wait(50);
