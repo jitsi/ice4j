@@ -36,8 +36,8 @@ class NetAccessManager
      * All access points currently in use. The table maps
      * <tt>TransportAddress</tt>es to <tt>Connector</tt>s
      */
-    private Hashtable<TransportAddress, NetAccessPoint> netAccessPoints
-            = new Hashtable<TransportAddress, NetAccessPoint>();
+    private Hashtable<TransportAddress, Connector> netAccessPoints
+            = new Hashtable<TransportAddress, Connector>();
 
     /**
      * A synchronized FIFO where incoming messages are stocked for processing.
@@ -106,12 +106,12 @@ class NetAccessManager
                                  String message,
                                  Throwable error)
     {
-        if (callingThread instanceof NetAccessPoint)
+        if (callingThread instanceof Connector)
         {
-            NetAccessPoint ap = (NetAccessPoint)callingThread;
+            Connector ap = (Connector)callingThread;
 
             //make sure nothing's left and notify user
-            removeNetAccessPoint(ap.getListenAddress());
+            removeConnector(ap.getListenAddress());
             logger.log(Level.WARNING, "Removing connector:"+ ap);
         }
         else if( callingThread instanceof MessageProcessor )
@@ -140,7 +140,7 @@ class NetAccessManager
      *
      * @throws IOException if we fail to setup the socket.
      */
-    protected void installUdpConnector(DatagramSocket socket)
+    protected void addSocket(DatagramSocket socket)
         throws IOException
     {
 
@@ -151,7 +151,7 @@ class NetAccessManager
         if(netAccessPoints.containsKey(localAddr))
             return;
 
-        NetAccessPoint ap = new NetAccessPoint(socket, messageQueue, this);
+        Connector ap = new Connector(socket, messageQueue, this);
 
         netAccessPoints.put(localAddr, ap);
 
@@ -164,9 +164,9 @@ class NetAccessManager
      *
      * @param address the address of the connector to remove.
      */
-    protected void removeNetAccessPoint(TransportAddress address)
+    protected void removeConnector(TransportAddress address)
     {
-        NetAccessPoint ap = netAccessPoints.remove(address);
+        Connector ap = netAccessPoints.remove(address);
 
         if(ap != null)
             ap.stop();
@@ -272,7 +272,7 @@ class NetAccessManager
         throws IOException, IllegalArgumentException, StunException
     {
         byte[] bytes = stunMessage.encode();
-        NetAccessPoint ap = netAccessPoints.get(srcAddr);
+        Connector ap = netAccessPoints.get(srcAddr);
 
         if(ap == null)
             throw new IllegalArgumentException(

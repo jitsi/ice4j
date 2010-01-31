@@ -169,7 +169,7 @@ public class NetworkConfigurationDiscoveryProcess
 
         DatagramSocket sock = new DatagramSocket(localAddress);
 
-        stunStack.installNetAccessPoint(sock);
+        stunStack.addSocket(sock);
 
         stunProvider = stunStack.getProvider();
         requestSender = new BlockingRequestSender(stunProvider, localAddress);
