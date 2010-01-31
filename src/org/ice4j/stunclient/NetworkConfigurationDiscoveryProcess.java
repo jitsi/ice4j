@@ -143,6 +143,10 @@ public class NetworkConfigurationDiscoveryProcess
      */
     public void shutDown()
     {
+        stunStack.removeSocket(localAddress);
+        sock.close();
+        sock = null;
+
         stunStack     = null;
         localAddress  = null;
         requestSender = null;
@@ -161,7 +165,7 @@ public class NetworkConfigurationDiscoveryProcess
     {
         stunStack = StunStack.getInstance();
 
-        DatagramSocket sock = new DatagramSocket(localAddress);
+        sock = new DatagramSocket(localAddress);
 
         stunStack.addSocket(sock);
 
@@ -207,14 +211,14 @@ public class NetworkConfigurationDiscoveryProcess
               return null;
             }
 
-            logger.info("mapped address is="+mappedAddress
+            logger.fine("mapped address is="+mappedAddress
                         +", name=" + mappedAddress.getHostAddress());
 
             TransportAddress backupServerAddress
                 =((ChangedAddressAttribute) evt.getMessage()
                   .getAttribute(Attribute.CHANGED_ADDRESS)).getAddress();
 
-            logger.info("backup server address is="+backupServerAddress
+            logger.fine("backup server address is="+backupServerAddress
                         + ", name=" + backupServerAddress.getHostAddress());
 
             report.setPublicAddress(mappedAddress);
@@ -322,8 +326,7 @@ public class NetworkConfigurationDiscoveryProcess
         StunMessageEvent evt = null;
         try
         {
-            evt
-                = requestSender.sendRequestAndWaitForResponse(
+            evt = requestSender.sendRequestAndWaitForResponse(
                     request, serverAddress);
         }
         catch (StunException ex)
@@ -337,10 +340,10 @@ public class NetworkConfigurationDiscoveryProcess
         }
 
         if(evt != null)
-            logger.info("TEST I res="+evt.getRemoteAddress().toString()
+            logger.fine("TEST I res="+evt.getRemoteAddress().toString()
                                +" - "+ evt.getRemoteAddress().getHostAddress());
         else
-            logger.info("NO RESPONSE received to TEST I.");
+            logger.fine("NO RESPONSE received to TEST I.");
         return evt;
     }
 
@@ -372,10 +375,10 @@ public class NetworkConfigurationDiscoveryProcess
             = requestSender.sendRequestAndWaitForResponse(request,
                                                           serverAddress);
         if(evt != null)
-            logger.info("Test II res="+evt.getRemoteAddress().toString()
+            logger.fine("Test II res="+evt.getRemoteAddress().toString()
                             +" - "+ evt.getRemoteAddress().getHostAddress());
         else
-            logger.info("NO RESPONSE received to Test II.");
+            logger.fine("NO RESPONSE received to Test II.");
 
         return evt;
     }
@@ -405,10 +408,10 @@ public class NetworkConfigurationDiscoveryProcess
         StunMessageEvent evt = requestSender.sendRequestAndWaitForResponse(
             request, serverAddress);
         if(evt != null)
-            logger.info("Test III res="+evt.getRemoteAddress().toString()
+            logger.fine("Test III res="+evt.getRemoteAddress().toString()
                             +" - "+ evt.getRemoteAddress().getHostAddress());
         else
-            logger.info("NO RESPONSE received to Test III.");
+            logger.fine("NO RESPONSE received to Test III.");
 
         return evt;
     }
