@@ -28,7 +28,7 @@ public class DatagramCollector
 
             synchronized (this)
             {
-                notify();
+                notifyAll();
             }
 
         }
@@ -45,15 +45,6 @@ public class DatagramCollector
         receivedPacket = new DatagramPacket(new byte[4096], 4096);
 
         new Thread(this).start();
-
-        //give the guy a chance to start
-        try
-        {
-            Thread.sleep(200);
-        }
-        catch (InterruptedException ex)
-        {
-        }
     }
 
     public void waitForPacket()
@@ -62,7 +53,7 @@ public class DatagramCollector
         {
             try
             {
-                wait(1000);
+                wait(50);
             }
             catch (InterruptedException e)
             {

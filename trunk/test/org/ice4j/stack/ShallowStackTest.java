@@ -40,7 +40,8 @@ public class ShallowStackTest extends TestCase {
     private DatagramPacket bindingRequestPacket
                                     = new DatagramPacket(new byte[4096], 4096);
 
-    public ShallowStackTest(String name) {
+    public ShallowStackTest(String name)
+    {
         super(name);
     }
 
@@ -60,12 +61,9 @@ public class ShallowStackTest extends TestCase {
         stunStack    = StunStack.getInstance();
         stunProvider = stunStack.getProvider();
 
-System.out.println("binding 1!!!");
         //access point
         localSock = new DatagramSocket(localAddress);
-
         stunStack.addSocket(localSock);
-System.out.println("binding 2!!!");
 
         //init the dummy server
         dummyServerSocket = new DatagramSocket( dummyServerAddress );
@@ -75,19 +73,17 @@ System.out.println("binding 2!!!");
         throws Exception
     {
         msgFixture.tearDown();
-System.out.println("tearing down!!!");
         stunStack.removeSocket(localAddress);
 
-System.out.println("unbinding 1!!!");
         localSock.close();
 
-System.out.println("unbinding 2!!!");
         dummyServerSocket.close();
 
 
         msgFixture = null;
         super.tearDown();
     }
+
 
     /**
      * Sends a binding request using the stack to a bare socket, and verifies
@@ -100,22 +96,22 @@ System.out.println("unbinding 2!!!");
         throws Exception
     {
         Request bindingRequest = MessageFactory.createBindingRequest();
-System.out.println("test 1!!!");
+
         dgramCollector.startListening(dummyServerSocket);
-System.out.println("test 2!!!");
+
         stunProvider.sendRequest(bindingRequest,
                                  dummyServerAddress,
                                  localAddress,
                                  new SimpleResponseCollector());
-System.out.println("test 3!!!");
+
         //wait for its arrival
         dgramCollector.waitForPacket();
-System.out.println("test 4!!!");
+
         DatagramPacket receivedPacket = dgramCollector.collectPacket();
-System.out.println("test 5!!!");
+
         assertTrue("The stack did not properly send a Binding Request",
                    (receivedPacket.getLength() > 0));
-System.out.println("test 6!!!");
+
         Request receivedRequest =
                         (Request)Request.decode(receivedPacket.getData(),
                                             (char)0,
@@ -124,13 +120,13 @@ System.out.println("test 6!!!");
                      +"one that was sent.",
                      bindingRequest, //expected
                      receivedRequest); // actual
-System.out.println("test 7!!!");
+
         //wait for retransmissions
 
         dgramCollector.startListening(dummyServerSocket);
-System.out.println("test 8!!!");
+
         dgramCollector.waitForPacket();
-System.out.println("test 9!!!");
+
         receivedPacket = dgramCollector.collectPacket();
 
         assertTrue("The stack did not retransmit a Binding Request",
@@ -143,9 +139,6 @@ System.out.println("test 9!!!");
         assertEquals("The retransmitted request did not match the original.",
                      bindingRequest, //expected
                      receivedRequest); // actual
-
-
-
     }
 
     /**
@@ -166,7 +159,7 @@ System.out.println("test 9!!!");
             localAddress));
 
         //wait for the packet to arrive
-        try{ Thread.sleep(50); }catch (InterruptedException ex){}
+        requestCollector.waitForRequest();
 
         Request collectedRequest = requestCollector.collectedRequest;
 
@@ -199,12 +192,7 @@ System.out.println("test 9!!!");
                                             localAddress));
 
         //wait for the packet to arrive
-        try{
-            synchronized(this)
-            {
-                wait(50);
-            }
-        }catch (InterruptedException ex){}
+        requestCollector.waitForRequest();
 
         Request collectedRequest = requestCollector.collectedRequest;
 
@@ -231,7 +219,7 @@ System.out.println("test 9!!!");
                                  dummyServerAddress);
 
         //wait for its arrival
-        try{ Thread.sleep(50); }catch (InterruptedException ex){}
+        dgramCollector.waitForPacket();
 
         DatagramPacket receivedPacket = dgramCollector.collectPacket();
 
@@ -261,7 +249,7 @@ System.out.println("test 9!!!");
                                  collector);
 
         //wait for its arrival
-        try{ Thread.sleep(50); }catch (InterruptedException ex){}
+        collector.waitForResponse();
 
         //create the right response
         byte response[] = new byte[msgFixture.bindingResponse.length];
@@ -282,7 +270,7 @@ System.out.println("test 9!!!");
                                                 localAddress));
 
         //wait for the packet to arrive
-        try{ Thread.sleep(50); }catch (InterruptedException ex){}
+        collector.waitForResponse();
 
         Response collectedResponse = collector.collectedResponse;
 
@@ -300,12 +288,37 @@ System.out.println("test 9!!!");
         public void processResponse(StunMessageEvent evt)
         {
             collectedResponse = (Response)evt.getMessage();
-            logger.info("Received response.");
+            logger.finest("Received response.");
+
+            synchronized(this)
+            {
+                notifyAll();
+            }
         }
 
         public void processTimeout()
         {
             logger.info("Timeout");
+
+            synchronized(this)
+            {
+                notifyAll();
+            }
+        }
+
+        public void waitForResponse()
+        {
+            synchronized(this)
+            {
+                try
+                {
+                    wait(50);
+                }
+                catch (InterruptedException e)
+                {
+                    logger.log(Level.INFO, "oops", e);
+                }
+            }
         }
     }
 
@@ -313,11 +326,32 @@ System.out.println("test 9!!!");
         implements RequestListener
     {
         private Request collectedRequest = null;
+
         public void requestReceived(StunMessageEvent evt)
         {
             collectedRequest = (Request)evt.getMessage();
             stunProvider.removeRequestListener(this);
-            logger.info("Received request.");
+            logger.finest("Received request.");
+
+            synchronized(this)
+            {
+                notifyAll();
+            }
+        }
+
+        public void waitForRequest()
+        {
+            synchronized(this)
+            {
+                try
+                {
+                    wait(50);
+                }
+                catch (InterruptedException e)
+                {
+                    logger.log(Level.INFO, "oops", e);
+                }
+            }
         }
     }
 /*

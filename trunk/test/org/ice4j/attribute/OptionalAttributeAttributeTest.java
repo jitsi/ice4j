@@ -52,8 +52,8 @@ public class OptionalAttributeAttributeTest extends TestCase
 
 
     /**
-     * Test whetner sample binary arrays are correctly decoded.
-     * @throws StunException
+     * Test whether sample binary arrays are correctly decoded.
+     * @throws StunException if anything goes wrong.
      */
     public void testDecodeAttributeBody() throws StunException {
 

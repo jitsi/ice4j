@@ -1,8 +1,8 @@
 /*
- * Stun4j, the OpenSource Java Solution for NAT and Firewall Traversal.
+ * ice4j, the OpenSource Java Solution for NAT and Firewall Traversal.
+ * Maintained by the SIP Communicator community (http://sip-communicator.org).
  *
- * Distributable under LGPL license.
- * See terms of license at gnu.org.
+ * Distributable under LGPL license. See terms of license at gnu.org.
  */
 package org.ice4j.attribute;
 
@@ -84,7 +84,7 @@ public class UnknownAttributesAttributeTest extends TestCase {
 
     /**
      * Tests whether a sample binary array is properly decoded.
-     * @throws StunException
+     * @throws StunException if anything goes wrong.
      */
     public void testDecodeAttributeBody() throws StunException {
         //a copy of the array in the fixture:
@@ -224,7 +224,7 @@ public class UnknownAttributesAttributeTest extends TestCase {
         unknownAttributesAttribute.addAttributeID(expectedId1);
         unknownAttributesAttribute.addAttributeID(expectedId2);
 
-        Iterator iterator = unknownAttributesAttribute.getAttributes();
+        Iterator<Character> iterator = unknownAttributesAttribute.getAttributes();
 
         actualId1 = ((Character)iterator.next()).charValue();
         actualId2 = ((Character)iterator.next()).charValue();;
