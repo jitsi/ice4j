@@ -92,6 +92,7 @@ public class StunProvider
 
         clientTransactions.put(clientTransaction.getTransactionID(),
                                clientTransaction);
+
         clientTransaction.sendRequest();
     }
 
@@ -99,9 +100,9 @@ public class StunProvider
      * Sends the specified response message through the specified access point.
      *
      * @param transactionID the id of the transaction to use when sending the
-     *    response. Actually we are getting kind of redundant here as we already
-     *    have the id in the response object, but I am bringing out as an extra
-     *    parameter as the user might otherwise forget to explicitly set it.
+     * response. Actually we are getting kind of redundant here as we already
+     * have the id in the response object, but I am bringing out as an extra
+     * parameter as the user might otherwise forget to explicitly set it.
      * @param response      the message to send.
      * @param sendThrough   the local address to use when sending the message.
      * @param sendTo        the destination of the message.
@@ -111,7 +112,6 @@ public class StunProvider
      * @throws IllegalArgumentException if the apDescriptor references an
      * access point that had not been installed,
      * @throws StunException if message encoding fails,
-
      */
     public void sendResponse(byte[]           transactionID,
                              Response         response,
@@ -214,6 +214,7 @@ public class StunProvider
 
     /**
      * Called to notify this provider for an incoming message.
+     *
      * @param event the event object that contains the new message.
      */
     public void handleMessageEvent(StunMessageEvent event)

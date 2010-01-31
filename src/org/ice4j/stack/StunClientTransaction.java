@@ -130,7 +130,7 @@ class StunClientTransaction
     /**
      * The thread that this transaction runs in.
      */
-    private Thread runningThread = null;
+    private Thread retransmissionsThread = null;
 
     /**
      * Creates a client transaction
@@ -169,7 +169,7 @@ class StunClientTransaction
                                       +"generated an invalid transaction ID");
         }
 
-        runningThread = new Thread(this);
+        retransmissionsThread = new Thread(this);
     }
 
     /**
@@ -182,7 +182,7 @@ class StunClientTransaction
      */
     public void run()
     {
-        runningThread.setName("CliTran");
+        retransmissionsThread.setName("CliTran");
         nextWaitInterval = originalWaitInterval;
 
         for (retransmissionCounter = 0;
@@ -239,7 +239,7 @@ class StunClientTransaction
     {
         sendRequest0();
 
-        runningThread.start();
+        retransmissionsThread.start();
     }
 
     /**

@@ -16,10 +16,11 @@ import org.ice4j.*;
 import org.ice4j.message.*;
 
 /**
- * Manages NetAccessPoints and MessageProcessor pooling. This class serves as a
- * layer that masks network primitives and provides equivalent STUN abstractions.
- * Instances that operate with the NetAccessManager are only supposed to
- * understand STUN talk and shouldn't be aware of datagrams sockets, and etc.
+ * Manages <tt>Connector</tt>s and <tt>MessageProcessor</tt> pooling. This class
+ * serves as a layer that masks network primitives and provides equivalent STUN
+ * abstractions. Instances that operate with the NetAccessManager are only
+ * supposed to understand STUN talk and shouldn't be aware of datagrams sockets,
+ * and etc.
  *
  * @author Emil Ivov
  */
@@ -111,8 +112,8 @@ class NetAccessManager
             Connector ap = (Connector)callingThread;
 
             //make sure nothing's left and notify user
-            removeConnector(ap.getListenAddress());
-            logger.log(Level.WARNING, "Removing connector:"+ ap);
+            removeSocket(ap.getListenAddress());
+            logger.log(Level.WARNING, "Removing connector:"+ ap, error);
         }
         else if( callingThread instanceof MessageProcessor )
         {
@@ -164,7 +165,7 @@ class NetAccessManager
      *
      * @param address the address of the connector to remove.
      */
-    protected void removeConnector(TransportAddress address)
+    protected void removeSocket(TransportAddress address)
     {
         Connector ap = netAccessPoints.remove(address);
 
@@ -176,7 +177,7 @@ class NetAccessManager
     /**
      * Adjusts the number of concurrently running MessageProcessors.
      * If the number is smaller or bigger than the number of threads
-     * currentlyrunning, then message processors are created/deleted so that
+     * currently running, then message processors are created/deleted so that
      * their count matches the new value.
      *
      * @param threadPoolSize the number of MessageProcessors that should be

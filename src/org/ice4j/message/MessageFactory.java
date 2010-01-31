@@ -1,12 +1,11 @@
 /*
- * Ice4j, the OpenSource Java Solution for NAT and Firewall Traversal.
+ * ice4j, the OpenSource Java Solution for NAT and Firewall Traversal.
+ * Maintained by the SIP Communicator community (http://sip-communicator.org).
  *
- * Distributable under LGPL license.
- * See terms of license at gnu.org.
+ * Distributable under LGPL license. See terms of license at gnu.org.
  */
 package org.ice4j.message;
 
-import java.util.List;
 import java.util.logging.*;
 
 import org.ice4j.*;
@@ -16,11 +15,8 @@ import org.ice4j.attribute.*;
  * This class  provides factory methods to allow an application to create
  * STUN Messages from a particular implementation.
  *
- * <p>Organisation: Louis Pasteur University, Strasbourg, France.</p>
- *                   <p>Network Research Team (http://www-r2.u-strasbg.fr)</p></p>
  * @author Emil Ivov
  * @author Sebastien Vincent
- * @version 0.1
  */
 
 public class MessageFactory
@@ -29,8 +25,8 @@ public class MessageFactory
         Logger.getLogger(MessageFactory.class.getName());
 
     /**
-     * Creates a default binding request. 
-     * The request DOES NOT contains a ChangeRequest attribute 
+     * Creates a default binding request.
+     * The request DOES NOT contains a ChangeRequest attribute
      * with zero change ip and change port flags.
      * @return a default binding request.
      */
@@ -48,7 +44,7 @@ public class MessageFactory
         }
 
         /* do not add this by default */
-/*
+        /*
         //add a change request attribute
         ChangeRequestAttribute attribute
                              = AttributeFactory.createChangeRequestAttribute();
@@ -60,9 +56,10 @@ public class MessageFactory
         catch (StunException ex)
         {
             //shouldn't happen
-            throw new RuntimeException("Failed to add a change request attribute to a binding request!");
+            throw new RuntimeException("Failed to add a change request "
+                                    +"attribute to a binding request!");
         }
-*/
+        */
         return bindingRequest;
     }
 
@@ -71,35 +68,38 @@ public class MessageFactory
      * attribute with zero change ip and change port flags.
      * It also contains the PRIORITY attribute used for ICE processing
      *
-     * @param priority
+     * @param priority the value for the priority attribute
      * @return a BindingRequest header with ICE PRIORITY attribute
-     * @throws StunException
+     * @throws StunException if we have a problem creating the request
      */
     public static Request createBindingRequest(long priority)
         throws StunException
     {
         Request bindingRequest = createBindingRequest();
-        
+
         PriorityAttribute attribute
                         = AttributeFactory.createPriorityAttribute(priority);
         bindingRequest.addAttribute(attribute);
-        
-        return bindingRequest;
-    }   
 
-    /**     
+        return bindingRequest;
+    }
+
+    /**
      * Creates a default binding request. The request contains a ChangeReqeust
      * attribute with zero change ip and change port flags.
      * It contains the PRIORITY, ICE-CONTROLLED or ICE-CONTROLLING attributes
      * used for ICE processing
      *
-     * @param priority
-     * @param controlling
-     * @param tieBreaker
-     * @return a BindingRequest header with some ICE attributes (PRIORITY, ICE-CONTROLLING / ICE-CONTROLLED)
-     * @throws StunException
+     * @param priority the value of the ICE priority attributes
+     * @param controlling the value of the controlling attribute
+     * @param tieBreaker the value of the ICE tie breaker attribute
+     * @return a BindingRequest header with some ICE attributes (PRIORITY,
+     * ICE-CONTROLLING / ICE-CONTROLLED)
+     * @throws StunException if we have a problem creating the request
      */
-    public static Request createBindingRequest(long priority, boolean controlling, long tieBreaker)
+    public static Request createBindingRequest(long    priority,
+                                               boolean controlling,
+                                               long    tieBreaker)
         throws StunException
     {
         Request bindingRequest = createBindingRequest();
@@ -111,13 +111,13 @@ public class MessageFactory
         if(controlling)
         {
             IceControllingAttribute iceControllingAttribute
-                        = AttributeFactory.createIceControllingAttribute(tieBreaker);
+                = AttributeFactory.createIceControllingAttribute(tieBreaker);
             bindingRequest.addAttribute(iceControllingAttribute);
         }
         else
         {
             IceControlledAttribute iceControlledAttribute
-                        = AttributeFactory.createIceControlledAttribute(tieBreaker);
+                = AttributeFactory.createIceControlledAttribute(tieBreaker);
             bindingRequest.addAttribute(iceControlledAttribute);
         }
 
@@ -135,9 +135,10 @@ public class MessageFactory
      *         headers.
      * @throws StunException ILLEGAL_ARGUMENT
      */
-    public static Response createBindingResponse(TransportAddress mappedAddress,
-                                                 TransportAddress sourceAddress,
-                                                 TransportAddress changedAddress)
+    public static Response createBindingResponse(
+                                        TransportAddress mappedAddress,
+                                        TransportAddress sourceAddress,
+                                        TransportAddress changedAddress)
         throws StunException
     {
         Response bindingResponse = new Response();
@@ -294,9 +295,10 @@ public class MessageFactory
 
     /**
      * Create an allocate request without attribute.
+     *
      * @return an allocate request
      */
-    public static Request createAllocateRequest() throws StunException
+    public static Request createAllocateRequest()
     {
         Request allocateRequest = new Request();
         try
@@ -314,16 +316,16 @@ public class MessageFactory
 
     /**
      * Create an allocate request to allocate an even port.
-     * Attention this does not have attributes for long-term 
+     * Attention this does not have attributes for long-term
      * authentication.
      * @param protocol requested protocol number
      * @param rFlag R flag for the EVEN-PORT
      * @return an allocation request
      */
-    public static Request createAllocateRequest(byte protocol, boolean rFlag) throws StunException
+    public static Request createAllocateRequest(byte protocol, boolean rFlag)
     {
       Request allocateRequest = new Request();
-      
+
       try
       {
         allocateRequest.setMessageType(Message.ALLOCATE_REQUEST);
@@ -336,11 +338,13 @@ public class MessageFactory
         }
 
         /* add a REQUESTED-TRANSPORT attribute */
-        RequestedTransportAttribute reqTransport = AttributeFactory.createRequestedTransportAttribute(protocol);
+        RequestedTransportAttribute reqTransport
+            = AttributeFactory.createRequestedTransportAttribute(protocol);
         allocateRequest.addAttribute(reqTransport);
-        
+
         /* add EVEN-PORT attribute */
-        EvenPortAttribute reqProps = AttributeFactory.createEvenPortAttribute(rFlag);
+        EvenPortAttribute reqProps
+            = AttributeFactory.createEvenPortAttribute(rFlag);
         allocateRequest.addAttribute(reqProps);
       }
       catch(StunException ex)
@@ -359,10 +363,18 @@ public class MessageFactory
      * @param username username value
      * @param realm realm value
      * @param nonce nonce value
+     *
+     * @throws StunException in case we have a problem creating the username
+     * realm or nonce attributes.
      */
-    public static void addLongTermAuthentifcationAttribute(Request request, byte username[], byte realm[], byte nonce[]) throws StunException
+    public static void addLongTermAuthentifcationAttribute(Request request,
+                                                           byte    username[],
+                                                           byte    realm[],
+                                                           byte    nonce[])
+        throws StunException
     {
-      UsernameAttribute usernameAttr = AttributeFactory.createUsernameAttribute(username);
+      UsernameAttribute usernameAttr
+          = AttributeFactory.createUsernameAttribute(username);
       RealmAttribute realmAttr = AttributeFactory.createRealmAttribute(realm);
       NonceAttribute nonceAttr = AttributeFactory.createNonceAttribute(nonce);
 
@@ -378,7 +390,7 @@ public class MessageFactory
      * @param lifetime lifetime value
      * @return refresh request
      */
-    public static Request createRefreshRequest(int lifetime) throws StunException
+    public static Request createRefreshRequest(int lifetime)
     {
      Request refreshRequest = new Request();
 
@@ -387,7 +399,8 @@ public class MessageFactory
         refreshRequest.setMessageType(Message.REFRESH_REQUEST);
 
         /* add a LIFETIME attribute */
-        LifetimeAttribute lifetimeReq = AttributeFactory.createLifetimeAttribute(lifetime);
+        LifetimeAttribute lifetimeReq
+            = AttributeFactory.createLifetimeAttribute(lifetime);
         refreshRequest.addAttribute(lifetimeReq);
       }
       catch(StunException ex)
@@ -402,22 +415,27 @@ public class MessageFactory
      * Create a ChannelBind request.
      * @param channelNumber the channel number
      * @param peerAddress the peer address
-     * @return channelbind request
+     *
+     * @return channel bind request
      */
-    public static Request createChannelBindRequest(char channelNumber, TransportAddress peerAddress) throws StunException
+    public static Request createChannelBindRequest(
+                                            char             channelNumber,
+                                            TransportAddress peerAddress)
     {
       Request channelBindRequest = new Request();
 
       try
       {
         channelBindRequest.setMessageType(Message.CHANNELBIND_REQUEST);
-        
+
         /* add a CHANNEL-NUMBER attribute */
-        ChannelNumberAttribute channelNumberAttribute = AttributeFactory.createChannelNumberAttribute(channelNumber);
+        ChannelNumberAttribute channelNumberAttribute
+            = AttributeFactory.createChannelNumberAttribute(channelNumber);
         channelBindRequest.addAttribute(channelNumberAttribute);
 
         /* add a XOR-PEER-ADDRESS */
-        XorPeerAddressAttribute peerAddressAttribute = AttributeFactory.createXorPeerAddressAttribute(peerAddress);
+        XorPeerAddressAttribute peerAddressAttribute
+            = AttributeFactory.createXorPeerAddressAttribute(peerAddress);
         channelBindRequest.addAttribute(peerAddressAttribute);
       }
       catch(StunException ex)
@@ -434,16 +452,18 @@ public class MessageFactory
      * @param data data (could be 0 byte)
      * @return send indication message
      */
-    public static Indication createSendIndication(TransportAddress peerAddress, byte data[])
+    public static Indication createSendIndication(TransportAddress peerAddress,
+                                                  byte data[])
     {
       Indication sendIndication = new Indication();
 
       try
       {
         sendIndication.setMessageType(Message.SEND_INDICATION);
-        
+
         /* add XOR-PEER-ADDRESS attribute */
-        XorPeerAddressAttribute peerAddressAttribute = AttributeFactory.createXorPeerAddressAttribute(peerAddress);
+        XorPeerAddressAttribute peerAddressAttribute
+            = AttributeFactory.createXorPeerAddressAttribute(peerAddress);
         sendIndication.addAttribute(peerAddressAttribute);
 
         /* add DATA if data */
