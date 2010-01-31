@@ -60,7 +60,7 @@ public class ResponseSequenceServer
 
         localSocket = new DatagramSocket(serverAddress);
 
-        stunStack.installNetAccessPoint(localSocket);
+        stunStack.addSocket(localSocket);
         stunProvider.addRequestListener(serverAddress, this);
 
     }

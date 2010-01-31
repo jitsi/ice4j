@@ -18,10 +18,7 @@ import org.ice4j.message.*;
 /**
  * All unit stack tests should be provided later. I just don't have the time now.
  *
- * <p>Organisation: <p> Louis Pasteur University, Strasbourg, France</p>
- * <p>Network Research Team (http://www-r2.u-strasbg.fr)</p></p>
  * @author Emil Ivov
- * @version 0.1
  */
 public class ShallowStackTest extends TestCase {
 
@@ -32,17 +29,16 @@ public class ShallowStackTest extends TestCase {
     private StunStack    stunStack  = null;
     private MsgFixture   msgFixture = null;
 
-    private TransportAddress           stun4jAddressOfDummyImpl = null;
-    private InetSocketAddress socketAddressOfStun4jStack = null;
+    private TransportAddress dummyServerAddress = null;
+    private TransportAddress localAddress = null;
 
     private DatagramCollector dgramCollector = new DatagramCollector();
 
-    private TransportAddress localAddress = null;
     private DatagramSocket   localSock = null;
 
-    private DatagramSocket dummyImplSocket = null;
+    private DatagramSocket dummyServerSocket = null;
     private DatagramPacket bindingRequestPacket
-        = new DatagramPacket(new byte[4096], 4096);
+                                    = new DatagramPacket(new byte[4096], 4096);
 
     public ShallowStackTest(String name) {
         super(name);
@@ -55,39 +51,46 @@ public class ShallowStackTest extends TestCase {
         msgFixture = new MsgFixture();
         msgFixture.setUp();
         //Addresses
-        stun4jAddressOfDummyImpl = new TransportAddress(
-                    "127.0.0.1", 6000, Transport.UDP);
-        socketAddressOfStun4jStack = new TransportAddress(
-                    "127.0.0.1", 5000, Transport.UDP);
+        dummyServerAddress = new TransportAddress(
+                    "127.0.0.1", 6004, Transport.UDP);
+        localAddress = new TransportAddress(
+                    "127.0.0.1", 5004, Transport.UDP);
 
         //init the stack
         stunStack    = StunStack.getInstance();
         stunProvider = stunStack.getProvider();
 
+System.out.println("binding 1!!!");
         //access point
-        localAddress  = new TransportAddress("127.0.0.1", 5000, Transport.UDP);
         localSock = new DatagramSocket(localAddress);
 
-        stunStack.installNetAccessPoint(localSock);
+        stunStack.addSocket(localSock);
+System.out.println("binding 2!!!");
 
-        //init the phoney stack
-        dummyImplSocket = new DatagramSocket( 6000 );
+        //init the dummy server
+        dummyServerSocket = new DatagramSocket( dummyServerAddress );
     }
 
     protected void tearDown()
         throws Exception
     {
-
         msgFixture.tearDown();
+System.out.println("tearing down!!!");
+        stunStack.removeSocket(localAddress);
 
-        dummyImplSocket.close();
+System.out.println("unbinding 1!!!");
+        localSock.close();
+
+System.out.println("unbinding 2!!!");
+        dummyServerSocket.close();
+
 
         msgFixture = null;
         super.tearDown();
     }
 
     /**
-     * Sends a binding request using the stack to a phoney socket, and verifies
+     * Sends a binding request using the stack to a bare socket, and verifies
      * that it is received and that the contents of the datagram corresponds to
      * the request that was sent.
      *
@@ -97,22 +100,22 @@ public class ShallowStackTest extends TestCase {
         throws Exception
     {
         Request bindingRequest = MessageFactory.createBindingRequest();
-
-        dgramCollector.startListening(dummyImplSocket);
-
+System.out.println("test 1!!!");
+        dgramCollector.startListening(dummyServerSocket);
+System.out.println("test 2!!!");
         stunProvider.sendRequest(bindingRequest,
-                                 stun4jAddressOfDummyImpl,
+                                 dummyServerAddress,
                                  localAddress,
                                  new SimpleResponseCollector());
-
+System.out.println("test 3!!!");
         //wait for its arrival
-        try{ Thread.sleep(500); }catch (InterruptedException ex){}
-
+        dgramCollector.waitForPacket();
+System.out.println("test 4!!!");
         DatagramPacket receivedPacket = dgramCollector.collectPacket();
-
+System.out.println("test 5!!!");
         assertTrue("The stack did not properly send a Binding Request",
                    (receivedPacket.getLength() > 0));
-
+System.out.println("test 6!!!");
         Request receivedRequest =
                         (Request)Request.decode(receivedPacket.getData(),
                                             (char)0,
@@ -121,13 +124,13 @@ public class ShallowStackTest extends TestCase {
                      +"one that was sent.",
                      bindingRequest, //expected
                      receivedRequest); // actual
-
+System.out.println("test 7!!!");
         //wait for retransmissions
 
-        dgramCollector.startListening(dummyImplSocket);
-
-        try{ Thread.sleep(1000); }catch (InterruptedException ex){}
-
+        dgramCollector.startListening(dummyServerSocket);
+System.out.println("test 8!!!");
+        dgramCollector.waitForPacket();
+System.out.println("test 9!!!");
         receivedPacket = dgramCollector.collectPacket();
 
         assertTrue("The stack did not retransmit a Binding Request",
@@ -157,13 +160,13 @@ public class ShallowStackTest extends TestCase {
         SimpleRequestCollector requestCollector = new SimpleRequestCollector();
         stunProvider.addRequestListener(requestCollector);
 
-        dummyImplSocket.send(new DatagramPacket(
+        dummyServerSocket.send(new DatagramPacket(
             msgFixture.bindingRequest2,
             msgFixture.bindingRequest2.length,
-            socketAddressOfStun4jStack));
+            localAddress));
 
         //wait for the packet to arrive
-        try{ Thread.sleep(500); }catch (InterruptedException ex){}
+        try{ Thread.sleep(50); }catch (InterruptedException ex){}
 
         Request collectedRequest = requestCollector.collectedRequest;
 
@@ -190,16 +193,16 @@ public class ShallowStackTest extends TestCase {
         SimpleRequestCollector requestCollector = new SimpleRequestCollector();
         stunProvider.addRequestListener(requestCollector);
 
-        dummyImplSocket.send(new DatagramPacket(
+        dummyServerSocket.send(new DatagramPacket(
                                             msgFixture.bindingRequest,
                                             msgFixture.bindingRequest.length,
-                                            socketAddressOfStun4jStack));
+                                            localAddress));
 
         //wait for the packet to arrive
         try{
             synchronized(this)
             {
-                wait(500);
+                wait(50);
             }
         }catch (InterruptedException ex){}
 
@@ -220,15 +223,15 @@ public class ShallowStackTest extends TestCase {
                  msgFixture.ADDRESS_ATTRIBUTE_PORT_3, Transport.UDP));
 
         //---------- send & receive the response -------------------------------
-        dgramCollector.startListening(dummyImplSocket);
+        dgramCollector.startListening(dummyServerSocket);
 
         stunProvider.sendResponse(collectedRequest.getTransactionID(),
                                  bindingResponse,
                                  localAddress,
-                                 stun4jAddressOfDummyImpl);
+                                 dummyServerAddress);
 
         //wait for its arrival
-        try{ Thread.sleep(500); }catch (InterruptedException ex){}
+        try{ Thread.sleep(50); }catch (InterruptedException ex){}
 
         DatagramPacket receivedPacket = dgramCollector.collectPacket();
 
@@ -253,12 +256,12 @@ public class ShallowStackTest extends TestCase {
         Request bindingRequest = MessageFactory.createBindingRequest();
 
         stunProvider.sendRequest(bindingRequest,
-                                 stun4jAddressOfDummyImpl,
+                                 dummyServerAddress,
                                  localAddress,
                                  collector);
 
         //wait for its arrival
-        try{ Thread.sleep(500); }catch (InterruptedException ex){}
+        try{ Thread.sleep(50); }catch (InterruptedException ex){}
 
         //create the right response
         byte response[] = new byte[msgFixture.bindingResponse.length];
@@ -274,12 +277,12 @@ public class ShallowStackTest extends TestCase {
 
         //send the response
 
-        dummyImplSocket.send(new DatagramPacket(response,
+        dummyServerSocket.send(new DatagramPacket(response,
                                                 response.length,
-                                                socketAddressOfStun4jStack));
+                                                localAddress));
 
         //wait for the packet to arrive
-        try{ Thread.sleep(500); }catch (InterruptedException ex){}
+        try{ Thread.sleep(50); }catch (InterruptedException ex){}
 
         Response collectedResponse = collector.collectedResponse;
 
