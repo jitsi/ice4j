@@ -51,7 +51,7 @@ public class AttributeDecoderTest extends TestCase {
     }
 
     public void testDecodeMappedAddress()
-        throws StunException
+        throws Exception
     {
         //
         byte[] bytes = msgFixture.mappedAddress;
@@ -61,17 +61,19 @@ public class AttributeDecoderTest extends TestCase {
         //create the message
         MappedAddressAttribute expectedReturn = new MappedAddressAttribute();
 
-        expectedReturn.setAddress(
-                            new TransportAddress(msgFixture.ADDRESS_ATTRIBUTE_ADDRESS,
-                                        msgFixture.ADDRESS_ATTRIBUTE_PORT));
+        expectedReturn.setAddress(new TransportAddress(
+                       msgFixture.ADDRESS_ATTRIBUTE_ADDRESS,
+                       msgFixture.ADDRESS_ATTRIBUTE_PORT,
+                       Transport.UDP));
 
         Attribute actualReturn = attributeDecoder.decode(bytes, offset, length);
-        assertEquals("AttributeDecoder.decode() failed for a MAPPED-ADDRESS attribute",
-                     expectedReturn, actualReturn);
+        assertEquals(
+            "AttributeDecoder.decode() failed for a MAPPED-ADDRESS attribute",
+            expectedReturn, actualReturn);
     }
 
     public void testDecodeMappedAddress_v6()
-        throws StunException
+        throws Exception
     {
         //
         byte[] bytes = msgFixture.mappedAddressv6;
@@ -81,13 +83,15 @@ public class AttributeDecoderTest extends TestCase {
         //create the message
         MappedAddressAttribute expectedReturn = new MappedAddressAttribute();
 
-        expectedReturn.setAddress(
-                            new TransportAddress(msgFixture.ADDRESS_ATTRIBUTE_ADDRESS_V6,
-                                        msgFixture.ADDRESS_ATTRIBUTE_PORT));
+        expectedReturn.setAddress( new TransportAddress(
+                        msgFixture.ADDRESS_ATTRIBUTE_ADDRESS_V6,
+                        msgFixture.ADDRESS_ATTRIBUTE_PORT,
+                        Transport.UDP));
 
         Attribute actualReturn = attributeDecoder.decode(bytes, offset, length);
-        assertEquals("AttributeDecoder.decode() failed for a MAPPED-ADDRESS attribute",
-                     expectedReturn, actualReturn);
+        assertEquals(
+            "AttributeDecoder.decode() failed for a MAPPED-ADDRESS attribute",
+            expectedReturn, actualReturn);
     }
 
     public void testDecodeChangeRequest()

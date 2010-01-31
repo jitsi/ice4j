@@ -1,10 +1,16 @@
+/*
+ * ice4j, the OpenSource Java Solution for NAT and Firewall Traversal.
+ * Maintained by the SIP Communicator community (http://sip-communicator.org).
+ *
+ * Distributable under LGPL license. See terms of license at gnu.org.
+ */
 package org.ice4j;
+
+import java.net.*;
+import java.util.*;
 
 import junit.framework.*;
 
-import java.util.*;
-
-import org.ice4j.*;
 import org.ice4j.message.*;
 import org.ice4j.stack.*;
 
@@ -12,20 +18,41 @@ import org.ice4j.stack.*;
  * Test how client and server behave, how they recognize/adopt messages and
  * how they both handle retransmissions (i.e. client transactions should make
  * them and server transactions should hide them)
- * <p>Company: Net Research Team, Louis Pasteur University</p>
+ *
  * @author Emil Ivov
  */
 public class TransactionSupportTests extends TestCase
 {
-    StunStack stunStack = null;
+    /**
+     * The client address we use for this test.
+     */
+    TransportAddress clientAddress
+        = new TransportAddress("127.0.0.1", 5216, Transport.UDP);
 
-    TransportAddress clientAddress = new TransportAddress("127.0.0.1", 5216);
-    TransportAddress serverAddress = new TransportAddress("127.0.0.2", 5255);
+    /**
+     * The client address we use for this test.
+     */
+    TransportAddress serverAddress
+        = new TransportAddress("127.0.0.2", 5255, Transport.UDP);
 
-    NetAccessPointDescriptor  clientAccessPoint = null;
-    NetAccessPointDescriptor  serverAccessPoint = null;
+    /**
+     * The socket the client uses in this test.
+     */
+    DatagramSocket clientSock = null;
 
+    /**
+     * The socket the server uses in this test.
+     */
+    DatagramSocket serverSock = null;
+
+    /**
+     * The request we send in this test.
+     */
     Request  bindingRequest = null;
+
+    /**
+     * The response we send in this test.
+     */
     Response bindingResponse = null;
 
     PlainRequestCollector requestCollector = null;
@@ -35,13 +62,11 @@ public class TransactionSupportTests extends TestCase
     {
         super.setUp();
 
-        stunStack = StunStack.getInstance();
+        clientSock = new DatagramSocket(clientAddress);
+        serverSock = new DatagramSocket(serverAddress);
 
-        clientAccessPoint = new NetAccessPointDescriptor(clientAddress);
-        serverAccessPoint = new NetAccessPointDescriptor(serverAddress);
-
-        stunStack.installNetAccessPoint(clientAccessPoint);
-        stunStack.installNetAccessPoint(serverAccessPoint);
+        StunStack.getInstance().installNetAccessPoint(clientSock);
+        StunStack.getInstance().installNetAccessPoint(serverSock);
 
         bindingRequest = MessageFactory.createBindingRequest();
         bindingResponse = MessageFactory.createBindingResponse(
@@ -66,8 +91,9 @@ public class TransactionSupportTests extends TestCase
 
     protected void tearDown() throws Exception
     {
-        clientAccessPoint = null;
-        serverAccessPoint = null;
+        clientSock.close();
+        serverSock.close();
+
         requestCollector = null;
         responseCollector = null;
 
@@ -95,18 +121,19 @@ public class TransactionSupportTests extends TestCase
         //prepare to listen
         System.setProperty("org.ice4j.PROPAGATE_RECEIVED_RETRANSMISSIONS",
                            "true");
-        stunStack.getProvider().addRequestListener(serverAccessPoint,
-                                                   requestCollector);
+
+        StunStack.getInstance().getProvider()
+            .addRequestListener(serverAddress, requestCollector);
         //send
-        stunStack.getProvider().sendRequest(bindingRequest,
-                                            serverAddress,
-                                            clientAccessPoint,
-                                            responseCollector);
+        StunStack.getInstance().getProvider().sendRequest(bindingRequest,
+                         serverAddress, clientAddress, responseCollector);
         //wait for retransmissions
-        Thread.currentThread().sleep(12000);
+        Thread.sleep(12000);
 
         //verify
-        Vector<StunMessageEvent> reqs = requestCollector.getRequestsForTransaction(bindingRequest.getTransactionID());
+        Vector<StunMessageEvent> reqs
+            = requestCollector.getRequestsForTransaction(
+                                bindingRequest.getTransactionID());
         assertTrue("No retransmissions of the request have been received",
             reqs.size() > 1);
         assertTrue("The binding request has not been retransmitted enough!",
@@ -122,28 +149,30 @@ public class TransactionSupportTests extends TestCase
     public void testServerRetransmissionHiding() throws Exception
     {
         //prepare to listen
-        stunStack.getProvider().addRequestListener(serverAccessPoint,
-                                                   requestCollector);
+        StunStack.getInstance().getProvider().addRequestListener(
+                        serverAddress, requestCollector);
         //send
-        stunStack.getProvider().sendRequest(bindingRequest,
-                                            serverAddress,
-                                            clientAccessPoint,
-                                            responseCollector);
+        StunStack.getInstance().getProvider().sendRequest(bindingRequest,
+              serverAddress, clientAddress, responseCollector);
+
         //wait for retransmissions
-        Thread.currentThread().sleep(12000);
+        Thread.sleep(12000);
 
         //verify
-        Vector reqs = requestCollector.getRequestsForTransaction(
-                                bindingRequest.getTransactionID());
+        Vector<StunMessageEvent> reqs
+            = requestCollector.getRequestsForTransaction(
+                bindingRequest.getTransactionID());
+
         assertTrue(
-            "Retransmissions of a binding request were propagated to the server",
-            reqs.size() <= 1 );
+            "Retransmissions of a binding request were propagated "
+            + "to the server", reqs.size() <= 1 );
     }
 
     /**
      * Makes sure that once a request has been answered by the server,
      * retransmissions of this request are not propagated to the UA and are
      * automatically handled with a retransmission of the last seen response
+     *
      * @throws Exception if we screw up.
      */
     public void testServerResponseRetransmissions() throws Exception
@@ -151,26 +180,24 @@ public class TransactionSupportTests extends TestCase
         //prepare to listen
         System.setProperty("org.ice4j.KEEP_CLIENT_TRANS_AFTER_A_RESPONSE",
                            "true");
-        stunStack.getProvider().addRequestListener(serverAccessPoint,
-                                                   requestCollector);
+        StunStack.getInstance().getProvider().addRequestListener(
+                        serverAddress, requestCollector);
         //send
-        stunStack.getProvider().sendRequest(bindingRequest,
-                                            serverAddress,
-                                            clientAccessPoint,
-                                            responseCollector);
+        StunStack.getInstance().getProvider().sendRequest(
+            bindingRequest, serverAddress,
+                clientAddress, responseCollector);
 
         //wait for the message to arrive
-        Thread.currentThread().sleep(500);
+        Thread.sleep(500);
 
-        Vector reqs = requestCollector.getRequestsForTransaction(
-                                bindingRequest.getTransactionID());
-        StunMessageEvent evt =
-            ((StunMessageEvent)reqs.get(0));
+        Vector<StunMessageEvent> reqs = requestCollector
+            .getRequestsForTransaction( bindingRequest.getTransactionID());
+
+        StunMessageEvent evt = ((StunMessageEvent)reqs.get(0));
+
         byte[] tid = evt.getMessage().getTransactionID();
-        stunStack.getProvider().sendResponse(tid,
-                                             bindingResponse,
-                                             serverAccessPoint,
-                                             clientAddress);
+        StunStack.getInstance().getProvider().sendResponse(
+                        tid, bindingResponse, serverAddress, clientAddress);
 
         //wait for retransmissions
         Thread.currentThread().sleep(12000);
@@ -187,38 +214,35 @@ public class TransactionSupportTests extends TestCase
      */
     public void testUniqueIDs() throws Exception
     {
-        stunStack.getProvider().addRequestListener(serverAccessPoint,
-                                                   requestCollector);
+        StunStack.getInstance().getProvider().addRequestListener(
+                            serverAddress, requestCollector);
         //send req 1
-        stunStack.getProvider().sendRequest(bindingRequest,
-                                            serverAddress,
-                                            clientAccessPoint,
-                                            responseCollector);
-        //wait for retransmissions
-        Thread.currentThread().sleep(500);
+        StunStack.getInstance().getProvider().sendRequest(bindingRequest,
+            serverAddress, clientAddress, responseCollector);
 
-        Vector reqs1 = requestCollector.getRequestsForTransaction(
-                                bindingRequest.getTransactionID());
-        StunMessageEvent evt1 =
-            ((StunMessageEvent)reqs1.get(0));
+        //wait for retransmissions
+        Thread.sleep(500);
+
+        Vector<StunMessageEvent> reqs1 = requestCollector
+            .getRequestsForTransaction( bindingRequest.getTransactionID());
+
+        StunMessageEvent evt1 = ((StunMessageEvent)reqs1.get(0));
 
         //send a response to make the other guy shut up
         byte[] tid = evt1.getMessage().getTransactionID();
-        stunStack.getProvider().sendResponse(tid,
-                                             bindingResponse,
-                                             serverAccessPoint,
-                                             clientAddress);
+        StunStack.getInstance().getProvider().sendResponse(tid,
+                    bindingResponse, serverAddress, clientAddress);
 
         //send req 2
-        stunStack.getProvider().sendRequest(bindingRequest,
-                                            serverAddress,
-                                            clientAccessPoint,
-                                            responseCollector);
-        //wait for retransmissions
-        Thread.currentThread().sleep(12000);
+        StunStack.getInstance().getProvider().sendRequest(bindingRequest,
+                        serverAddress, clientAddress, responseCollector);
 
-        Vector reqs2 = requestCollector.getRequestsForTransaction(
-                                bindingRequest.getTransactionID());
+        //wait for retransmissions
+        Thread.sleep(12000);
+
+        Vector<StunMessageEvent> reqs2
+            = requestCollector.getRequestsForTransaction(
+                bindingRequest.getTransactionID());
 
         StunMessageEvent evt2 = ((StunMessageEvent)reqs2.get(0));
 
@@ -237,19 +261,19 @@ public class TransactionSupportTests extends TestCase
         //make sure we see retransmissions so that we may count them
         System.setProperty("org.ice4j.PROPAGATE_RECEIVED_RETRANSMISSIONS",
                            "true");
-        stunStack.getProvider().addRequestListener(serverAccessPoint,
-                                                   requestCollector);
+        StunStack.getInstance().getProvider().addRequestListener(
+                        serverAddress, requestCollector);
         //send
-        stunStack.getProvider().sendRequest(bindingRequest,
-                                            serverAddress,
-                                            clientAccessPoint,
-                                            responseCollector);
+        StunStack.getInstance().getProvider().sendRequest(
+            bindingRequest, serverAddress, clientAddress, responseCollector);
         //wait for retransmissions
-        Thread.currentThread().sleep(1600);
+        Thread.sleep(1600);
 
         //verify
-        Vector reqs = requestCollector.getRequestsForTransaction(
-                                bindingRequest.getTransactionID());
+        Vector<StunMessageEvent> reqs
+            = requestCollector.getRequestsForTransaction(
+                bindingRequest.getTransactionID());
+
         assertTrue("No retransmissions of the request have been received",
             reqs.size() > 1);
         assertEquals(
@@ -268,13 +292,11 @@ public class TransactionSupportTests extends TestCase
         //make sure we see retransmissions so that we may count them
         System.setProperty("org.ice4j.PROPAGATE_RECEIVED_RETRANSMISSIONS",
                            "true");
-        stunStack.getProvider().addRequestListener(serverAccessPoint,
-                                                   requestCollector);
+        StunStack.getInstance().getProvider().addRequestListener(
+                        serverAddress, requestCollector);
         //send
-        stunStack.getProvider().sendRequest(bindingRequest,
-                                            serverAddress,
-                                            clientAccessPoint,
-                                            responseCollector);
+        StunStack.getInstance().getProvider().sendRequest(bindingRequest,
+            serverAddress, clientAddress, responseCollector);
 
         //wait a while
         Thread.currentThread().sleep(500);
@@ -308,15 +330,14 @@ public class TransactionSupportTests extends TestCase
                            "true");
         System.setProperty("org.ice4j.MAX_RETRANSMISSIONS",
                            "11");
-        stunStack.getProvider().addRequestListener(serverAccessPoint,
-                                                   requestCollector);
+        StunStack.getInstance().getProvider()
+            .addRequestListener(serverAddress, requestCollector);
         //send
-        stunStack.getProvider().sendRequest(bindingRequest,
-                                            serverAddress,
-                                            clientAccessPoint,
-                                            responseCollector);
-//        //wait a while
-        Thread.currentThread().sleep(1095);
+        StunStack.getInstance().getProvider().sendRequest(bindingRequest,
+            serverAddress, clientAddress, responseCollector);
+
+        //wait a while
+        Thread.sleep(1095);
 
         //verify
         Vector reqs = requestCollector.getRequestsForTransaction(
