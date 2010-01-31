@@ -8,6 +8,7 @@ package org.ice4j;
 
 import java.net.*;
 import java.util.*;
+import java.util.logging.*;
 
 import junit.framework.*;
 
@@ -33,7 +34,7 @@ public class TransactionSupportTests extends TestCase
      * The client address we use for this test.
      */
     TransportAddress serverAddress
-        = new TransportAddress("127.0.0.2", 5255, Transport.UDP);
+        = new TransportAddress("127.0.0.1", 5255, Transport.UDP);
 
     /**
      * The socket the client uses in this test.
@@ -91,6 +92,9 @@ public class TransactionSupportTests extends TestCase
 
     protected void tearDown() throws Exception
     {
+        StunStack.getInstance().removeSocket(clientAddress);
+        StunStack.getInstance().removeSocket(serverAddress);
+
         clientSock.close();
         serverSock.close();
 
@@ -118,6 +122,14 @@ public class TransactionSupportTests extends TestCase
      */
     public void testClientRetransmissions() throws Exception
     {
+        String oldRetransValue = System.getProperty(
+                                            "org.ice4j.MAX_RETRANSMISSIONS");
+        String oldMaxWaitValue = System.getProperty(
+                                            "org.ice4j.MAX_WAIT_INTERVAL");
+
+        System.setProperty("org.ice4j.MAX_WAIT_INTERVAL", "100");
+        System.setProperty("org.ice4j.MAX_RETRANSMISSIONS", "2");
+
         //prepare to listen
         System.setProperty("org.ice4j.PROPAGATE_RECEIVED_RETRANSMISSIONS",
                            "true");
@@ -128,7 +140,7 @@ public class TransactionSupportTests extends TestCase
         StunStack.getInstance().sendRequest(bindingRequest,
                          serverAddress, clientAddress, responseCollector);
         //wait for retransmissions
-        Thread.sleep(12000);
+        Thread.sleep(1000);
 
         //verify
         Vector<StunMessageEvent> reqs
@@ -137,17 +149,36 @@ public class TransactionSupportTests extends TestCase
         assertTrue("No retransmissions of the request have been received",
             reqs.size() > 1);
         assertTrue("The binding request has not been retransmitted enough!",
-            reqs.size() >= 7);
+            reqs.size() >= 3);
+
+        //restore the retransmissions prop in case others are counting on
+        //defaults.
+        if(oldRetransValue != null)
+            System.getProperty( "org.ice4j.MAX_RETRANSMISSIONS",
+                                oldRetransValue);
+        else
+            System.clearProperty("org.ice4j.MAX_RETRANSMISSIONS");
+
+        if(oldMaxWaitValue != null)
+            System.getProperty( "org.ice4j.MAX_WAIT_INTERVAL",
+                                oldRetransValue);
+        else
+            System.clearProperty("org.ice4j.MAX_WAIT_INTERVAL");
+
 
     }
 
     /**
      * Make sure that retransmissions are not seen by the server user and that
      * it only gets a single request.
+     *
      * @throws Exception if anything goes wrong.
      */
     public void testServerRetransmissionHiding() throws Exception
     {
+        String oldRetransValue = System.getProperty(
+                "org.ice4j.MAX_RETRANSMISSIONS");
+        System.setProperty("org.ice4j.MAX_RETRANSMISSIONS", "2");
         //prepare to listen
         StunStack.getInstance().addRequestListener(
                         serverAddress, requestCollector);
@@ -156,7 +187,7 @@ public class TransactionSupportTests extends TestCase
               serverAddress, clientAddress, responseCollector);
 
         //wait for retransmissions
-        Thread.sleep(12000);
+        Thread.sleep(1000);
 
         //verify
         Vector<StunMessageEvent> reqs
@@ -166,6 +197,14 @@ public class TransactionSupportTests extends TestCase
         assertTrue(
             "Retransmissions of a binding request were propagated "
             + "to the server", reqs.size() <= 1 );
+
+        //restore the retransmissions prop in case others are counting on
+        //defaults.
+        if(oldRetransValue != null)
+            System.getProperty( "org.ice4j.MAX_RETRANSMISSIONS",
+                                oldRetransValue);
+        else
+            System.clearProperty("org.ice4j.MAX_RETRANSMISSIONS");
     }
 
     /**
@@ -177,6 +216,11 @@ public class TransactionSupportTests extends TestCase
      */
     public void testServerResponseRetransmissions() throws Exception
     {
+        String oldRetransValue = System.getProperty(
+            "org.ice4j.MAX_RETRANSMISSIONS");
+        System.setProperty("org.ice4j.MAX_RETRANSMISSIONS", "2");
+        System.setProperty("org.ice4j.MAX_WAIT_INTERVAL", "100");
+
         //prepare to listen
         System.setProperty("org.ice4j.KEEP_CLIENT_TRANS_AFTER_A_RESPONSE",
                            "true");
@@ -188,7 +232,7 @@ public class TransactionSupportTests extends TestCase
                 clientAddress, responseCollector);
 
         //wait for the message to arrive
-        Thread.sleep(500);
+        requestCollector.waitForRequest();
 
         Vector<StunMessageEvent> reqs = requestCollector
             .getRequestsForTransaction( bindingRequest.getTransactionID());
@@ -200,12 +244,23 @@ public class TransactionSupportTests extends TestCase
                         tid, bindingResponse, serverAddress, clientAddress);
 
         //wait for retransmissions
-        Thread.currentThread().sleep(12000);
+        Thread.sleep(500);
 
-        //verify that at least half of the request received a retransmitted resp.
+        //verify that we received a fair number of retransmitted responses.
         assertTrue(
-            "There were no retransmissions of a binding response",
-            responseCollector.receivedResponses.size() < 5 );
+            "There were too few retransmissions of a binding response: "
+                        +responseCollector.receivedResponses.size(),
+            responseCollector.receivedResponses.size() < 3 );
+
+        //restore the retransmissions prop in case others are counting on
+        //defaults.
+        if(oldRetransValue != null)
+            System.getProperty( "org.ice4j.MAX_RETRANSMISSIONS",
+                                oldRetransValue);
+        else
+            System.clearProperty("org.ice4j.MAX_RETRANSMISSIONS");
+
+        System.clearProperty("org.ice4j.MAX_WAIT_INTERVAL");
     }
 
     /**
@@ -221,7 +276,7 @@ public class TransactionSupportTests extends TestCase
             serverAddress, clientAddress, responseCollector);
 
         //wait for retransmissions
-        Thread.sleep(500);
+        requestCollector.waitForRequest();
 
         Vector<StunMessageEvent> reqs1 = requestCollector
             .getRequestsForTransaction( bindingRequest.getTransactionID());
@@ -238,7 +293,7 @@ public class TransactionSupportTests extends TestCase
                         serverAddress, clientAddress, responseCollector);
 
         //wait for retransmissions
-        Thread.sleep(12000);
+        Thread.sleep(1000);
 
         Vector<StunMessageEvent> reqs2
             = requestCollector.getRequestsForTransaction(
@@ -288,7 +343,7 @@ public class TransactionSupportTests extends TestCase
     {
         //MAX_RETRANSMISSIONS
         System.setProperty("org.ice4j.ORIGINAL_WAIT_INTERVAL",
-                           "1000");
+                           "50");
         //make sure we see retransmissions so that we may count them
         System.setProperty("org.ice4j.PROPAGATE_RECEIVED_RETRANSMISSIONS",
                            "true");
@@ -299,7 +354,7 @@ public class TransactionSupportTests extends TestCase
             serverAddress, clientAddress, responseCollector);
 
         //wait a while
-        Thread.currentThread().sleep(500);
+        requestCollector.waitForRequest();
 
         //verify
         Vector reqs = requestCollector.getRequestsForTransaction(
@@ -308,15 +363,14 @@ public class TransactionSupportTests extends TestCase
             reqs.size() < 2);
 
         //wait for a send
-        Thread.currentThread().sleep(700);
+        Thread.sleep(110);
 
         reqs = requestCollector.getRequestsForTransaction(
                                 bindingRequest.getTransactionID());
 
         //verify
         assertEquals("A retransmissions of the request was not sent",
-                     2,
-                     reqs.size());
+                     2, reqs.size());
     }
 
     public void testMaxWaitIntervalConfigurationParameter()
@@ -337,18 +391,19 @@ public class TransactionSupportTests extends TestCase
             serverAddress, clientAddress, responseCollector);
 
         //wait a while
-        Thread.sleep(1095);
+        Thread.sleep(1200);
 
         //verify
-        Vector reqs = requestCollector.getRequestsForTransaction(
+        Vector<StunMessageEvent> reqs
+            = requestCollector.getRequestsForTransaction(
                                 bindingRequest.getTransactionID());
         assertEquals("Not all retransmissions were made for the expected period "
                    +"of time",
-                   11,
+                   12,
                    reqs.size());
 
         //wait for a send
-        Thread.currentThread().sleep(1800);
+        Thread.sleep(1800);
 
         //verify
         reqs = requestCollector.getRequestsForTransaction(
@@ -360,10 +415,16 @@ public class TransactionSupportTests extends TestCase
     }
 
     private class PlainRequestCollector implements RequestListener{
-        private Vector<StunMessageEvent> receivedRequestsVector = new Vector<StunMessageEvent>();
+        private Vector<StunMessageEvent> receivedRequestsVector
+                                            = new Vector<StunMessageEvent>();
 
-        public void requestReceived(StunMessageEvent evt){
-            receivedRequestsVector.add(evt);
+        public void requestReceived(StunMessageEvent evt)
+        {
+            synchronized(this)
+            {
+                receivedRequestsVector.add(evt);
+                notifyAll();
+            }
         }
 
         /**
@@ -379,7 +440,8 @@ public class TransactionSupportTests extends TestCase
         {
             Vector<StunMessageEvent> newVec = new Vector<StunMessageEvent>();
 
-            Iterator reqsIter = receivedRequestsVector.iterator();
+            Iterator<StunMessageEvent> reqsIter
+                                    = receivedRequestsVector.iterator();
 
             while(reqsIter.hasNext())
             {
@@ -390,6 +452,19 @@ public class TransactionSupportTests extends TestCase
             }
 
             return newVec;
+        }
+
+        public void waitForRequest()
+        {
+            synchronized(this)
+            {
+                try
+                {
+                    wait(50);
+                }
+                catch (InterruptedException e)
+                {}
+            }
         }
     }
 

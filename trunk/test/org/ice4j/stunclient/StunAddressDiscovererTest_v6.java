@@ -41,7 +41,8 @@ public class StunAddressDiscovererTest_v6 extends TestCase {
         super(name);
     }
 
-    protected void setUp() throws Exception {
+    protected void setUp() throws Exception
+    {
         super.setUp();
         responseServer = new ResponseSequenceServer(responseServerAddress);
         stunAddressDiscoverer
@@ -51,10 +52,15 @@ public class StunAddressDiscovererTest_v6 extends TestCase {
 
         stunAddressDiscoverer.start();
         responseServer.start();
+
+        System.setProperty("org.ice4j.MAX_WAIT_INTERVAL", "100");
+        System.setProperty("org.ice4j.MAX_RETRANSMISSIONS", "2");
     }
 
-    protected void tearDown() throws Exception {
-
+    protected void tearDown() throws Exception
+    {
+        System.clearProperty("org.ice4j.MAX_WAIT_INTERVAL");
+        System.clearProperty("org.ice4j.MAX_RETRANSMISSIONS");
         responseServer.shutDown();
         stunAddressDiscoverer.shutDown();
         stunAddressDiscoverer = null;

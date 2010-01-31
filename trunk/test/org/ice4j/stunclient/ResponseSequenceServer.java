@@ -68,6 +68,7 @@ public class ResponseSequenceServer
      */
     public void shutDown()
     {
+        stunStack.removeSocket(serverAddress);
         messageSequence.removeAllElements();
         localSocket.close();
 
