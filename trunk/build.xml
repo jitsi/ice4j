@@ -107,6 +107,7 @@
             <fileset dir="${dest}">
                 <patternset refid="dest.exclude"/>
                 <include name="**/*.*"/>
+
             </fileset>
         </jar>
     </target>
@@ -115,7 +116,7 @@
     <target name="test">
         <junit haltonfailure="true">
             <formatter type="xml"/>
-            <formatter type="brief" usefile="false"/>
+            <formatter type="plain" usefile="false"/>
             <test name="org.ice4j.StunTestSuite" todir="${junit.reports}"/>
             <classpath refid="project.class.path"/>
         </junit>
