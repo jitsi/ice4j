@@ -1,8 +1,8 @@
 /*
- * Stun4j, the OpenSource Java Solution for NAT and Firewall Traversal.
+ * ice4j, the OpenSource Java Solution for NAT and Firewall Traversal.
+ * Maintained by the SIP Communicator community (http://sip-communicator.org).
  *
- * Distributable under LGPL license.
- * See terms of license at gnu.org.
+ * Distributable under LGPL license. See terms of license at gnu.org.
  */
 package org.ice4j.stack;
 
@@ -31,13 +31,6 @@ class NetAccessPoint
         Logger.getLogger(NetAccessPoint.class.getName());
 
     /**
-     * Creates a new access point.
-     */
-    NetAccessPoint()
-    {
-    }
-
-    /**
      * The message queue is where incoming messages are added.
      */
     private MessageQueue messageQueue = null;
@@ -45,7 +38,7 @@ class NetAccessPoint
     /**
      * The socket object that used by this access point to access the network.
      */
-    protected DatagramSocket sock;
+    private final DatagramSocket sock;
 
     /**
      * A flag that is set to false to exit the message processor.
@@ -59,9 +52,9 @@ class NetAccessPoint
     private ErrorHandler errorHandler = null;
 
     /**
-     * Used for locking socket operations
+     * The address that we are listening to.
      */
-    private Object socketLock = new Object();
+    private final TransportAddress listenAddress;
 
     /**
      * Creates a network access point.
@@ -77,6 +70,8 @@ class NetAccessPoint
         this.sock = socket;
         this.messageQueue = messageQueue;
         this.errorHandler = errorHandler;
+        this.listenAddress = new TransportAddress(socket.getLocalAddress(),
+                        socket.getLocalPort(), Transport.UDP);
     }
 
 
@@ -88,7 +83,7 @@ class NetAccessPoint
     void start()
         throws IOException
     {
-        synchronized(socketLock)
+        synchronized(sock)
         {
             this.isRunning = true;
             Thread thread = new Thread(this);
@@ -129,8 +124,10 @@ class NetAccessPoint
                 logger.finest("received datagram");
 
                 RawMessage rawMessage = new RawMessage( message,
-                    packet.getLength(), packet.getAddress(), packet.getPort(),
-                    getDescriptor());
+                    packet.getLength(),
+                    new TransportAddress( packet.getAddress(),
+                                    packet.getPort(), Transport.UDP),
+                    listenAddress);
 
                 messageQueue.add(rawMessage);
             }
@@ -199,7 +196,7 @@ class NetAccessPoint
         DatagramPacket datagramPacket = new DatagramPacket(
                         message, 0, message.length, address.getSocketAddress());
 
-        synchronized(socketLock)
+        synchronized(sock)
         {
             sock.send(datagramPacket);
         }
@@ -212,21 +209,20 @@ class NetAccessPoint
     public String toString()
     {
         return "org.ice4j.stack.AccessPoint@"
-                +apDescriptor.getAddress()
+                + sock.getLocalSocketAddress()
                 +" status: "
                 + (isRunning? "not":"")
                 +" running";
      }
 
      /**
-      * Sets a socket for the access point to use. This socket will not be
-      * closed when the AP is <tt>stop()</tt>ed (Bug Report - Dave Stuart).
+      * Returns the <tt>TransportAddress</tt> that this access point is bound
+      * on.
       *
-      * @param socket the socket that the AP should use.
+      * @return the <tt>TransportAddress</tt> associated with this AP.
       */
-     void useExternalSocket(DatagramSocket socket)
+     TransportAddress getListenAddress()
      {
-         this.sock = socket;
-         this.isUsingExternalSocket = true;
+         return listenAddress;
      }
 }

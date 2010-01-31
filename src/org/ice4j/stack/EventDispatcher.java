@@ -1,9 +1,8 @@
-
 /*
- * Stun4j, the OpenSource Java Solution for NAT and Firewall Traversal.
+ * ice4j, the OpenSource Java Solution for NAT and Firewall Traversal.
+ * Maintained by the SIP Communicator community (http://sip-communicator.org).
  *
- * Distributable under LGPL license.
- * See terms of license at gnu.org.
+ * Distributable under LGPL license. See terms of license at gnu.org.
  */
 package org.ice4j.stack;
 
@@ -15,7 +14,7 @@ import org.ice4j.*;
 /**
  * This is a utility class used for dispatching incoming request events. We use
  * this class mainly (and probably solely) for its ability to handle listener
- * proxies  (i.e. listeners interested in requests recevied on a particular
+ * proxies (i.e. listeners interested in requests received on a particular
  * NetAccessPoint only).
  *
  * @author Emil Ivov
@@ -32,10 +31,11 @@ public class EventDispatcher
      * Hashtable for managing property change listeners registered for specific
      * properties. Maps property names to PropertyChangeSupport objects.
      */
-    private Hashtable<NetAccessPointDescriptor, EventDispatcher> requestListenersChildren = null;
+    private Hashtable<TransportAddress, EventDispatcher>
+                                        requestListenersChildren = null;
 
     /**
-     * Constructs an <code>EventDispatcher</code> object.
+     * Constructs an <tt>EventDispatcher</tt> object.
      */
     public EventDispatcher()
     {
@@ -63,23 +63,23 @@ public class EventDispatcher
      * will be invoked only when a call on fireRequestReceived is issued for
      * that specific NetAccessPoint.
      *
-     * @param descriptor  The NETAP descriptor that we're interested in.
+     * @param localAddr  The NETAP descriptor that we're interested in.
      * @param listener  The ConfigurationChangeListener to be added
      */
 
-    public synchronized void addRequestListener(
-        NetAccessPointDescriptor descriptor,
-        RequestListener listener)
+    public synchronized void addRequestListener( TransportAddress localAddr,
+                                                 RequestListener  listener)
     {
         if (requestListenersChildren == null)
         {
-            requestListenersChildren = new Hashtable<NetAccessPointDescriptor, EventDispatcher>();
+            requestListenersChildren
+                        = new Hashtable<TransportAddress, EventDispatcher>();
         }
-        EventDispatcher child = requestListenersChildren.get(descriptor);
+        EventDispatcher child = requestListenersChildren.get(localAddr);
         if (child == null)
         {
             child = new EventDispatcher();
-            requestListenersChildren.put(descriptor, child);
+            requestListenersChildren.put(localAddr, child);
         }
         child.addRequestListener(listener);
     }
@@ -87,7 +87,7 @@ public class EventDispatcher
     /**
      * Remove a RquestListener from the listener list.
      * This removes a RequestListener that was registered
-     * for all NetAccessPoints and would not remove lsiteners registered for
+     * for all NetAccessPoints and would not remove listeners registered for
      * specific NetAccessPointDescriptors.
      *
      * @param listener The RequestListener to be removed
@@ -108,18 +108,17 @@ public class EventDispatcher
      * would only remove the listener for the specified NetAccessPointDescriptor
      * and would not remove it if it was also registered as a wildcard listener.
      *
-     * @param apDescriptor  The NetAPDescriptor that was listened on.
+     * @param localAddr  The NetAPDescriptor that was listened on.
      * @param listener  The RequestListener to be removed
      */
-    public synchronized void removeRequestListener(
-        NetAccessPointDescriptor apDescriptor,
-        RequestListener listener)
+    public synchronized void removeRequestListener(TransportAddress localAddr,
+                                                   RequestListener  listener)
     {
         if (requestListenersChildren == null)
         {
             return;
         }
-        EventDispatcher child = requestListenersChildren.get( apDescriptor );
+        EventDispatcher child = requestListenersChildren.get( localAddr );
 
         if (child == null)
         {
@@ -136,15 +135,17 @@ public class EventDispatcher
      */
     public void fireMessageEvent(StunMessageEvent evt)
     {
-        NetAccessPointDescriptor apDescriptor = evt.getSourceAccessPoint();
+        TransportAddress localAddr = evt.getLocalAddress();
         if (requestListeners != null)
         {
-            Iterator iterator = null;
+            List<RequestListener> listenersCopy = null;
             synchronized(requestListeners)
             {
-                iterator = new ArrayList<RequestListener>(requestListeners).iterator();
+                listenersCopy
+                    = new ArrayList<RequestListener>(requestListeners);
             }
 
+            Iterator<RequestListener> iterator = listenersCopy.iterator();
             while (iterator.hasNext())
             {
                 RequestListener target =
@@ -153,16 +154,14 @@ public class EventDispatcher
             }
         }
 
-        if (requestListenersChildren != null && apDescriptor != null)
+        if (requestListenersChildren != null && localAddr != null)
         {
-            EventDispatcher child
-                    = requestListenersChildren.get(apDescriptor);
-                apDescriptor.getAddress().toString();
+            EventDispatcher child = requestListenersChildren.get(localAddr);
 
-                if (child != null)
-                {
-                    child.fireMessageEvent(evt);
-                }
+            if (child != null)
+            {
+                child.fireMessageEvent(evt);
+            }
         }
     }
 
@@ -170,21 +169,21 @@ public class EventDispatcher
      * Check if there are any listeners for a specific NetAccessPointDescriptor.
      * (Generic listeners count as well)
      *
-     * @param apDescriptor  the NetAccessPointDescriptor.
+     * @param localAddr the NetAccessPointDescriptor.
      * @return true if there are one or more listeners for the specified
      * NetAccessPointDescriptor
      */
-    public synchronized boolean hasRequestListeners(
-                NetAccessPointDescriptor apDescriptor)
+    public synchronized boolean hasRequestListeners(TransportAddress localAddr)
     {
         if(requestListeners != null && !requestListeners.isEmpty())
         {
             // there is a generic listener
             return true;
         }
+
         if (requestListenersChildren != null)
         {
-            EventDispatcher child = requestListenersChildren.get(apDescriptor);
+            EventDispatcher child = requestListenersChildren.get(localAddr);
             if (child != null && child.requestListeners != null)
             {
                 return!child.requestListeners.isEmpty();

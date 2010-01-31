@@ -1,8 +1,8 @@
 /*
- * Stun4j, the OpenSource Java Solution for NAT and Firewall Traversal.
+ * ice4j, the OpenSource Java Solution for NAT and Firewall Traversal.
+ * Maintained by the SIP Communicator community (http://sip-communicator.org).
  *
- * Distributable under LGPL license.
- * See terms of license at gnu.org.
+ * Distributable under LGPL license. See terms of license at gnu.org.
  */
 package org.ice4j;
 
@@ -30,33 +30,13 @@ public class TransportAddress
     private final Transport transport;
 
     /**
-     * Creates an address instance address from an IP address and a port number
-     * and UDP transport.
-     * <p>
-     * A valid port value is between 0 and 65535.
-     * A port number of <code>zero</code> will let the system pick up an
-     * ephemeral port in a <code>bind</code> operation.
-     * <P>
-     * A <code>null</code> address will assign the <i>wildcard</i> address.
-     * <p>
-     * @param    hostname    The IP address
-     * @param    port        The port number
-     * @throws IllegalArgumentException if the port parameter is outside the
-     * specified range of valid port values.
-     */
-    public TransportAddress(String hostname, int port)
-    {
-        this(hostname, port, Transport.UDP);
-    }
-
-    /**
      * Creates an address instance address from an IP address and a port number.
      * <p>
      * A valid port value is between 0 and 65535.
-     * A port number of <code>zero</code> will let the system pick up an
-     * ephemeral port in a <code>bind</code> operation.
+     * A port number of <tt>zero</tt> will let the system pick up an
+     * ephemeral port in a <tt>bind</tt> operation.
      * <P>
-     * A <code>null</code> address will assign the <i>wildcard</i> address.
+     * A <tt>null</tt> address will assign the <i>wildcard</i> address.
      * <p>
      * @param   hostname    The IP address
      * @param   port        The port number
@@ -67,7 +47,7 @@ public class TransportAddress
     public TransportAddress(String hostname, int port, Transport transport)
     {
         socketAddress = new InetSocketAddress(hostname, port);
-        this.transport = Transport.UDP;
+        this.transport = transport;
     }
 
     /**
@@ -75,18 +55,20 @@ public class TransportAddress
      * address and a port number.
      * <p>
      * A valid port value is between 0 and 65535.
-     * A port number of <code>zero</code> will let the system pick up an
-     * ephemeral port in a <code>bind</code> operation.
+     * A port number of <tt>zero</tt> will let the system pick up an
+     * ephemeral port in a <tt>bind</tt> operation.
      * <P>
-     * A <code>null</code> address will assign the <i>wildcard</i> address.
+     * A <tt>null</tt> address will assign the <i>wildcard</i> address.
      * <p>
      * @param    ipAddress The IP address
      * @param    port      The port number
+     * @param    transport The <tt>Transport</tt> to use with this address.
+     *
      * @throws IllegalArgumentException if the port parameter is outside the
-     * specified range of valid port values or if ipAddress is not a valid ip
+     * specified range of valid port values or if ipAddress is not a valid IP
      * address.
      */
-    public TransportAddress(byte[] ipAddress, int port)
+    public TransportAddress(byte[] ipAddress, int port, Transport transport)
     {
 
         try
@@ -104,7 +86,7 @@ public class TransportAddress
                                                    port);
         }
 
-        transport = Transport.UDP;
+        this.transport = transport;
     }
 
 
@@ -114,40 +96,21 @@ public class TransportAddress
      * An attempt will be made to resolve the hostname into an InetAddress.
      * If that attempt fails, the address will be flagged as <I>unresolved</I>.
      * <p>
-     * A valid port value is between 0 and 65535.
-     * A port number of <code>zero</code> will let the system pick up an
-     * ephemeral port in a <code>bind</code> operation.
-     * <P>
-     * @param    address the address itself
-     * @param    port    the port number
+     * A valid port value is between 0 and 65535. A port number of zero will
+     * let the system pick up an ephemeral port in a <tt>bind</tt> operation.
+     * <p>
+     * @param    address   the address itself
+     * @param    port      the port number
+     * @param    transport the transport to use with this address.
+     *
      * @throws IllegalArgumentException if the port parameter is outside the
      * range of valid port values, or if the hostname parmeter is <TT>null</TT>.
      */
-    public TransportAddress(InetAddress address, int port)
+    public TransportAddress(InetAddress address, int port, Transport transport)
     {
         socketAddress = new InetSocketAddress(address, port);
-        transport = Transport.UDP;
+        this.transport = transport;
     }
-
-    /**
-     * Creates an address instance from the localhost amd a port number.
-     * <p>
-     * Addresses created with this constructor should be used cautiously as
-     * they won't be trated as equal to address created from the localhost
-     * address even though the represent the same thing. In other words - use
-     * this constructor only if you're not going to compare the resulting
-     * instance with other addresses.
-     *
-     * @param    port    the port number
-     * @throws IllegalArgumentException if the port parameter is outside the
-         * range of valid port values, or if the hostname parmeter is <TT>null</TT>.
-     */
-    public TransportAddress(int port)
-    {
-        socketAddress = new InetSocketAddress(port);
-        transport = Transport.UDP;
-    }
-
 
     /**
      * Returns the raw IP address of this Address object. The result is in
@@ -163,7 +126,7 @@ public class TransportAddress
     }
 
     /**
-     * Returns the port number or 0 if the addres has not been initialized.
+     * Returns the port number or 0 if the address has not been initialized.
      * @return the port number.
      */
     public int getPort()

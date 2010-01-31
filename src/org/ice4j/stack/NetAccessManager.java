@@ -1,8 +1,8 @@
 /*
- * Stun4j, the OpenSource Java Solution for NAT and Firewall Traversal.
+ * ice4j, the OpenSource Java Solution for NAT and Firewall Traversal.
+ * Maintained by the SIP Communicator community (http://sip-communicator.org).
  *
- * Distributable under LGPL license.
- * See terms of license at gnu.org.
+ * Distributable under LGPL license. See terms of license at gnu.org.
  */
 package org.ice4j.stack;
 
@@ -34,10 +34,10 @@ class NetAccessManager
         Logger.getLogger(NetAccessManager.class.getName());
     /**
      * All access points currently in use. The table maps
-     * <tt>NetAccessPointDescriptor</tt>s to <tt>NetAccessPoint</tt>s
+     * <tt>TransportAddress</tt>es to <tt>Connector</tt>s
      */
-    private Hashtable<NetAccessPointDescriptor, NetAccessPoint> netAccessPoints
-            = new Hashtable<NetAccessPointDescriptor, NetAccessPoint>();
+    private Hashtable<TransportAddress, NetAccessPoint> netAccessPoints
+            = new Hashtable<TransportAddress, NetAccessPoint>();
 
     /**
      * A synchronized FIFO where incoming messages are stocked for processing.
@@ -96,8 +96,7 @@ class NetAccessManager
     }
 
     /**
-     * Clears the faulty thread and tries to repair the damage and instantiate
-     * a replacement.
+     * Clears the faulty thread and reports the problem.
      *
      * @param callingThread the thread where the error occurred.
      * @param message       A description of the error
@@ -111,23 +110,9 @@ class NetAccessManager
         {
             NetAccessPoint ap = (NetAccessPoint)callingThread;
 
-            //make sure socket is closed
-            removeNetAccessPoint(ap.getDescriptor());
-
-            try
-            {
-                logger.log( Level.WARNING, "An access point has unexpectedly "
-                    +"stopped. AP:" + ap.toString(), error);
-                installNetAccessPoint(ap.getDescriptor());
-            }
-            catch (IOException ex)
-            {
-                //make sure nothing's left and notify user
-                removeNetAccessPoint(ap.getDescriptor());
-                logger.log(Level.WARNING, "Failed to relaunch accesspoint:"
-                           + ap,
-                           ex);
-            }
+            //make sure nothing's left and notify user
+            removeNetAccessPoint(ap.getListenAddress());
+            logger.log(Level.WARNING, "Removing connector:"+ ap);
         }
         else if( callingThread instanceof MessageProcessor )
         {
@@ -147,71 +132,41 @@ class NetAccessManager
     }
 
     /**
-     * Creates and starts a new access point according to the given descriptor.
-     * If the specified access point has already been installed the method
-     * has no effect.
-     *
-     * @param apDescriptor   a description of the access point to create.
-     * @throws IOException if we fail to bind a datagram socket on the specified
-     * address and port (NetAccessPointDescriptor)
-     */
-    void installNetAccessPoint(NetAccessPointDescriptor apDescriptor)
-        throws IOException
-    {
-        if(netAccessPoints.containsKey(apDescriptor))
-            return;
-
-        NetAccessPoint ap
-            = new NetAccessPoint(apDescriptor, messageQueue, this);
-        netAccessPoints.put(apDescriptor, ap);
-        ap.start();
-    }
-
-    /**
      * Creates and starts a new access point based on the specified socket.
      * If the specified access point has already been installed the method
      * has no effect.
      *
      * @param  socket   the socket that the access point should use.
-     * @return an access point descriptor to allow further management of the
-     * newly created access point.
      *
      * @throws IOException if we fail to setup the socket.
      */
-    NetAccessPointDescriptor installNetAccessPoint(DatagramSocket socket)
+    protected void installUdpConnector(DatagramSocket socket)
         throws IOException
     {
 
         //no null check - let it through a null pointer exception
-        TransportAddress address = new TransportAddress(
-                        socket.getLocalAddress(), socket.getLocalPort());
-        NetAccessPointDescriptor apDescriptor
-                        = new NetAccessPointDescriptor(address);
+        TransportAddress localAddr = new TransportAddress(
+               socket.getLocalAddress(), socket.getLocalPort(), Transport.UDP);
 
-        if(netAccessPoints.containsKey(apDescriptor))
-            return apDescriptor;
+        if(netAccessPoints.containsKey(localAddr))
+            return;
 
-        NetAccessPoint ap
-            = new NetAccessPoint(apDescriptor, messageQueue, this);
+        NetAccessPoint ap = new NetAccessPoint(socket, messageQueue, this);
 
-        //call the useExternalSocket method to avoid closing the socket when
-        //removing the accesspoint. Bug Report - Dave Stuart - SipQuest
-        ap.useExternalSocket(socket);
-        netAccessPoints.put(apDescriptor, ap);
+        netAccessPoints.put(localAddr, ap);
 
         ap.start();
-
-        return apDescriptor;
     }
 
 
     /**
      * Stops and deletes the specified access point.
-     * @param apDescriptor the access  point to remove
+     *
+     * @param address the address of the connector to remove.
      */
-    void removeNetAccessPoint(NetAccessPointDescriptor apDescriptor)
+    protected void removeNetAccessPoint(TransportAddress address)
     {
-        NetAccessPoint ap = netAccessPoints.remove(apDescriptor);
+        NetAccessPoint ap = netAccessPoints.remove(address);
 
         if(ap != null)
             ap.stop();
@@ -302,8 +257,8 @@ class NetAccessManager
      * Sends the specified stun message through the specified access point.
      *
      * @param stunMessage the message to send
-     * @param apDescriptor the access point to use to send the message
-     * @param address the destination of the message.
+     * @param srcAddr the access point to use to send the message
+     * @param remoteAddr the destination of the message.
      *
      * @throws IOException  if an error occurs while sending message bytes
      * through the network socket.
@@ -311,19 +266,19 @@ class NetAccessManager
      * access point that had not been installed,
      * @throws StunException if message encoding fails,
      */
-    void sendMessage(Message                  stunMessage,
-                     NetAccessPointDescriptor apDescriptor,
-                     TransportAddress         address)
+    void sendMessage(Message          stunMessage,
+                     TransportAddress srcAddr,
+                     TransportAddress remoteAddr)
         throws IOException, IllegalArgumentException, StunException
     {
         byte[] bytes = stunMessage.encode();
-        NetAccessPoint ap = netAccessPoints.get(apDescriptor);
+        NetAccessPoint ap = netAccessPoints.get(srcAddr);
 
         if(ap == null)
             throw new IllegalArgumentException(
                           "The specified access point had not been installed.");
 
-        ap.sendMessage(bytes, address);
+        ap.sendMessage(bytes, remoteAddr);
     }
 
 }

@@ -1,8 +1,8 @@
 /*
- * Stun4j, the OpenSource Java Solution for NAT and Firewall Traversal.
+ * ice4j, the OpenSource Java Solution for NAT and Firewall Traversal.
+ * Maintained by the SIP Communicator community (http://sip-communicator.org).
  *
- * Distributable under LGPL license.
- * See terms of license at gnu.org.
+ * Distributable under LGPL license. See terms of license at gnu.org.
  */
 package org.ice4j;
 
@@ -40,27 +40,27 @@ public class StunMessageEvent
 
     /**
      * Constructs a StunMessageEvent according to the specified message.
-     * @param source the access point that received the message
+     * @param sourceAddress the access point that received the message
      * @param message the message itself
      * @param remoteAddress the address that sent the message
      */
-    public StunMessageEvent(NetAccessPointDescriptor source,
-                            Message                  message,
-                            TransportAddress        remoteAddress)
+    public StunMessageEvent(TransportAddress sourceAddress,
+                            Message          message,
+                            TransportAddress remoteAddress)
     {
-        super(source);
+        super(sourceAddress);
         this.message = message;
         this.remoteAddress  = remoteAddress;
     }
 
     /**
-     * Returns a NetAccessPointDescriptor referencing the access point where the
-     * message was received.
+     * Returns a <tt>TransportAddress</tt> referencing the access point where
+     * the message was received.
      * @return a descriptor of the access point where the message arrived.
      */
-    public NetAccessPointDescriptor getSourceAccessPoint()
+    public TransportAddress getLocalAddress()
     {
-        return (NetAccessPointDescriptor)getSource();
+        return (TransportAddress)getSource();
     }
 
     /**

@@ -1,12 +1,11 @@
 /*
- * Stun4j, the OpenSource Java Solution for NAT and Firewall Traversal.
+ * ice4j, the OpenSource Java Solution for NAT and Firewall Traversal.
+ * Maintained by the SIP Communicator community (http://sip-communicator.org).
  *
- * Distributable under LGPL license.
- * See terms of license at gnu.org.
+ * Distributable under LGPL license. See terms of license at gnu.org.
  */
 package org.ice4j.stack;
 
-import java.util.TimerTask;
 import java.io.*;
 
 import org.ice4j.*;
@@ -31,10 +30,7 @@ import org.ice4j.message.*;
  * response that was saved for the original request, and not let any
  * retransmissions go through to the user application.
  *
- * <p>Organisation: <p> Louis Pasteur University, Strasbourg, France</p>
- * <p>Network Research Team (http://www-r2.u-strasbg.fr)</p></p>
  * @author Emil Ivov
- * @version 0.1
  */
 
 class StunServerTransaction
@@ -48,7 +44,7 @@ class StunServerTransaction
     /**
      * The StunProvider that created us.
      */
-    private StunProvider      providerCallback  = null;
+    private StunProvider providerCallback  = null;
 
     /**
      * The source of the transaction request.
@@ -61,17 +57,17 @@ class StunServerTransaction
     private Response response = null;
 
     /**
-     * The ap descriptor used when sending the response
+     * The <tt>TransportAddress</tt> we use when sending responses
      */
-    private NetAccessPointDescriptor apDescriptor = null;
+    private TransportAddress localAddress = null;
 
     /**
      * The id of the transaction.
      */
-    private TransactionID    transactionID      = null;
+    private TransactionID transactionID = null;
 
     /**
-     * The date (in millis) when the next retransmission should follow.
+     * The date (in milliseconds) when the next retransmission should follow.
      */
     private long expirationDate = -1;
 
@@ -140,7 +136,7 @@ class StunServerTransaction
      * the transaction's state to retransmitting.
      *
      * @param response the response to send the transaction to.
-     * @param sendThrough the NetAccessPoint through which the response is to
+     * @param sendThrough the local address through which the response is to
      * be sent
      * @param sendTo the destination of the response.
      *
@@ -150,9 +146,9 @@ class StunServerTransaction
      * access point that had not been installed,
      * @throws StunException if message encoding fails,
      */
-    void sendResponse(Response response,
-                      NetAccessPointDescriptor sendThrough,
-                      TransportAddress sendTo)
+    public void sendResponse(Response response,
+                             TransportAddress sendThrough,
+                             TransportAddress sendTo)
         throws StunException,
                IOException,
                IllegalArgumentException
@@ -162,7 +158,7 @@ class StunServerTransaction
             //the transaction id might already have been set, but its our job
             //to make sure of that
             response.setTransactionID(this.transactionID.getTransactionID());
-            this.apDescriptor = sendThrough;
+            this.localAddress = sendThrough;
             this.responseDestination = sendTo;
         }
 
@@ -180,7 +176,7 @@ class StunServerTransaction
      * access point that had not been installed,
      * @throws StunException if message encoding fails,
      */
-    void retransmitResponse()
+    private void retransmitResponse()
         throws StunException,
                IOException,
                IllegalArgumentException
@@ -191,15 +187,15 @@ class StunServerTransaction
             return;
 
         providerCallback.getNetAccessManager().sendMessage(response,
-                                                           apDescriptor,
+                                                           localAddress,
                                                            responseDestination);
     }
 
     /**
      * Waits until next retransmission is due or until the transaction is
-     * cancelled (whichever comes first).
+     * canceled (whichever comes first).
      */
-    synchronized void waitNextScheduledDate()
+    private synchronized void waitNextScheduledDate()
     {
         long current = System.currentTimeMillis();
         while(expirationDate - current > 0)
@@ -221,9 +217,10 @@ class StunServerTransaction
 
     /**
      * Sets the expiration date for this server transaction.
-     * @param timeout the number of millis to wait before expiration.
+     *
+     * @param timeout the number of milliseconds to wait before expiration.
      */
-    void schedule(long timeout)
+    private void schedule(long timeout)
     {
         this.expirationDate = System.currentTimeMillis() + timeout;
     }
@@ -232,7 +229,7 @@ class StunServerTransaction
      * Cancels the transaction. Once this method is called the transaction is
      * considered terminated and will stop retransmissions.
      */
-    synchronized void expire()
+    public synchronized void expire()
     {
         this.expired = true;
         notifyAll();
@@ -244,7 +241,7 @@ class StunServerTransaction
      *
      * @return the ID of the transaction.
      */
-    TransactionID getTransactionID()
+    public TransactionID getTransactionID()
     {
         return this.transactionID;
     }
@@ -252,9 +249,11 @@ class StunServerTransaction
     /**
      * Specifies whether this server transaction is in the retransmitting state.
      * Or in other words - has it already sent a first response or not?
-     * @return boolean
+     *
+     * @return <tt>true</tt> if this transaction is still retransmitting and
+     * false <tt>otherwise</tt>
      */
-    boolean isReransmitting()
+    public boolean isReransmitting()
     {
         return isRetransmitting;
     }

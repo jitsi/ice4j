@@ -1,26 +1,26 @@
 /*
- * Stun4j, the OpenSource Java Solution for NAT and Firewall Traversal.
+ * ice4j, the OpenSource Java Solution for NAT and Firewall Traversal.
+ * Maintained by the SIP Communicator community (http://sip-communicator.org).
  *
- * Distributable under LGPL license.
- * See terms of license at gnu.org.
+ * Distributable under LGPL license. See terms of license at gnu.org.
  */
 package org.ice4j.stunclient;
 
-import java.util.logging.*;
 import java.io.*;
+import java.util.logging.*;
 
 import org.ice4j.*;
 import org.ice4j.message.*;
 import org.ice4j.stack.*;
 
 /**
- * A utility used to flatten the multithreaded architecture of the Stack
+ * A utility used to flatten the multi-thread architecture of the Stack
  * and execute the discovery process in a synchronized manner. Roughly what
  * happens here is:
- *
+ * <code>
  * ApplicationThread:
  *     sendMessage()
- * 	   wait();
+ *        wait();
  *
  * StackThread:
  *     processMessage/Timeout()
@@ -28,32 +28,57 @@ import org.ice4j.stack.*;
  *          saveMessage();
  *          notify();
  *     }
+ *</code>
  *
- *
- * <p>Organisation: <p> Louis Pasteur University, Strasbourg, France</p>
- * <p>Network Research Team (http://www-r2.u-strasbg.fr)</p></p>
  * @author Emil Ivov
- * @version 0.1
  */
 class BlockingRequestSender
     implements ResponseCollector
 {
-    private static final Logger logger =
-        Logger.getLogger(BlockingRequestSender.class.getName());
+    /**
+     * Our class logger
+     */
+    private static final Logger logger
+        = Logger.getLogger(BlockingRequestSender.class.getName());
 
-    private StunProvider             stunProvider  = null;
-    private NetAccessPointDescriptor apDescriptor  = null;
+    /**
+     * The provider that we are using to send requests through.
+     */
+    private StunProvider stunProvider  = null;
 
-    StunMessageEvent responseEvent = null;
+    /**
+     * The transport address that we are bound on.
+     */
+    private TransportAddress localAddress  = null;
 
+    /**
+     * The <tt>StunMessageEvent</tt> that contains the response matching our
+     * request.
+     */
+    private StunMessageEvent responseEvent = null;
+
+    /**
+     * Determines whether this request sender has comleted its coarse.
+     */
     private boolean ended = false;
-    private Object  sendLock = new Object();
 
-    BlockingRequestSender(StunProvider             stunProvider,
-                          NetAccessPointDescriptor apDescriptor)
+    /**
+     * A lock object that we are using to synchronize sending.
+     */
+    private Object sendLock = new Object();
+
+    /**
+     * Creates a new request sender.
+     * @param stunProvider the provider that the sender should send requests
+     * through.
+     * @param localAddress the <tt>TransportAddress</tt> that requests should be
+     * leaving from.
+     */
+    BlockingRequestSender(StunProvider     stunProvider,
+                          TransportAddress localAddress)
     {
         this.stunProvider = stunProvider;
-        this.apDescriptor = apDescriptor;
+        this.localAddress = localAddress;
     }
 
     /**
@@ -71,7 +96,7 @@ class BlockingRequestSender
     }
 
     /**
-     * Notifies the discoverer thread when a message has timeouted so that
+     * Notifies the discoverer thread when a message has timeout-ed so that
      * it may resume and consider it as unanswered.
      */
     public synchronized void processTimeout()
@@ -85,7 +110,7 @@ class BlockingRequestSender
     /**
      * Sends the specified request and blocks until a response has been
      * received or the request transaction has timed out.
-     * @param request the reuqest to send
+     * @param request the request to send
      * @param serverAddress the request destination address
      * @return the event encapsulating the response or null if no response
      * has been received.
@@ -97,13 +122,13 @@ class BlockingRequestSender
      * @throws StunException if message encoding fails,
      */
     public synchronized StunMessageEvent sendRequestAndWaitForResponse(
-                                                    Request request,
-                                                    TransportAddress serverAddress)
+                                                Request request,
+                                                TransportAddress serverAddress)
             throws StunException,
                    IOException
     {
         synchronized(sendLock){
-            stunProvider.sendRequest(request, serverAddress, apDescriptor,
+            stunProvider.sendRequest(request, serverAddress, localAddress,
                                      BlockingRequestSender.this);
         }
 

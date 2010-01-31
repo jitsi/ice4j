@@ -1,12 +1,10 @@
 /*
- * Stun4j, the OpenSource Java Solution for NAT and Firewall Traversal.
+ * ice4j, the OpenSource Java Solution for NAT and Firewall Traversal.
+ * Maintained by the SIP Communicator community (http://sip-communicator.org).
  *
- * Distributable under LGPL license.
- * See terms of license at gnu.org.
+ * Distributable under LGPL license. See terms of license at gnu.org.
  */
 package org.ice4j.stack;
-
-import java.net.*;
 
 import org.ice4j.*;
 
@@ -32,7 +30,12 @@ class RawMessage
     /**
      * The address and port where the message was sent from.
      */
-    private InetSocketAddress remoteAddress = null;
+    private TransportAddress remoteAddress = null;
+
+    /**
+     * The address that this message was received on.
+     */
+    private TransportAddress localAddress = null;
 
     /**
      * Constructs a raw message with the specified field values. All parameters
@@ -42,14 +45,15 @@ class RawMessage
      * @param messageLength the number of bytes currently stored in the
      * <tt>messageBytes</tt> array.
      * @param remoteAddress the address where the message came from.
-     * @param remotePort the port where the message came from.
+     * @param localAddress the <tt>TransportAddress</tt> that the message was
+     * received on.
      *
      * @throws NullPointerException if one or more of the parameters were null.
      */
-    RawMessage(byte[]      messageBytes,
-               InetAddress remoteAddress,
-               int         messageLength,
-               int         remotePort)
+    RawMessage(byte[]           messageBytes,
+               int              messageLength,
+               TransportAddress remoteAddress,
+               TransportAddress localAddress)
     {
         //... don't do a null check - let it throw an NP exception
 
@@ -58,7 +62,7 @@ class RawMessage
         System.arraycopy(messageBytes, 0, this.messageBytes,
                                                        0, messageBytes.length);
 
-        this.remoteAddress = new InetSocketAddress(remoteAddress, remotePort);
+        this.remoteAddress = remoteAddress;
     }
 
     /**
@@ -83,10 +87,21 @@ class RawMessage
 
     /**
      * Returns the address and port of the host that sent the message
+     *
      * @return the [address]:[port] pair that sent the message.
      */
-    InetSocketAddress getRemoteAddress()
+    public TransportAddress getRemoteAddress()
     {
         return this.remoteAddress;
+    }
+
+    /**
+     * Returns the address that this message was received on.
+     *
+     * @return the address that this message was received on.
+     */
+    public TransportAddress getLocalAddress()
+    {
+        return localAddress;
     }
 }
