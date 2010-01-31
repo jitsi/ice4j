@@ -64,7 +64,7 @@ public class XorOnlyTest extends TestCase
 
     /**
      * Test positive and negative XorOnly.equals() returns
-     * @throws Exteption if decoding fails
+     * @throws Exception if decoding fails
      */
     public void testEquals() throws Exception
     {

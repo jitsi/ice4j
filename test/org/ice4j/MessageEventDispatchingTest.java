@@ -8,6 +8,7 @@ package org.ice4j;
 
 import java.net.*;
 import java.util.*;
+import java.util.logging.*;
 
 import junit.framework.*;
 
@@ -36,13 +37,13 @@ public class MessageEventDispatchingTest extends TestCase
      * The Address of the server.
      */
     TransportAddress serverAddress
-        = new TransportAddress("127.0.0.2", 5255, Transport.UDP);
+        = new TransportAddress("127.0.0.1", 5255, Transport.UDP);
 
     /**
      * The address of the second server.
      */
     TransportAddress serverAddress2
-        = new TransportAddress("127.0.0.2", 5259, Transport.UDP);
+        = new TransportAddress("127.0.0.1", 5259, Transport.UDP);
 
     /**
      * The socket that the client is using.
@@ -91,8 +92,8 @@ public class MessageEventDispatchingTest extends TestCase
         stunStack = StunStack.getInstance();
 
         clientSock = new DatagramSocket(clientAddress);
-        serverSock = new DatagramSocket(clientAddress);
-        serverSock = new DatagramSocket(serverAddress2);
+        serverSock = new DatagramSocket(serverAddress);
+        serverSock2 = new DatagramSocket(serverAddress2);
 
         stunStack.addSocket(clientSock);
         stunStack.addSocket(serverSock);
@@ -114,9 +115,13 @@ public class MessageEventDispatchingTest extends TestCase
      */
     protected void tearDown() throws Exception
     {
+        stunStack.removeSocket(clientAddress);
+        stunStack.removeSocket(serverAddress);
+        stunStack.removeSocket(serverAddress2);
+
         clientSock.close();
         serverSock.close();
-        serverSock.close();
+        serverSock2.close();
 
         requestCollector = null;
         responseCollector = null;
@@ -131,12 +136,14 @@ public class MessageEventDispatchingTest extends TestCase
      */
     public void testClientTransactionTimeouts() throws Exception
     {
-
+        String oldRetransValue = System.getProperty(
+                            "org.ice4j.MAX_RETRANSMISSIONS");
+        System.setProperty("org.ice4j.MAX_RETRANSMISSIONS", "1");
         stunStack.getProvider().sendRequest(bindingRequest,
                                             serverAddress,
                                             clientAddress,
                                             responseCollector);
-        Thread.sleep(12000);
+        responseCollector.waitForTimeout();
 
         assertEquals(
             "No timeout was produced upon expiration of a client transaction",
@@ -145,6 +152,14 @@ public class MessageEventDispatchingTest extends TestCase
         assertEquals(
             "No timeout was produced upon expiration of a client transaction",
             responseCollector.receivedResponses.get(0), "timeout");
+
+        //restore the retransmissions prop in case others are counting on
+        //defaults.
+        if(oldRetransValue != null)
+            System.getProperty( "org.ice4j.MAX_RETRANSMISSIONS",
+                                oldRetransValue);
+        else
+            System.clearProperty("org.ice4j.MAX_RETRANSMISSIONS");
     }
 
     /**
@@ -162,7 +177,7 @@ public class MessageEventDispatchingTest extends TestCase
                                             clientAddress,
                                             responseCollector);
         //wait for retransmissions
-        Thread.sleep(50);
+        requestCollector.waitForRequest();
 
         //verify
         assertTrue("No MessageEvents have been dispatched",
@@ -192,7 +207,8 @@ public class MessageEventDispatchingTest extends TestCase
                                             clientAddress,
                                             responseCollector);
         //wait for retransmissions
-        Thread.sleep(50);
+        requestCollector.waitForRequest();
+        requestCollector2.waitForRequest();
 
         //verify
         assertTrue(
@@ -220,7 +236,7 @@ public class MessageEventDispatchingTest extends TestCase
                                             responseCollector);
 
         //wait for the message to arrive
-        Thread.sleep(50);
+        requestCollector.waitForRequest();
 
         StunMessageEvent evt = requestCollector.receivedRequests.get(0);
         byte[] tid = evt.getMessage().getTransactionID();
@@ -230,7 +246,7 @@ public class MessageEventDispatchingTest extends TestCase
                                              clientAddress);
 
         //wait for retransmissions
-        Thread.sleep(50);
+        responseCollector.waitForResponse();
 
         //verify that we got the response.
         assertTrue(
@@ -254,7 +270,26 @@ public class MessageEventDispatchingTest extends TestCase
          */
         public void requestReceived(StunMessageEvent evt)
         {
-            receivedRequests.add(evt);
+            synchronized (this)
+            {
+                receivedRequests.add(evt);
+                notifyAll();
+            }
+        }
+
+        public void waitForRequest()
+        {
+            synchronized(this)
+            {
+                if (receivedRequests.size() > 0)
+                    return;
+                try
+                {
+                    wait(50);
+                }
+                catch (InterruptedException e)
+                {}
+            }
         }
     }
 
@@ -275,7 +310,11 @@ public class MessageEventDispatchingTest extends TestCase
          */
         public void processResponse(StunMessageEvent responseEvt)
         {
-            receivedResponses.add(responseEvt);
+            synchronized(this)
+            {
+                receivedResponses.add(responseEvt);
+                notifyAll();
+            }
         }
 
         /**
@@ -283,7 +322,47 @@ public class MessageEventDispatchingTest extends TestCase
          */
         public void processTimeout()
         {
-            receivedResponses.add(new String("timeout"));
+            synchronized(this)
+            {
+                receivedResponses.add(new String("timeout"));
+                notifyAll();
+            }
+        }
+
+        /**
+         * Waits for a short period of time for a response to arrive
+         */
+        public void waitForResponse()
+        {
+            synchronized(this)
+            {
+                try
+                {
+                    if (receivedResponses.size() > 0)
+                        return;
+                    wait(50);
+                }
+                catch (InterruptedException e)
+                {}
+            }
+        }
+
+        /**
+         * Waits for a long period of time for a timeout trigger to fire.
+         */
+        public void waitForTimeout()
+        {
+            synchronized(this)
+            {
+                try
+                {
+                    if (receivedResponses.size() > 0)
+                        return;
+                    wait(12000);
+                }
+                catch (InterruptedException e)
+                {}
+            }
         }
 
     }

@@ -34,7 +34,7 @@ public class StunTestSuite
     public static Test suite()
     {
         TestSuite suite = new TestSuite();
-/*
+
         //attributes
         suite.addTestSuite(org.ice4j.attribute.
                            AddressAttributeTest.class);
@@ -59,13 +59,13 @@ public class StunTestSuite
         //messages
         suite.addTestSuite(org.ice4j.message.MessageFactoryTest.class);
         suite.addTestSuite(org.ice4j.message.MessageTest.class);
-*/
+
         //stack
         suite.addTestSuite(org.ice4j.stack.ShallowStackTest.class);
-/*
+
         //event dispatching
         suite.addTestSuite(org.ice4j.MessageEventDispatchingTest.class);
-
+        /*
         //transactions
         suite.addTestSuite(org.ice4j.TransactionSupportTests.class);
 
