@@ -98,7 +98,8 @@ public class HostCandidateHarvester
                                         +"\naddr:" + addr
                                         +"\npreferredPort:" + preferredPort
                                         +"\nminPort:" + minPort
-                                        +"\nmaxPort:" + maxPort);
+                                        +"\nmaxPort:" + maxPort
+                                        +"\nContinuing with next address");
                     continue;
                 }
 
@@ -203,7 +204,9 @@ public class HostCandidateHarvester
             {
                 logger.log(Level.INFO,
                     "Retrying a bind because of a failure to bind to address "
-                        + laddr + " and port " + port, se);
+                        + laddr + " and port " + port);
+                logger.log(Level.FINEST, "", se);
+
             }
 
             port ++;
