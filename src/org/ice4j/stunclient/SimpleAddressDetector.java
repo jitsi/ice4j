@@ -112,7 +112,7 @@ public class SimpleAddressDetector
          TransportAddress localAddress = new TransportAddress(
               (InetSocketAddress)socket.getLocalSocketAddress(), Transport.UDP);
 
-         stunStack.installNetAccessPoint(socket);
+         stunStack.addSocket(socket);
 
          requestSender = new BlockingRequestSender(stunProvider, localAddress);
          StunMessageEvent evt = null;
@@ -132,7 +132,7 @@ public class SimpleAddressDetector
          }
          finally
          {
-             stunStack.removeNetAccessPoint(localAddress);
+             stunStack.removeSocket(localAddress);
          }
 
         if(evt != null)

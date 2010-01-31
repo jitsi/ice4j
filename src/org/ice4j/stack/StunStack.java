@@ -72,10 +72,10 @@ public class StunStack
      * @param sock The socket that the new access point should represent.
      * @throws IOException if we fail to setup the socket.
      */
-   public void installNetAccessPoint(DatagramSocket sock)
+   public void addSocket(DatagramSocket sock)
        throws IOException
    {
-       netAccessManager.installUdpConnector(sock);
+       netAccessManager.addSocket(sock);
    }
 
 
@@ -84,9 +84,9 @@ public class StunStack
      *
      * @param localAddr the access  point to remove
      */
-    public void removeNetAccessPoint(TransportAddress localAddr)
+    public void removeSocket(TransportAddress localAddr)
     {
-        netAccessManager.removeNetAccessPoint(localAddr);
+        netAccessManager.removeConnector(localAddr);
     }
 
 
