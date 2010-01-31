@@ -1,8 +1,8 @@
 /*
- * Stun4j, the OpenSource Java Solution for NAT and Firewall Traversal.
+ * ice4j, the OpenSource Java Solution for NAT and Firewall Traversal.
+ * Maintained by the SIP Communicator community (http://sip-communicator.org).
  *
- * Distributable under LGPL license.
- * See terms of license at gnu.org.
+ * Distributable under LGPL license. See terms of license at gnu.org.
  */
 package org.ice4j.stack;
 
@@ -69,7 +69,7 @@ public class StunProvider
      * registers the specified ResponseCollector for later notification.
      * @param  request     the request to send
      * @param  sendTo      the destination address of the request.
-     * @param  sendThrough the access point to use when sending the request
+     * @param  sendThrough the local address to use when sending the request
      * @param  collector   the instance to notify when a response arrives or the
      *                     the transaction timeouts
      *
@@ -80,10 +80,10 @@ public class StunProvider
      * @throws StunException if message encoding fails,
      *
      */
-    public void sendRequest( Request                  request,
-                             TransportAddress              sendTo,
-                             NetAccessPointDescriptor sendThrough,
-                             ResponseCollector        collector )
+    public void sendRequest( Request           request,
+                             TransportAddress  sendTo,
+                             TransportAddress  sendThrough,
+                             ResponseCollector collector )
         throws StunException, IOException, IllegalArgumentException
     {
         StunClientTransaction clientTransaction
@@ -103,7 +103,7 @@ public class StunProvider
      *    have the id in the response object, but I am bringing out as an extra
      *    parameter as the user might otherwise forget to explicitly set it.
      * @param response      the message to send.
-     * @param sendThrough   the access point to use when sending the message.
+     * @param sendThrough   the local address to use when sending the message.
      * @param sendTo        the destination of the message.
      *
      * @throws IOException  if an error occurs while sending message bytes
@@ -113,10 +113,10 @@ public class StunProvider
      * @throws StunException if message encoding fails,
 
      */
-    public void sendResponse(byte[]                   transactionID,
-                             Response                 response,
-                             NetAccessPointDescriptor sendThrough,
-                             TransportAddress         sendTo)
+    public void sendResponse(byte[]           transactionID,
+                             Response         response,
+                             TransportAddress sendThrough,
+                             TransportAddress sendTo)
         throws StunException,
                IOException,
                IllegalArgumentException
@@ -166,15 +166,18 @@ public class StunProvider
      * The listener will be invoked only when a request event is received on
      * that specific property.
      *
-     * @param apDescriptor  The descriptor of the NetAccessPoint to listen on.
-     * @param listener  The ConfigurationChangeListener to be added
+     * @param localAddress The local <tt>TransportAddress</tt> that we would
+     * like to listen on.
+     * @param listener The ConfigurationChangeListener to be added
      */
 
-    public synchronized void addRequestListener(
-        NetAccessPointDescriptor apDescriptor,
-        RequestListener listener)
+    public void addRequestListener( TransportAddress localAddress,
+                                    RequestListener  listener)
     {
-        eventDispatcher.addRequestListener(apDescriptor, listener);
+        synchronized(eventDispatcher)
+        {
+            eventDispatcher.addRequestListener(localAddress, listener);
+        }
     }
 
 //------------- stack internals ------------------------------------------------
@@ -219,7 +222,7 @@ public class StunProvider
 
         if(logger.isLoggable(Level.FINEST))
             logger.finest("Received a message on NetAP"
-                        + event.getSourceAccessPoint()
+                        + event.getLocalAddress()
                         + " of type:"
                         + (int)msg.getMessageType());
 

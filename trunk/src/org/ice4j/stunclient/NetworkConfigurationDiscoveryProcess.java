@@ -1,15 +1,14 @@
 /*
- * Stun4j, the OpenSource Java Solution for NAT and Firewall Traversal.
+ * ice4j, the OpenSource Java Solution for NAT and Firewall Traversal.
+ * Maintained by the SIP Communicator community (http://sip-communicator.org).
  *
- * Distributable under LGPL license.
- * See terms of license at gnu.org.
+ * Distributable under LGPL license. See terms of license at gnu.org.
  */
 package org.ice4j.stunclient;
 
-import java.net.*;
-
-import java.util.logging.*;
 import java.io.*;
+import java.net.*;
+import java.util.logging.*;
 
 import org.ice4j.*;
 import org.ice4j.attribute.*;
@@ -85,6 +84,9 @@ import org.ice4j.stack.*;
 
 public class NetworkConfigurationDiscoveryProcess
 {
+    /**
+     * Our class logger.
+     */
     private static final Logger logger =
         Logger.getLogger(NetworkConfigurationDiscoveryProcess.class.getName());
     /**
@@ -96,52 +98,46 @@ public class NetworkConfigurationDiscoveryProcess
     /**
      * The stack to use for STUN communication.
      */
-    private StunStack                stunStack     = null;
+    private StunStack stunStack = null;
 
     /**
      * The provider to send our messages through
      */
-    private StunProvider             stunProvider  = null;
+    private StunProvider stunProvider  = null;
 
     /**
      * The point where we'll be listening.
      */
-    private NetAccessPointDescriptor apDescriptor  = null;
+    private TransportAddress localAddress  = null;
 
     /**
      * The address of the stun server
      */
-    private TransportAddress              serverAddress = null;
+    private TransportAddress serverAddress = null;
 
     /**
-     * A utility used to flatten the multithreaded architecture of the Stack
+     * A utility used to flatten the multi thread architecture of the Stack
      * and execute the discovery process in a synchronized manner
      */
-    private BlockingRequestSender    requestSender = null;
+    private BlockingRequestSender requestSender = null;
+
+    /**
+     * The <tt>DatagramSocket</tt> that we are going to be running the
+     * discovery process through.
+     */
+    private DatagramSocket sock = null;
 
     /**
      * Creates a StunAddressDiscoverer. In order to use it one must start the
      * discoverer.
-     * @param localAddress the address where the stach should bind.
+     *
+     * @param localAddress  the address where the stack should bind.
      * @param serverAddress the address of the server to interrogate.
      */
     public NetworkConfigurationDiscoveryProcess(TransportAddress localAddress,
-                                 TransportAddress serverAddress)
+                                                TransportAddress serverAddress)
     {
-        apDescriptor       = new NetAccessPointDescriptor(localAddress);
-        this.serverAddress = serverAddress;
-    }
-
-    /**
-     * Creates a StunAddressDiscoverer. In order to use it one must start the
-     * discoverer.
-     * @param apDescriptor the address where the stach should bind.
-     * @param serverAddress the address of the server to interrogate.
-     */
-    public NetworkConfigurationDiscoveryProcess(NetAccessPointDescriptor apDescriptor,
-                                 TransportAddress serverAddress)
-    {
-        this.apDescriptor  = apDescriptor;
+        this.localAddress  = localAddress;
         this.serverAddress = serverAddress;
 
     }
@@ -154,7 +150,7 @@ public class NetworkConfigurationDiscoveryProcess
     {
         stunStack     = null;
         stunProvider  = null;
-        apDescriptor  = null;
+        localAddress  = null;
         requestSender = null;
 
         this.started = false;
@@ -171,11 +167,13 @@ public class NetworkConfigurationDiscoveryProcess
     {
         stunStack = StunStack.getInstance();
 
-        stunStack.installNetAccessPoint(apDescriptor);
+        DatagramSocket sock
+            = new DatagramSocket(localAddress.getSocketAddress());
+
+        stunStack.installNetAccessPoint(sock);
 
         stunProvider = stunStack.getProvider();
-
-        requestSender = new BlockingRequestSender(stunProvider, apDescriptor);
+        requestSender = new BlockingRequestSender(stunProvider, localAddress);
 
         started = true;
     }
@@ -228,7 +226,7 @@ public class NetworkConfigurationDiscoveryProcess
                         + ", name=" + backupServerAddress.getHostAddress());
 
             report.setPublicAddress(mappedAddress);
-            if (mappedAddress.equals(apDescriptor.getAddress()))
+            if (mappedAddress.equals(localAddress))
             {
                 evt = doTestII(serverAddress);
                 if (evt == null)
@@ -260,7 +258,8 @@ public class NetworkConfigurationDiscoveryProcess
                     }
                     TransportAddress mappedAddress2 =
                         ((MappedAddressAttribute)evt.getMessage().
-                            getAttribute(Attribute.MAPPED_ADDRESS)).getAddress();
+                            getAttribute(Attribute.MAPPED_ADDRESS))
+                                .getAddress();
                     if(mappedAddress.equals(mappedAddress2))
                     {
                         evt = doTestIII(serverAddress);
@@ -322,7 +321,8 @@ public class NetworkConfigurationDiscoveryProcess
         changeRequest.setChangePortFlag(false);
 */
         /* add a change request attribute */
-        ChangeRequestAttribute changeRequest = AttributeFactory.createChangeRequestAttribute();
+        ChangeRequestAttribute changeRequest
+            = AttributeFactory.createChangeRequestAttribute();
         changeRequest.setChangeIpFlag(false);
         changeRequest.setChangePortFlag(false);
         request.addAttribute(changeRequest);
@@ -367,7 +367,9 @@ public class NetworkConfigurationDiscoveryProcess
     {
         Request request = MessageFactory.createBindingRequest();
 
-        /* ChangeRequestAttribute changeRequest = (ChangeRequestAttribute)request.getAttribute(Attribute.CHANGE_REQUEST); */
+        /* ChangeRequestAttribute changeRequest
+         *  = (ChangeRequestAttribute)request
+         *   .getAttribute(Attribute.CHANGE_REQUEST); */
         /* add a change request attribute */
         ChangeRequestAttribute changeRequest = AttributeFactory.createChangeRequestAttribute();
         changeRequest.setChangeIpFlag(true);

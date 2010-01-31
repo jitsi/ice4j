@@ -1,25 +1,21 @@
 /*
- * Stun4j, the OpenSource Java Solution for NAT and Firewall Traversal.
+ * ice4j, the OpenSource Java Solution for NAT and Firewall Traversal.
+ * Maintained by the SIP Communicator community (http://sip-communicator.org).
  *
- * Distributable under LGPL license.
- * See terms of license at gnu.org.
+ * Distributable under LGPL license. See terms of license at gnu.org.
  */
 package org.ice4j.stack;
 
-import java.net.DatagramSocket;
 import java.io.*;
+import java.net.*;
 
 import org.ice4j.*;
-import org.ice4j.message.*;
 
 /**
  * The entry point to the Stun4J stack. The class is used to start, stop and
  * configure the stack.
  *
- * <p>Organisation: Louis Pasteur University, Strasbourg, France</p>
- *               <p>Network Research Team (http://www-r2.u-strasbg.fr)</p></p>
  * @author Emil Ivov
- * @version 0.1
  */
 public class StunStack
 {
@@ -70,48 +66,34 @@ public class StunStack
     }
 
     /**
-     * Creates and starts the specified Network Access Point.
-     *
-     * @param apDescriptor A descriptor containing the address and port of the
-     * STUN server that the newly created access point will communicate with.
-     * @throws IOException if we fail to bind a datagram socket on the specified
-     * address and port (NetAccessPointDescriptor)
-     */
-    public void installNetAccessPoint(NetAccessPointDescriptor apDescriptor)
-        throws IOException
-    {
-        netAccessManager.installNetAccessPoint(apDescriptor);
-    }
-
-    /**
      * Creates and starts the specified Network Access Point based on the
      * specified socket and returns a relevant descriptor.
      *
      * @param sock The socket that the new access point should represent.
      * @throws IOException if we fail to setup the socket.
-     * @return a descriptor of the newly created access point.
      */
-   public NetAccessPointDescriptor installNetAccessPoint(DatagramSocket sock)
+   public void installNetAccessPoint(DatagramSocket sock)
        throws IOException
    {
-       return netAccessManager.installNetAccessPoint(sock);
+       netAccessManager.installUdpConnector(sock);
    }
 
 
     /**
-     * Stops and deletes the specified access point.
-     * @param apDescriptor the access  point to remove
+     * Stops and deletes the connector listening on the specified local address.
+     *
+     * @param localAddr the access  point to remove
      */
-    public void removeNetAccessPoint(NetAccessPointDescriptor apDescriptor)
+    public void removeNetAccessPoint(TransportAddress localAddr)
     {
-        netAccessManager.removeNetAccessPoint(apDescriptor);
+        netAccessManager.removeNetAccessPoint(localAddr);
     }
 
 
 
     /**
      * Returns a StunProvider instance to be used for sending and receiving
-     * mesages.
+     * messages.
      *
      * @return an instance of StunProvider
      */

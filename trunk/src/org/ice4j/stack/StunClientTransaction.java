@@ -1,8 +1,8 @@
 /*
- * Stun4j, the OpenSource Java Solution for NAT and Firewall Traversal.
+ * ice4j, the OpenSource Java Solution for NAT and Firewall Traversal.
+ * Maintained by the SIP Communicator community (http://sip-communicator.org).
  *
- * Distributable under LGPL license.
- * See terms of license at gnu.org.
+ * Distributable under LGPL license. See terms of license at gnu.org.
  */
 package org.ice4j.stack;
 
@@ -29,16 +29,16 @@ import org.ice4j.message.*;
  * transaction to have failed if no response has been received.
  *
  *
- * <p>Organisation: <p> Louis Pasteur University, Strasbourg, France</p>
- * <p>Network Research Team (http://www-r2.u-strasbg.fr)</p></p>
  * @author Emil Ivov.
  * @author Pascal Mogeri (contributed configuration of client transactions).
- * @version 0.1
  */
 
 class StunClientTransaction
     implements Runnable
 {
+    /**
+     * Our class logger.
+     */
     private static final Logger logger =
         Logger.getLogger(StunClientTransaction.class.getName());
 
@@ -88,50 +88,44 @@ class StunClientTransaction
     /**
      * How much did we wait after our last retransmission.
      */
-    private int nextWaitInterval       = originalWaitInterval;
+    private int nextWaitInterval = originalWaitInterval;
 
     /**
      * The StunProvider that created us.
      */
-    private StunProvider      providerCallback  = null;
+    private StunProvider providerCallback = null;
 
     /**
      * The request that we are retransmitting.
      */
-    private Request           request           = null;
+    private Request request = null;
 
     /**
      * The destination of the request.
      */
-    private TransportAddress           requestDestination= null;
-
+    private TransportAddress requestDestination= null;
 
     /**
      * The id of the transaction.
      */
-    private TransactionID    transactionID      = null;
+    private TransactionID transactionID = null;
 
     /**
-     * The NetAccessPoint through which the original request was sent an where
-     * we are supposed to be retransmitting.
+     * The <tt>TransportAddress</tt> through which the original request was sent
+     * and that we are supposed to be retransmitting through.
      */
-    private NetAccessPointDescriptor apDescriptor = null;
+    private TransportAddress localAddress = null;
 
     /**
      * The instance to notify when a response has been received in the current
      * transaction or when it has timed out.
      */
-    private ResponseCollector 	     responseCollector = null;
+    private ResponseCollector responseCollector = null;
 
     /**
-     * Specifies whether the transaction is active or not.
+     * Determines whether the transaction is active or not.
      */
     private boolean cancelled = false;
-
-    /**
-     * The date (in millis) when the next retransmission should follow.
-     */
-    private long nextRetransmissionDate = -1;
 
     /**
      * The thread that this transaction runs in.
@@ -143,20 +137,20 @@ class StunClientTransaction
      * @param providerCallback the provider that created us.
      * @param request the request that we are living for.
      * @param requestDestination the destination of the request.
-     * @param apDescriptor the access point through which we are supposed to
+     * @param localAddress the local <tt>TransportAddress</tt> this transaction
+     * will be communication through.
      * @param responseCollector the instance that should receive this request's
-     * response.
-     * retransmit.
+     * response retransmit.
      */
-    public StunClientTransaction(StunProvider            providerCallback,
-                                Request                  request,
-                                TransportAddress              requestDestination,
-                                NetAccessPointDescriptor apDescriptor,
-                                ResponseCollector        responseCollector)
+    public StunClientTransaction(StunProvider     providerCallback,
+                                Request           request,
+                                TransportAddress  requestDestination,
+                                TransportAddress  localAddress,
+                                ResponseCollector responseCollector)
     {
         this.providerCallback  = providerCallback;
         this.request           = request;
-        this.apDescriptor      = apDescriptor;
+        this.localAddress      = localAddress;
         this.responseCollector = responseCollector;
         this.requestDestination = requestDestination;
 
@@ -267,7 +261,7 @@ class StunClientTransaction
         }
         providerCallback.getNetAccessManager().sendMessage(
             this.request,
-            apDescriptor,
+            localAddress,
             requestDestination);
     }
 

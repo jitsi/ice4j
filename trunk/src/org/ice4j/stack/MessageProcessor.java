@@ -1,8 +1,8 @@
 /*
- * Stun4j, the OpenSource Java Solution for NAT and Firewall Traversal.
+ * ice4j, the OpenSource Java Solution for NAT and Firewall Traversal.
+ * Maintained by the SIP Communicator community (http://sip-communicator.org).
  *
- * Distributable under LGPL license.
- * See terms of license at gnu.org.
+ * Distributable under LGPL license. See terms of license at gnu.org.
  */
 package org.ice4j.stack;
 
@@ -29,27 +29,27 @@ class MessageProcessor
     /**
      * The queue where we store incoming messages until they are collected.
      */
-    private MessageQueue           messageQueue     = null;
+    private MessageQueue messageQueue = null;
 
     /**
      * The listener that will be retrieving <tt>MessageEvent</tt>s
      */
-    private MessageEventHandler    messageHandler   = null;
+    private MessageEventHandler messageHandler = null;
 
     /**
      * The listener that will be collecting error notifications.
      */
-    private ErrorHandler           errorHandler     = null;
+    private ErrorHandler errorHandler  = null;
 
     /**
      * The flag that indicates whether we are still running.
      */
-    private boolean                isRunning        = false;
+    private boolean isRunning = false;
 
     /**
      * A reference to the thread that we use to execute ourselves.
      */
-    private Thread                 runningThread    = null;
+    private Thread runningThread = null;
 
     /**
      * Creates a Message processor.
@@ -136,11 +136,9 @@ class MessageProcessor
 
                 StunMessageEvent stunMessageEvent =
                     new StunMessageEvent(
-                        rawMessage.getNetAccessPoint(),
+                        rawMessage.getLocalAddress(),
                         stunMessage,
-                        new TransportAddress(
-                            rawMessage.getRemoteAddress().getAddress(),
-                            rawMessage.getRemoteAddress().getPort() ));
+                        rawMessage.getRemoteAddress());
                 messageHandler.handleMessageEvent(stunMessageEvent);
             }
         }
@@ -176,7 +174,7 @@ class MessageProcessor
     /**
      * Determines whether the processor is still running;
      *
-     * @return true if the processor is still authorised to run, and false
+     * @return true if the processor is still authorized to run, and false
      * otherwise.
      */
     boolean isRunning()
