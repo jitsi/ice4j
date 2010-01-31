@@ -285,11 +285,10 @@ public class ShallowStackTest extends TestCase {
         Response collectedResponse = null;
         public void processResponse(StunMessageEvent evt)
         {
-            collectedResponse = (Response)evt.getMessage();
-            logger.finest("Received response.");
-
             synchronized(this)
             {
+                collectedResponse = (Response)evt.getMessage();
+                logger.finest("Received response.");
                 notifyAll();
             }
         }
@@ -310,6 +309,8 @@ public class ShallowStackTest extends TestCase {
             {
                 try
                 {
+                    if (collectedResponse != null)
+                        return;
                     wait(50);
                 }
                 catch (InterruptedException e)
@@ -327,12 +328,11 @@ public class ShallowStackTest extends TestCase {
 
         public void requestReceived(StunMessageEvent evt)
         {
-            collectedRequest = (Request)evt.getMessage();
-            stunStack.removeRequestListener(this);
-            logger.finest("Received request.");
-
             synchronized(this)
             {
+                collectedRequest = (Request)evt.getMessage();
+                stunStack.removeRequestListener(this);
+                logger.finest("Received request.");
                 notifyAll();
             }
         }
@@ -341,6 +341,9 @@ public class ShallowStackTest extends TestCase {
         {
             synchronized(this)
             {
+                if (collectedRequest != null)
+                    return;
+
                 try
                 {
                     wait(50);
