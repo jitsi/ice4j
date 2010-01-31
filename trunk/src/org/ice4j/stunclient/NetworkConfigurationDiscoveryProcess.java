@@ -101,11 +101,6 @@ public class NetworkConfigurationDiscoveryProcess
     private StunStack stunStack = null;
 
     /**
-     * The provider to send our messages through
-     */
-    private StunProvider stunProvider  = null;
-
-    /**
      * The point where we'll be listening.
      */
     private TransportAddress localAddress  = null;
@@ -149,7 +144,6 @@ public class NetworkConfigurationDiscoveryProcess
     public void shutDown()
     {
         stunStack     = null;
-        stunProvider  = null;
         localAddress  = null;
         requestSender = null;
 
@@ -171,8 +165,7 @@ public class NetworkConfigurationDiscoveryProcess
 
         stunStack.addSocket(sock);
 
-        stunProvider = stunStack.getProvider();
-        requestSender = new BlockingRequestSender(stunProvider, localAddress);
+        requestSender = new BlockingRequestSender(stunStack, localAddress);
 
         started = true;
     }

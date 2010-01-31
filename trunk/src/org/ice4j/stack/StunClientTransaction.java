@@ -91,9 +91,9 @@ class StunClientTransaction
     private int nextWaitInterval = originalWaitInterval;
 
     /**
-     * The StunProvider that created us.
+     * The <tt>StunStack</tt> that created us.
      */
-    private StunProvider providerCallback = null;
+    private StunStack stackCallback = null;
 
     /**
      * The request that we are retransmitting.
@@ -133,8 +133,9 @@ class StunClientTransaction
     private Thread retransmissionsThread = null;
 
     /**
-     * Creates a client transaction
-     * @param providerCallback the provider that created us.
+     * Creates a client transaction.
+     *
+     * @param stackCallback the stack that created us.
      * @param request the request that we are living for.
      * @param requestDestination the destination of the request.
      * @param localAddress the local <tt>TransportAddress</tt> this transaction
@@ -142,16 +143,16 @@ class StunClientTransaction
      * @param responseCollector the instance that should receive this request's
      * response retransmit.
      */
-    public StunClientTransaction(StunProvider     providerCallback,
+    public StunClientTransaction(StunStack        stackCallback,
                                 Request           request,
                                 TransportAddress  requestDestination,
                                 TransportAddress  localAddress,
                                 ResponseCollector responseCollector)
     {
-        this.providerCallback  = providerCallback;
-        this.request           = request;
-        this.localAddress      = localAddress;
-        this.responseCollector = responseCollector;
+        this.stackCallback      = stackCallback;
+        this.request            = request;
+        this.localAddress       = localAddress;
+        this.responseCollector  = responseCollector;
         this.requestDestination = requestDestination;
 
         initTransactionConfiguration();
@@ -219,7 +220,7 @@ class StunClientTransaction
         waitFor(nextWaitInterval);
 
         responseCollector.processTimeout();
-        providerCallback.removeClientTransaction(this);
+        stackCallback.removeClientTransaction(this);
 
     }
 
@@ -259,7 +260,7 @@ class StunClientTransaction
             logger.finer("Trying to resend a cancelled transaction.");
             return;
         }
-        providerCallback.getNetAccessManager().sendMessage(
+        stackCallback.getNetAccessManager().sendMessage(
             this.request,
             localAddress,
             requestDestination);
@@ -304,8 +305,9 @@ class StunClientTransaction
     }
 
     /**
-     * Dispatches the response then cancels itself and notifies the StunProvider
+     * Dispatches the response then cancels itself and notifies the StunStack
      * for its termination.
+     *
      * @param evt the event that contains the newly received message
      */
     void handleResponse(StunMessageEvent evt)

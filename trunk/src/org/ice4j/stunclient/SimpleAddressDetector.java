@@ -37,11 +37,6 @@ public class SimpleAddressDetector
     private StunStack stunStack = null;
 
     /**
-     * The provider to send our messages through
-     */
-    private StunProvider stunProvider = null;
-
-    /**
      * The address of the stun server
      */
     private TransportAddress serverAddress = null;
@@ -81,7 +76,6 @@ public class SimpleAddressDetector
     public void shutDown()
     {
         stunStack = null;
-        stunProvider = null;
         requestSender = null;
     }
 
@@ -91,8 +85,6 @@ public class SimpleAddressDetector
     public void start()
     {
         stunStack = StunStack.getInstance();
-
-        stunProvider = stunStack.getProvider();
     }
 
 
@@ -114,7 +106,7 @@ public class SimpleAddressDetector
 
          stunStack.addSocket(socket);
 
-         requestSender = new BlockingRequestSender(stunProvider, localAddress);
+         requestSender = new BlockingRequestSender(stunStack, localAddress);
          StunMessageEvent evt = null;
          try
          {

@@ -42,9 +42,9 @@ class StunServerTransaction
     private long transactionLifetime = 16000;
 
     /**
-     * The StunProvider that created us.
+     * The <tt>StunStack</tt> that created us.
      */
-    private StunProvider providerCallback  = null;
+    private StunStack stackCallback  = null;
 
     /**
      * The source of the transaction request.
@@ -90,14 +90,14 @@ class StunServerTransaction
 
     /**
      * Creates a server transaction
-     * @param providerCallback the provider that created us.
+     * @param stackCallback the stack that created us.
      * @param tranID the transaction id contained by the request that was the
      * cause for this transaction.
      */
-    public StunServerTransaction(StunProvider            providerCallback,
-                                 TransactionID           tranID)
+    public StunServerTransaction(StunStack     stackCallback,
+                                 TransactionID tranID)
     {
-        this.providerCallback  = providerCallback;
+        this.stackCallback  = stackCallback;
 
         this.transactionID = tranID;
 
@@ -127,7 +127,7 @@ class StunServerTransaction
 
         //let's get lost
         expire();
-        providerCallback.removeServerTransaction(this);
+        stackCallback.removeServerTransaction(this);
     }
 
     /**
@@ -186,7 +186,7 @@ class StunServerTransaction
         if(expired || !isRetransmitting)
             return;
 
-        providerCallback.getNetAccessManager().sendMessage(response,
+        stackCallback.getNetAccessManager().sendMessage(response,
                                                            localAddress,
                                                            responseDestination);
     }
