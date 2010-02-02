@@ -420,7 +420,7 @@ public class StunStack
         Enumeration<TransactionID> tids = clientTransactions.keys();
         while (tids.hasMoreElements())
         {
-            TransactionID item = (TransactionID)tids.nextElement();
+            TransactionID item = tids.nextElement();
             StunClientTransaction tran = clientTransactions.remove(item);
             if(tran != null)
                 tran.cancel();
@@ -430,7 +430,7 @@ public class StunStack
         tids = serverTransactions.keys();
         while (tids.hasMoreElements())
         {
-            TransactionID item = (TransactionID)tids.nextElement();
+            TransactionID item = tids.nextElement();
             StunServerTransaction tran = serverTransactions.remove(item);
             if(tran != null)
                 tran.expire();
