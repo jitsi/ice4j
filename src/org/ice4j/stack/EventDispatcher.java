@@ -25,7 +25,7 @@ public class EventDispatcher
     /**
      * All property change listeners registered so far.
      */
-    private Vector<RequestListener> requestListeners
+    private final Vector<RequestListener> requestListeners
                                                 = new Vector<RequestListener>();
 
     /**
@@ -140,13 +140,8 @@ public class EventDispatcher
                     = new ArrayList<RequestListener>(requestListeners);
             }
 
-            Iterator<RequestListener> iterator = listenersCopy.iterator();
-            while (iterator.hasNext())
-            {
-                RequestListener target =
-                    (RequestListener) iterator.next();
+            for (RequestListener target : listenersCopy)
                 target.requestReceived(evt);
-            }
         }
 
         synchronized(requestListenersChildren)

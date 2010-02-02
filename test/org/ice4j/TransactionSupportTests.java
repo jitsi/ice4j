@@ -237,7 +237,7 @@ public class TransactionSupportTests extends TestCase
         Vector<StunMessageEvent> reqs = requestCollector
             .getRequestsForTransaction( bindingRequest.getTransactionID());
 
-        StunMessageEvent evt = ((StunMessageEvent)reqs.get(0));
+        StunMessageEvent evt = reqs.get(0);
 
         byte[] tid = evt.getMessage().getTransactionID();
         StunStack.getInstance().sendResponse(
@@ -281,7 +281,7 @@ public class TransactionSupportTests extends TestCase
         Vector<StunMessageEvent> reqs1 = requestCollector
             .getRequestsForTransaction( bindingRequest.getTransactionID());
 
-        StunMessageEvent evt1 = ((StunMessageEvent)reqs1.get(0));
+        StunMessageEvent evt1 = reqs1.get(0);
 
         //send a response to make the other guy shut up
         byte[] tid = evt1.getMessage().getTransactionID();
@@ -299,7 +299,7 @@ public class TransactionSupportTests extends TestCase
             = requestCollector.getRequestsForTransaction(
                 bindingRequest.getTransactionID());
 
-        StunMessageEvent evt2 = ((StunMessageEvent)reqs2.get(0));
+        StunMessageEvent evt2 = reqs2.get(0);
 
         assertFalse("Consecutive requests were assigned the same transaction id",
             Arrays.equals( evt1.getMessage().getTransactionID(),
@@ -440,12 +440,8 @@ public class TransactionSupportTests extends TestCase
         {
             Vector<StunMessageEvent> newVec = new Vector<StunMessageEvent>();
 
-            Iterator<StunMessageEvent> reqsIter
-                                    = receivedRequestsVector.iterator();
-
-            while(reqsIter.hasNext())
+            for (StunMessageEvent evt : receivedRequestsVector)
             {
-                StunMessageEvent evt = (StunMessageEvent)reqsIter.next();
                 Message msg = evt.getMessage();
                 if( Arrays.equals(tranid, msg.getTransactionID()))
                     newVec.add(evt);
