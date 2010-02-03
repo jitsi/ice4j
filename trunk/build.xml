@@ -6,6 +6,7 @@
     <property name="src" value="src"/>
     <property name="src2" value="test"/>
     <property name="junit.reports" value="junit-reports"/>
+    <property name="junit.html.reports" value="${junit.reports}/html"/>
     <property name="ice4j.jar" value="ice4j.jar"/>
     <path id="project.class.path">
         <pathelement location="${dest}"/>
@@ -99,6 +100,7 @@
     <target name="init">
         <mkdir dir="${dest}"/>
         <mkdir dir="${junit.reports}"/>
+        <mkdir dir="${junit.html.reports}"/>
     </target>
 
     <!-- create jar file-->
@@ -112,15 +114,42 @@
         </jar>
     </target>
 
+    <!-- We use this target from within the test target in order to generate
+    a human readable test report. We do not directly use the htmlreport
+    target because we  need to include xalan in the classpath before we
+    do.-->
+    <target name="htmlreport">
+        <junitreport todir="${junit.reports}">
+            <fileset dir="${junit.reports}">
+                <include name="TEST-*.xml"/>
+            </fileset>
+            <report format="frames" todir="${junit.html.reports}"/>
+        </junitreport>
+    </target>
+
     <!-- Run the tests-->
     <target name="test">
         <junit haltonfailure="true">
             <formatter type="xml"/>
-            <formatter type="plain" usefile="false"/>
+            <formatter type="brief" usefile="false"/>
             <test name="org.ice4j.StunTestSuite" todir="${junit.reports}"/>
             <classpath refid="project.class.path"/>
         </junit>
+
+        <!-- Generate the html report.
+        Run it quietly (i.e. redirect the output) because we don't won't to
+        see its "Build Successful" output line as users might confuse it
+        for a general build success while this might not be the case.-->
+        <echo message="Generating HTML test reports ..."/>
+        <java fork="true"
+            classname="org.apache.tools.ant.launch.Launcher"
+            classpath="${java.class.path}:${lib}/xalan-2.6.0.jar"
+            failonerror="true"
+            output="${junit.html.reports}/output.txt">
+            <arg value="htmlreport"/>
+        </java>
     </target>
+
 
     <!-- Cruise Control Target-->
     <target name="cc-buildloop" depends="rebuild,test"/>
