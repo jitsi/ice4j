@@ -41,6 +41,12 @@ class Connector
     private DatagramSocket sock;
 
     /**
+     * The object that we use to lock socket operations (since the socket itself
+     * is often null)
+     */
+    private final Object sockLock = new Object();
+
+    /**
      * A flag that is set to false to exit the message processor.
      */
     private boolean isRunning;
@@ -112,7 +118,22 @@ class Connector
                 byte message[] = new byte[bufsize];
                 DatagramPacket packet = new DatagramPacket(message, bufsize);
 
-                sock.receive(packet);
+                DatagramSocket localSock;
+
+                synchronized (sockLock)
+                {
+                    if (!isRunning)
+                        return;
+
+                    localSock = this.sock;
+                }
+
+
+                localSock.receive(packet);
+
+                //get lost if we are no longer running.
+                if(!isRunning)
+                    return;
 
                 //get lost if we are no longer running.
                 if(!isRunning)
@@ -176,8 +197,11 @@ class Connector
      */
     protected void stop()
     {
-        this.sock = null;
-        this.isRunning = false;
+        synchronized(sockLock)
+        {
+            this.isRunning = false;
+            this.sock = null;
+        }
     }
 
     /**
