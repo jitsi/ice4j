@@ -152,6 +152,6 @@
 
 
     <!-- Cruise Control Target-->
-    <target name="cc-buildloop" depends="rebuild,test"/>
+    <target name="cc-buildloop" depends="rebuild"/>
 
 </project>
