@@ -243,17 +243,15 @@ public abstract class Message
     public char getDataLength()
     {
         char length = 0;
-        Attribute att = null;
 
-        Iterator iter = attributes.entrySet().iterator();
-        while (iter.hasNext()) {
-            att = (Attribute)((Map.Entry)iter.next()).getValue();
+        for (Attribute att : attributes.values())
+        {
             length += att.getDataLength() + Attribute.HEADER_LENGTH;
         }
 
         if((length % 4) > 0)
         {
-          length += (4 - (length % 4));
+            length += (4 - (length % 4));
         }
 
         return length;
@@ -484,17 +482,14 @@ public abstract class Message
             return false;
 
         //compare attributes
-        Iterator iter = attributes.entrySet().iterator();
-        while (iter.hasNext()) {
-            Attribute localAtt = (Attribute)((Map.Entry)iter.next()).getValue();
-
+        for (Attribute localAtt : attributes.values())
+        {
             if(!localAtt.equals(msg.getAttribute(localAtt.getAttributeType())))
                 return false;
         }
 
         return true;
     }
-
 
     /**
      * Returns a binary representation of this message.
@@ -522,11 +517,8 @@ public abstract class Message
         System.arraycopy(getTransactionID(), 0, binMsg, offset, TRANSACTION_ID_LENGTH);
         offset+=TRANSACTION_ID_LENGTH;
 
-        Iterator iter = attributes.entrySet().iterator();
-        while (iter.hasNext()) {
-
-            Attribute attribute = (Attribute)((Map.Entry)iter.next()).getValue();
-
+        for (Attribute attribute : attributes.values())
+        {
             byte[] attBinValue = attribute.encode();
             System.arraycopy(attBinValue, 0, binMsg, offset, attBinValue.length);
             offset += attBinValue.length;

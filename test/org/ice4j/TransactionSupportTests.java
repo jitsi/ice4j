@@ -357,7 +357,7 @@ public class TransactionSupportTests extends TestCase
         requestCollector.waitForRequest();
 
         //verify
-        Vector reqs = requestCollector.getRequestsForTransaction(
+        Vector<?> reqs = requestCollector.getRequestsForTransaction(
                                 bindingRequest.getTransactionID());
         assertTrue("A retransmissions of the request was sent too early",
             reqs.size() < 2);

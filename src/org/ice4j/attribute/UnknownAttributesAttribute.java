@@ -35,7 +35,6 @@ import org.ice4j.*;
  * @author Emil Ivov
  * @version 0.1
  */
-
 public class UnknownAttributesAttribute extends Attribute
 {
     /**
@@ -151,9 +150,9 @@ public class UnknownAttributesAttribute extends Attribute
         binValue[offset++] = (byte) (getDataLength() & 0x00FF);
 
 
-        Iterator attributes = getAttributes();
+        Iterator<Character> attributes = getAttributes();
         while (attributes.hasNext()) {
-            char att = ((Character)attributes.next()).charValue();
+            char att = attributes.next().charValue();
             binValue[offset++] = (byte)(att>>8);
             binValue[offset++] = (byte)(att & 0x00FF);
         }
@@ -224,7 +223,5 @@ public class UnknownAttributesAttribute extends Attribute
                                (attributeValue[offset++]) );
             addAttributeID(attributeID);
         }
-
     }
-
 }
