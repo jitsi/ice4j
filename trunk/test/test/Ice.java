@@ -82,13 +82,11 @@ public class Ice
     {
         try
         {
-            Method method
-                = iface.getClass().getMethod("isLoopback", new Class[]{});
+            Method method = iface.getClass().getMethod("isLoopback");
 
             System.out.println("It works!");
 
-            return ((Boolean)method.invoke(iface, new Object[]{}))
-                        .booleanValue();
+            return ((Boolean)method.invoke(iface)).booleanValue();
         }
         catch(Throwable t)
         {
@@ -107,13 +105,11 @@ public class Ice
     {
         try
         {
-            Method method
-                = iface.getClass().getMethod("isUp", new Class[]{});
+            Method method = iface.getClass().getMethod("isUp");
 
             System.out.println("It works!");
 
-            return ((Boolean)method.invoke(iface, new Object[]{}))
-                        .booleanValue();
+            return ((Boolean)method.invoke(iface)).booleanValue();
         }
         catch(Throwable t)
         {
@@ -129,13 +125,11 @@ public class Ice
     {
         try
         {
-            Method method
-                = iface.getClass().getMethod("isVirtual", new Class[]{});
+            Method method = iface.getClass().getMethod("isVirtual");
 
             System.out.println("It works!");
 
-            return ((Boolean)method.invoke(iface, new Object[]{}))
-                        .booleanValue();
+            return ((Boolean)method.invoke(iface)).booleanValue();
         }
         catch(Throwable t)
         {
