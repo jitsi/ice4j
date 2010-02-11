@@ -13,6 +13,7 @@ import java.util.logging.*;
 import org.ice4j.*;
 import org.ice4j.attribute.*;
 import org.ice4j.message.*;
+import org.ice4j.socket.*;
 import org.ice4j.stack.*;
 
 /**
@@ -165,7 +166,7 @@ public class NetworkConfigurationDiscoveryProcess
     {
         stunStack = StunStack.getInstance();
 
-        sock = new DatagramSocket(localAddress);
+        sock = new SafeCloseDatagramSocket(localAddress);
 
         stunStack.addSocket(sock);
 

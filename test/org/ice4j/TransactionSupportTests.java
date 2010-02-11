@@ -8,11 +8,11 @@ package org.ice4j;
 
 import java.net.*;
 import java.util.*;
-import java.util.logging.*;
 
 import junit.framework.*;
 
 import org.ice4j.message.*;
+import org.ice4j.socket.*;
 import org.ice4j.stack.*;
 
 /**
@@ -63,8 +63,8 @@ public class TransactionSupportTests extends TestCase
     {
         super.setUp();
 
-        clientSock = new DatagramSocket(clientAddress);
-        serverSock = new DatagramSocket(serverAddress);
+        clientSock = new SafeCloseDatagramSocket(clientAddress);
+        serverSock = new SafeCloseDatagramSocket(serverAddress);
 
         StunStack.getInstance().addSocket(clientSock);
         StunStack.getInstance().addSocket(serverSock);

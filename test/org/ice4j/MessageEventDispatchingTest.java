@@ -8,11 +8,11 @@ package org.ice4j;
 
 import java.net.*;
 import java.util.*;
-import java.util.logging.*;
 
 import junit.framework.*;
 
 import org.ice4j.message.*;
+import org.ice4j.socket.*;
 import org.ice4j.stack.*;
 
 /**
@@ -91,9 +91,9 @@ public class MessageEventDispatchingTest extends TestCase
 
         stunStack = StunStack.getInstance();
 
-        clientSock = new DatagramSocket(clientAddress);
-        serverSock = new DatagramSocket(serverAddress);
-        serverSock2 = new DatagramSocket(serverAddress2);
+        clientSock = new SafeCloseDatagramSocket(clientAddress);
+        serverSock = new SafeCloseDatagramSocket(serverAddress);
+        serverSock2 = new SafeCloseDatagramSocket(serverAddress2);
 
         stunStack.addSocket(clientSock);
         stunStack.addSocket(serverSock);

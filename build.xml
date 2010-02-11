@@ -129,7 +129,7 @@
 
     <!-- Run the tests-->
     <target name="test">
-        <junit haltonfailure="true">
+        <junit haltonfailure="true" fork="true" forkmode="once">
             <formatter type="xml"/>
             <formatter type="brief" usefile="false"/>
             <test name="org.ice4j.StunTestSuite" todir="${junit.reports}"/>
@@ -152,6 +152,6 @@
 
 
     <!-- Cruise Control Target-->
-    <target name="cc-buildloop" depends="rebuild"/>
+    <target name="cc-buildloop" depends="rebuild,test"/>
 
 </project>

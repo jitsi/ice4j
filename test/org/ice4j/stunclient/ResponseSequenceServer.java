@@ -13,6 +13,7 @@ import java.util.logging.*;
 
 import org.ice4j.*;
 import org.ice4j.message.*;
+import org.ice4j.socket.*;
 import org.ice4j.stack.*;
 
 /**
@@ -56,7 +57,7 @@ public class ResponseSequenceServer
     {
         stunStack    = StunStack.getInstance();
 
-        localSocket = new DatagramSocket(serverAddress);
+        localSocket = new SafeCloseDatagramSocket(serverAddress);
 
         stunStack.addSocket(localSocket);
         stunStack.addRequestListener(serverAddress, this);

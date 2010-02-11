@@ -14,6 +14,7 @@ import junit.framework.*;
 
 import org.ice4j.*;
 import org.ice4j.message.*;
+import org.ice4j.socket.*;
 
 /**
  * All unit stack tests should be provided later. I just don't have the time now.
@@ -60,7 +61,7 @@ public class ShallowStackTest extends TestCase {
         stunStack    = StunStack.getInstance();
 
         //access point
-        localSock = new DatagramSocket(localAddress);
+        localSock = new SafeCloseDatagramSocket(localAddress);
         stunStack.addSocket(localSock);
 
         //init the dummy server
@@ -70,14 +71,13 @@ public class ShallowStackTest extends TestCase {
     protected void tearDown()
         throws Exception
     {
-        msgFixture.tearDown();
         stunStack.removeSocket(localAddress);
 
         localSock.close();
 
         dummyServerSocket.close();
 
-
+        msgFixture.tearDown();
         msgFixture = null;
         super.tearDown();
     }
