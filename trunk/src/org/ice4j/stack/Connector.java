@@ -135,10 +135,6 @@ class Connector
                 if(!isRunning)
                     return;
 
-                //get lost if we are no longer running.
-                if(!isRunning)
-                    return;
-
                 logger.finest("received datagram");
 
                 RawMessage rawMessage = new RawMessage( message,
@@ -225,6 +221,7 @@ class Connector
      * Returns a String representation of the object.
      * @return a String representation of the object.
      */
+    @Override
     public String toString()
     {
         return "org.ice4j.stack.AccessPoint@"
