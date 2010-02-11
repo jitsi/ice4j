@@ -14,8 +14,8 @@ import org.ice4j.ice.*;
  * The Address class is used to define destinations to outgoing Stun Packets.
  *
  * @author Emil Ivov
+ * @author Lubomir Marinov
  */
-
 public class TransportAddress
     extends InetSocketAddress
 {
@@ -166,6 +166,21 @@ public class TransportAddress
     public Transport getTransport()
     {
         return transport;
+    }
+
+    /**
+     * Determines whether this <tt>TransportAddress</tt> is value equal to a
+     * specific <tt>TransportAddress</tt>.
+     *
+     * @param transportAddress the <tt>TransportAddress</tt> to test for value
+     * equality with this <tt>TransportAddress</tt>
+     * @return <tt>true</tt> if this <tt>TransportAddress</tt> is value equal to
+     * the specified <tt>transportAddress</tt>; otherwise, <tt>false</tt>
+     * @see #equalsTransportAddress(Object)
+     */
+    public boolean equals(TransportAddress transportAddress)
+    {
+        return equalsTransportAddress(transportAddress);
     }
 
     /**

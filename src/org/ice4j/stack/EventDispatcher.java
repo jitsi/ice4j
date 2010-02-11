@@ -32,7 +32,7 @@ public class EventDispatcher
      * Hashtable for managing property change listeners registered for specific
      * properties. Maps property names to PropertyChangeSupport objects.
      */
-    private Hashtable<TransportAddress, EventDispatcher>
+    private final Hashtable<TransportAddress, EventDispatcher>
         requestListenersChildren
             = new Hashtable<TransportAddress, EventDispatcher>();
 
@@ -176,7 +176,7 @@ public class EventDispatcher
 
         synchronized(requestListenersChildren)
         {
-            if (requestListenersChildren != null)
+            if (!requestListenersChildren.isEmpty())
             {
                 EventDispatcher child = requestListenersChildren.get(localAddr);
                 if (child != null && child.requestListeners != null)
@@ -196,6 +196,6 @@ public class EventDispatcher
     {
         if(requestListeners != null)
             requestListeners.removeAllElements();
-        requestListenersChildren = null;
+        requestListenersChildren.clear();
     }
 }
