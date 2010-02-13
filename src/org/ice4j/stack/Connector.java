@@ -33,7 +33,7 @@ class Connector
     /**
      * The message queue is where incoming messages are added.
      */
-    private MessageQueue messageQueue = null;
+    private final MessageQueue messageQueue;
 
     /**
      * The socket object that used by this access point to access the network.
@@ -55,7 +55,7 @@ class Connector
      * The instance to be notified if errors occur in the network listening
      * thread.
      */
-    private ErrorHandler errorHandler = null;
+    private final ErrorHandler errorHandler;
 
     /**
      * The address that we are listening to.
@@ -160,6 +160,7 @@ class Connector
                         + "receive a message.",
                         ex);
                 }
+                else
                 {
                     //The exception was most probably caused by calling
                     //this.stop() ....

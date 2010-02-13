@@ -15,7 +15,6 @@ import org.ice4j.*;
  *
  * @author Emil Ivov
  */
-
 interface MessageEventHandler
 {
     /**

@@ -46,21 +46,20 @@ public class StunStack
     /**
      * Stores active client transactions mapped against TransactionID-s.
      */
-    private Hashtable<TransactionID, StunClientTransaction> clientTransactions
+    private final Hashtable<TransactionID, StunClientTransaction> clientTransactions
                         = new Hashtable<TransactionID, StunClientTransaction>();
 
     /**
      * Currently open server transactions. The vector contains transaction ids
      * for transactions corresponding to all non-answered received requests.
      */
-    private Hashtable<TransactionID, StunServerTransaction> serverTransactions
+    private final Hashtable<TransactionID, StunServerTransaction> serverTransactions
                         = new Hashtable<TransactionID, StunServerTransaction>();
 
     /**
      * A dispatcher for incoming requests event;
      */
     private EventDispatcher eventDispatcher = new EventDispatcher();
-
 
     /**
      * Returns a reference to the singleton StunStack instance. If the stack
@@ -95,12 +94,11 @@ public class StunStack
      * @param sock The socket that the new access point should represent.
      * @throws IOException if we fail to setup the socket.
      */
-   public void addSocket(DatagramSocket sock)
+    public void addSocket(DatagramSocket sock)
        throws IOException
-   {
-       netAccessManager.addSocket(sock);
-   }
-
+    {
+        netAccessManager.addSocket(sock);
+    }
 
     /**
      * Stops and deletes the connector listening on the specified local address.
@@ -201,8 +199,7 @@ public class StunStack
      * through the network socket.
      * @throws IllegalArgumentException if the apDescriptor references an
      * access point that had not been installed,
-     * @throws StunException if message encoding fails,
-     *
+     * @throws StunException if message encoding fails
      */
     public void sendRequest( Request           request,
                              TransportAddress  sendTo,
@@ -235,7 +232,7 @@ public class StunStack
      * through the network socket.
      * @throws IllegalArgumentException if the apDescriptor references an
      * access point that had not been installed,
-     * @throws StunException if message encoding fails,
+     * @throws StunException if message encoding fails
      */
     public void sendResponse(byte[]           transactionID,
                              Response         response,
@@ -260,9 +257,6 @@ public class StunStack
         {
             sTran.sendResponse(response, sendThrough, sendTo);
         }
-
-
-
     }
 
     /**
@@ -294,7 +288,6 @@ public class StunStack
      * like to listen on.
      * @param listener The ConfigurationChangeListener to be added
      */
-
     public void addRequestListener( TransportAddress localAddress,
                                     RequestListener  listener)
     {
@@ -407,7 +400,6 @@ public class StunStack
                                             + clientTransactions.toString());
             }
         }
-
     }
 
     /**
@@ -424,7 +416,6 @@ public class StunStack
             StunClientTransaction tran = clientTransactions.remove(item);
             if(tran != null)
                 tran.cancel();
-
         }
 
         tids = serverTransactions.keys();
@@ -434,7 +425,6 @@ public class StunStack
             StunServerTransaction tran = serverTransactions.remove(item);
             if(tran != null)
                 tran.expire();
-
         }
     }
 }

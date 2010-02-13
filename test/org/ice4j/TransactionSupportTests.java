@@ -86,8 +86,6 @@ public class TransactionSupportTests extends TestCase
                            "");
         System.setProperty("org.ice4j.ORIGINAL_WAIT_INTERVAL",
                            "");
-
-
     }
 
     protected void tearDown() throws Exception
@@ -164,8 +162,6 @@ public class TransactionSupportTests extends TestCase
                                 oldRetransValue);
         else
             System.clearProperty("org.ice4j.MAX_WAIT_INTERVAL");
-
-
     }
 
     /**
@@ -464,9 +460,10 @@ public class TransactionSupportTests extends TestCase
         }
     }
 
-    private class PlainResponseCollector implements ResponseCollector{
-
-        public Vector<Object> receivedResponses = new Vector<Object>();
+    private class PlainResponseCollector
+        implements ResponseCollector
+    {
+        public final Vector<Object> receivedResponses = new Vector<Object>();
 
         public void processResponse(StunMessageEvent responseEvt)
         {
@@ -475,10 +472,24 @@ public class TransactionSupportTests extends TestCase
 
         public void processTimeout()
         {
-            receivedResponses.add(new String("timeout"));
+            receivedResponses.add("timeout");
         }
 
+        /**
+         * Notifies this collector that the destination of the request has been
+         * determined to be unreachable and that the request should be
+         * considered unanswered.
+         *
+         * @param exception the <tt>PortUnreachableException</tt> which signaled
+         * that the destination of the request was found to be unreachable
+         * @see ResponseCollector#processUnreachable(PortUnreachableException)
+         */
+        public void processUnreachable(PortUnreachableException exception)
+        {
+            receivedResponses.add("unreachable");
+        }
     }
+
     /*
     public TransactionSupportTests(String name)
     {
