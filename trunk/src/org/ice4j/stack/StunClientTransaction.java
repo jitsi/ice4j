@@ -6,8 +6,9 @@
  */
 package org.ice4j.stack;
 
-import java.util.logging.*;
 import java.io.*;
+import java.net.*;
+import java.util.logging.*;
 
 import org.ice4j.*;
 import org.ice4j.message.*;
@@ -93,34 +94,34 @@ class StunClientTransaction
     /**
      * The <tt>StunStack</tt> that created us.
      */
-    private StunStack stackCallback = null;
+    private final StunStack stackCallback;
 
     /**
      * The request that we are retransmitting.
      */
-    private Request request = null;
+    private final Request request;
 
     /**
      * The destination of the request.
      */
-    private TransportAddress requestDestination= null;
+    private final TransportAddress requestDestination;
 
     /**
      * The id of the transaction.
      */
-    private TransactionID transactionID = null;
+    private final TransactionID transactionID;
 
     /**
      * The <tt>TransportAddress</tt> through which the original request was sent
      * and that we are supposed to be retransmitting through.
      */
-    private TransportAddress localAddress = null;
+    private final TransportAddress localAddress;
 
     /**
      * The instance to notify when a response has been received in the current
      * transaction or when it has timed out.
      */
-    private ResponseCollector responseCollector = null;
+    private final ResponseCollector responseCollector;
 
     /**
      * Determines whether the transaction is active or not.
@@ -191,8 +192,8 @@ class StunClientTransaction
              retransmissionCounter ++)
         {
             waitFor(nextWaitInterval);
-            //did someone tell us to get lost?
 
+            //did someone tell us to get lost?
             if(cancelled)
                 return;
 
@@ -209,7 +210,7 @@ class StunClientTransaction
                 //has failed
                 logger.log(Level.WARNING,
                            "A client tran retransmission failed", ex);
-            };
+            }
         }
 
         //before stating that a transaction has timeout-ed we should first wait
@@ -221,7 +222,6 @@ class StunClientTransaction
 
         responseCollector.processTimeout();
         stackCallback.removeClientTransaction(this);
-
     }
 
     /**
@@ -231,9 +231,8 @@ class StunClientTransaction
      * @throws IOException  if an error occurs while sending message bytes
      * through the network socket.
      * @throws IllegalArgumentException if the apDescriptor references an
-     * access point that had not been installed,
-     * @throws StunException if message encoding fails,
-     *
+     * access point that had not been installed
+     * @throws StunException if message encoding fails
      */
     void sendRequest()
         throws StunException, IllegalArgumentException, IOException

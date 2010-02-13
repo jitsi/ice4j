@@ -9,8 +9,8 @@ package org.ice4j.stack;
 /**
  * Generic Error Handler.
  *
- * <p>Organisation: <p> Louis Pasteur University, Strasbourg, France.</p>
- * <p>Network Research Team (http://www-r2.u-strasbg.fr)</p></p>
+ * <p>Organization: <p> Louis Pasteur University, Strasbourg, France.</p>
+ * <p>Network Research Team (http://www-r2.u-strasbg.fr)</p>
  * @author Emil Ivov
  * @version 0.1
  */
@@ -32,5 +32,7 @@ interface ErrorHandler
      * @param message       a message describing the error.
      * @param error         the error itself.
      */
-    public void handleFatalError(Runnable callingThread, String message, Throwable error);
+    public void handleFatalError(Runnable callingThread,
+                                 String message,
+                                 Throwable error);
 }

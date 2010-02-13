@@ -14,8 +14,8 @@ import java.util.logging.Logger;
  * access is synchronized and message delivery ( remove() ) is blocking in the
  * case of an empty queue.
  *
- * <p>Organisation: Louis Pasteur University, Strasbourg, France</p>
- * <p>Network Research Team (http://www-r2.u-strasbg.fr)</p></p>
+ * <p>Organization: Louis Pasteur University, Strasbourg, France</p>
+ * <p>Network Research Team (http://www-r2.u-strasbg.fr)</p>
  *
  * @author Emil Ivov
  * @version 0.1
@@ -37,7 +37,6 @@ class MessageQueue
      */
     MessageQueue()
     {
-
     }
 
     /**

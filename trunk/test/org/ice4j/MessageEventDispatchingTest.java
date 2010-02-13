@@ -283,74 +283,75 @@ public class MessageEventDispatchingTest extends TestCase
     /**
      * A utility class we use to collect incoming responses.
      */
-    private class PlainResponseCollector implements ResponseCollector
+    private class PlainResponseCollector
+        implements ResponseCollector
     {
-        /**
-         *
-         */
-        public Vector<Object> receivedResponses = new Vector<Object>();
+        public final Vector<Object> receivedResponses = new Vector<Object>();
 
         /**
          * Stores incoming requests.
          *
          * @param responseEvt the event containing the incoming request.
          */
-        public void processResponse(StunMessageEvent responseEvt)
+        public synchronized void processResponse(StunMessageEvent responseEvt)
         {
-            synchronized(this)
-            {
-                receivedResponses.add(responseEvt);
-                notifyAll();
-            }
+            receivedResponses.add(responseEvt);
+            notifyAll();
         }
 
         /**
          * Indicates that no response has been received.
          */
-        public void processTimeout()
+        public synchronized void processTimeout()
         {
-            synchronized(this)
-            {
-                receivedResponses.add(new String("timeout"));
-                notifyAll();
-            }
+            receivedResponses.add("timeout");
+            notifyAll();
+        }
+
+        /**
+         * Notifies this collector that the destination of the request has been
+         * determined to be unreachable and that the request should be
+         * considered unanswered.
+         *
+         * @param exception the <tt>PortUnreachableException</tt> which signaled
+         * that the destination of the request was found to be unreachable
+         * @see ResponseCollector#processUnreachable(PortUnreachableException)
+         */
+        public synchronized void processUnreachable(
+                PortUnreachableException exception)
+        {
+            receivedResponses.add("unreachable");
+            notifyAll();
         }
 
         /**
          * Waits for a short period of time for a response to arrive
          */
-        public void waitForResponse()
+        public synchronized void waitForResponse()
         {
-            synchronized(this)
+            try
             {
-                try
-                {
-                    if (receivedResponses.size() > 0)
-                        return;
+                if (receivedResponses.size() == 0)
                     wait(50);
-                }
-                catch (InterruptedException e)
-                {}
+            }
+            catch (InterruptedException e)
+            {
             }
         }
 
         /**
          * Waits for a long period of time for a timeout trigger to fire.
          */
-        public void waitForTimeout()
+        public synchronized void waitForTimeout()
         {
-            synchronized(this)
+            try
             {
-                try
-                {
-                    if (receivedResponses.size() > 0)
-                        return;
+                if (receivedResponses.size() == 0)
                     wait(12000);
-                }
-                catch (InterruptedException e)
-                {}
+            }
+            catch (InterruptedException e)
+            {
             }
         }
-
     }
 }

@@ -283,40 +283,46 @@ public class ShallowStackTest extends TestCase {
         implements ResponseCollector
     {
         Response collectedResponse = null;
-        public void processResponse(StunMessageEvent evt)
+
+        public synchronized void processResponse(StunMessageEvent evt)
         {
-            synchronized(this)
-            {
-                collectedResponse = (Response)evt.getMessage();
-                logger.finest("Received response.");
-                notifyAll();
-            }
+            collectedResponse = (Response)evt.getMessage();
+            logger.finest("Received response.");
+            notifyAll();
         }
 
-        public void processTimeout()
+        public synchronized void processTimeout()
         {
             logger.info("Timeout");
-
-            synchronized(this)
-            {
-                notifyAll();
-            }
+            notifyAll();
         }
 
-        public void waitForResponse()
+        /**
+         * Notifies this collector that the destination of the request has been
+         * determined to be unreachable and that the request should be
+         * considered unanswered.
+         *
+         * @param exception the <tt>PortUnreachableException</tt> which signaled
+         * that the destination of the request was found to be unreachable
+         * @see ResponseCollector#processUnreachable(PortUnreachableException)
+         */
+        public synchronized void processUnreachable(
+                PortUnreachableException exception)
         {
-            synchronized(this)
+            logger.info("Unreachable");
+            notifyAll();
+        }
+
+        public synchronized void waitForResponse()
+        {
+            try
             {
-                try
-                {
-                    if (collectedResponse != null)
-                        return;
+                if (collectedResponse == null)
                     wait(50);
-                }
-                catch (InterruptedException e)
-                {
-                    logger.log(Level.INFO, "oops", e);
-                }
+            }
+            catch (InterruptedException e)
+            {
+                logger.log(Level.INFO, "oops", e);
             }
         }
     }

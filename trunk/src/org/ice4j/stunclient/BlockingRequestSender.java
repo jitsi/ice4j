@@ -7,6 +7,7 @@
 package org.ice4j.stunclient;
 
 import java.io.*;
+import java.net.*;
 import java.util.logging.*;
 
 import org.ice4j.*;
@@ -44,12 +45,12 @@ class BlockingRequestSender
     /**
      * The stack that we are using to send requests through.
      */
-    private StunStack stunStack  = null;
+    private final StunStack stunStack;
 
     /**
      * The transport address that we are bound on.
      */
-    private TransportAddress localAddress  = null;
+    private final TransportAddress localAddress;
 
     /**
      * The <tt>StunMessageEvent</tt> that contains the response matching our
@@ -58,14 +59,14 @@ class BlockingRequestSender
     private StunMessageEvent responseEvent = null;
 
     /**
-     * Determines whether this request sender has comleted its coarse.
+     * Determines whether this request sender has completed its course.
      */
     private boolean ended = false;
 
     /**
      * A lock object that we are using to synchronize sending.
      */
-    private Object sendLock = new Object();
+    private final Object sendLock = new Object();
 
     /**
      * Creates a new request sender.
@@ -102,6 +103,25 @@ class BlockingRequestSender
     public synchronized void processTimeout()
     {
         synchronized(sendLock){
+            ended = true;
+            notifyAll();
+        }
+    }
+
+    /**
+     * Notifies this collector that the destination of the request has been
+     * determined to be unreachable and that the request should be considered
+     * unanswered.
+     *
+     * @param exception the <tt>PortUnreachableException</tt> which signaled
+     * that the destination of the request was found to be unreachable
+     * @see ResponseCollector#processUnreachable(PortUnreachableException)
+     */
+    public synchronized void processUnreachable(
+            PortUnreachableException exception)
+    {
+        synchronized(sendLock)
+        {
             ended = true;
             notifyAll();
         }

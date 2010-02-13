@@ -24,7 +24,6 @@ import org.ice4j.message.*;
  *
  * @author Emil Ivov
  */
-
 class NetAccessManager
     implements ErrorHandler
 {
@@ -33,6 +32,7 @@ class NetAccessManager
      */
     private static final Logger logger =
         Logger.getLogger(NetAccessManager.class.getName());
+
     /**
      * All access points currently in use. The table maps
      * <tt>TransportAddress</tt>es to <tt>Connector</tt>s
@@ -43,7 +43,7 @@ class NetAccessManager
     /**
      * A synchronized FIFO where incoming messages are stocked for processing.
      */
-    private MessageQueue messageQueue = new MessageQueue();
+    private final MessageQueue messageQueue = new MessageQueue();
 
     /**
      * A thread pool of message processors.
@@ -52,7 +52,7 @@ class NetAccessManager
                                             = new Vector<MessageProcessor>();
 
     /**
-     * The instance that should be notified whan an incoming message has been
+     * The instance that should be notified when an incoming message has been
      * processed and ready for delivery
      */
     private MessageEventHandler messageEventHandler = null;
@@ -119,7 +119,7 @@ class NetAccessManager
         {
             MessageProcessor mp = (MessageProcessor)callingThread;
             logger.log( Level.WARNING, "A message processor has unexpectedly "
-                    +"stopped. AP:" + mp.toString(), error);
+                    +"stopped. AP:" + mp, error);
 
             //make sure the guy's dead.
             mp.stop();
@@ -144,7 +144,6 @@ class NetAccessManager
     protected void addSocket(DatagramSocket socket)
         throws IOException
     {
-
         //no null check - let it through a null pointer exception
         TransportAddress localAddr = new TransportAddress(
                socket.getLocalAddress(), socket.getLocalPort(), Transport.UDP);
@@ -158,7 +157,6 @@ class NetAccessManager
 
         ap.start();
     }
-
 
     /**
      * Stops and deletes the specified access point.
@@ -216,7 +214,6 @@ class NetAccessManager
             fillUpThreadPool(initialThreadPoolSize);
     }
 
-
     /**
      * Starts all message processors
      *
@@ -236,13 +233,12 @@ class NetAccessManager
 
             mp.start();
         }
-
     }
 
     /**
      * Starts all message processors
      *
-     * @param newSize the new thread poolsize
+     * @param newSize the new thread pool size
      */
     private void shrinkThreadPool(int newSize)
     {
@@ -281,5 +277,4 @@ class NetAccessManager
 
         ap.sendMessage(bytes, remoteAddr);
     }
-
 }
