@@ -14,8 +14,6 @@ import java.util.Arrays;
  * transaction ids in collection objects as it implements the equals method.
  * It also provies a utility for creating unique transaction ids.
  *
- * <p>Organisation: <p> Louis Pasteur University, Strasbourg, France</p>
- * <p>Network Research Team (http://www-r2.u-strasbg.fr)</p></p>
  * @author Emil Ivov
  * @version 0.1
  */
