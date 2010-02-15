@@ -99,8 +99,11 @@ class BlockingRequestSender
     /**
      * Notifies the discoverer thread when a message has timeout-ed so that
      * it may resume and consider it as unanswered.
+     *
+     * @param evt the <tt>StunTimeoutEvent</tt> containing the transaction that
+     * has just expired.
      */
-    public synchronized void processTimeout()
+    public synchronized void processTimeout(StunTimeoutEvent evt)
     {
         synchronized(sendLock){
             ended = true;

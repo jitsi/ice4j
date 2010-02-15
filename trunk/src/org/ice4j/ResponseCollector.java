@@ -28,7 +28,7 @@ public interface ResponseCollector
      * after repeated retransmissions of the original request (as described
      * by rfc3489) and that the request should be considered unanswered.
      */
-    public void processTimeout();
+    public void processTimeout(StunTimeoutEvent event);
 
     /**
      * Notifies this collector that the destination of the request has been

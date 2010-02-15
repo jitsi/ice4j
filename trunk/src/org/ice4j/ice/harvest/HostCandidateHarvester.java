@@ -206,8 +206,9 @@ public class HostCandidateHarvester
             {
                 logger.log(Level.INFO,
                     "Retrying a bind because of a failure to bind to address "
-                        + laddr + " and port " + port);
-                logger.log(Level.FINEST, "", se);
+                        + laddr + " and port " + port
+                        + " (" + se.getMessage() +")");
+                logger.log(Level.INFO, "", se);
 
             }
 
