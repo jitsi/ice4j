@@ -10,6 +10,7 @@ package org.ice4j.ice.harvest;
 import java.io.*;
 import java.net.*;
 import java.util.*;
+import java.util.logging.*;
 
 import org.ice4j.*;
 import org.ice4j.ice.*;
@@ -26,6 +27,11 @@ public class StunCandidateHarvester
     implements CandidateHarvester,
                ResponseCollector
 {
+    /**
+     * Our class logger.
+     */
+    private final Logger logger
+        = Logger.getLogger(StunCandidateHarvester.class.getName());
 
     /**
      * The stack to use for STUN communication.
@@ -40,8 +46,8 @@ public class StunCandidateHarvester
     /**
      * The list of candidates that we are currently resolving.
      */
-    private final List<HostCandidate> resolveList
-                                            = new LinkedList<HostCandidate>();
+    private final Map<TransactionID, HostCandidate> resolveMap
+                            = new Hashtable<TransactionID, HostCandidate>();
 
     /**
      * Creates a new STUN harvester that will be running against the specified
@@ -98,23 +104,27 @@ public class StunCandidateHarvester
         DatagramSocket sock = hostCand.getSocket();
         stunStack.addSocket(sock);
 
-        synchronized(resolveList)
+        synchronized(resolveMap)
         {
-            resolveList.add(hostCand);
+            TransactionID tran;
+            try
+            {
+                tran = stunStack.sendRequest(
+                    MessageFactory.createBindingRequest(), stunServer, sock,
+                        this);
+
+            }
+            catch (Exception exception)
+            {
+                logger.log(Level.INFO, "Failed to send a STUN Binding Request",
+                                exception);
+                return;
+            }
+
+            resolveMap.put(tran, hostCand);
         }
 
-        try
-        {
-            stunStack.sendRequest(MessageFactory.createBindingRequest(),
-                            stunServer, sock, this);
-        }
-        catch (Exception e)
-        {
-            synchronized(resolveList)
-            {
-                resolveList.remove(hostCand);
-            }
-        }
+        waitForResolutionEnd();
     }
 
     /**
@@ -123,14 +133,14 @@ public class StunCandidateHarvester
      */
     private void waitForResolutionEnd()
     {
-        synchronized(resolveList)
+        synchronized(resolveMap)
         {
-            if(resolveList.isEmpty())
+            if(resolveMap.isEmpty())
                 return;
 
             try
             {
-                resolveList.wait();
+                resolveMap.wait();
             }
             catch (InterruptedException e){}
         }
@@ -143,7 +153,11 @@ public class StunCandidateHarvester
      */
     public void processResponse(StunMessageEvent response)
     {
-        response.getMessage().getTransactionID();
+        synchronized (resolveMap)
+        {
+            //TransactionID tranID = response.getMessage().getTransactionID();
+        }
+
     }
 
     /**
