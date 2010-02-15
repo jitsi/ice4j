@@ -13,6 +13,7 @@ import java.util.*;
 
 import org.ice4j.*;
 import org.ice4j.ice.*;
+import org.ice4j.ice.harvest.*;
 
 /**
  * Simple ice4j testing scenarios.
@@ -30,6 +31,11 @@ public class Ice
     public static void main(String[] args) throws Throwable
     {
         Agent agent = new Agent();
+
+        StunCandidateHarvester stunHarv = new StunCandidateHarvester(
+            new TransportAddress("130.79.90.150", 3478, Transport.UDP));
+        agent.addCandidateHarvester(stunHarv);
+
         IceMediaStream stream = agent.createMediaStream("audio");
 
         //rtp
