@@ -676,9 +676,9 @@ public abstract class Message
      */
     public String toString()
     {
-        return getName()+"("+getMessageType()
+        return getName()+"(0x"+Integer.toHexString(getMessageType())
             +")[attrib.count=" + getAttributeCount()
-            +" len=" + this.getDataLength()
+            +" len=" + (int) this.getDataLength()
             +" tranID=" + this.getTransactionID() + "]";
     }
 

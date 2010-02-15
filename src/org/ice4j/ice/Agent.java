@@ -46,8 +46,15 @@ public class Agent
      * The candidate harvester that we use to gather candidate on the local
      * machine.
      */
-    private HostCandidateHarvester hostCandidateHarvester
+    private final HostCandidateHarvester hostCandidateHarvester
                                                 = new HostCandidateHarvester();
+
+    /**
+     * The list of harvesters (i.e. STUN, TURN, and others) that the agent
+     * should use when gathering candidates for components.
+     */
+    private final List<CandidateHarvester> harvesters
+                                        = new ArrayList<CandidateHarvester>();
 
     /**
      * We use the <tt>FoundationsRegistry</tt> to keep track of the foundations
@@ -156,7 +163,14 @@ public class Agent
         hostCandidateHarvester.harvest(
                         component, preferredPort, minPort, maxPort);
 
-        //TODO: apply STUN and TURN harvesters now.
+        //apply other harvesters here:
+        synchronized(harvesters)
+        {
+            for (CandidateHarvester h : harvesters )
+            {
+                h.harvest(component);
+            }
+        }
 
         computeFoundations(component);
 
@@ -182,21 +196,17 @@ public class Agent
     }
 
     /**
-     * Computes and sets the priorities for all <tt>Candidate</tt>s currently
-     * found in <tt>component</tt>. This happens outside of the
-     * <tt>Candidate</tt> class because some of the decisions made about the
-     * priority of the candidates is made based on the number of candidates of
-     * a certain type.
+     * Adds <tt>harvester</tt> to the list of harvesters that this agent will
+     * use when gathering <tt>Candidate</tt>s.
      *
-     * @param component the component whose candidates we'd like to prioritize.
+     * @param harvester a <tt>CandidateHarvester</tt> that this agent should use
+     * when gathering candidates.
      */
-    private void computePriorities(Component component)
+    public void addCandidateHarvester(CandidateHarvester harvester)
     {
-        List<Candidate> candidates = component.getLocalCandidates();
-
-        for (Candidate cand : candidates)
+        synchronized(harvesters)
         {
-            cand.computePriority();
+            harvesters.add(harvester);
         }
     }
 }

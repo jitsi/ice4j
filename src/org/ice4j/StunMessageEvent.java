@@ -101,4 +101,22 @@ public class StunMessageEvent
     {
         return transactionID;
     }
+
+    /**
+     * Returns a <tt>String</tt> representation of this event, containing the
+     * corresponding message, remote and local addresses.
+     *
+     * @return a <tt>String</tt> representation of this event, containing the
+     * corresponding message, remote and local addresses.
+     */
+    public String toString()
+    {
+        StringBuffer buff = new StringBuffer("StunMessageEvent:\n\tMessage=");
+
+        buff.append(getMessage());
+        buff.append(" remoteAddr=").append(getRemoteAddress());
+        buff.append(" localAddr=").append(getLocalAddress());
+
+        return buff.toString();
+    }
 }

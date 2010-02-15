@@ -119,7 +119,8 @@ class StunServerTransaction
         this.localListeningAddress = localListeningAddress;
         this.requestSource = requestSource;
 
-        runningThread = new Thread(this);
+        runningThread = new Thread(this, "StunServerTransaction@"+hashCode());
+        runningThread.setDaemon(true);
     }
 
     /**

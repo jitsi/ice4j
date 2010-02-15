@@ -14,6 +14,7 @@ import java.util.logging.*;
 
 import org.ice4j.*;
 import org.ice4j.ice.*;
+import org.ice4j.socket.*;
 
 /**
  * A <tt>HostCandidateHarvester</tt> gathers host <tt>Candidate</tt>s for a
@@ -193,7 +194,8 @@ public class HostCandidateHarvester
 
             try
             {
-                DatagramSocket sock = new DatagramSocket(port, laddr);
+                DatagramSocket sock
+                                = new MultiplexingDatagramSocket(port, laddr);
 
                 if(logger.isLoggable(Level.FINEST))
                     logger.log(Level.FINEST,
