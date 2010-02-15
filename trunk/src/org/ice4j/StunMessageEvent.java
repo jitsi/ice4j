@@ -43,7 +43,7 @@ public class StunMessageEvent
      * The <tt>TransactionID</tt> of the transaction that the source message
      * is related to.
      */
-    private final TransactionID tranID;
+    private final TransactionID transactionID;
 
     /**
      * Constructs a StunMessageEvent according to the specified message.
@@ -58,7 +58,8 @@ public class StunMessageEvent
         super(sourceAddress);
         this.message = message;
         this.remoteAddress  = remoteAddress;
-        this.transactionID = TransactionID.createTransactionID(message.getTransactionID());
+        this.transactionID = TransactionID.createTransactionID(message
+                                                        .getTransactionID());
     }
 
     /**
@@ -87,5 +88,17 @@ public class StunMessageEvent
     public TransportAddress getRemoteAddress()
     {
         return remoteAddress;
+    }
+
+    /**
+     * Returns the id of the transaction associated with the message that
+     * triggered this event.
+     *
+     * @return the id of the transaction associated with the message that
+     * triggered this event.
+     */
+    public TransactionID getTransactionID()
+    {
+        return transactionID;
     }
 }
