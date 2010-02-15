@@ -40,11 +40,21 @@ public class ShallowStackTest extends TestCase {
     private DatagramPacket bindingRequestPacket
                                     = new DatagramPacket(new byte[4096], 4096);
 
+    /**
+     * Creates a test instance for the method with the specified name.
+     *
+     * @param name the name of the test we'd like to create an instance for.
+     */
     public ShallowStackTest(String name)
     {
         super(name);
     }
 
+    /**
+     * Initializes whatever sockets we'll be using in our tests.
+     *
+     * @throws Exception if something goes wrong with socket initialization.
+     */
     protected void setUp()
         throws Exception
     {
@@ -68,6 +78,11 @@ public class ShallowStackTest extends TestCase {
         dummyServerSocket = new DatagramSocket( dummyServerAddress );
     }
 
+    /**
+     * Releases the sockets we use here.
+     *
+     * @throws Exception if closing the sockets fails.
+     */
     protected void tearDown()
         throws Exception
     {
@@ -234,6 +249,11 @@ public class ShallowStackTest extends TestCase {
             receivedResponse); // actual
     }
 
+    /**
+     * Performs a basic test on message reception
+     *
+     * @throws Exception if something fails somewhere.
+     */
     public void testReceiveResponse()
         throws Exception
     {
@@ -318,12 +338,14 @@ public class ShallowStackTest extends TestCase {
          * determined to be unreachable and that the request should be
          * considered unanswered.
          *
-         * @param exception the <tt>PortUnreachableException</tt> which signaled
+         * @param evt the <tt>StunFailureEvent</tt> containing the
+         * <tt>PortUnreachableException</tt> which signaled
          * that the destination of the request was found to be unreachable
-         * @see ResponseCollector#processUnreachable(PortUnreachableException)
+         *
+         * @see ResponseCollector#processUnreachable(StunFailureEvent)
          */
         public synchronized void processUnreachable(
-                PortUnreachableException exception)
+                StunFailureEvent evt)
         {
             logger.info("Unreachable");
             notifyAll();
