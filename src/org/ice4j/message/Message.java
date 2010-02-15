@@ -18,11 +18,8 @@ import org.ice4j.attribute.*;
  * STUN attributes, the set of which depends on the message type.  The STUN
  * header contains a STUN message type, transaction ID, and length.
  *
- * <p>Organisation: Louis Pasteur University, Strasbourg, France</p>
- * 					<p>Network Research Team (http://www-r2.u-strasbg.fr)</p>
  * @author Emil Ivov
  * @author Sebastien Vincent
- * @version 0.1
  */
 public abstract class Message
 {
@@ -97,7 +94,8 @@ public abstract class Message
      * so we'll be using a LinkedHashMap
      */
     //not sure this is the best solution but I'm trying to keep entry order
-    protected LinkedHashMap<Character, Attribute> attributes = new LinkedHashMap<Character, Attribute>();
+    protected LinkedHashMap<Character, Attribute> attributes
+                                = new LinkedHashMap<Character, Attribute>();
 
     /**
      * Desribes which attributes are present in which messages.  An
@@ -187,7 +185,7 @@ public abstract class Message
     protected static final byte PRIORITY_PRESENTITY_INDEX                     = 28;
     protected static final byte ICE_CONTROLLING_PRESENTITY_INDEX              = 29;
     protected static final byte ICE_CONTROLLED_PRESENTITY_INDEX               = 30;
-    protected static final byte USE_CANDIDATE_PRESENTITY_INDEX                = 31; 
+    protected static final byte USE_CANDIDATE_PRESENTITY_INDEX                = 31;
 
     protected final static byte attributePresentities[][] = new byte[][]{
     //                                            Binding   Shared   Shared   Shared  Alloc   Alloc   Rfrsh   Rfrsh   ChnlBnd  ChnlBnd Send    Data
@@ -213,7 +211,7 @@ public abstract class Message
       /*ALTERNATE_SERVER*/  { O,        O,        O,        O,       O,       O,      N_A,    N_A,    N_A,    N_A,    N_A,     N_A,    N_A,   N_A},
       /*REALM*/             { O,        N_A,      N_A,      N_A,     M,       N_A,    O,      O,      O,      O,      O,       O,      N_A,   N_A},
       /*NONCE*/             { O,        N_A,      N_A,      N_A,     M,       N_A,    O,      O,      O,      O,      O,       O,      N_A,   N_A},
-      /*FINGERPRINT*/       { O,        O,        O,        O,       O,       O,      O,      O,      O,      O,      O,       O,      N_A,   N_A},  
+      /*FINGERPRINT*/       { O,        O,        O,        O,       O,       O,      O,      O,      O,      O,      O,       O,      N_A,   N_A},
       /*CHANNEL-NUMBER*/    { N_A,      N_A,      N_A,      N_A,     N_A,     N_A,    N_A,    N_A,    N_A,    N_A,    M,       N_A,    N_A,   N_A},
       /*LIFETIME*/          { N_A,      N_A,      N_A,      N_A,     N_A,     N_A,    O,      N_A,    M,      N_A,    N_A,     N_A,    N_A,   N_A},
       /*XOR-PEER-ADDRESS*/  { N_A,      N_A,      N_A,      N_A,     N_A,     N_A,    N_A,    N_A,    N_A,    N_A,    M,       N_A,    M,     M},
@@ -493,12 +491,13 @@ public abstract class Message
 
     /**
      * Returns a binary representation of this message.
+     *
      * @return a binary representation of this message.
-     * @throws StunException if the message does not have all required
-     * attributes.
+     * @throws IllegalStateException if the message does not have all
+     * required attributes.
      */
     public byte[] encode()
-        throws StunException
+        throws IllegalStateException
     {
         //make sure we have everything necessary to encode a proper message
         validateAttributePresentity();
@@ -514,11 +513,18 @@ public abstract class Message
 
         System.arraycopy(MAGIC_COOKIE, 0, binMsg, offset, 4);
         offset+=4;
-        System.arraycopy(getTransactionID(), 0, binMsg, offset, TRANSACTION_ID_LENGTH);
+        System.arraycopy(getTransactionID(), 0, binMsg, offset,
+                            TRANSACTION_ID_LENGTH);
         offset+=TRANSACTION_ID_LENGTH;
 
-        for (Attribute attribute : attributes.values())
+        Iterator<Map.Entry<Character, Attribute>> iter
+            = attributes.entrySet().iterator();
+        while (iter.hasNext())
         {
+
+            Attribute attribute
+                = ((Map.Entry<Character, Attribute>)iter.next()).getValue();
+
             byte[] attBinValue = attribute.encode();
             System.arraycopy(attBinValue, 0, binMsg, offset, attBinValue.length);
             offset += attBinValue.length;
@@ -567,7 +573,7 @@ public abstract class Message
         /* copy the cookie */
         byte cookie[] = new byte[4];
         System.arraycopy(binMessage, offset, cookie, 0, 4);
-        offset+=4; 
+        offset+=4;
 
         if(arrayLen - offset - TRANSACTION_ID_LENGTH < length)
             throw new StunException(StunException.ILLEGAL_ARGUMENT,
@@ -596,18 +602,16 @@ public abstract class Message
      * Verify that the message has all obligatory attributes and throw an
      * exception if this is not the case.
      *
-     * @throws StunException (ILLEGAL_STATE)if the message does not have all
+     * @throws IllegalStateException if the message does not have all
      * required attributes.
      */
     protected void validateAttributePresentity()
-        throws StunException
+        throws IllegalStateException
     {
         for(char i = Attribute.MAPPED_ADDRESS; i < Attribute.REFLECTED_FROM; i++)
             if(getAttributePresentity(i) == M && getAttribute(i) == null)
-                throw new StunException(StunException.ILLEGAL_STATE,
-                                        "A mandatory attribute (type="
-                                        +(int)i
-                                        + ") is missing!");
+                throw new IllegalStateException(
+                    "A mandatory attribute (type=" +(int)i + ") is missing!");
 
     }
 
@@ -665,6 +669,11 @@ public abstract class Message
       return ((type & 0x0110) == STUN_REQUEST);
     }
 
+    /**
+     * Returns a <tt>String</tt> representation of this message.
+     *
+     * @return  a <tt>String</tt> representation of this message.
+     */
     public String toString()
     {
         return getName()+"("+getMessageType()

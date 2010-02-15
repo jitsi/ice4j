@@ -37,19 +37,22 @@ class TransactionID
      */
     private int hashCode = 0;
 
+    /**
+     * Limits access to <tt>TransactionID</tt> instantiation.
+     */
     private TransactionID()
     {
     }
 
     /**
-     * Creates a transaction id object.The transaction id itself is genereated
-     * using the folloing algorithm:
+     * Creates a transaction id object.The transaction id itself is generated
+     * using the following algorithm:
      *
-     * The first 6 bytes of the id are given the value of System.currentTimeMillis()
-     * Putting the right most bits first so that we get a more optimized equals()
-     * method.
+     * The first 6 bytes of the id are given the value of
+     * <tt>System.currentTimeMillis()</tt>. Putting the right most bits first
+     * so that we get a more optimized equals() method.
      *
-     * @return A TransactionID object with a unique transaction id.
+     * @return A <tt>TransactionID</tt> object with a unique transaction id.
      */
     static TransactionID createTransactionID()
     {

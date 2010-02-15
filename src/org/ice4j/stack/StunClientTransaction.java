@@ -231,11 +231,16 @@ class StunClientTransaction
      * @throws IOException  if an error occurs while sending message bytes
      * through the network socket.
      * @throws IllegalArgumentException if the apDescriptor references an
+<<<<<<< HEAD
      * access point that had not been installed
      * @throws StunException if message encoding fails
+=======
+     * access point that had not been installed,
+     *
+>>>>>>> Makes stun transactions more visible to users of the stun stack
      */
     void sendRequest()
-        throws StunException, IllegalArgumentException, IOException
+        throws IllegalArgumentException, IOException
     {
         sendRequest0();
 
@@ -249,10 +254,9 @@ class StunClientTransaction
      * through the network socket.
      * @throws IllegalArgumentException if the apDescriptor references an
      * access point that had not been installed,
-     * @throws StunException if message encoding fails,
      */
     private void sendRequest0()
-        throws StunException, IllegalArgumentException, IOException
+        throws IllegalArgumentException, IOException
     {
         if(cancelled)
         {

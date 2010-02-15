@@ -92,10 +92,8 @@ public class StunStack
      * specified socket and returns a relevant descriptor.
      *
      * @param sock The socket that the new access point should represent.
-     * @throws IOException if we fail to setup the socket.
      */
     public void addSocket(DatagramSocket sock)
-       throws IOException
     {
         netAccessManager.addSocket(sock);
     }
@@ -195,17 +193,19 @@ public class StunStack
      * @param  collector   the instance to notify when a response arrives or the
      *                     the transaction timeouts
      *
+     * @return the <tt>TransactionID</tt> of the <tt>StunClientTransaction</tt>
+     * that we used in order to send the request.
+     *
      * @throws IOException  if an error occurs while sending message bytes
      * through the network socket.
      * @throws IllegalArgumentException if the apDescriptor references an
      * access point that had not been installed,
-     * @throws StunException if message encoding fails
      */
-    public void sendRequest( Request           request,
-                             TransportAddress  sendTo,
-                             TransportAddress  sendThrough,
-                             ResponseCollector collector )
-        throws StunException, IOException, IllegalArgumentException
+    public TransactionID sendRequest(  Request           request,
+                                       TransportAddress  sendTo,
+                                       TransportAddress  sendThrough,
+                                       ResponseCollector collector )
+        throws IOException, IllegalArgumentException
     {
         StunClientTransaction clientTransaction
             = new StunClientTransaction(this, request, sendTo, sendThrough,
@@ -215,6 +215,38 @@ public class StunStack
                                clientTransaction);
 
         clientTransaction.sendRequest();
+
+        return clientTransaction.getTransactionID();
+    }
+
+    /**
+     * Sends the specified request through the specified access point, and
+     * registers the specified ResponseCollector for later notification.
+     * @param  request     the request to send
+     * @param  sendTo      the destination address of the request.
+     * @param  sendThrough the socket that we should send the request through.
+     * @param  collector   the instance to notify when a response arrives or the
+     *                     the transaction timeouts
+     *
+     * @return the <tt>TransactionID</tt> of the <tt>StunClientTransaction</tt>
+     * that we used in order to send the request.
+     *
+     * @throws IOException  if an error occurs while sending message bytes
+     * through the network socket.
+     * @throws IllegalArgumentException if the apDescriptor references an
+     * access point that had not been installed,
+     */
+    public TransactionID sendRequest( Request           request,
+                                      TransportAddress  sendTo,
+                                      DatagramSocket    sendThrough,
+                                      ResponseCollector collector )
+        throws IOException, IllegalArgumentException
+    {
+        TransportAddress sendThroughAddr = new TransportAddress(
+            sendThrough.getLocalAddress(), sendThrough.getLocalPort(),
+                Transport.UDP);
+
+        return sendRequest(request, sendTo, sendThroughAddr, collector);
     }
 
     /**
