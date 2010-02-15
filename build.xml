@@ -150,6 +150,13 @@
         </java>
     </target>
 
+    <target name="run-sample">
+        <java fork="true"
+            classname="test.Ice"
+            classpathref="project.class.path">
+        </java>
+    </target>
+
 
     <!-- Cruise Control Target-->
     <target name="cc-buildloop" depends="rebuild,test"/>
