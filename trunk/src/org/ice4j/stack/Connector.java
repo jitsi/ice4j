@@ -83,11 +83,8 @@ class Connector
 
     /**
      * Start the network listening thread.
-     *
-     * @throws IOException if we fail to setup the socket.
      */
     void start()
-        throws IOException
     {
         this.isRunning = true;
         Thread thread = new Thread(this);

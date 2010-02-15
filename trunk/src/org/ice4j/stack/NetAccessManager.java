@@ -138,11 +138,8 @@ class NetAccessManager
      * has no effect.
      *
      * @param  socket   the socket that the access point should use.
-     *
-     * @throws IOException if we fail to setup the socket.
      */
     protected void addSocket(DatagramSocket socket)
-        throws IOException
     {
         //no null check - let it through a null pointer exception
         TransportAddress localAddr = new TransportAddress(
@@ -261,12 +258,11 @@ class NetAccessManager
      * through the network socket.
      * @throws IllegalArgumentException if the apDescriptor references an
      * access point that had not been installed,
-     * @throws StunException if message encoding fails,
      */
     void sendMessage(Message          stunMessage,
                      TransportAddress srcAddr,
                      TransportAddress remoteAddr)
-        throws IOException, IllegalArgumentException, StunException
+        throws IOException, IllegalArgumentException
     {
         byte[] bytes = stunMessage.encode();
         Connector ap = netAccessPoints.get(srcAddr);
