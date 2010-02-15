@@ -56,10 +56,23 @@ public class TransactionSupportTests extends TestCase
      */
     Response bindingResponse = null;
 
+    /**
+     * The tool that collects requests.
+     */
     PlainRequestCollector requestCollector = null;
+
+    /**
+     * The tool that collects responses.
+     */
     PlainResponseCollector responseCollector = null;
 
-    protected void setUp() throws Exception
+    /**
+     * Inits sockets.
+     *
+     * @throws Exception if something goes bad.
+     */
+    protected void setUp()
+        throws Exception
     {
         super.setUp();
 
@@ -88,7 +101,13 @@ public class TransactionSupportTests extends TestCase
                            "");
     }
 
-    protected void tearDown() throws Exception
+    /**
+     * Frees all sockets that we are currently using.
+     *
+     * @throws Exception if something does not go as planned.
+     */
+    protected void tearDown()
+        throws Exception
     {
         StunStack.getInstance().removeSocket(clientAddress);
         StunStack.getInstance().removeSocket(serverAddress);
@@ -302,6 +321,12 @@ public class TransactionSupportTests extends TestCase
                            evt2.getMessage().getTransactionID()));
     }
 
+    /**
+     * Tests whether the properties for configuring the maximum number of
+     * retransmissions in a transaction are working properly.
+     *
+     * @throws Exception if the gods so decide.
+     */
     public void testClientTransactionMaxRetransmisssionsConfigurationParameter()
         throws Exception
     {
@@ -334,6 +359,12 @@ public class TransactionSupportTests extends TestCase
 
     }
 
+    /**
+     * Tests whether the properties for configuring the minimum transaction
+     * wait interval is working properly.
+     *
+     * @throws Exception if we are having a bad day.
+     */
     public void testMinWaitIntervalConfigurationParameter()
         throws Exception
     {
@@ -369,6 +400,12 @@ public class TransactionSupportTests extends TestCase
                      2, reqs.size());
     }
 
+    /**
+     * Tests whether the properties for configuring the maximum transaction
+     * wait interval is working properly.
+     *
+     * @throws Exception if the gods so decide.
+     */
     public void testMaxWaitIntervalConfigurationParameter()
         throws Exception
     {
@@ -410,10 +447,23 @@ public class TransactionSupportTests extends TestCase
                     reqs.size());
     }
 
-    private class PlainRequestCollector implements RequestListener{
+    /**
+     * A simply utility for asynchronous collection of requests.
+     */
+    private class PlainRequestCollector
+        implements RequestListener
+    {
+        /**
+         *
+         */
         private Vector<StunMessageEvent> receivedRequestsVector
                                             = new Vector<StunMessageEvent>();
 
+        /**
+         * Logs the newly received request.
+         *
+         * @param evt the {@link StunMessageEvent} to log.
+         */
         public void requestReceived(StunMessageEvent evt)
         {
             synchronized(this)
@@ -446,6 +496,9 @@ public class TransactionSupportTests extends TestCase
             return newVec;
         }
 
+        /**
+         * Blocks until a request arrives or 50 ms pass.
+         */
         public void waitForRequest()
         {
             synchronized(this)
@@ -460,17 +513,34 @@ public class TransactionSupportTests extends TestCase
         }
     }
 
+    /**
+     * A simple utility for asynchronously collecting responses.
+     */
     private class PlainResponseCollector
         implements ResponseCollector
     {
+        /**
+         * The responses we've collected so far.
+         */
         public final Vector<Object> receivedResponses = new Vector<Object>();
 
+        /**
+         * Logs the received <tt>responseEvt</tt>
+         *
+         * @param responseEvt the event to log.
+         */
         public void processResponse(StunMessageEvent responseEvt)
         {
             receivedResponses.add(responseEvt);
         }
 
-        public void processTimeout()
+        /**
+         * Called when the associated transaction expires.
+         *
+         * @param evt the <tt>StunTimeoutEvent</tt> containing a reference to
+         * the failed <tt>Message</tt> and the expired transaction.
+         */
+        public void processTimeout(StunTimeoutEvent evt)
         {
             receivedResponses.add("timeout");
         }
@@ -489,18 +559,4 @@ public class TransactionSupportTests extends TestCase
             receivedResponses.add("unreachable");
         }
     }
-
-    /*
-    public TransactionSupportTests(String name)
-    {
-        super(name);
-    }
-    public static Test suite()
-    {
-        TestSuite suite = new TestSuite();
-        suite.addTest(new TransactionSupportTests(
-            "testMaxWaitIntervalConfigurationParameter"));
-        return suite;
-    }
-    */
 }

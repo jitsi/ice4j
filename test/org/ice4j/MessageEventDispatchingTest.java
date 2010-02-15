@@ -300,9 +300,12 @@ public class MessageEventDispatchingTest extends TestCase
         }
 
         /**
-         * Indicates that no response has been received.
+         * Called when the associated transaction expires.
+         *
+         * @param evt the <tt>StunTimeoutEvent</tt> containing a reference to
+         * the failed <tt>Message</tt> and the expired transaction.
          */
-        public synchronized void processTimeout()
+        public synchronized void processTimeout(StunTimeoutEvent evt)
         {
             receivedResponses.add("timeout");
             notifyAll();
