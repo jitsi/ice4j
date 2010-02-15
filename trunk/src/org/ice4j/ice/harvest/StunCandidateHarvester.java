@@ -7,7 +7,6 @@
  */
 package org.ice4j.ice.harvest;
 
-import java.io.*;
 import java.net.*;
 import java.util.*;
 import java.util.logging.*;
@@ -157,7 +156,15 @@ public class StunCandidateHarvester
         {
             TransactionID tranID = response.getTransactionID();
 
+            Candidate localCand = resolveMap.remove(tranID);
+
+            //if this was the last candidate, we are done with the STUN
+            //resolution and need to notify the waiters.
+            if(resolveMap.isEmpty())
+                resolveMap.notify();
+
             System.out.println("received a message tranid=" + tranID);
+            System.out.println("response=" + response);
         }
 
     }

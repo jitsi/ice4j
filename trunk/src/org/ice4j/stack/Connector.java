@@ -87,7 +87,8 @@ class Connector
     void start()
     {
         this.isRunning = true;
-        Thread thread = new Thread(this);
+        Thread thread = new Thread(this, "IceConnector@"+hashCode());
+        thread.setDaemon(true);
         thread.start();
     }
 

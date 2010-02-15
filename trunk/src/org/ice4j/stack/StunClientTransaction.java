@@ -171,7 +171,9 @@ class StunClientTransaction
                                       +"generated an invalid transaction ID");
         }
 
-        retransmissionsThread = new Thread(this);
+        retransmissionsThread = new Thread(this,
+                        "StunClientTransaction@"+hashCode());
+        retransmissionsThread.setDaemon(true);
     }
 
     /**
@@ -231,13 +233,8 @@ class StunClientTransaction
      * @throws IOException  if an error occurs while sending message bytes
      * through the network socket.
      * @throws IllegalArgumentException if the apDescriptor references an
-<<<<<<< HEAD
      * access point that had not been installed
-     * @throws StunException if message encoding fails
-=======
-     * access point that had not been installed,
      *
->>>>>>> Makes stun transactions more visible to users of the stun stack
      */
     void sendRequest()
         throws IllegalArgumentException, IOException
