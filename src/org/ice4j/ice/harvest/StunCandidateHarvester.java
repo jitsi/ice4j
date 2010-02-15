@@ -155,7 +155,9 @@ public class StunCandidateHarvester
     {
         synchronized (resolveMap)
         {
-            //TransactionID tranID = response.getMessage().getTransactionID();
+            TransactionID tranID = response.getTransactionID();
+
+            System.out.println("received a message tranid=" + tranID);
         }
 
     }

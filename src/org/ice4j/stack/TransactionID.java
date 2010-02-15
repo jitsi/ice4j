@@ -50,7 +50,7 @@ public class TransactionID
      *
      * @return A <tt>TransactionID</tt> object with a unique transaction id.
      */
-    static TransactionID createTransactionID()
+    public static TransactionID createTransactionID()
     {
         TransactionID tid = new TransactionID();
 
@@ -77,7 +77,7 @@ public class TransactionID
      * @param transactionID the id to give to the new TransactionID
      * @return a new TransactionID object with the specified id value;
      */
-    static TransactionID createTransactionID(byte[] transactionID)
+    public static TransactionID createTransactionID(byte[] transactionID)
     {
         TransactionID tid = new TransactionID();
 
