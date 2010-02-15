@@ -21,7 +21,7 @@ import java.util.*;
  * @author Lubomir Marinov
  */
 public class MultiplexingDatagramSocket
-    extends DatagramSocket
+    extends SafeCloseDatagramSocket
 {
 
     /**

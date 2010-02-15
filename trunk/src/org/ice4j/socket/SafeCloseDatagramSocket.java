@@ -36,6 +36,21 @@ public class SafeCloseDatagramSocket
     private final Object inReceiveSyncRoot = new Object();
 
     /**
+     * Initializes a new <tt>SafeCloseDatagramSocket</tt> instance and binds it
+     * to any available port on the local host machine.  The socket will be
+     * bound to the wildcard address, an IP address chosen by the kernel.
+     *
+     * @throws SocketException if the socket could not be opened, or the socket
+     * could not bind to the specified local port
+     * @see DatagramSocket#DatagramSocket()
+     */
+    public SafeCloseDatagramSocket()
+        throws SocketException
+    {
+        super();
+    }
+
+    /**
      * Creates a datagram socket, bound to the specified local socket address.
      * <p>
      * If, if the address is <tt>null</tt>, creates an unbound socket.
@@ -50,6 +65,40 @@ public class SafeCloseDatagramSocket
         throws SocketException
     {
         super(bindaddr);
+    }
+
+    /**
+     * Initializes a new <tt>SafeCloseDatagramSocket</tt> instance  and binds it
+     * to the specified port on the local host machine.  The socket will be
+     * bound to the wildcard address, an IP address chosen by the kernel.
+     *
+     * @param port the port to bind the new socket to
+     * @throws SocketException if the socket could not be opened, or the socket
+     * could not bind to the specified local port
+     * @see DatagramSocket#DatagramSocket(int)
+     */
+    public SafeCloseDatagramSocket(int port)
+        throws SocketException
+    {
+        super(port);
+    }
+
+    /**
+     * Initializes a new <tt>SafeCloseDatagramSocket</tt> instance bound to the
+     * specified local address.  The local port must be between 0 and 65535
+     * inclusive. If the IP address is 0.0.0.0, the socket will be bound to the
+     * wildcard address, an IP address chosen by the kernel.
+     *
+     * @param port the local port to bind the new socket to
+     * @param laddr the local address to bind the new socket to
+     * @throws SocketException if the socket could not be opened, or the socket
+     * could not bind to the specified local port
+     * @see DatagramSocket#DatagramSocket(int, InetAddress)
+     */
+    public SafeCloseDatagramSocket(int port, InetAddress laddr)
+        throws SocketException
+    {
+        super(port, laddr);
     }
 
     /**
