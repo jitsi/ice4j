@@ -12,9 +12,12 @@ import java.util.*;
 import java.util.logging.*;
 
 import org.ice4j.*;
+import org.ice4j.attribute.*;
 import org.ice4j.ice.*;
 import org.ice4j.message.*;
 import org.ice4j.stack.*;
+
+import com.sun.org.apache.bcel.internal.generic.*;
 
 /**
  * A <tt>StunCandidateHarvester</tt> gathers STUN <tt>Candidate</tt>s for a
@@ -149,9 +152,10 @@ public class StunCandidateHarvester
     }
 
     /**
-     * Try to figure out .
+     * Matches the response to one of the local candidates and creates a
+     * <tt>ServerReflexiveCandidate</tt> using it as a base.
      *
-     * @param response the response to dispatch.
+     * @param response the response that we've just received from a StunServer.
      */
     public void processResponse(StunMessageEvent response)
     {
@@ -159,15 +163,21 @@ public class StunCandidateHarvester
         {
             TransactionID tranID = response.getTransactionID();
 
-            Candidate localCand = resolveMap.remove(tranID);
+            HostCandidate localCand = resolveMap.remove(tranID);
+
+            if ( localCand != null)
+            {
+                createServerReflexiveCandidate(response.getMessage(),
+                                               localCand);
+            }
 
             //if this was the last candidate, we are done with the STUN
             //resolution and need to notify the waiters.
             if(resolveMap.isEmpty())
                 resolveMap.notify();
 
-            System.out.println("received a message tranid=" + tranID);
-            System.out.println("response=" + response);
+            logger.finest("received a message tranid=" + tranID);
+            logger.finest("localCand=" + localCand);
         }
 
     }
@@ -182,20 +192,7 @@ public class StunCandidateHarvester
      */
     public void processTimeout(StunTimeoutEvent event)
     {
-        synchronized (resolveMap)
-        {
-            TransactionID tranID = event.getTransactionID();
-
-            Candidate localCand = resolveMap.remove(tranID);
-
-            //if this was the last candidate, we are done with the STUN
-            //resolution and need to notify the waiters.
-            if(resolveMap.isEmpty())
-                resolveMap.notify();
-
-            System.out.println("a tran expired tranid=" + tranID);
-            System.out.println("event=" + event);
-        }
+        processFailure(event.getTransactionID());
     }
 
     /**
@@ -204,11 +201,65 @@ public class StunCandidateHarvester
      * because of the oddities of the BSD and Java socket implementations, which
      * is why we currently ignore this method.
      *
-     * @param exception the <tt>PortUnreachableException</tt> which signaled
-     * that the destination of the request was found to be unreachable
+     * @param event the <tt>StunFailureEvent</tt>
+     * <tt>PortUnreachableException</tt> which signaled that the destination of
+     * the request was found to be unreachable.
      */
-    public void processUnreachable(PortUnreachableException exception)
+    public void processUnreachable(StunFailureEvent event)
     {
+        processFailure(event.getTransactionID());
+    }
 
+    /**
+     * Removes the corresponding local candidate from the list of candidates
+     * that we are waiting on in order to complete the harvest.
+     *
+     * @param transactionID the ID of the transaction that has just ended.
+     */
+    private void processFailure(TransactionID transactionID)
+    {
+        synchronized (resolveMap)
+        {
+            Candidate localCand = resolveMap.remove(transactionID);
+
+            //if this was the last candidate, we are done with the STUN
+            //resolution and need to notify the waiters.
+            if(resolveMap.isEmpty())
+                resolveMap.notify();
+
+            logger.finest("a tran expired tranid=" + transactionID);
+            logger.finest("localAddr=" + localCand);
+        }
+    }
+
+    /**
+     * Creates a <tt>ServerReflexiveCandidate</tt> using <tt>base</tt> as its
+     * and the <tt>XOR-MAPPED-ADDRESS</tt> attributes in <tt>response</tt> for
+     * the actual <tt>TransportAddress</tt> of the new candidate. If the message
+     * is somehow malformed and does not contain the corresponding attribute
+     * this method simply has no effect.
+     *
+     * @param response the <tt>Message</tt> that is supposed to contain the
+     * address we should use for this candidate.
+     * @param base the <tt>HostCandidate</tt> that we should use as a base
+     * for the new <tt>ServerReflexiveCandidate</tt>.
+     */
+    private void createServerReflexiveCandidate(Message       response,
+                                                HostCandidate base)
+    {
+        Attribute attribute
+            = response.getAttribute(Attribute.XOR_MAPPED_ADDRESS);
+
+        if(attribute == null
+           || !(attribute instanceof XorMappedAddressAttribute))
+            return;
+
+        TransportAddress addr = ((XorMappedAddressAttribute)attribute)
+            .applyXor(Message.MAGIC_COOKIE);
+
+        ServerReflexiveCandidate srvrRflxCand
+            = new ServerReflexiveCandidate(addr, base, stunServer);
+
+        base.getParentComponent().addLocalCandidate(srvrRflxCand);
     }
 }

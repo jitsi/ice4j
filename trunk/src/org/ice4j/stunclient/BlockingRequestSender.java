@@ -116,12 +116,13 @@ class BlockingRequestSender
      * determined to be unreachable and that the request should be considered
      * unanswered.
      *
-     * @param exception the <tt>PortUnreachableException</tt> which signaled
-     * that the destination of the request was found to be unreachable
-     * @see ResponseCollector#processUnreachable(PortUnreachableException)
+     * @param event the <tt>StunFailureEvent</tt> that contains the
+     * <tt>PortUnreachableException</tt> which signaled that the destination of
+     * the request was found to be unreachable
+     * @see ResponseCollector#processUnreachable(StunFailureEvent)
      */
     public synchronized void processUnreachable(
-            PortUnreachableException exception)
+                    StunFailureEvent event)
     {
         synchronized(sendLock)
         {
