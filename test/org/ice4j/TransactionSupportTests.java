@@ -550,11 +550,13 @@ public class TransactionSupportTests extends TestCase
          * determined to be unreachable and that the request should be
          * considered unanswered.
          *
-         * @param exception the <tt>PortUnreachableException</tt> which signaled
+         * @param event the <tt>StunFailureEvent</tt>  containing
+         * <tt>PortUnreachableException</tt> which signaled
          * that the destination of the request was found to be unreachable
-         * @see ResponseCollector#processUnreachable(PortUnreachableException)
+         *
+         * @see ResponseCollector#processUnreachable(StunFailureEvent)
          */
-        public void processUnreachable(PortUnreachableException exception)
+        public void processUnreachable(StunFailureEvent event)
         {
             receivedResponses.add("unreachable");
         }
