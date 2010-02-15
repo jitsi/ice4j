@@ -222,7 +222,8 @@ class StunClientTransaction
 
         waitFor(nextWaitInterval);
 
-        responseCollector.processTimeout();
+        responseCollector.processTimeout(
+                        new StunTimeoutEvent(this.request, getLocalAddress()));
         stackCallback.removeClientTransaction(this);
     }
 

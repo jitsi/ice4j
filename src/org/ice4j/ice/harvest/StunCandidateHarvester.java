@@ -100,6 +100,11 @@ public class StunCandidateHarvester
      */
     private void startResolvingCandidate(HostCandidate hostCand)
     {
+        //first of all, make sure that the STUN server and the Candidate
+        //address are of the same type and that they can communicate.
+        if(!hostCand.getTransportAddress().canReach(stunServer))
+            return;
+
         DatagramSocket sock = hostCand.getSocket();
         stunStack.addSocket(sock);
 
@@ -122,8 +127,6 @@ public class StunCandidateHarvester
 
             resolveMap.put(tran, hostCand);
         }
-
-        waitForResolutionEnd();
     }
 
     /**
@@ -170,13 +173,29 @@ public class StunCandidateHarvester
     }
 
     /**
-     * Notify the collector that no response had been received
+     * Notifies the collector that no response had been received
      * after repeated retransmissions of the original request (as described
      * by rfc3489) and that the request should be considered unanswered.
+     *
+     * @param event the <tt>StunTimeoutEvent</tt> that contains the transaction
+     * which has just expired.
      */
-    public void processTimeout()
+    public void processTimeout(StunTimeoutEvent event)
     {
+        synchronized (resolveMap)
+        {
+            TransactionID tranID = event.getTransactionID();
 
+            Candidate localCand = resolveMap.remove(tranID);
+
+            //if this was the last candidate, we are done with the STUN
+            //resolution and need to notify the waiters.
+            if(resolveMap.isEmpty())
+                resolveMap.notify();
+
+            System.out.println("a tran expired tranid=" + tranID);
+            System.out.println("event=" + event);
+        }
     }
 
     /**

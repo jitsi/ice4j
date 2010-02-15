@@ -14,8 +14,9 @@ import java.net.*;
  * Represents a <tt>DatagramSocket</tt> which fixes the following problem: when
  * {@link DatagramSocket#close()} is called while another thread is blocked in
  * its {@link DatagramSocket#receive(DatagramPacket)}, calling
- * {@link DatagramSocket#bind(SocketAddress) throws an "Already bound" exception
- * until (the native counterpart of) the <tt>receive</tt> method returns.
+ * {@link DatagramSocket#bind(SocketAddress)} throws an "Already bound"
+ * exception until (the native counterpart of) the <tt>receive</tt> method
+ * returns.
  *
  * @author Lubomir Marinov
  */

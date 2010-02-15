@@ -205,4 +205,41 @@ public class TransportAddress
         return super.equals(obj)
             &&(  ((TransportAddress)obj).getTransport() == getTransport() );
     }
+
+    /**
+     * Returns <tt>true</tt> if this is an IPv6 address and <tt>false</tt>
+     * otherwise.
+     *
+     * @return <tt>true</tt> if this is an IPv6 address and <tt>false</tt>
+     * otherwise.
+     */
+    public boolean isIPv6()
+    {
+        return getAddress() instanceof Inet6Address;
+    }
+
+    /**
+     * Determines whether this <tt>TransportAddress</tt> is theoretically
+     * capable of communicating with <tt>dst</tt>. An address is certain not
+     * to be able to communicate with another if they do not have the same
+     * <tt>Transport</tt> or family.
+     *
+     * @param dst the <tt>TransportAddress</tt> that we'd like to check for
+     * reachability from this one.
+     *
+     * @return <tt>true</tt> if this {@link TransportAddress} shares the same
+     * <tt>Transport</tt> and family as <tt>dst</tt> or <tt>false</tt>
+     * otherwise.
+     *
+     */
+    public boolean canReach(TransportAddress dst)
+    {
+        if (dst.getTransport() != getTransport())
+            return false;
+
+        if( isIPv6() != dst.isIPv6())
+            return false;
+
+        return true;
+    }
 }
