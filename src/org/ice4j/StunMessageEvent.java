@@ -9,6 +9,7 @@ package org.ice4j;
 import java.util.*;
 
 import org.ice4j.message.*;
+import org.ice4j.stack.*;
 
 
 /**
@@ -39,6 +40,12 @@ public class StunMessageEvent
     private TransportAddress remoteAddress = null;
 
     /**
+     * The <tt>TransactionID</tt> of the transaction that the source message
+     * is related to.
+     */
+    private final TransactionID tranID;
+
+    /**
      * Constructs a StunMessageEvent according to the specified message.
      * @param sourceAddress the access point that received the message
      * @param message the message itself
@@ -51,6 +58,7 @@ public class StunMessageEvent
         super(sourceAddress);
         this.message = message;
         this.remoteAddress  = remoteAddress;
+        this.transactionID = TransactionID.createTransactionID(message.getTransactionID());
     }
 
     /**

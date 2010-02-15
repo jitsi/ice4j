@@ -1,24 +1,22 @@
 /*
- * Stun4j, the OpenSource Java Solution for NAT and Firewall Traversal.
+ * ice4j, the OpenSource Java Solution for NAT and Firewall Traversal.
+ * Maintained by the SIP Communicator community (http://sip-communicator.org).
  *
- * Distributable under LGPL license.
- * See terms of license at gnu.org.
+ * Distributable under LGPL license. See terms of license at gnu.org.
  */
 package org.ice4j.stack;
 
-import java.util.Random;
-import java.util.Arrays;
+import java.util.*;
 
 /**
  * This class encapsulates a STUN transaction ID. It is useful for storing
- * transaction ids in collection objects as it implements the equals method.
- * It also provies a utility for creating unique transaction ids.
+ * transaction IDs in collection objects as it implements the equals method.
+ * It also provides a utility for creating unique transaction IDs.
  *
  * @author Emil Ivov
- * @version 0.1
  */
 
-class TransactionID
+public class TransactionID
 {
     /**
      * The id itself
