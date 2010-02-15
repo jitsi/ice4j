@@ -6,8 +6,6 @@
  */
 package org.ice4j;
 
-import java.net.*;
-
 /**
  * The interface is used as a callback when sending a request. The response
  * collector is then used as a means of dispatching the response.
@@ -27,6 +25,9 @@ public interface ResponseCollector
      * Notify the collector that no response had been received
      * after repeated retransmissions of the original request (as described
      * by rfc3489) and that the request should be considered unanswered.
+     *
+     * @param event the <tt>StunTimeoutEvent</tt> containing a reference to
+     * the transaction that has just failed.
      */
     public void processTimeout(StunTimeoutEvent event);
 
@@ -35,8 +36,8 @@ public interface ResponseCollector
      * determined to be unreachable and that the request should be considered
      * unanswered.
      *
-     * @param exception the <tt>PortUnreachableException</tt> which signaled
-     * that the destination of the request was found to be unreachable
+     * @param event the <tt>StunFailureEvent</tt> containing the
+     * <tt>PortUnreachableException</tt> that has just occurred.
      */
-    public void processUnreachable(PortUnreachableException exception);
+    public void processUnreachable(StunFailureEvent event);
 }

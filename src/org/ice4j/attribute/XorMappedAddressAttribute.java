@@ -106,13 +106,15 @@ public class XorMappedAddressAttribute
 
     /**
      * Returns the result of applying XOR on this attribute's address, using the
-     * specified transaction identifier. The method may be used for both
-     * encoding and decoding XorMappedAddresses.
-     * @param transactionID the transaction id to use for the XOR
+     * specified operand. The method may be used for both
+     * encoding and decoding <tt>XorMappedAddresses</tt>.
+     *
+     * @param operand the transaction id to use for the XOR
+     *
      * @return the XOR-ed address.
      */
-    public TransportAddress applyXor(byte[] transactionID)
+    public TransportAddress applyXor(byte[] operand)
     {
-        return applyXor(getAddress(), transactionID);
+        return applyXor(getAddress(), operand);
     }
 }
