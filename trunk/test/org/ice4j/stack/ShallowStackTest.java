@@ -279,11 +279,22 @@ public class ShallowStackTest extends TestCase {
     }
 
     //--------------------------------------- listener implementations ---------
+    /**
+     * A simple utility that allows us to asynchronously collect messages.
+     */
     public class SimpleResponseCollector
         implements ResponseCollector
     {
+
+        /**
+         * The response that we've just collected or <tt>null</tt> if none
+         * arrived while we were waiting.
+         */
         Response collectedResponse = null;
 
+        /**
+         * Logs the received response and notifies the wait method.
+         */
         public synchronized void processResponse(StunMessageEvent evt)
         {
             collectedResponse = (Response)evt.getMessage();
@@ -291,7 +302,12 @@ public class ShallowStackTest extends TestCase {
             notifyAll();
         }
 
-        public synchronized void processTimeout()
+        /**
+         * Logs the timeout event for later use.
+         *
+         * @param evt the timeout event that has just occurred.
+         */
+        public synchronized void processTimeout(StunTimeoutEvent evt)
         {
             logger.info("Timeout");
             notifyAll();
@@ -313,6 +329,9 @@ public class ShallowStackTest extends TestCase {
             notifyAll();
         }
 
+        /**
+         * Blocks until a request arrives or 50 ms pass.
+         */
         public synchronized void waitForResponse()
         {
             try
@@ -327,11 +346,24 @@ public class ShallowStackTest extends TestCase {
         }
     }
 
+    /**
+     * A utility class for asynchronously collecting requests.
+     */
     public class SimpleRequestCollector
         implements RequestListener
     {
+        /**
+         * The one request that this collector has received or <tt>null</tt> if
+         * none arrived while we were waiting.
+         */
         private Request collectedRequest = null;
 
+        /**
+         * Indicates that a <tt>StunRequest</tt> has just been received.
+         *
+         * @param evt the <tt>StunMessageEvent</tt> containing the details of
+         * the newly received request.
+         */
         public void requestReceived(StunMessageEvent evt)
         {
             synchronized(this)
@@ -343,6 +375,9 @@ public class ShallowStackTest extends TestCase {
             }
         }
 
+        /**
+         * Blocks until a request arrives or 50 ms pass.
+         */
         public void waitForRequest()
         {
             synchronized(this)
