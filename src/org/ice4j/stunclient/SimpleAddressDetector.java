@@ -149,7 +149,7 @@ public class SimpleAddressDetector
                System.arraycopy(Message.MAGIC_COOKIE, 0, xoring, 0, 4);
                System.arraycopy(res.getTransactionID(), 0, xoring, 4, 12);
 
-              return xorAtt.applyXor(xoring);
+              return xorAtt.getAddress(xoring);
             }
        }
 

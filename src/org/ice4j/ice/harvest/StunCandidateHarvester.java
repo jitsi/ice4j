@@ -255,7 +255,7 @@ public class StunCandidateHarvester
             return;
 
         TransportAddress addr = ((XorMappedAddressAttribute)attribute)
-            .applyXor(Message.MAGIC_COOKIE);
+            .getAddress(response.getTransactionID());
 
         ServerReflexiveCandidate srvrRflxCand
             = new ServerReflexiveCandidate(addr, base, stunServer);
