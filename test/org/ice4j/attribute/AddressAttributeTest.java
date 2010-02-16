@@ -215,7 +215,7 @@ public class AddressAttributeTest extends TestCase {
         addressAttribute.setAddress(testAddress);
 
         //do a xor with an id equal to the v4 address itself so that we get 0000..,
-        TransportAddress xorredAddr = addressAttribute.applyXor(
+        TransportAddress xorredAddr = addressAttribute.getAddress(
                 new byte[]{(byte)130,79,95,53,0,0,0,0,0,0,0,0,0,0,0,0,0});
 
         assertTrue("Xorring the address with itself didn't return 00000...",
@@ -226,11 +226,11 @@ public class AddressAttributeTest extends TestCase {
 
         //Test xor-ing the original with the xored - should get the xor code
         addressAttribute.setAddress(testAddress);
-        xorredAddr = addressAttribute.applyXor(
+        xorredAddr = addressAttribute.getAddress(
                 new byte[]{21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36});
 
         xorredAddr =
-            addressAttribute.applyXor(xorredAddr.getAddressBytes());
+            addressAttribute.getAddress(xorredAddr.getAddressBytes());
 
         assertTrue("Xorring the original with the xor-ed didn't "
                         +"return the code..",
@@ -242,11 +242,11 @@ public class AddressAttributeTest extends TestCase {
 
         //Test double xor-ing - should get the original
         addressAttribute.setAddress(testAddress);
-        xorredAddr = addressAttribute.applyXor(
+        xorredAddr = addressAttribute.getAddress(
                 new byte[]{21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36});
 
         addressAttribute.setAddress(xorredAddr);
-        xorredAddr = addressAttribute.applyXor(
+        xorredAddr = addressAttribute.getAddress(
                 new byte[]{21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36});
 
         assertEquals("Double xorring didn't give the original ...",
@@ -267,7 +267,7 @@ public class AddressAttributeTest extends TestCase {
 
         //do a xor with an id equal to the v4 address itself so that we get 0000..,
         TransportAddress xorredAddr =
-            addressAttribute.applyXor(
+            addressAttribute.getAddress(
                 new byte[]{(byte)0x20, (byte)0x01, (byte)0x06, (byte)0x60,
                            (byte)0x47, (byte)0x01, (byte)0x10, (byte)0x01,
                            (byte)0x02, (byte)0x02, (byte)0x8a, (byte)0xff,
@@ -285,10 +285,10 @@ public class AddressAttributeTest extends TestCase {
 
         //Test xor-ing the original with the xored - should get the xor code
         addressAttribute.setAddress(testAddress);
-        xorredAddr = addressAttribute.applyXor(
+        xorredAddr = addressAttribute.getAddress(
                   new byte[]{21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36});
 
-        xorredAddr = addressAttribute.applyXor(xorredAddr.getAddressBytes());
+        xorredAddr = addressAttribute.getAddress(xorredAddr.getAddressBytes());
 
         assertTrue("Xorring the original with the xor-ed didn't return the code..",
             Arrays.equals(
@@ -300,11 +300,11 @@ public class AddressAttributeTest extends TestCase {
 
         //Test double xor-ing - should get the original
         addressAttribute.setAddress(testAddress);
-        xorredAddr = addressAttribute.applyXor(
+        xorredAddr = addressAttribute.getAddress(
                   new byte[]{21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36});
 
         addressAttribute.setAddress(xorredAddr);
-        xorredAddr = addressAttribute.applyXor(
+        xorredAddr = addressAttribute.getAddress(
                   new byte[]{21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36});
 
         assertEquals("Double xorring didn't give the original ...",

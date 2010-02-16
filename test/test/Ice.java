@@ -33,8 +33,13 @@ public class Ice
         Agent agent = new Agent();
 
         StunCandidateHarvester stunHarv = new StunCandidateHarvester(
-            new TransportAddress("130.79.90.150", 3478, Transport.UDP));
+            new TransportAddress("sip-communicator.net", 3478, Transport.UDP));
+        StunCandidateHarvester stun6Harv = new StunCandidateHarvester(
+            new TransportAddress("ipv6.sip-communicator.net",
+                                 3478, Transport.UDP));
+
         agent.addCandidateHarvester(stunHarv);
+        agent.addCandidateHarvester(stun6Harv);
 
         IceMediaStream stream = agent.createMediaStream("audio");
 
