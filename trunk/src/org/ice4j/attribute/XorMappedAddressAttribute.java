@@ -9,6 +9,7 @@ package org.ice4j.attribute;
 import java.net.*;
 
 import org.ice4j.*;
+import org.ice4j.message.*;
 
 /**
  * The XOR-MAPPED-ADDRESS attribute is only present in Binding
@@ -51,8 +52,14 @@ import org.ice4j.*;
 public class XorMappedAddressAttribute
     extends AddressAttribute
 {
+    /**
+     * The name of this attribute
+     */
     public static final String NAME = "XOR-MAPPED-ADDRESS";
 
+    /**
+     * Creates an instance of this attribute
+     */
     XorMappedAddressAttribute()
     {
         super(XOR_MAPPED_ADDRESS);
@@ -106,15 +113,21 @@ public class XorMappedAddressAttribute
 
     /**
      * Returns the result of applying XOR on this attribute's address, using the
-     * specified operand. The method may be used for both
-     * encoding and decoding <tt>XorMappedAddresses</tt>.
+     * specified transaction ID when converting IPv6 addresses. The method may
+     * be used for both encoding and decoding <tt>XorMappedAddresses</tt>.
      *
-     * @param operand the transaction id to use for the XOR
+     * @param transactionID the transaction ID to use in case this attribute is
+     * encapsulating an IPv6 address.
      *
      * @return the XOR-ed address.
      */
-    public TransportAddress applyXor(byte[] operand)
+    public TransportAddress getAddress(byte[] transactionID)
     {
-        return applyXor(getAddress(), operand);
+        byte[] xorMask = new byte[16];
+
+        System.arraycopy(Message.MAGIC_COOKIE, 0, xorMask, 0, 4);
+        System.arraycopy(transactionID, 0, xorMask, 4, 12);
+
+        return applyXor(getAddress(), xorMask);
     }
 }
