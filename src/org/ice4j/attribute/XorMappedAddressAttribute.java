@@ -113,8 +113,7 @@ public class XorMappedAddressAttribute
 
     /**
      * Returns the result of applying XOR on this attribute's address, using the
-     * specified transaction ID when converting IPv6 addresses. The method may
-     * be used for both encoding and decoding <tt>XorMappedAddresses</tt>.
+     * specified transaction ID when converting IPv6 addresses.
      *
      * @param transactionID the transaction ID to use in case this attribute is
      * encapsulating an IPv6 address.
@@ -128,6 +127,22 @@ public class XorMappedAddressAttribute
         System.arraycopy(Message.MAGIC_COOKIE, 0, xorMask, 0, 4);
         System.arraycopy(transactionID, 0, xorMask, 4, 12);
 
+        return applyXor(xorMask);
+    }
+
+    /**
+     * Returns the result of applying XOR on this attribute's address, using the
+     * specified XOR mask. The method may be used for both encoding and
+     * decoding <tt>XorMappedAddresses</tt>.
+     *
+     * @param xorMask the XOR mask to use when obtaining the original address.
+     *
+     * @return the XOR-ed address.
+     */
+    public TransportAddress applyXor(byte[] xorMask)
+    {
         return applyXor(getAddress(), xorMask);
     }
+
+
 }
