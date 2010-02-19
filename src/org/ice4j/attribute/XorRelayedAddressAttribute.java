@@ -6,8 +6,6 @@
  */
 package org.ice4j.attribute;
 
-import org.ice4j.*;
-
 /**
  * The XOR-RELAYED-ADDRESS attribute is given by a TURN server to
  * indicates the client its relayed address.

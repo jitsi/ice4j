@@ -10,23 +10,17 @@ package org.ice4j;
  * A StunException is thrown when a general STUN exception is encountered.
  *
  * <p>Copyright: Copyright (c) 2003</p>
- * <p>Organisation: Louis Pasteur University, Strasbourg, France</p>
- * <p>Network Research Team (http://www-r2.u-strasbg.fr)</p></p>
+ * <p>Organization: Louis Pasteur University, Strasbourg, France</p>
+ * <p>Network Research Team (http://www-r2.u-strasbg.fr)</p>
  * @author Emil Ivov
  * @version 0.1
  */
-
 public class StunException extends Exception
 {
     /**
      * Serial version UID for this Serializable class.
      */
     private static final long serialVersionUID = 35367793L;
-
-    /**
-     * Error ID.
-     */
-    private int errorID = 0;
 
     /**
      * Means that the the reason that caused the exception was unclear.
@@ -50,7 +44,7 @@ public class StunException extends Exception
     public static final int INTERNAL_ERROR = 3;
 
     /**
-     * Thrown when trying to send responses through a non-existant transaction
+     * Thrown when trying to send responses through a non-existent transaction
      * That may happen when a corresponding request has already been responded
      * to or when no such request has been received.
      */

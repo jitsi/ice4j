@@ -29,8 +29,6 @@ public class MessageTest extends TestCase {
 
     private MsgFixture msgFixture;
 
-
-
     protected void setUp() throws Exception {
         super.setUp();
         msgFixture = new MsgFixture();
@@ -72,8 +70,6 @@ public class MessageTest extends TestCase {
 
         bindingResponse.addAttribute(changedAddress);
         bindingResponse.setTransactionID(msgFixture.TRANSACTION_ID);
-
-
     }
 
     protected void tearDown() throws Exception
@@ -127,9 +123,6 @@ public class MessageTest extends TestCase {
         assertEquals("The second attribute could not be extracted.",
                     sourceAddress,
                     getResult);
-
-
-
     }
 
     /**
@@ -155,8 +148,6 @@ public class MessageTest extends TestCase {
 
         assertTrue("A binding response was not properly encoded",
                      Arrays.equals(  expectedReturn, actualReturn ) );
-
-
     }
 
     /**
@@ -187,11 +178,7 @@ public class MessageTest extends TestCase {
 
         assertEquals("A binding response was not properly decoded",
                      expectedReturn, actualReturn );
-
-
-
     }
-
 
     /**
      * Tests the equals method against a null, a different and an identical
@@ -235,9 +222,6 @@ public class MessageTest extends TestCase {
         binResTarget.addAttribute(changedAddress);
         actualReturn = bindingResponse.equals(binResTarget);
         assertEquals("Equals failed against a different target", expectedReturn, actualReturn);
-
-
-
     }
 
     /**
@@ -252,7 +236,6 @@ public class MessageTest extends TestCase {
         actualReturn = bindingResponse.getAttributeCount();
         assertEquals("getAttributeCount failed for a bindingRequest",
                      expectedReturn, actualReturn);
-
     }
 
     /**
@@ -270,8 +253,5 @@ public class MessageTest extends TestCase {
         int actualReturn = bindingRequest.getAttributeCount();
         assertEquals("Attribute count did not change after removing an attribute",
                      expectedReturn, actualReturn);
-
-
     }
-
 }

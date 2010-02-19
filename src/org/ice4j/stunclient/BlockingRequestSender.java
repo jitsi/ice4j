@@ -7,7 +7,6 @@
 package org.ice4j.stunclient;
 
 import java.io.*;
-import java.net.*;
 import java.util.logging.*;
 
 import org.ice4j.*;
