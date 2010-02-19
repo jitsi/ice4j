@@ -6,13 +6,11 @@
  */
 package org.ice4j.attribute;
 
-import java.lang.*;
-
 import org.ice4j.*;
 
 /**
  * The EVEN-PORT attribute is used to ask the TURN
- * server to allocate an even port and optionnaly allocate
+ * server to allocate an even port and optionally allocate
  * the next higher port number.
  *
  * There are one flag supported : <br/>

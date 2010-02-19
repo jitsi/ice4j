@@ -6,8 +6,6 @@
  */
 package org.ice4j.attribute;
 
-import java.util.*;
-
 import org.ice4j.*;
 
 /**

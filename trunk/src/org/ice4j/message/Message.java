@@ -522,10 +522,9 @@ public abstract class Message
         while (iter.hasNext())
         {
 
-            Attribute attribute
-                = ((Map.Entry<Character, Attribute>)iter.next()).getValue();
-
+            Attribute attribute = iter.next().getValue();
             byte[] attBinValue = attribute.encode();
+
             System.arraycopy(attBinValue, 0, binMsg, offset, attBinValue.length);
             offset += attBinValue.length;
         }

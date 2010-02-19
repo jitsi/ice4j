@@ -6,8 +6,6 @@
  */
 package org.ice4j.attribute;
 
-import java.util.Hashtable;
-
 import org.ice4j.*;
 
 /**
@@ -74,8 +72,8 @@ import org.ice4j.*;
  *      The client should not retry.
  *
  * <p>Copyright: Copyright (c) 2003</p>
- * <p>Organisation: Louis Pasteur University, Strasbourg, France</p>
- * <p>Network Research Team (http://www-r2.u-strasbg.fr)</p></p>
+ * <p>Organization: Louis Pasteur University, Strasbourg, France</p>
+ * <p>Network Research Team (http://www-r2.u-strasbg.fr)</p>
  * @author Emil Ivov
  * @version 0.1
  */

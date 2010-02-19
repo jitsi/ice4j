@@ -6,9 +6,6 @@
  */
 package org.ice4j;
 
-import org.ice4j.attribute.*;
-import org.ice4j.message.*;
-
 public class MsgFixture
 {
     //---------------------- Attributes ---------------------------------------

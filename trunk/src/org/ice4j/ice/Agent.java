@@ -32,7 +32,7 @@ public class Agent
     /**
      * Our class logger.
      */
-    private final Logger logger
+    private static final Logger logger
         = Logger.getLogger(Agent.class.getName());
 
     /**

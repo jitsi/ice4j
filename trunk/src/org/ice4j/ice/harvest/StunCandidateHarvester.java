@@ -17,11 +17,9 @@ import org.ice4j.ice.*;
 import org.ice4j.message.*;
 import org.ice4j.stack.*;
 
-import com.sun.org.apache.bcel.internal.generic.*;
-
 /**
  * A <tt>StunCandidateHarvester</tt> gathers STUN <tt>Candidate</tt>s for a
- * specified {@link org.ice4j.ice.Component}.
+ * specified {@link Component}.
  *
  * @author Emil Ivov
  */
@@ -133,21 +131,28 @@ public class StunCandidateHarvester
     }
 
     /**
-     * Blocks the current thread until all resolutions in this harverster
+     * Blocks the current thread until all resolutions in this harvester
      * have terminated one way or another.
      */
     private void waitForResolutionEnd()
     {
         synchronized(resolveMap)
         {
-            if(resolveMap.isEmpty())
-                return;
+            boolean interrupted = false;
 
-            try
-            {
-                resolveMap.wait();
-            }
-            catch (InterruptedException e){}
+            // Handle spurious wakeups.
+            while (!resolveMap.isEmpty())
+                try
+                {
+                    resolveMap.wait();
+                }
+                catch (InterruptedException iex)
+                {
+                    interrupted = true;
+                }
+            // Restore the interrupted status.
+            if (interrupted)
+                Thread.currentThread().interrupt();
         }
     }
 
@@ -179,7 +184,6 @@ public class StunCandidateHarvester
             logger.finest("received a message tranid=" + tranID);
             logger.finest("localCand=" + localCand);
         }
-
     }
 
     /**
@@ -201,7 +205,7 @@ public class StunCandidateHarvester
      * because of the oddities of the BSD and Java socket implementations, which
      * is why we currently ignore this method.
      *
-     * @param event the <tt>StunFailureEvent</tt>
+     * @param event the <tt>StunFailureEvent</tt> containg the
      * <tt>PortUnreachableException</tt> which signaled that the destination of
      * the request was found to be unreachable.
      */
@@ -250,8 +254,7 @@ public class StunCandidateHarvester
         Attribute attribute
             = response.getAttribute(Attribute.XOR_MAPPED_ADDRESS);
 
-        if(attribute == null
-           || !(attribute instanceof XorMappedAddressAttribute))
+        if(!(attribute instanceof XorMappedAddressAttribute))
             return;
 
         TransportAddress addr = ((XorMappedAddressAttribute)attribute)

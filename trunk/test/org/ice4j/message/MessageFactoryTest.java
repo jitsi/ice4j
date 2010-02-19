@@ -48,7 +48,6 @@ public class MessageFactoryTest extends TestCase {
         Message actualReturn
             = messageFactory.createBindingErrorResponse(errorCode);
         assertEquals("return value", expectedReturn, actualReturn);
-
     }
 
     public void testCreateBindingErrorResponse1() throws StunException {
@@ -66,7 +65,6 @@ public class MessageFactoryTest extends TestCase {
             .createBindingErrorResponse(errorCode, reasonPhrase);
         assertEquals("Failed to create an error code attribute.",
                         expectedReturn, actualReturn);
-
     }
 
     public void testCreateBindingErrorResponseUnknownAttributes()
@@ -98,7 +96,6 @@ public class MessageFactoryTest extends TestCase {
             .createBindingErrorResponseUnknownAttributes(unknownAttributes);
         //compare
         assertEquals("return value", expectedReturn, actualReturn);
-
     }
 
     public void testCreateBindingErrorResponseUnknownAttributes1()

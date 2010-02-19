@@ -7,7 +7,6 @@
 package org.ice4j.stack;
 
 import java.io.*;
-import java.net.*;
 import java.util.logging.*;
 
 import org.ice4j.*;
@@ -33,7 +32,6 @@ import org.ice4j.message.*;
  * @author Emil Ivov.
  * @author Pascal Mogeri (contributed configuration of client transactions).
  */
-
 class StunClientTransaction
     implements Runnable
 {

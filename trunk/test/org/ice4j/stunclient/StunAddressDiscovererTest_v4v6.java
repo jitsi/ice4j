@@ -98,7 +98,7 @@ public class StunAddressDiscovererTest_v4v6 extends TestCase {
         stunAddressDiscoverer_v4 = null;
 
         //give the sockets the time to clear out
-        Thread.currentThread().sleep(1000);
+        Thread.sleep(1000);
 
         super.tearDown();
     }

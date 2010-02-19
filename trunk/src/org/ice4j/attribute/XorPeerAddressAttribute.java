@@ -6,8 +6,6 @@
  */
 package org.ice4j.attribute;
 
-import org.ice4j.*;
-
 /**
  * The XOR-PEER-ADDRESS attribute is given by a TURN client to
  * indicates the peer destination address of its relayed packet.

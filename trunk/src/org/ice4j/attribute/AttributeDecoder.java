@@ -7,15 +7,14 @@
 package org.ice4j.attribute;
 
 import org.ice4j.*;
-import org.ice4j.message.*;
 
 /**
  * The class provides utilities for decoding a binary stream into an Attribute
  * class.
  *
  * <p>Copyright: Copyright (c) 2003-2008</p>
- * <p>Organisation: Louis Pasteur University, Strasbourg, France</p>
- *                   <p>Network Research Team (http://www-r2.u-strasbg.fr)</p></p>
+ * <p>Organization: Louis Pasteur University, Strasbourg, France</p>
+ * <p>Network Research Team (http://www-r2.u-strasbg.fr)</p>
  * @author Emil Ivov
  * @author Sebastien Vincent
  * @version 0.1
@@ -128,5 +127,4 @@ public class AttributeDecoder
 
         return decodedAttribute;
     }
-
 }

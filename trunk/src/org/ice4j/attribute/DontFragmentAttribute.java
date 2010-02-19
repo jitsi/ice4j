@@ -6,8 +6,6 @@
  */
 package org.ice4j.attribute;
 
-import java.lang.*;
-
 import org.ice4j.*;
 
 /**
@@ -112,4 +110,3 @@ public class DontFragmentAttribute extends Attribute
         }
     }
 }
-

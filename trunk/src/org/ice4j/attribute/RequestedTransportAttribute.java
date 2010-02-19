@@ -6,8 +6,6 @@
  */
 package org.ice4j.attribute;
 
-import java.lang.*;
-
 import org.ice4j.*;
 
 /**
@@ -15,7 +13,7 @@ import org.ice4j.*;
  * TURN address of certain transport protocol.
  *
  * In the original TURN specification, only UDP is supported.
- * Support of TCP is detailled in draft-ietf-behave-turn-tcp-05.
+ * Support of TCP is detailed in draft-ietf-behave-turn-tcp-05.
  *
  * @author Sebastien Vincent
  * @version 0.1
