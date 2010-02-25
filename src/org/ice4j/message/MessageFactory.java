@@ -18,7 +18,6 @@ import org.ice4j.attribute.*;
  * @author Emil Ivov
  * @author Sebastien Vincent
  */
-
 public class MessageFactory
 {
     private static final Logger logger =
@@ -171,7 +170,6 @@ public class MessageFactory
         return bindingResponse;
     }
 
-
     /**
      * Creates a binding error response according to the specified error code
      * and unknown attributes.
@@ -257,7 +255,6 @@ public class MessageFactory
                                           unknownAttributes);
     }
 
-
     /**
      * Creates a binding error response with an ERROR-CODE attribute.
      *
@@ -301,6 +298,7 @@ public class MessageFactory
     public static Request createAllocateRequest()
     {
         Request allocateRequest = new Request();
+
         try
         {
             allocateRequest.setMessageType(Message.ALLOCATE_REQUEST);
@@ -310,7 +308,6 @@ public class MessageFactory
             //there should be no exc here since we're the creators.
             logger.log(Level.FINE, "Failed to set message type.", ex);
         }
-
         return allocateRequest;
     }
 
@@ -329,7 +326,6 @@ public class MessageFactory
       try
       {
         allocateRequest.setMessageType(Message.ALLOCATE_REQUEST);
-
 
         /* XXX add enum somewhere for transport number */
         if(protocol != 6 && protocol != 17)
@@ -500,5 +496,4 @@ public class MessageFactory
         throw new UnsupportedOperationException(
             "Shared Secret Support is not currently implemented");
     }
-
 }

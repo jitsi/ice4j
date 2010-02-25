@@ -15,7 +15,6 @@ import org.ice4j.*;
  *
  * @author Emil Ivov
  */
-
 public class Response extends Message
 {
 
@@ -24,7 +23,6 @@ public class Response extends Message
      */
     Response()
     {
-
     }
 
     /**
@@ -45,5 +43,4 @@ public class Response extends Message
 
         super.setMessageType(responseType);
     }
-
 }

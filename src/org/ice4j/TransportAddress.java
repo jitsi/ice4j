@@ -48,6 +48,7 @@ public class TransportAddress
     public TransportAddress(String hostname, int port, Transport transport)
     {
         super(hostname, port);
+
         this.transport = transport;
     }
 
@@ -71,9 +72,7 @@ public class TransportAddress
     public TransportAddress(byte[] ipAddress, int port, Transport transport)
         throws UnknownHostException
     {
-        super(InetAddress.getByAddress(ipAddress), port);
-
-        this.transport = transport;
+        this(InetAddress.getByAddress(ipAddress), port, transport);
     }
 
     /**
@@ -88,8 +87,7 @@ public class TransportAddress
      */
     public TransportAddress(InetSocketAddress address, Transport transport)
     {
-        super(address.getAddress(), address.getPort());
-        this.transport = transport;
+        this(address.getAddress(), address.getPort(), transport);
     }
 
     /**
@@ -112,6 +110,7 @@ public class TransportAddress
     public TransportAddress(InetAddress address, int port, Transport transport)
     {
         super(address, port);
+
         this.transport = transport;
     }
 
@@ -137,7 +136,7 @@ public class TransportAddress
      */
     public String toString()
     {
-        return super.toString() + "/"+getTransport();
+        return super.toString() + "/" + getTransport();
     }
 
     /**
@@ -148,7 +147,6 @@ public class TransportAddress
     public String getHostAddress()
     {
         InetAddress addr = getAddress();
-
         String addressStr = addr.getHostAddress();
 
         if(addr instanceof Inet6Address)
@@ -234,12 +232,8 @@ public class TransportAddress
      */
     public boolean canReach(TransportAddress dst)
     {
-        if (dst.getTransport() != getTransport())
-            return false;
-
-        if( isIPv6() != dst.isIPv6())
-            return false;
-
-        return true;
+        return
+            (getTransport() == dst.getTransport())
+                && (isIPv6() != dst.isIPv6());
     }
 }

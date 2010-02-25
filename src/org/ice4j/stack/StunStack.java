@@ -13,6 +13,7 @@ import java.util.logging.*;
 
 import org.ice4j.*;
 import org.ice4j.message.*;
+
 /**
  * The entry point to the Stun4J stack. The class is used to start, stop and
  * configure the stack.
@@ -59,7 +60,7 @@ public class StunStack
     /**
      * A dispatcher for incoming requests event;
      */
-    private EventDispatcher eventDispatcher = new EventDispatcher();
+    private final EventDispatcher eventDispatcher = new EventDispatcher();
 
     /**
      * Returns a reference to the singleton StunStack instance. If the stack
@@ -372,7 +373,6 @@ public class StunStack
             StunServerTransaction sTran  = serverTransactions.get(serverTid);
             if( sTran != null)
             {
-
                 //requests from this transaction have already been seen
                 //retransmit the response if there was any
                 logger.finest("found an existing transaction");
@@ -414,9 +414,7 @@ public class StunStack
         {
             TransactionID tid
                 = TransactionID.createTransactionID(msg.getTransactionID());
-
-            StunClientTransaction tran =
-                clientTransactions.remove(tid);
+            StunClientTransaction tran = clientTransactions.remove(tid);
 
             if(tran != null)
             {
