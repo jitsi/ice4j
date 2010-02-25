@@ -15,18 +15,18 @@ import java.util.*;
  *
  * @author Emil Ivov
  */
-
 public class TransactionID
 {
     /**
      * The id itself
      */
-    private byte transactionID[] = new byte[12];
+    private final byte transactionID[] = new byte[12];
 
     /**
      * The object to use to generate the rightmost 8 bytes of the id.
      */
-    private static Random random = new Random(System.currentTimeMillis());
+    private static final Random random
+        = new Random(System.currentTimeMillis());
 
     /**
      * A hashcode for hashtable storage.
@@ -93,7 +93,6 @@ public class TransactionID
         return tid;
     }
 
-
     /**
      * Returns the transaction id byte array (length 12).
      * @return the transaction ID byte array.
@@ -110,9 +109,7 @@ public class TransactionID
      */
     public boolean equals(Object obj)
     {
-
-        if(   obj == null
-           || !(obj instanceof TransactionID))
+        if(!(obj instanceof TransactionID))
             return false;
 
         if(this == obj)
