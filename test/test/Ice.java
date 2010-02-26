@@ -43,15 +43,23 @@ public class Ice
 
         IceMediaStream stream = agent.createMediaStream("audio");
 
+        long startTime = System.currentTimeMillis();
         //rtp
         Component rtpComp = agent.createComponent(
                         stream, Transport.UDP, 9090, 9090, 10000);
         System.out.println("rtpComp:" + rtpComp);
+        long endTime = System.currentTimeMillis();
+        System.out.println("Componente created in "
+                        + (endTime - startTime) +" ms");
+        startTime = endTime;
         //rtcpComp
         Component rtcpComp = agent.createComponent(
                         stream, Transport.UDP, 9091, 9090, 10000);
 
         System.out.println("rtcpComp:" + rtcpComp);
+        endTime = System.currentTimeMillis();
+        System.out.println("Componente created in "
+                        + (endTime - startTime) +" ms");
     }
 
     /**
