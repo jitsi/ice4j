@@ -87,9 +87,9 @@ public class StunCandidateHarvester
             HostCandidate hostCand = (HostCandidate)cand;
 
             startResolvingCandidate(hostCand);
-
-            waitForResolutionEnd();
         }
+
+        waitForResolutionEnd();
     }
 
     /**
@@ -265,4 +265,6 @@ public class StunCandidateHarvester
 
         base.getParentComponent().addLocalCandidate(srvrRflxCand);
     }
+
+
 }
