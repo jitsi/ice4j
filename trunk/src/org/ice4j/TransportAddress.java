@@ -232,8 +232,7 @@ public class TransportAddress
      */
     public boolean canReach(TransportAddress dst)
     {
-        return
-            (getTransport() == dst.getTransport())
-                && (isIPv6() != dst.isIPv6());
+        return (getTransport() == dst.getTransport())
+                && (isIPv6() == dst.isIPv6());
     }
 }
