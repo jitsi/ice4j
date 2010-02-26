@@ -32,7 +32,7 @@ public class HostCandidate extends Candidate
      * If this is a local candidate the field contains the socket that is
      * actually associated with the candidate.
      */
-    private DatagramSocket socket = null;
+    private final DatagramSocket socket;
 
     /**
      * Creates a HostCandidate for the specified transport address.
@@ -55,9 +55,11 @@ public class HostCandidate extends Candidate
     }
 
     /**
-     * Returns the <tt>DatagramSocket</tt> associated with this candidate.
+     * Gets the <tt>DatagramSocket</tt> associated with this <tt>Candidate</tt>.
      *
-     * @return the <tt>DatagramSocket</tt> associated with this candidate.
+     * @return the <tt>DatagramSocket</tt> associated with this
+     * <tt>Candidate</tt>
+     * @see Candidate#getSocket()
      */
     public DatagramSocket getSocket()
     {

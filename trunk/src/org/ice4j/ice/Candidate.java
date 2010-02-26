@@ -24,8 +24,9 @@ import org.ice4j.*;
  * </p>
  *
  * @author Emil Ivov
+ * @author Lubomir Marinov
  */
-public class Candidate
+public abstract class Candidate
 {
     /**
      * The transport address represented by this candidate.
@@ -139,6 +140,14 @@ public class Candidate
         this.parentComponent = parentComponent;
         this.candidateType = type;
     }
+
+    /**
+     * Gets the <tt>DatagramSocket</tt> associated with this <tt>Candidate</tt>.
+     *
+     * @return the <tt>DatagramSocket</tt> associated with this
+     * <tt>Candidate</tt>
+     */
+    public abstract DatagramSocket getSocket();
 
     /**
      * Returns the type of this candidate which should be an instance of the
