@@ -164,6 +164,7 @@ public class Agent
                         component, preferredPort, minPort, maxPort);
 
         //apply other harvesters here:
+        //todo: run harvesters in a parallel manner
         synchronized(harvesters)
         {
             for (CandidateHarvester h : harvesters )
