@@ -124,26 +124,4 @@ public class StunCandidateHarvester
                        exception);
         }
     }
-
-    private class KeepAliveThread extends Thread
-    {
-        public KeepAliveThread()
-        {
-            super("Stun Harvester Keep Alive Thread");
-            setDaemon(true);
-        }
-
-        public void run()
-        {
-            synchronized(allocatedCandidates)
-            {
-                allocatedCandidates.wait(keepAliveInterval);
-
-                for(ServerReflexiveCandidate srflxCand : allocatedCandidates)
-                {
-
-                }
-            }
-        }
-    }
 }
