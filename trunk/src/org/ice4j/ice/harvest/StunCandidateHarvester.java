@@ -7,6 +7,10 @@
  */
 package org.ice4j.ice.harvest;
 
+import java.net.*;
+import java.util.*;
+import java.util.logging.*;
+
 import org.ice4j.*;
 import org.ice4j.ice.*;
 import org.ice4j.message.*;
@@ -23,6 +27,12 @@ import org.ice4j.socket.*;
 public class StunCandidateHarvester
     extends AbstractStunCandidateHarvester
 {
+    /**
+     * The <tt>Logger</tt> used by the <tt>StunCandidateHarvester</tt>
+     * class and its instances for logging output.
+     */
+    private static final Logger logger
+        = Logger.getLogger(AbstractStunCandidateHarvester.class.getName());
 
     /**
      * The <tt>DatagramPacketFilter</tt> which accepts only STUN messages
@@ -31,6 +41,13 @@ public class StunCandidateHarvester
      */
     private static final StunDatagramPacketFilter stunDatagramPacketFilter
         = new StunDatagramPacketFilter();
+
+    /**
+     * The list of candidates that this harvester has allocated and that it
+     * needs to keep alive.
+     */
+    private List<ServerReflexiveCandidate> allocatedCandidates
+        = new LinkedList<ServerReflexiveCandidate>();
 
     /**
      * Creates a new STUN harvester that will be running against the specified
@@ -80,5 +97,31 @@ public class StunCandidateHarvester
             HostCandidate hostCand)
     {
         return stunDatagramPacketFilter;
+    }
+
+    /**
+     * reSends a binding request to our stun server through the specified
+     * <tt>srflxCand</tt> candidate so that it would keep the potential NAT
+     * mapping valid.
+     *
+     * @param srflxCand the <tt>ServerReflexiveCandidate</tt> that we'd like to
+     * refresh and keep alive.
+     */
+    private void refreshCandidate(ServerReflexiveCandidate srflxCand)
+    {
+        DatagramSocket sock = srflxCand.getSocket();
+        stunStack.addSocket(sock);
+
+        try
+        {
+            stunStack.sendRequest( MessageFactory.createBindingRequest(),
+                            stunServer, sock, this);
+
+        }
+        catch (Exception exception)
+        {
+            logger.log(Level.INFO, "Failed to send a refresh for a candidate",
+                       exception);
+        }
     }
 }

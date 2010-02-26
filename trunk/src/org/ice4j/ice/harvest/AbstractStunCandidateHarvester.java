@@ -51,7 +51,7 @@ public abstract class AbstractStunCandidateHarvester
     /**
      * The stack to use for STUN communication.
      */
-    private final StunStack stunStack = StunStack.getInstance();
+    protected final StunStack stunStack = StunStack.getInstance();
 
     /**
      * Creates a new STUN harvester that will be running against the specified
@@ -110,7 +110,7 @@ public abstract class AbstractStunCandidateHarvester
      * @param base the <tt>HostCandidate</tt> that we should use as a base
      * for the new <tt>ServerReflexiveCandidate</tt>.
      */
-    protected void createServerReflexiveCandidate(Message response, 
+    protected void createServerReflexiveCandidate(Message response,
                                                   HostCandidate base)
     {
         Attribute attribute
