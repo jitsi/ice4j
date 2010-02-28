@@ -111,7 +111,7 @@ public class Ice
     private static void transferRemoteCandidates(Component localComponent,
                                                  Component remoteComponent)
     {
-        List<Candidate> remoteCandidates = remoteComponent.getRemoteCandidates();
+        List<Candidate> remoteCandidates = remoteComponent.getLocalCandidates();
 
         for(Candidate rCand : remoteCandidates)
         {
