@@ -177,6 +177,12 @@ public class Agent
 
         //make sure we compute priorities only after we have all candidates
         component.prioritizeCandidates();
+
+        //eliminate redundant candidates
+        component.eliminateRedundantCandidates();
+
+        //select the candidate to put in the media line.
+        component.selectDefaultCandidate();
     }
 
     /**

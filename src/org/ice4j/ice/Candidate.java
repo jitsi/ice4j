@@ -622,4 +622,32 @@ public abstract class Candidate
         return buff.toString();
     }
 
+    /**
+     * Returns an integer indicating the preference that this <tt>Candidate</tt>
+     * should be considered with for becoming a default candidate.
+     *
+     * @return an integer indicating the preference that this <tt>Candidate</tt>
+     * should be considered with for becoming a default candidate.
+     */
+    protected int getDefaultPreference()
+    {
+        if( getType() == CandidateType.RELAYED_CANDIDATE)
+            return 30;
+
+        if( getType() == CandidateType.SERVER_REFLEXIVE_CANDIDATE)
+            return 20;
+
+        if( getType() == CandidateType.HOST_CANDIDATE)
+        {
+            //prefer IPv4 as default since many servers would still freak out
+            //when seeing IPv6 address.
+            if(getTransportAddress().isIPv6())
+                return 10;
+            else
+                return 15;
+        }
+
+        //WTF?
+        return 5;
+    }
 }

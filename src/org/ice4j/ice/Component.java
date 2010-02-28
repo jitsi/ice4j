@@ -8,6 +8,7 @@
 package org.ice4j.ice;
 
 import java.util.*;
+import java.util.logging.*;
 
 import org.ice4j.*;
 
@@ -24,6 +25,12 @@ import org.ice4j.*;
  */
 public class Component
 {
+    /**
+     * Our class logger.
+     */
+    private static final Logger logger
+        = Logger.getLogger(Component.class.getName());
+
     /**
      * A component id is a positive integer between 1 and 256 which identifies
      * the specific component of the media stream for which this is a candidate.
@@ -73,6 +80,12 @@ public class Component
      */
     private CandidatePrioritizer candidatePrioritizer
                                               = new CandidatePrioritizer();
+
+    /**
+     * The default <tt>Candidate</tt> for this component or in other words, the
+     * candidate that we would have used without ICE.
+     */
+    private Candidate defaultCandidate = null;
 
     /**
      * Creates a new <tt>Component</tt> with the specified <tt>componentID</tt>
@@ -295,6 +308,8 @@ public class Component
                     buff.append("\n" + cand.toString());
                 }
             }
+
+            buff.append("\nDefault Candidate: " + getDefaultCandidate());
         }
         else
         {
@@ -328,7 +343,7 @@ public class Component
      * Computes the priorities of all <tt>Candidate</tt>s and then sorts them
      * accordingly.
      */
-    public void prioritizeCandidates()
+    protected void prioritizeCandidates()
     {
         synchronized(localCandidates)
         {
@@ -405,6 +420,101 @@ public class Component
         public boolean equals(Object obj)
         {
             return (obj instanceof CandidatePrioritizer);
+        }
+    }
+
+    /**
+     * Eliminates redundant candidates, removing them from the specified
+     * <tt>component</tt>.  A candidate is redundant if its transport address
+     * equals another candidate, and its base equals the base of that other
+     * candidate.  Note that two candidates can have the same transport address
+     * yet have different bases, and these would not be considered redundant.
+     * Frequently, a server reflexive candidate and a host candidate will be
+     * redundant when the agent is not behind a NAT.  The agent SHOULD eliminate
+     * the redundant candidate with the lower priority which is why we have to
+     * run this method only after prioritizing candidates.
+     */
+    protected void eliminateRedundantCandidates()
+    {
+        List<Candidate> candidatesCopy = getLocalCandidates();
+
+        for (Candidate cand : candidatesCopy)
+        {
+            //find and remove all candidates that have the same address and
+            //base as cand and a lower priority.
+            synchronized(localCandidates)
+            {
+                Iterator<Candidate> localCandsIter = localCandidates.iterator();
+
+                while (localCandsIter.hasNext())
+                {
+                    Candidate cand2 = localCandsIter.next();
+
+                    if(   cand != cand2
+                       && cand.getTransportAddress()
+                                        .equals(cand2.getTransportAddress())
+                       && cand.getBase().equals(cand2.getBase())
+                       && cand.getPriority() >= cand2.getPriority() )
+                    {
+                       localCandsIter.remove();
+                       if(logger.isLoggable(Level.FINEST))
+                           logger.finest("eliminating redundant cand: "+ cand2);
+                    }
+                }
+            }
+        }
+    }
+
+    /**
+     * Returns the <tt>Candidate</tt> that has been selected as the default
+     * for this <tt>Component</tt> or <tt>null</tt> if no such
+     * <tt>Candidate</tt> has been selected yet. A candidate is said to be
+     * default if it would be the target of media from a non-ICE peer;
+     *
+     * @return the <tt>Candidate</tt> that has been selected as the default for
+     * this <tt>Component</tt> or <tt>null</tt> if no such <tt>Candidate</tt>
+     * has been selected yet
+     */
+    public Candidate getDefaultCandidate()
+    {
+        return defaultCandidate;
+    }
+
+    /**
+     * Selects a <tt>Candidate</tt> that should be considered as the default
+     * for this <tt>Component</tt>. A candidate is said to be default if it
+     * would be the target of media from a non-ICE peer;
+     * <p>
+     * The ICE specification RECOMMENDEDs that default candidates be chosen
+     * based on the likelihood of those candidates to work with the peer that is
+     * being contacted. It is RECOMMENDED that the default candidates are the
+     * relayed candidates (if relayed candidates are available), server
+     * reflexive candidates (if server reflexive candidates are available), and
+     * finally host candidates.
+     * </p>
+     */
+    protected void selectDefaultCandidate()
+    {
+        synchronized(localCandidates)
+        {
+            Iterator<Candidate> localCandsIter = localCandidates.iterator();
+
+            while (localCandsIter.hasNext())
+            {
+                Candidate cand = localCandsIter.next();
+
+                if(this.defaultCandidate == null)
+                {
+                    this.defaultCandidate = cand;
+                    continue;
+                }
+
+                if( defaultCandidate.getDefaultPreference()
+                                < cand.getDefaultPreference())
+                {
+                    defaultCandidate = cand;
+                }
+            }
         }
     }
 }
