@@ -8,7 +8,9 @@
 package org.ice4j.ice;
 
 import java.io.*;
+import java.math.*;
 import java.net.*;
+import java.security.*;
 import java.util.*;
 import java.util.logging.*;
 
@@ -64,10 +66,24 @@ public class Agent
     private FoundationsRegistry foundationsRegistry = new FoundationsRegistry();
 
     /**
+     * The user fragment that we should use for the ice-ufrag attribute.
+     */
+    private final String ufrag;
+
+    /**
+     * The password that we should use for the ice-pwd attribute.
+     */
+    private final String password;
+
+    /**
      * Creates an empty <tt>Agent</tt> with no streams, and no address
      */
     public Agent()
     {
+        SecureRandom random = new SecureRandom();
+
+        ufrag = new BigInteger(24, random).toString(32);
+        password = new BigInteger(128, random).toString(32);
     }
 
     /**
@@ -216,4 +232,29 @@ public class Agent
             harvesters.add(harvester);
         }
     }
+
+    /**
+     * Returns that user name that should be advertised in session descriptions
+     * containing ICE data from this agent.
+     *
+     * @return that user name that should be advertised in session descriptions
+     * containing ICE data from this agent.
+     */
+    public String getUserName()
+    {
+        return ufrag;
+    }
+
+    /**
+     * Returns that password that should be advertised in session descriptions
+     * containing ICE data from this agent.
+     *
+     * @return that password that should be advertised in session descriptions
+     * containing ICE data from this agent.
+     */
+    public String getPassword()
+    {
+        return password;
+    }
+
 }
