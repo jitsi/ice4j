@@ -32,6 +32,9 @@ public class Ice
     {
         Agent agent = new Agent();
 
+        System.out.println("ice-pwd:"+ agent.getPassword());
+        System.out.println("ice-ufrag:" + agent.getUserName() + "\n");
+
         StunCandidateHarvester stunHarv = new StunCandidateHarvester(
             new TransportAddress("sip-communicator.net", 3478, Transport.UDP));
         StunCandidateHarvester stun6Harv = new StunCandidateHarvester(
@@ -49,8 +52,8 @@ public class Ice
                         stream, Transport.UDP, 9090, 9090, 10000);
         System.out.println("rtpComp:" + rtpComp);
         long endTime = System.currentTimeMillis();
-        System.out.println("Componente created in "
-                        + (endTime - startTime) +" ms");
+        System.out.println("Component created in "
+                        + (endTime - startTime) +" ms\n");
         startTime = endTime;
         //rtcpComp
         Component rtcpComp = agent.createComponent(
@@ -58,8 +61,8 @@ public class Ice
 
         System.out.println("rtcpComp:" + rtcpComp);
         endTime = System.currentTimeMillis();
-        System.out.println("Componente created in "
-                        + (endTime - startTime) +" ms");
+        System.out.println("Component created in "
+                        + (endTime - startTime) +" ms\n");
     }
 
     /**
