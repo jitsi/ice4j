@@ -33,7 +33,7 @@ public class StunDatagramPacketFilter
      * @return <tt>true</tt> if this <tt>DatagramPacketFilter</tt> accepts the
      * <tt>DatagramPacket</tt> which represents a STUN message with the
      * specified STUN method; otherwise, <tt>false</tt>
-     * @see BaseStunDatagramPacketFilter#acceptMethod(char)
+     * @see AbstractStunDatagramPacketFilter#acceptMethod(char)
      */
     public boolean acceptMethod(char method)
     {
