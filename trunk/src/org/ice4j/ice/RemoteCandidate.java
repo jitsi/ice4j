@@ -38,16 +38,4 @@ public class RemoteCandidate
     {
         super(transportAddress, parentComponent, type);
     }
-
-    /**
-     * Always returns null since remote candidates do not have a
-     * <tt>DatagramSocket</tt> associated with them.
-     *
-     * @return <tt>null</tt>
-     */
-    public DatagramSocket getSocket()
-    {
-        return null;
-    }
-
 }

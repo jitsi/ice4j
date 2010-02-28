@@ -142,14 +142,6 @@ public abstract class Candidate
     }
 
     /**
-     * Gets the <tt>DatagramSocket</tt> associated with this <tt>Candidate</tt>.
-     *
-     * @return the <tt>DatagramSocket</tt> associated with this
-     * <tt>Candidate</tt>
-     */
-    public abstract DatagramSocket getSocket();
-
-    /**
      * Returns the type of this candidate which should be an instance of the
      * {@link CandidateType} enumeration.
      *

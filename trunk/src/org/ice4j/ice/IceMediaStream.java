@@ -108,7 +108,20 @@ public class IceMediaStream
      */
     public String toString()
     {
-        return "media stream:" + getName();
+        StringBuffer buff = new StringBuffer( "media stream:")
+            .append(getName());
+        buff.append(" (component count=").append(getComponentCount())
+            .append(")");
+
+        List<Component> components = getComponents();
+        for (Component cmp : components)
+        {
+            buff.append("Component ").append(cmp.getComponentID())
+                .append(" :\n");
+            buff.append(cmp);
+        }
+
+        return buff.toString();
     }
 
     /**
@@ -140,6 +153,21 @@ public class IceMediaStream
         synchronized(components)
         {
             return new LinkedList<Component>(components.values());
+        }
+    }
+
+    /**
+     * Returns the number of <tt>Component</tt>s currently registered with this
+     * stream.
+     *
+     * @return the number of <tt>Component</tt>s currently registered with this
+     * stream.
+     */
+    public int getComponentCount()
+    {
+        synchronized(components)
+        {
+            return components.size();
         }
     }
 
