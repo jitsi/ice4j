@@ -169,7 +169,7 @@ public class Component
      * @return the number of all local candidates currently registered in this
      * <tt>Component</tt>.
      */
-    public int countLocalCandidates()
+    public int getLocalCandidateCount()
     {
         synchronized(localCandidates)
         {
@@ -240,7 +240,7 @@ public class Component
      * @return the number of all remote candidates currently registered in this
      * <tt>Component</tt>.
      */
-    public int countRemoteCandidates()
+    public int getRemoteCandidateCount()
     {
         synchronized(remoteCandidates)
         {
@@ -297,7 +297,7 @@ public class Component
         buff.append(" parent stream=" + getParentStream().getName());
 
         //local candidates
-        int localCandidatesCount = countLocalCandidates();
+        int localCandidatesCount = getLocalCandidateCount();
 
         if(localCandidatesCount > 0)
         {
@@ -319,7 +319,7 @@ public class Component
         }
 
         //remote candidates
-        int remoteCandidatesCount = countRemoteCandidates();
+        int remoteCandidatesCount = getRemoteCandidateCount();
 
         if(remoteCandidatesCount > 0)
         {

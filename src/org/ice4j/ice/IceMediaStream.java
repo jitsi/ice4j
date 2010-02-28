@@ -81,8 +81,12 @@ public class IceMediaStream
     {
         lastComponentID ++;
 
-        Component component = new Component(lastComponentID, transport, this);
-        components.put(new Integer(lastComponentID), component);
+        Component component;
+        synchronized( components )
+        {
+            component = new Component(lastComponentID, transport, this);
+            components.put(new Integer(lastComponentID), component);
+        }
 
         return component;
     }
@@ -118,7 +122,10 @@ public class IceMediaStream
      */
     public Component getComponnet(int id)
     {
-        return components.get(id);
+        synchronized(components)
+        {
+            return components.get(id);
+        }
     }
 
     /**
@@ -130,7 +137,10 @@ public class IceMediaStream
      */
     public List<Component> getComponents()
     {
-        return new LinkedList<Component>(components.values());
+        synchronized(components)
+        {
+            return new LinkedList<Component>(components.values());
+        }
     }
 
     /**
@@ -142,6 +152,24 @@ public class IceMediaStream
      */
     public List<Integer> getComponentIDs()
     {
-        return new LinkedList<Integer>(components.keySet());
+        synchronized(components)
+        {
+            return new LinkedList<Integer>(components.keySet());
+        }
+    }
+
+    /**
+     * Returns the number of <tt>Component</tt>s currently registered with this
+     * stream.
+     *
+     * @return the number of <tt>Component</tt>s currently registered with this
+     * stream.
+     */
+    public int getStreamCount()
+    {
+        synchronized(components)
+        {
+            return components.size();
+        }
     }
 }
