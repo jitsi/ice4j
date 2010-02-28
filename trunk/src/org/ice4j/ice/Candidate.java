@@ -563,10 +563,13 @@ public abstract class Candidate
      *
      * @return the <tt>TransportAddress</tt> of the base if this is a reflexive
      * candidate, the mapped address in the case of a relayed candidate, and
-     * <tt>null</tt> if this is a host candidate.
+     * <tt>null</tt> if this is a host or a remote candidate.
      */
     public TransportAddress getRelatedAddress()
     {
+        if(this instanceof RemoteCandidate)
+            return null;
+
         if ( getType () == CandidateType.SERVER_REFLEXIVE_CANDIDATE
              || getType () == CandidateType.PEER_REFLEXIVE_CANDIDATE)
         {

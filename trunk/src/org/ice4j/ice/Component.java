@@ -323,7 +323,7 @@ public class Component
 
         if(remoteCandidatesCount > 0)
         {
-            buff.append("\n" + remoteCandidatesCount + " rocal candidates:");
+            buff.append("\n" + remoteCandidatesCount + " remote candidates:");
 
             synchronized(remoteCandidates)
             {
