@@ -257,4 +257,44 @@ public class Agent
         return password;
     }
 
+    /**
+     * Returns the <tt>IceMediaStream</tt> with the specified <tt>name</tt> or
+     * <tt>null</tt> if no such stream has been registered with this
+     * <tt>Agent</tt> yet.
+     *
+     * @param name the name of the stream that we'd like to obtain a reference
+     * to.
+     *
+     * @return the <tt>IceMediaStream</tt> with the specified <tt>name</tt> or
+     * <tt>null</tt> if no such stream has been registered with this
+     * <tt>Agent</tt> yet.
+     */
+    public IceMediaStream getMediaStream(String name)
+    {
+        return mediaStreams.get(name);
+    }
+
+    /**
+     * Returns a <tt>List</tt> containing the names of all currently registered
+     * media streams.
+     *
+     * @return a <tt>List</tt> containing the names of all currently registered
+     * media streams.
+     */
+    public List<String> getMediaStreamNames()
+    {
+        return new LinkedList<String>(mediaStreams.keySet());
+    }
+
+    /**
+     * Returns a <tt>List</tt> containing all <tt>IceMediaStream</tt>s currently
+     * registered with this agent.
+     *
+     * @return a <tt>List</tt> containing all <tt>IceMediaStream</tt>s currently
+     * registered with this agent.
+     */
+    public List<IceMediaStream> getMediaStreams()
+    {
+        return new LinkedList<IceMediaStream>(mediaStreams.values());
+    }
 }

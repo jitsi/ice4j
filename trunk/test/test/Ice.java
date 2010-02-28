@@ -24,11 +24,17 @@ public class Ice
 {
     /**
      * Runs the test
-     * @param args cmd line args
+     * @param args command line arguments
      *
      * @throws Throwable if bad stuff happens.
      */
     public static void main(String[] args) throws Throwable
+    {
+        Agent agent1 = createAgent(9090);
+    }
+
+    private static Agent createAgent(int rtpPort)
+        throws Throwable
     {
         Agent agent = new Agent();
 
@@ -49,7 +55,7 @@ public class Ice
         long startTime = System.currentTimeMillis();
         //rtp
         Component rtpComp = agent.createComponent(
-                        stream, Transport.UDP, 9090, 9090, 10000);
+                stream, Transport.UDP, rtpPort, rtpPort, rtpPort + 100);
         System.out.println("rtpComp:" + rtpComp);
         long endTime = System.currentTimeMillis();
         System.out.println("Component created in "
@@ -57,12 +63,14 @@ public class Ice
         startTime = endTime;
         //rtcpComp
         Component rtcpComp = agent.createComponent(
-                        stream, Transport.UDP, 9091, 9090, 10000);
+                stream, Transport.UDP, rtpPort + 1, rtpPort + 1, rtpPort + 101);
 
         System.out.println("rtcpComp:" + rtcpComp);
         endTime = System.currentTimeMillis();
         System.out.println("Component created in "
                         + (endTime - startTime) +" ms\n");
+
+        return agent;
     }
 
     /**
