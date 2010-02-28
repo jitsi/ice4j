@@ -30,16 +30,113 @@ public class Ice
      */
     public static void main(String[] args) throws Throwable
     {
-        Agent agent1 = createAgent(9090);
+        long startTime = System.currentTimeMillis();
+
+        Agent localAgent = createAgent(9090);
+        Agent remotePeer = createAgent(6060);
+
+        long endTime = System.currentTimeMillis();
+
+        transferRemoteCandidates(localAgent, remotePeer);
+
+        System.out.println("LocalAgent:\n" + localAgent);
+
+        System.out.println("Total execution time: "
+                        + (endTime - startTime) + "ms");
     }
 
+    /**
+     * Installs remote candidates in <tt>localAgent</tt>..
+     *
+     * @param localAgent a reference to the agent that we will pretend to be the
+     * local
+     * @param remotePeer a reference to what we'll pretend to be a remote agent.
+     */
+    private static void transferRemoteCandidates(Agent localAgent,
+                                                 Agent remotePeer)
+    {
+        List<IceMediaStream> streams = localAgent.getStreams();
+
+        for(IceMediaStream localStream : streams)
+        {
+            String streamName = localStream.getName();
+
+            //get a reference to the local stream
+            IceMediaStream remoteStream = remotePeer.getStream(streamName);
+
+            if(remoteStream != null)
+                transferRemoteCandidates(localStream, remoteStream);
+            else
+            {
+                //localStream.free();
+            }
+        }
+    }
+
+    /**
+     * Installs remote candidates in <tt>localStream</tt>..
+     *
+     * @param localStream the stream where we will be adding remote candidates
+     * to.
+     * @param remoteStream the stream that we should extract remote candidates
+     * from.
+     */
+    private static void transferRemoteCandidates(IceMediaStream localStream,
+                                                 IceMediaStream remoteStream)
+    {
+        List<Component> localComponents = localStream.getComponents();
+
+        for(Component localComponent : localComponents)
+        {
+            int id = localComponent.getComponentID();
+
+            Component remoteComponent = remoteStream.getComponnet(id);
+
+            if(remoteComponent != null)
+                transferRemoteCandidates(localComponent, remoteComponent);
+            else
+            {
+                //localComponent.free();
+            }
+        }
+    }
+
+    /**
+     * Adds to <tt>localComponent</tt> a list of remote candidates that are
+     * actually the local candidates from <tt>remoteComponent</tt>.
+     * @param localComponent the <tt>Component</tt> where that we should be
+     * adding <tt>remoteCandidate</tt>s to.
+     * @param remoteComponent the source of remote candidates.
+     */
+    private static void transferRemoteCandidates(Component localComponent,
+                                                 Component remoteComponent)
+    {
+        List<Candidate> remoteCandidates = remoteComponent.getRemoteCandidates();
+
+        for(Candidate rCand : remoteCandidates)
+        {
+            localComponent.addRemoteCandidate(new RemoteCandidate(
+                            rCand.getTransportAddress(),
+                            localComponent,
+                            rCand.getType()));
+        }
+    }
+
+    /**
+     * Creates an ICE <tt>Agent</tt> and adds to it an audio stream with RTP
+     * and RTCP components.
+     *
+     * @param rtpPort the port that we should try to bind the RTP component on
+     * (the RTCP one would automatically go to rtpPort + 1)
+     * @return an ICE <tt>Agent</tt> with an audio stream with RTP and RTCP
+     * components.
+     *
+     * @throws Throwable if anything goes wrong.
+     */
     private static Agent createAgent(int rtpPort)
         throws Throwable
     {
         Agent agent = new Agent();
-
-        System.out.println("ice-pwd:"+ agent.getPassword());
-        System.out.println("ice-ufrag:" + agent.getUserName() + "\n");
 
         StunCandidateHarvester stunHarv = new StunCandidateHarvester(
             new TransportAddress("sip-communicator.net", 3478, Transport.UDP));
@@ -56,19 +153,18 @@ public class Ice
         //rtp
         Component rtpComp = agent.createComponent(
                 stream, Transport.UDP, rtpPort, rtpPort, rtpPort + 100);
-        System.out.println("rtpComp:" + rtpComp);
+
         long endTime = System.currentTimeMillis();
-        System.out.println("Component created in "
-                        + (endTime - startTime) +" ms\n");
+        System.out.println("RTP Component created in "
+                        + (endTime - startTime) +" ms");
         startTime = endTime;
         //rtcpComp
         Component rtcpComp = agent.createComponent(
                 stream, Transport.UDP, rtpPort + 1, rtpPort + 1, rtpPort + 101);
 
-        System.out.println("rtcpComp:" + rtcpComp);
         endTime = System.currentTimeMillis();
-        System.out.println("Component created in "
-                        + (endTime - startTime) +" ms\n");
+        System.out.println("RTCP Component created in "
+                        + (endTime - startTime) +" ms");
 
         return agent;
     }
