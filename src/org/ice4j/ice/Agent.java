@@ -322,4 +322,30 @@ public class Agent
             return mediaStreams.size();
         }
     }
+
+    /**
+     * Returns a <tt>String</tt> representation of this agent.
+     *
+     * @return a <tt>String</tt> representation of this agent.
+     */
+    @Override
+    public String toString()
+    {
+        StringBuffer buff = new StringBuffer("ICE Agent (stream-count=");
+
+        buff.append(getStreamCount()).append(" ice-pwd:").append(getPassword());
+        buff.append(getStreamCount()).append(" ice-ufrag:")
+                                                    .append(getUserName());
+        buff.append("):\n");
+
+        List<IceMediaStream> streams = getStreams();
+        for(IceMediaStream stream : streams)
+        {
+            buff.append(stream.toString()).append("\n");
+        }
+
+        return buff.toString();
+    }
+
+
 }

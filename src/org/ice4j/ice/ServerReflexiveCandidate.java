@@ -24,7 +24,7 @@ import org.ice4j.*;
  *
  * @author Emil Ivov
  */
-public class ServerReflexiveCandidate extends Candidate
+public class ServerReflexiveCandidate extends LocalCandidate
 {
 
     /**
@@ -55,10 +55,10 @@ public class ServerReflexiveCandidate extends Candidate
      *
      * @return the <tt>DatagramSocket</tt> associated with this
      * <tt>Candidate</tt>
-     * @see Candidate#getSocket()
+     * @see LocalCandidate#getSocket()
      */
     public DatagramSocket getSocket()
     {
-        return getBase().getSocket();
+        return ((HostCandidate)getBase()).getSocket();
     }
 }

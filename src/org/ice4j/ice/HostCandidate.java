@@ -25,7 +25,7 @@ import org.ice4j.*;
  *
  * @author Emil Ivov
  */
-public class HostCandidate extends Candidate
+public class HostCandidate extends LocalCandidate
 {
 
     /**
@@ -59,7 +59,7 @@ public class HostCandidate extends Candidate
      *
      * @return the <tt>DatagramSocket</tt> associated with this
      * <tt>Candidate</tt>
-     * @see Candidate#getSocket()
+     * @see LocalCandidate#getSocket()
      */
     public DatagramSocket getSocket()
     {

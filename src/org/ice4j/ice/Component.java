@@ -108,13 +108,13 @@ public class Component
     }
 
     /**
-     * Add a local candidate to this component. The method has package access
-     * because local candidates can only be created and added by the candidate
-     * harvesters registered with the agent.
+     * Add a local candidate to this component. The method should only be
+     * accessed and local candidates added by the candidate harvesters
+     * registered with the agent.
      *
      * @param candidate the candidate object to be added
      */
-    protected void addLocalCandidate(Candidate candidate)
+    public void addLocalCandidate(Candidate candidate)
     {
         synchronized(localCandidates)
         {
