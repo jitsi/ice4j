@@ -76,6 +76,18 @@ public class Agent
     private final String password;
 
     /**
+     * The tie-breaker number is used in connectivity checks to detect and
+     * repair the case where both agents believe to have the controlling or the
+     * controlled role.
+     */
+    private final long tieBreaker;
+
+    /**
+     * Determines whether this is the controlling agent in a an ICE interaction.
+     */
+    private boolean isControlling = true;
+
+    /**
      * Creates an empty <tt>Agent</tt> with no streams, and no address
      */
     public Agent()
@@ -84,6 +96,8 @@ public class Agent
 
         ufrag = new BigInteger(24, random).toString(32);
         password = new BigInteger(128, random).toString(32);
+
+        tieBreaker = random.nextLong();
     }
 
     /**
@@ -336,6 +350,7 @@ public class Agent
         buff.append(getStreamCount()).append(" ice-pwd:").append(getPassword());
         buff.append(getStreamCount()).append(" ice-ufrag:")
                                                     .append(getUserName());
+        buff.append(getStreamCount()).append(" tie-breaker:" + getTieBreaker());
         buff.append("):\n");
 
         List<IceMediaStream> streams = getStreams();
@@ -347,5 +362,38 @@ public class Agent
         return buff.toString();
     }
 
+    /**
+     * Returns this agent's tie-breaker number. The tie-breaker number is used
+     * in connectivity checks to detect and repair the case where both agents
+     * believe to have the controlling or the controlled role.
+     *
+     * @return  this agent's tie-breaker number
+     */
+    public long getTieBreaker()
+    {
+        return tieBreaker;
+    }
 
+    /**
+     * Specifies whether this agent has the controlling role in an ICE exchange.
+     *
+     * @param isControlling <tt>true</tt> if this is to be the controlling
+     * <tt>Agent</tt> and <tt>false</tt> otherwise.
+     */
+    public void setControlling(boolean isControlling)
+    {
+        this.isControlling = isControlling;
+    }
+
+    /**
+     * Determines whether this agent has the controlling role in an ICE
+     * exchange.
+     *
+     * @return <tt>true</tt> if this is to be the controlling <tt>Agent</tt>
+     * and <tt>false</tt> otherwise.
+     */
+    public boolean isControlling()
+    {
+        return isControlling;
+    }
 }
