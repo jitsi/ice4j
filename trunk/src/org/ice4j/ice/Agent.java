@@ -269,9 +269,12 @@ public class Agent
      * <tt>null</tt> if no such stream has been registered with this
      * <tt>Agent</tt> yet.
      */
-    public IceMediaStream getMediaStream(String name)
+    public IceMediaStream getStream(String name)
     {
-        return mediaStreams.get(name);
+        synchronized(mediaStreams)
+        {
+            return mediaStreams.get(name);
+        }
     }
 
     /**
@@ -281,9 +284,12 @@ public class Agent
      * @return a <tt>List</tt> containing the names of all currently registered
      * media streams.
      */
-    public List<String> getMediaStreamNames()
+    public List<String> getStreamNames()
     {
-        return new LinkedList<String>(mediaStreams.keySet());
+        synchronized(mediaStreams)
+        {
+            return new LinkedList<String>(mediaStreams.keySet());
+        }
     }
 
     /**
@@ -293,8 +299,27 @@ public class Agent
      * @return a <tt>List</tt> containing all <tt>IceMediaStream</tt>s currently
      * registered with this agent.
      */
-    public List<IceMediaStream> getMediaStreams()
+    public List<IceMediaStream> getStreams()
     {
-        return new LinkedList<IceMediaStream>(mediaStreams.values());
+        synchronized(mediaStreams)
+        {
+            return new LinkedList<IceMediaStream>(mediaStreams.values());
+        }
+    }
+
+    /**
+     * Returns the number of <tt>IceMediaStream</tt>s currently registered with
+     * this agent.
+     *
+     * @return  the number of <tt>IceMediaStream</tt>s currently registered with
+     * this agent.
+     *
+     */
+    public int getStreamCount()
+    {
+        synchronized(mediaStreams)
+        {
+            return mediaStreams.size();
+        }
     }
 }
