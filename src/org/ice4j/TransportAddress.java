@@ -25,6 +25,13 @@ public class TransportAddress
     private static final long serialVersionUID = 5076001401234631237L;
 
     /**
+     * A property that allows us to specify whether we would expect link local
+     * IPv6 addresses to be able to reach globally routable ones.
+     */
+    public static final String PNAME_ALLOW_LINK_TO_GLOBAL_REACHABILITY
+                                = "org.ice4j.ALLOW_LINK_TO_GLOBAL_REACHABILITY";
+
+    /**
      * The variable that we are using to store the transport that this address
      * is pertaining to.
      */
@@ -232,7 +239,36 @@ public class TransportAddress
      */
     public boolean canReach(TransportAddress dst)
     {
-        return (getTransport() == dst.getTransport())
-                && (isIPv6() == dst.isIPv6());
+        if( getTransport() != dst.getTransport() )
+            return false;
+
+        if (isIPv6() != dst.isIPv6())
+            return false;
+
+        if (isIPv6())
+        {
+            Inet6Address srcAddr = (Inet6Address)getAddress();
+            Inet6Address dstAddr = (Inet6Address)dst.getAddress();
+
+            if(srcAddr.isLinkLocalAddress() != dstAddr.isLinkLocalAddress())
+            {
+                //this one may actually work if for example we are contacting
+                //the public address of someone in our local network. however
+                //in most cases we would also be able to reach the same address
+                //via a global address of our own and the probability of the
+                //opposite is considerably lower than the probability of us
+                //trying to reach a distant global address through one of our
+                //own. Therefore we would return false here by default.
+
+                if(Boolean.getBoolean(PNAME_ALLOW_LINK_TO_GLOBAL_REACHABILITY))
+                    return true;
+                else
+                    return false;
+            }
+        }
+
+        //may add more unreachability condition here in the future;
+
+        return true;
     }
 }
