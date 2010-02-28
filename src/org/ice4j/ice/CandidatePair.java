@@ -20,6 +20,7 @@ import java.util.logging.*;
  * @author Emil Ivov
  */
 public class CandidatePair
+    implements Comparable<CandidatePair>
 {
     /**
      * The <tt>Logger</tt> used by the <tt>CandidatePair</tt>
@@ -41,51 +42,15 @@ public class CandidatePair
     /**
      * Priority of the candidate-pair
      */
-    private long priority = 0;
+    private final long priority;
 
-    public static enum CandidatePairState{
-    /**
-     * Indicates that the candidate pair is in a Waiting state which means that
-     * a check has not been performed for this pair, and can be performed as
-     * soon as it is the highest priority Waiting pair on the check list.
-     */
-    STATE_WAITING("Waiting"),
-
-    /**
-     * Indicates that the candidate pair is in a "In-Progress" state which means that
-     * a check has been sent for this pair, but the transaction is in progress.
-     */
-    public static final String STATE_IN_PROGRESS = "In-Progress";
-
-    /**
-     * Indicates that the candidate pair is in a "Succeeded" state which means
-     * that a check for this pair was already done and produced a successful
-     * result.
-     */
-    public static final String STATE_SUCCEEDED = "Succeeded";
-
-    /**
-     * Indicates that the candidate pair is in a "Failed" state which means that
-     * a check for this pair was already done and failed, either never producing
-     * any response or producing an unrecoverable failure response.
-     */
-    public static final String STATE_FAILED = "Failed";
-
-    /**
-     * Indicates that the candidate pair is in a "Frozen" state which means that
-     * a check for this pair hasn't been performed, and it can't yet be
-     * performed until some other check succeeds, allowing this pair to unfreeze
-     * and move into the Waiting state.
-     */
-    public static final String STATE_FROZEN = "Frozen";
-    }
     /**
      * Each candidate pair has a a state that is assigned once the check list
      * for each media stream has been computed. The ICE RFC defines five
-     * potential values that the state can have. They are represented here with
-     * the STATE_XXX class fields.
+     * potential values that the state can have and they are all represented
+     * in the <tt>CandidatePairState</tt> enumeration.
      */
-    private CandidatePairState state = CandidatePairState.STATE_FROZEN;
+    private CandidatePairState state = CandidatePairState.WAITING;
 
     /**
      * Creates a <tt>CandidatePair</tt> instance mapping <tt>localCandidate</tt>
@@ -100,5 +65,185 @@ public class CandidatePair
 
         this.localCandidate = localCandidate;
         this.remoteCandidate = remoteCandidate;
+
+        priority = computePriority();
+    }
+
+    /**
+     * Returns the foundation of this <tt>CandidatePair</tt>. The foundation
+     * of a <tt>CandidatePair</tt> is just the concatenation of the foundations
+     * of its two candidates. Initially, only the candidate pairs with unique
+     * foundations are tested. The other candidate pairs are marked "frozen".
+     * When the connectivity checks for a candidate pair succeed, the other
+     * candidate pairs with the same foundation are unfrozen. This avoids
+     * repeated checking of components which are superficially more attractive
+     * but in fact are likely to fail.
+     *
+     * @return the foundation of this candidate pair, which is a concatenation
+     * of the foundations of the remote and local candidates.
+     */
+    public String getFoundation()
+    {
+        return localCandidate.getFoundation()
+            + remoteCandidate.getFoundation();
+    }
+
+    /**
+     * Returns the <tt>LocalCandidate</tt> of this <tt>CandidatePair</tt>.
+     *
+     * @return the local <tt>Candidate</tt> of this <tt>CandidatePair</tt>.
+     */
+    public LocalCandidate getLocalCandidate()
+    {
+        return localCandidate;
+    }
+
+    /**
+     * Returns the remote candidate of this <tt>CandidatePair</tt>.
+     *
+     * @return the remote <tt>Candidate</tt> of this <tt>CandidatePair</tt>.
+     */
+    public RemoteCandidate getRemoteCandidate()
+    {
+        return remoteCandidate;
+    }
+
+    /**
+     * Returns the state of this <tt>CandidatePair</tt>. Each candidate pair has
+     * a state that is assigned once the check list for each media stream has
+     * been computed. The ICE RFC defines five potential values that the state
+     * can have. They are represented here with the <tt>CandidatePairState</tt>
+     * enumeration.
+     *
+     * @return the <tt>CandidatePairState</tt> that this candidate pair is
+     * currently in.
+     */
+    public CandidatePairState getState()
+    {
+        return state;
+    }
+
+    /**
+     * Sets the <tt>CandidatePairState</tt> of this pair to <tt>state</tt>. This
+     * method should only be called by the ice agent, during the execution of
+     * the ICE procedures.
+     *
+     * @param state the state that this candidate pair is to enter.
+     */
+    protected void setState(CandidatePairState state)
+    {
+        this.state = state;
+    }
+
+    /**
+     * Determines whether this candidate pair is frozen or not. Initially, only
+     * the candidate pairs with unique foundations are tested. The other
+     * candidate pairs are marked "frozen". When the connectivity checks for a
+     * candidate pair succeed, the other candidate pairs with the same
+     * foundation are unfrozen.
+     *
+     * @return true if this candidate pair is frozen and false otherwise.
+     */
+    public boolean isFrozen()
+    {
+        return this.getState().equals(CandidatePairState.FROZEN);
+    }
+
+    /**
+     * Returns the candidate in this pair that belongs to the controlling agent.
+     *
+     * @return a reference to the <tt>Candidate</tt> instance that comes from
+     * the controlling agent.
+     */
+    public Candidate getControllingAgentCandidate()
+    {
+        return (getLocalCandidate().getParentComponent().getParentStream()
+                        .getParentAgent().isControlling())
+                    ? getLocalCandidate()
+                    : getRemoteCandidate();
+    }
+
+    /**
+     * Returns the candidate in this pair that belongs to the controlled agent.
+     *
+     * @return a reference to the <tt>Candidate</tt> instance that comes from
+     * the controlled agent.
+     */
+    public Candidate getControlledAgentCandidate()
+    {
+        return (getLocalCandidate().getParentComponent().getParentStream()
+                        .getParentAgent().isControlling())
+                    ? getRemoteCandidate()
+                    : getLocalCandidate();
+    }
+
+
+    /**
+     * A candidate pair priority is computed the following way:<br>
+     * Let G be the priority for the candidate provided by the controlling
+     * agent. Let D be the priority for the candidate provided by the
+     * controlled agent. The priority for a pair is computed as:
+     * <p>
+     * <i>pair priority = 2^32*MIN(G,D) + 2*MAX(G,D) + (G>D?1:0)</i>
+     * <p>
+     * This formula ensures a unique priority for each pair. Once the priority
+     * is assigned, the agent sorts the candidate pairs in decreasing order of
+     * priority. If two pairs have identical priority, the ordering amongst
+     * them is arbitrary.
+     *
+     * @return a long indicating the priority of this candidate pair.
+     */
+    private long computePriority()
+    {
+        //use G and D as local and remote candidate priority names to fit the
+        //definition in the RFC.
+        long G = getControllingAgentCandidate().getPriority();
+        long D = getControlledAgentCandidate().getPriority();
+
+        return (long)Math.pow(2, 32)*Math.min(G,D)
+                + 2*Math.max(G,D)
+                + (G>D?1l:0l);
+    }
+
+    /**
+     * Returns the priority of this pair.
+     *
+     * @return the priority of this pair.
+     */
+    public long getPriority()
+    {
+        return priority;
+    }
+
+    /**
+     * Compares this <tt>CandidatePair</tt> with the specified object for order.
+     * Returns a negative integer, zero, or a positive integer as this
+     * <tt>CandidatePair</tt> is less than, equal to, or greater than the
+     * specified object.<p>
+     *
+     * @param   candidatePair the Object to be compared.
+     * @return  a negative integer, zero, or a positive integer as this
+     * <tt>CandidatePair</tt> is less than, equal to, or greater than the
+     * specified object.
+     *
+     * @throws ClassCastException if the specified object's type prevents it
+     *         from being compared to this Object.
+     */
+    public int compareTo(CandidatePair candidatePair)
+    {
+        return (int)(getPriority() - candidatePair.getPriority());
+    }
+
+    /**
+     * Returns a String representation of this <tt>CandidatePair</tt>.
+     *
+     * @return a String representation of the object.
+     */
+    public String toString()
+    {
+        return "CandidatePair (State=" + getState()
+            + " Priority=" + getPriority()
+            + "):\n\tLocalCandidate=" + getLocalCandidate()
+            + "\n\tRemoteCandidate=" + getRemoteCandidate();
     }
 }

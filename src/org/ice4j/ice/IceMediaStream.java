@@ -200,4 +200,14 @@ public class IceMediaStream
             return components.size();
         }
     }
+
+    /**
+     * Returns a reference to the <tt>Agent</tt> that this stream belongs to.
+     *
+     * @return a reference to the <tt>Agent</tt> that this stream belongs to.
+     */
+    public Agent getParentAgent()
+    {
+        return parentAgent;
+    }
 }
