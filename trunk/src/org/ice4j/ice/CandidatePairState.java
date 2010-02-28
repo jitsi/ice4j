@@ -21,28 +21,28 @@ public enum CandidatePairState
      * a check has not been performed for this pair, and can be performed as
      * soon as it is the highest priority Waiting pair on the check list.
      */
-    STATE_WAITING("Waiting"),
+    WAITING("Waiting"),
 
     /**
      * Indicates that the candidate pair is in a "In-Progress" state which
      * means that a check has been sent for this pair, but the transaction is
      * in progress.
      */
-    STATE_IN_PROGRESS("In-Progress"),
+    PROGRESS("In-Progress"),
 
     /**
      * Indicates that the candidate pair is in a "Succeeded" state which means
      * that a check for this pair was already done and produced a successful
      * result.
      */
-    STATE_SUCCEEDED("Succeeded"),
+    SUCCEEDED("Succeeded"),
 
     /**
      * Indicates that the candidate pair is in a "Failed" state which means that
      * a check for this pair was already done and failed, either never producing
      * any response or producing an unrecoverable failure response.
      */
-    STATE_FAILED("Failed"),
+    FAILED("Failed"),
 
     /**
      * Indicates that the candidate pair is in a "Frozen" state which means that
@@ -50,7 +50,7 @@ public enum CandidatePairState
      * performed until some other check succeeds, allowing this pair to unfreeze
      * and move into the Waiting state.
      */
-    STATE_FROZEN("Frozen");
+    FROZEN("Frozen");
 
     /**
      * The name of this <tt>CandidatePairState</tt> instance.
