@@ -106,4 +106,42 @@ public class IceMediaStream
     {
         return "media stream:" + getName();
     }
+
+    /**
+     * Returns the <tt>Component</tt> with the specified <tt>id</tt> or
+     * <tt>null</tt> if no such component exists in this stream.
+     *
+     * @param id the identifier of the component we are looking for.
+     *
+     * @return  the <tt>Component</tt> with the specified <tt>id</tt> or
+     * <tt>null</tt> if no such component exists in this stream.
+     */
+    public Component getComponnet(int id)
+    {
+        return components.get(id);
+    }
+
+    /**
+     * Returns the list of <tt>Component</tt>s currently registered with this
+     * stream.
+     *
+     * @return a non-null list of <tt>Component</tt>s currently registered with
+     * this stream.
+     */
+    public List<Component> getComponents()
+    {
+        return new LinkedList<Component>(components.values());
+    }
+
+    /**
+     * Returns the IDs of all <tt>Component</tt>s currently registered with this
+     * stream.
+     *
+     * @return a non-null list of IDs corresponding to the <tt>Component</tt>s
+     * currently registered with this stream.
+     */
+    public List<Integer> getComponentIDs()
+    {
+        return new LinkedList<Integer>(components.keySet());
+    }
 }
