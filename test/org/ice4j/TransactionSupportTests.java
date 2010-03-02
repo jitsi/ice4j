@@ -516,13 +516,35 @@ public class TransactionSupportTests extends TestCase
     /**
      * A simple utility for asynchronously collecting responses.
      */
-    private class PlainResponseCollector
-        implements ResponseCollector
+    private static class PlainResponseCollector
+        extends AbstractResponseCollector
     {
         /**
          * The responses we've collected so far.
          */
         public final Vector<Object> receivedResponses = new Vector<Object>();
+
+        /**
+         * Notifies this <tt>ResponseCollector</tt> that a transaction described by
+         * the specified <tt>BaseStunMessageEvent</tt> has failed. The possible
+         * reasons for the failure include timeouts, unreachable destination, etc.
+         *
+         * @param event the <tt>BaseStunMessageEvent</tt> which describes the failed
+         * transaction and the runtime type of which specifies the failure reason
+         * @see AbstractResponseCollector#processFailure(BaseStunMessageEvent)
+         */
+        protected void processFailure(BaseStunMessageEvent event)
+        {
+            String receivedResponse;
+
+            if (event instanceof StunFailureEvent)
+                receivedResponse = "unreachable";
+            else if (event instanceof StunTimeoutEvent)
+                receivedResponse = "timeout";
+            else
+                receivedResponse = "failure";
+            receivedResponses.add(receivedResponse);
+        }
 
         /**
          * Logs the received <tt>responseEvt</tt>
@@ -532,33 +554,6 @@ public class TransactionSupportTests extends TestCase
         public void processResponse(StunMessageEvent responseEvt)
         {
             receivedResponses.add(responseEvt);
-        }
-
-        /**
-         * Called when the associated transaction expires.
-         *
-         * @param evt the <tt>StunTimeoutEvent</tt> containing a reference to
-         * the failed <tt>Message</tt> and the expired transaction.
-         */
-        public void processTimeout(StunTimeoutEvent evt)
-        {
-            receivedResponses.add("timeout");
-        }
-
-        /**
-         * Notifies this collector that the destination of the request has been
-         * determined to be unreachable and that the request should be
-         * considered unanswered.
-         *
-         * @param event the <tt>StunFailureEvent</tt>  containing
-         * <tt>PortUnreachableException</tt> which signaled
-         * that the destination of the request was found to be unreachable
-         *
-         * @see ResponseCollector#processUnreachable(StunFailureEvent)
-         */
-        public void processUnreachable(StunFailureEvent event)
-        {
-            receivedResponses.add("unreachable");
         }
     }
 }

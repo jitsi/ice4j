@@ -37,8 +37,6 @@ public class ShallowStackTest extends TestCase {
     private DatagramSocket   localSock = null;
 
     private DatagramSocket dummyServerSocket = null;
-    private DatagramPacket bindingRequestPacket
-                                    = new DatagramPacket(new byte[4096], 4096);
 
     /**
      * Creates a test instance for the method with the specified name.
@@ -216,12 +214,12 @@ public class ShallowStackTest extends TestCase {
 
         //---------- create the response ---------------------------------------
         Response bindingResponse = MessageFactory.createBindingResponse(
-            new TransportAddress( msgFixture.ADDRESS_ATTRIBUTE_ADDRESS,
-                 msgFixture.ADDRESS_ATTRIBUTE_PORT, Transport.UDP ),
-            new TransportAddress( msgFixture.ADDRESS_ATTRIBUTE_ADDRESS_2,
-                 msgFixture.ADDRESS_ATTRIBUTE_PORT_2, Transport.UDP),
-            new TransportAddress( msgFixture.ADDRESS_ATTRIBUTE_ADDRESS_3,
-                 msgFixture.ADDRESS_ATTRIBUTE_PORT_3, Transport.UDP));
+            new TransportAddress( MsgFixture.ADDRESS_ATTRIBUTE_ADDRESS,
+                 MsgFixture.ADDRESS_ATTRIBUTE_PORT, Transport.UDP ),
+            new TransportAddress( MsgFixture.ADDRESS_ATTRIBUTE_ADDRESS_2,
+                 MsgFixture.ADDRESS_ATTRIBUTE_PORT_2, Transport.UDP),
+            new TransportAddress( MsgFixture.ADDRESS_ATTRIBUTE_ADDRESS_3,
+                 MsgFixture.ADDRESS_ATTRIBUTE_PORT_3, Transport.UDP));
 
         //---------- send & receive the response -------------------------------
         dgramCollector.startListening(dummyServerSocket);
@@ -302,8 +300,8 @@ public class ShallowStackTest extends TestCase {
     /**
      * A simple utility that allows us to asynchronously collect messages.
      */
-    public class SimpleResponseCollector
-        implements ResponseCollector
+    public static class SimpleResponseCollector
+        extends AbstractResponseCollector
     {
 
         /**
@@ -313,41 +311,35 @@ public class ShallowStackTest extends TestCase {
         Response collectedResponse = null;
 
         /**
+         * Notifies this <tt>ResponseCollector</tt> that a transaction described by
+         * the specified <tt>BaseStunMessageEvent</tt> has failed. The possible
+         * reasons for the failure include timeouts, unreachable destination, etc.
+         *
+         * @param event the <tt>BaseStunMessageEvent</tt> which describes the failed
+         * transaction and the runtime type of which specifies the failure reason
+         * @see AbstractResponseCollector#processFailure(BaseStunMessageEvent)
+         */
+        protected synchronized void processFailure(BaseStunMessageEvent event)
+        {
+            String msg;
+
+            if (event instanceof StunFailureEvent)
+                msg = "Unreachable";
+            else if (event instanceof StunTimeoutEvent)
+                msg = "Timeout";
+            else
+                msg = "Failure";
+            logger.info(msg);
+            notifyAll();
+        }
+
+        /**
          * Logs the received response and notifies the wait method.
          */
         public synchronized void processResponse(StunMessageEvent evt)
         {
             collectedResponse = (Response)evt.getMessage();
             logger.finest("Received response.");
-            notifyAll();
-        }
-
-        /**
-         * Logs the timeout event for later use.
-         *
-         * @param evt the timeout event that has just occurred.
-         */
-        public synchronized void processTimeout(StunTimeoutEvent evt)
-        {
-            logger.info("Timeout");
-            notifyAll();
-        }
-
-        /**
-         * Notifies this collector that the destination of the request has been
-         * determined to be unreachable and that the request should be
-         * considered unanswered.
-         *
-         * @param evt the <tt>StunFailureEvent</tt> containing the
-         * <tt>PortUnreachableException</tt> which signaled
-         * that the destination of the request was found to be unreachable
-         *
-         * @see ResponseCollector#processUnreachable(StunFailureEvent)
-         */
-        public synchronized void processUnreachable(
-                StunFailureEvent evt)
-        {
-            logger.info("Unreachable");
             notifyAll();
         }
 

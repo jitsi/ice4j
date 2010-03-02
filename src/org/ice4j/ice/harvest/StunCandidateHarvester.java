@@ -27,8 +27,8 @@ import org.ice4j.stack.*;
  * @author Lubomir Marinov
  */
 public class StunCandidateHarvester
-    implements CandidateHarvester,
-               ResponseCollector
+    extends AbstractResponseCollector
+    implements CandidateHarvester
 {
     /**
      * The <tt>Logger</tt> used by the <tt>StunCandidateHarvester</tt>
@@ -268,6 +268,20 @@ public class StunCandidateHarvester
     }
 
     /**
+     * Notifies this <tt>ResponseCollector</tt> that a transaction described by
+     * the specified <tt>BaseStunMessageEvent</tt> has failed. The possible
+     * reasons for the failure include timeouts, unreachable destination, etc.
+     *
+     * @param event the <tt>BaseStunMessageEvent</tt> which describes the failed
+     * transaction and the runtime type of which specifies the failure reason
+     * @see AbstractResponseCollector#processFailure(BaseStunMessageEvent)
+     */
+    protected void processFailure(BaseStunMessageEvent event)
+    {
+        processFailure(event.getTransactionID());
+    }
+
+    /**
      * Removes the corresponding local candidate from the list of candidates
      * that we are waiting on in order to complete the harvest.
      *
@@ -313,34 +327,6 @@ public class StunCandidateHarvester
             logger.finest("received a message tranid=" + tranID);
             logger.finest("localCand=" + localCand);
         }
-    }
-
-    /**
-     * Notifies the collector that no response had been received
-     * after repeated retransmissions of the original request (as described
-     * by rfc3489) and that the request should be considered unanswered.
-     *
-     * @param event the <tt>StunTimeoutEvent</tt> that contains the transaction
-     * which has just expired.
-     */
-    public void processTimeout(StunTimeoutEvent event)
-    {
-        processFailure(event.getTransactionID());
-    }
-
-    /**
-     * Called when one of our requests results in a
-     * <tt>PortUnreachableException</tt> ... which is actually quite rare
-     * because of the oddities of the BSD and Java socket implementations, which
-     * is why we currently ignore this method.
-     *
-     * @param event the <tt>StunFailureEvent</tt> containing the
-     * <tt>PortUnreachableException</tt> which signaled that the destination of
-     * the request was found to be unreachable.
-     */
-    public void processUnreachable(StunFailureEvent event)
-    {
-        processFailure(event.getTransactionID());
     }
 
     /**
