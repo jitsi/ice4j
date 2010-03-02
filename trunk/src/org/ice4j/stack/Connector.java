@@ -14,13 +14,12 @@ import org.ice4j.*;
 
 /**
  * The Network Access Point is the most outward part of the stack. It is
- * constructed around a datagram socket and takes care about forwarding incoming
- * messages to the MessageProcessor as well as sending datagrams to the STUN server
- * specified by the original NetAccessPointDescriptor.
+ * constructed around a datagram socket and takes care of forwarding incoming
+ * messages to the MessageProcessor as well as sending datagrams to the STUN
+ * server specified by the original NetAccessPointDescriptor.
  *
  * @author Emil Ivov
  */
-
 class Connector
     implements Runnable
 {
@@ -125,7 +124,6 @@ class Connector
 
                     localSock = this.sock;
                 }
-
 
                 localSock.receive(packet);
 

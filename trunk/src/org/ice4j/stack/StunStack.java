@@ -425,9 +425,8 @@ public class StunStack
                 //do nothing - just drop the phantom response.
                 logger.fine("Dropped response - "
                                             + "no matching client tran found.");
-                logger.fine("response tid was - " + tid.toString());
-                logger.fine("all tids in stock were"
-                                            + clientTransactions.toString());
+                logger.fine("response tid was - " + tid);
+                logger.fine("all tids in stock were" + clientTransactions);
             }
         }
     }
