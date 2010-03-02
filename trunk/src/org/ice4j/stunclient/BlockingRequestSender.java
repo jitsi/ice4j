@@ -31,9 +31,10 @@ import org.ice4j.stack.*;
  *</code>
  *
  * @author Emil Ivov
+ * @author Lubomir Marinov
  */
 class BlockingRequestSender
-    implements ResponseCollector
+    extends AbstractResponseCollector
 {
     /**
      * Our class logger
@@ -82,49 +83,34 @@ class BlockingRequestSender
     }
 
     /**
+     * Notifies this <tt>ResponseCollector</tt> that a transaction described by
+     * the specified <tt>BaseStunMessageEvent</tt> has failed. The possible
+     * reasons for the failure include timeouts, unreachable destination, etc.
+     * Notifies the discoverer so that it may resume.
+     *
+     * @param event the <tt>BaseStunMessageEvent</tt> which describes the failed
+     * transaction and the runtime type of which specifies the failure reason
+     * @see AbstractResponseCollector#processFailure(BaseStunMessageEvent)
+     */
+    protected synchronized void processFailure(BaseStunMessageEvent event)
+    {
+        synchronized(sendLock)
+        {
+            ended = true;
+            notifyAll();
+        }
+    }
+
+    /**
      * Saves the message event and notifies the discoverer thread so that
      * it may resume.
      * @param evt the newly arrived message event.
      */
     public synchronized void processResponse(StunMessageEvent evt)
     {
-        synchronized(sendLock){
-            this.responseEvent = evt;
-            ended = true;
-            notifyAll();
-        }
-    }
-
-    /**
-     * Notifies the discoverer thread when a message has timeout-ed so that
-     * it may resume and consider it as unanswered.
-     *
-     * @param evt the <tt>StunTimeoutEvent</tt> containing the transaction that
-     * has just expired.
-     */
-    public synchronized void processTimeout(StunTimeoutEvent evt)
-    {
-        synchronized(sendLock){
-            ended = true;
-            notifyAll();
-        }
-    }
-
-    /**
-     * Notifies this collector that the destination of the request has been
-     * determined to be unreachable and that the request should be considered
-     * unanswered.
-     *
-     * @param event the <tt>StunFailureEvent</tt> that contains the
-     * <tt>PortUnreachableException</tt> which signaled that the destination of
-     * the request was found to be unreachable
-     * @see ResponseCollector#processUnreachable(StunFailureEvent)
-     */
-    public synchronized void processUnreachable(
-                    StunFailureEvent event)
-    {
         synchronized(sendLock)
         {
+            this.responseEvent = evt;
             ended = true;
             notifyAll();
         }
@@ -150,13 +136,15 @@ class BlockingRequestSender
             throws StunException,
                    IOException
     {
-        synchronized(sendLock){
+        synchronized(sendLock)
+        {
             stunStack.sendRequest(request, serverAddress, localAddress,
                                      BlockingRequestSender.this);
         }
 
         ended = false;
-        while(!ended){
+        while(!ended)
+        {
             try
             {
                 wait();

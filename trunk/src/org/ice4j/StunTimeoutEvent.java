@@ -6,10 +6,7 @@
  */
 package org.ice4j;
 
-import java.util.*;
-
 import org.ice4j.message.*;
-import org.ice4j.stack.*;
 
 /**
  * The class is used to dispatch events that occur when a STUN transaction
@@ -18,23 +15,12 @@ import org.ice4j.stack.*;
  * @author Emil Ivov
  */
 public class StunTimeoutEvent
-    extends EventObject
+    extends BaseStunMessageEvent
 {
     /**
      * Serial version UID for this Serializable class.
      */
     private static final long serialVersionUID = 41267841L;
-
-    /**
-     * The message that the corresponding transaction was about.
-     */
-    private Message message = null;
-
-    /**
-     * The <tt>TransactionID</tt> of the transaction that the source message
-     * is related to.
-     */
-    private final TransactionID transactionID;
 
     /**
      * Constructs a <tt>StunTimeoutEvent</tt> according to the specified
@@ -46,10 +32,7 @@ public class StunTimeoutEvent
     public StunTimeoutEvent(Message          message,
                             TransportAddress localAddress)
     {
-        super(localAddress);
-        this.message = message;
-        this.transactionID = TransactionID.createTransactionID(message
-                                                        .getTransactionID());
+        super(localAddress, message);
     }
 
     /**
@@ -61,28 +44,7 @@ public class StunTimeoutEvent
      */
     public TransportAddress getLocalAddress()
     {
-        return (TransportAddress)getSource();
-    }
-
-    /**
-     * Returns the <tt>Message</tt> whose transaction has just expired.
-     *
-     * @return the <tt>Message</tt> whose transaction has just expired.
-     */
-    public Message getMessage()
-    {
-        return message;
-    }
-
-    /**
-     * Returns the id of the transaction that has just expired.
-     *
-     * @return the <tt>TransactionID</tt> of the transaction that has just
-     * expired.
-     */
-    public TransactionID getTransactionID()
-    {
-        return transactionID;
+        return getSourceAddress();
     }
 
     /**
@@ -92,6 +54,7 @@ public class StunTimeoutEvent
      * @return a <tt>String</tt> representation of this event, containing the
      * corresponding message, and local address.
      */
+    @Override
     public String toString()
     {
         StringBuffer buff = new StringBuffer("StunTimeoutEvent:\n\tMessage=");
@@ -101,5 +64,4 @@ public class StunTimeoutEvent
 
         return buff.toString();
     }
-
 }

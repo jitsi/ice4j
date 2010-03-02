@@ -7,19 +7,21 @@
 package org.ice4j;
 
 /**
- * The interface is used as a callback when sending a request. The response
- * collector is then used as a means of dispatching the response.
- *
- * @author Emil Ivov
+ * @author Lubomir Marinov
  */
-public interface ResponseCollector
+public abstract class AbstractResponseCollector
+    implements ResponseCollector
 {
+
     /**
-     * Dispatch the specified response.
+     * Notifies this <tt>ResponseCollector</tt> that a transaction described by
+     * the specified <tt>BaseStunMessageEvent</tt> has failed. The possible
+     * reasons for the failure include timeouts, unreachable destination, etc.
      *
-     * @param response the response to dispatch.
+     * @param event the <tt>BaseStunMessageEvent</tt> which describes the failed
+     * transaction and the runtime type of which specifies the failure reason
      */
-    public void processResponse(StunMessageEvent response);
+    protected abstract void processFailure(BaseStunMessageEvent event);
 
     /**
      * Notifies this collector that no response had been received after repeated
@@ -29,7 +31,10 @@ public interface ResponseCollector
      * @param event the <tt>StunTimeoutEvent</tt> containing a reference to the
      * transaction that has just failed.
      */
-    public void processTimeout(StunTimeoutEvent event);
+    public void processTimeout(StunTimeoutEvent event)
+    {
+        processFailure(event);
+    }
 
     /**
      * Notifies this collector that the destination of the request has been
@@ -39,5 +44,8 @@ public interface ResponseCollector
      * @param event the <tt>StunFailureEvent</tt> containing the
      * <tt>PortUnreachableException</tt> that has just occurred.
      */
-    public void processUnreachable(StunFailureEvent event);
+    public void processUnreachable(StunFailureEvent event)
+    {
+        processFailure(event);
+    }
 }

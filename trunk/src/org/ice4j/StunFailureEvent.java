@@ -6,10 +6,7 @@
  */
 package org.ice4j;
 
-import java.util.*;
-
 import org.ice4j.message.*;
-import org.ice4j.stack.*;
 
 /**
  * The class is used to dispatch events that occur when a STUN transaction
@@ -19,23 +16,12 @@ import org.ice4j.stack.*;
  * @author Emil Ivov
  */
 public class StunFailureEvent
-    extends EventObject
+    extends BaseStunMessageEvent
 {
     /**
      * Serial version UID for this Serializable class.
      */
     private static final long serialVersionUID = 41232541L;
-
-    /**
-     * The message that the corresponding transaction was about.
-     */
-    private final Message message;
-
-    /**
-     * The <tt>TransactionID</tt> of the transaction that the source message
-     * is related to.
-     */
-    private final TransactionID transactionID;
 
     /**
      * The <tt>Exception</tt> that caused this failure.
@@ -56,10 +42,7 @@ public class StunFailureEvent
                             TransportAddress localAddress,
                             Throwable        cause)
     {
-        super(localAddress);
-        this.message = message;
-        this.transactionID = TransactionID.createTransactionID(message
-                                                        .getTransactionID());
+        super(localAddress, message);
 
         this.cause = cause;
     }
@@ -73,28 +56,7 @@ public class StunFailureEvent
      */
     public TransportAddress getLocalAddress()
     {
-        return (TransportAddress)getSource();
-    }
-
-    /**
-     * Returns the <tt>Message</tt> whose transaction has just failed.
-     *
-     * @return the <tt>Message</tt> whose transaction has just failed.
-     */
-    public Message getMessage()
-    {
-        return message;
-    }
-
-    /**
-     * Returns the id of the transaction that has just failed.
-     *
-     * @return the <tt>TransactionID</tt> of the transaction that has just
-     * failed.
-     */
-    public TransactionID getTransactionID()
-    {
-        return transactionID;
+        return getSourceAddress();
     }
 
     /**
@@ -116,9 +78,10 @@ public class StunFailureEvent
      * @return a <tt>String</tt> representation of this event, containing the
      * corresponding message, and local address.
      */
+    @Override
     public String toString()
     {
-        StringBuffer buff = new StringBuffer("StunTimeoutEvent:\n\tMessage=");
+        StringBuffer buff = new StringBuffer("StunFailureEvent:\n\tMessage=");
 
         buff.append(getMessage());
         buff.append(" localAddr=").append(getLocalAddress());
