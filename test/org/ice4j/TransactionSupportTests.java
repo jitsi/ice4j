@@ -547,13 +547,13 @@ public class TransactionSupportTests extends TestCase
         }
 
         /**
-         * Logs the received <tt>responseEvt</tt>
+         * Logs the received <tt>response</tt>
          *
-         * @param responseEvt the event to log.
+         * @param response the event to log.
          */
-        public void processResponse(StunMessageEvent responseEvt)
+        public void processResponse(StunMessageEvent response)
         {
-            receivedResponses.add(responseEvt);
+            receivedResponses.add(response);
         }
     }
 }

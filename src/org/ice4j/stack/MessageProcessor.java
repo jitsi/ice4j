@@ -95,7 +95,7 @@ class MessageProcessor
         {
             while (isRunning)
             {
-                RawMessage rawMessage = null;
+                RawMessage rawMessage;
                 try
                 {
                     rawMessage = messageQueue.remove();
@@ -104,15 +104,15 @@ class MessageProcessor
                 {
                     if(isRunning())
                         logger.log(Level.WARNING,
-                                "A net access point has gone useless:", ex);
+                                "A net access point has gone useless: ", ex);
                     //nothing to do here since we test whether we are running
                     //just beneath ...
+                    rawMessage = null;
                 }
 
                 // were we asked to stop?
-                if (!isRunning()){
+                if (!isRunning())
                     return;
-                }
                 //anything to parse?
                 if (rawMessage == null)
                     continue;

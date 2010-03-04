@@ -143,6 +143,4 @@ public class XorMappedAddressAttribute
     {
         return applyXor(getAddress(), xorMask);
     }
-
-
 }

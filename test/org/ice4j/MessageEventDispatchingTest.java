@@ -312,13 +312,14 @@ public class MessageEventDispatchingTest extends TestCase
         }
 
         /**
-         * Stores incoming requests.
+         * Stores incoming responses.
          *
-         * @param responseEvt the event containing the incoming request.
+         * @param response a <tt>StunMessageEvent</tt> which describes the
+         * received STUN <tt>Response</tt>
          */
-        public synchronized void processResponse(StunMessageEvent responseEvt)
+        public synchronized void processResponse(StunMessageEvent response)
         {
-            receivedResponses.add(responseEvt);
+            receivedResponses.add(response);
             notifyAll();
         }
 

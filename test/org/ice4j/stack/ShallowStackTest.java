@@ -335,10 +335,13 @@ public class ShallowStackTest extends TestCase {
 
         /**
          * Logs the received response and notifies the wait method.
+         *
+         * @param response a <tt>StunMessageEvent</tt> which describes the
+         * received STUN <tt>Response</tt>
          */
-        public synchronized void processResponse(StunMessageEvent evt)
+        public synchronized void processResponse(StunMessageEvent response)
         {
-            collectedResponse = (Response)evt.getMessage();
+            collectedResponse = (Response) response.getMessage();
             logger.finest("Received response.");
             notifyAll();
         }
