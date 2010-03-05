@@ -86,7 +86,14 @@ public class Component
      * The default <tt>Candidate</tt> for this component or in other words, the
      * candidate that we would have used without ICE.
      */
-    private Candidate defaultCandidate = null;
+    private LocalCandidate defaultCandidate = null;
+
+    /**
+     * The default <tt>RemoteCandidate</tt> for this component or in other
+     * words, the candidate that we would have used to communicate with the
+     * remote peer if we hadn't been using ICE.
+     */
+    private Candidate defaultRemoteCandidate = null;
 
     /**
      * Creates a new <tt>Component</tt> with the specified <tt>componentID</tt>
@@ -479,9 +486,37 @@ public class Component
      * this <tt>Component</tt> or <tt>null</tt> if no such <tt>Candidate</tt>
      * has been selected yet
      */
-    public Candidate getDefaultCandidate()
+    public LocalCandidate getDefaultCandidate()
     {
         return defaultCandidate;
+    }
+
+    /**
+     * Returns the <tt>Candidate</tt> that the remote party has reported as
+     * default for this <tt>Component</tt> or <tt>null</tt> if no such
+     * <tt>Candidate</tt> has reported yet. A candidate is said to be
+     * default if it would be the target of media from a non-ICE peer;
+     *
+     * @return the <tt>Candidate</tt> that the remote party has reported as
+     * default for this <tt>Component</tt> or <tt>null</tt> if no such
+     * <tt>Candidate</tt> has reported yet.
+     */
+    public Candidate getDefaultRemoteCandidate()
+    {
+        return defaultRemoteCandidate;
+    }
+
+    /**
+     * Sets the <tt>Candidate</tt> that the remote party has reported as
+     * default for this <tt>Component</tt>. A candidate is said to be
+     * default if it would be the target of media from a non-ICE peer;
+     *
+     * @param candidate the <tt>Candidate</tt> that the remote party has
+     * reported as default for this <tt>Component</tt>.
+     */
+    public void setDefaultRemoteCandidate(Candidate candidate)
+    {
+        this.defaultRemoteCandidate = candidate;
     }
 
     /**
@@ -506,7 +541,7 @@ public class Component
 
             while (localCandsIter.hasNext())
             {
-                Candidate cand = localCandsIter.next();
+                LocalCandidate cand = localCandsIter.next();
 
                 if(this.defaultCandidate == null)
                 {
