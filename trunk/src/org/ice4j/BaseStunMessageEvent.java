@@ -20,6 +20,10 @@ import org.ice4j.stack.*;
 public class BaseStunMessageEvent
     extends EventObject
 {
+    /**
+     * A dummy version UID to suppress warnings.
+     */
+    private static final long serialVersionUID = 1L;
 
     /**
      * The STUN <tt>Message</tt> associated with this event.
