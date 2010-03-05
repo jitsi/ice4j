@@ -67,7 +67,8 @@ public class Component
     /**
      * The list locally gathered candidates for this media stream.
      */
-    private List<Candidate> localCandidates = new LinkedList<Candidate>();
+    private List<LocalCandidate> localCandidates
+                                        = new LinkedList<LocalCandidate>();
 
     /**
      * The list of candidates that the peer agent sent for this stream.
@@ -114,7 +115,7 @@ public class Component
      *
      * @param candidate the candidate object to be added
      */
-    public void addLocalCandidate(Candidate candidate)
+    public void addLocalCandidate(LocalCandidate candidate)
     {
         synchronized(localCandidates)
         {
@@ -211,7 +212,7 @@ public class Component
      *
      * @param candidates a <tt>List</tt> of candidates to be added
      */
-    public void addLocalCandidates(List<Candidate> candidates)
+    public void addLocalCandidates(List<LocalCandidate> candidates)
     {
         synchronized(localCandidates)
         {
@@ -301,6 +302,7 @@ public class Component
 
         if(localCandidatesCount > 0)
         {
+            buff.append("\nDefault Candidate: " + getDefaultCandidate());
             buff.append("\n" + localCandidatesCount + " local candidates:");
 
             synchronized(localCandidates)
@@ -310,8 +312,6 @@ public class Component
                     buff.append("\n" + cand.toString());
                 }
             }
-
-            buff.append("\nDefault Candidate: " + getDefaultCandidate());
         }
         else
         {
@@ -349,7 +349,8 @@ public class Component
     {
         synchronized(localCandidates)
         {
-            Candidate[] candidates = new Candidate[localCandidates.size()];
+            LocalCandidate[] candidates
+                = new LocalCandidate[localCandidates.size()];
             localCandidates.toArray(candidates);
 
             //first compute the actual priorities
@@ -363,7 +364,7 @@ public class Component
 
             //now re-add the candidates in the order they've been sorted in.
             localCandidates.clear();
-            for (Candidate cand : candidates)
+            for (LocalCandidate cand : candidates)
                 localCandidates.add(cand);
         }
     }
@@ -446,7 +447,8 @@ public class Component
             //base as cand and a lower priority.
             synchronized(localCandidates)
             {
-                Iterator<Candidate> localCandsIter = localCandidates.iterator();
+                Iterator<LocalCandidate> localCandsIter
+                                                = localCandidates.iterator();
 
                 while (localCandsIter.hasNext())
                 {
@@ -499,7 +501,8 @@ public class Component
     {
         synchronized(localCandidates)
         {
-            Iterator<Candidate> localCandsIter = localCandidates.iterator();
+            Iterator<LocalCandidate> localCandsIter
+                                                = localCandidates.iterator();
 
             while (localCandsIter.hasNext())
             {
@@ -516,6 +519,24 @@ public class Component
                 {
                     defaultCandidate = cand;
                 }
+            }
+        }
+    }
+
+    /**
+     * Releases all resources allocated by this <tt>Component</tt> and its
+     * <tt>Candidate</tt>s like sockets for example.
+     */
+    protected void free()
+    {
+        synchronized (localCandidates)
+        {
+            Iterator<LocalCandidate> cndIter = localCandidates.iterator();
+            while( cndIter.hasNext())
+            {
+                LocalCandidate candidate = cndIter.next();
+                candidate.free();
+                cndIter.remove();
             }
         }
     }

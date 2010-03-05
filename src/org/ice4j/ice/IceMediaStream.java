@@ -116,9 +116,7 @@ public class IceMediaStream
         List<Component> components = getComponents();
         for (Component cmp : components)
         {
-            buff.append("Component ").append(cmp.getComponentID())
-                .append(" :\n");
-            buff.append(cmp);
+            buff.append("\n").append(cmp);
         }
 
         return buff.toString();
@@ -209,5 +207,40 @@ public class IceMediaStream
     public Agent getParentAgent()
     {
         return parentAgent;
+    }
+
+    /**
+     * Removes this stream and all <tt>Candidate</tt>s associated with its child
+     * <tt>Component</tt>s.
+     */
+    protected void free()
+    {
+        synchronized (components)
+        {
+            Iterator<Map.Entry<Integer, Component>> cmpEntries
+                            = components.entrySet().iterator();
+            while (cmpEntries.hasNext())
+            {
+                Component component = cmpEntries.next().getValue();
+                component.free();
+                cmpEntries.remove();
+            }
+        }
+    }
+
+    /**
+     * Removes <tt>component</tt> and all its <tt>Candidate</tt>s from the
+     * this stream and releases all associated resources that they had
+     * allocated (like sockets for example)
+     *
+     * @param component the <tt>Component</tt> we'd like to remove and free.
+     */
+    public void removeComponent(Component component)
+    {
+        synchronized (components)
+        {
+            components.remove(component.getComponentID());
+            component.free();
+        }
     }
 }

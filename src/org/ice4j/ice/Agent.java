@@ -386,6 +386,22 @@ public class Agent
     }
 
     /**
+     * Removes <tt>stream</tt> and all its child <tt>Component</tt>s and
+     * <tt>Candidate</tt>s from the this agent and releases all resources that
+     * they had allocated (like sockets for example)
+     *
+     * @param stream the <tt>Component</tt> we'd like to remove and free.
+     */
+    public void removeStream(IceMediaStream stream)
+    {
+        synchronized (mediaStreams)
+        {
+            mediaStreams.remove(stream.getName());
+            stream.free();
+        }
+    }
+
+    /**
      * Determines whether this agent has the controlling role in an ICE
      * exchange.
      *

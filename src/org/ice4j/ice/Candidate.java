@@ -65,7 +65,7 @@ public abstract class Candidate
      * determine the order of the connectivity checks and the relative
      * preference for candidates.
      */
-    private long priority = 0;
+    protected long priority = 0;
 
     /**
      * Specifies whether the address associated with this candidate belongs to

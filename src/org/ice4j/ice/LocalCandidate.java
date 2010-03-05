@@ -45,4 +45,13 @@ public abstract class LocalCandidate
      * <tt>Candidate</tt>
      */
     public abstract DatagramSocket getSocket();
+
+    /**
+     * Frees resources allocated by this candidate such as its
+     * <tt>DatagramSocket</tt> for example.
+     */
+    protected void free()
+    {
+        getSocket().close();
+    }
 }
