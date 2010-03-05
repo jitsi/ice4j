@@ -68,7 +68,7 @@ public class Ice
                 transferRemoteCandidates(localStream, remoteStream);
             else
             {
-                //localStream.free();
+                localAgent.removeStream(localStream);
             }
         }
     }
@@ -96,7 +96,7 @@ public class Ice
                 transferRemoteCandidates(localComponent, remoteComponent);
             else
             {
-                //localComponent.free();
+                localStream.removeComponent(localComponent);
             }
         }
     }
@@ -104,6 +104,7 @@ public class Ice
     /**
      * Adds to <tt>localComponent</tt> a list of remote candidates that are
      * actually the local candidates from <tt>remoteComponent</tt>.
+     *
      * @param localComponent the <tt>Component</tt> where that we should be
      * adding <tt>remoteCandidate</tt>s to.
      * @param remoteComponent the source of remote candidates.
@@ -118,7 +119,9 @@ public class Ice
             localComponent.addRemoteCandidate(new RemoteCandidate(
                             rCand.getTransportAddress(),
                             localComponent,
-                            rCand.getType()));
+                            rCand.getType(),
+                            rCand.getFoundation(),
+                            rCand.getPriority()));
         }
     }
 
