@@ -7,8 +7,6 @@
  */
 package org.ice4j.ice;
 
-import java.net.*;
-
 import org.ice4j.*;
 
 /**
@@ -31,11 +29,34 @@ public class RemoteCandidate
      * @param parentComponent the <tt>Component</tt> that this candidate
      * belongs to.
      * @param type the <tt>CandidateType</tt> for this <tt>Candidate</tt>.
+     * @param foundation the <tt>RemoteCandidate</tt>'s foundation as reported
+     * by the session description protocol.
+     * @param priority the <tt>RemoteCandidate</tt>'s priority as reported
+     * by the session description protocol.
      */
     public RemoteCandidate(TransportAddress transportAddress,
                            Component        parentComponent,
-                           CandidateType    type)
+                           CandidateType    type,
+                           String           foundation,
+                           long             priority)
     {
         super(transportAddress, parentComponent, type);
+        super.setFoundation(foundation);
+        setPriority(priority);
+
+    }
+
+    /**
+     * Sets the priority of this <tt>RemoteCandidate</tt>. Priority is a unique
+     * priority number that MUST be a positive integer between 1 and
+     * (2**32 - 1). This priority will be set and used by ICE algorithms to
+     * determine the order of the connectivity checks and the relative
+     * preference for candidates.
+     *
+     * @param priority the priority number between 1 and (2**32 - 1).
+     */
+    public void setPriority(long priority)
+    {
+        super.priority = priority;
     }
 }
