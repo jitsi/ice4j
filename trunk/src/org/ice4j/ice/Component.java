@@ -309,8 +309,8 @@ public class Component
 
         if(localCandidatesCount > 0)
         {
-            buff.append("\nDefault Candidate: " + getDefaultCandidate());
-            buff.append("\n" + localCandidatesCount + " local candidates:");
+            buff.append("\n" + localCandidatesCount + " Local candidates:");
+            buff.append("\ndefault candidate: " + getDefaultCandidate());
 
             synchronized(localCandidates)
             {
@@ -330,8 +330,9 @@ public class Component
 
         if(remoteCandidatesCount > 0)
         {
-            buff.append("\n" + remoteCandidatesCount + " remote candidates:");
-
+            buff.append("\n" + remoteCandidatesCount + " Remote candidates:");
+            buff.append("\ndefault remote candidate: "
+                                + getDefaultRemoteCandidate());
             synchronized(remoteCandidates)
             {
                 for (Candidate cand : remoteCandidates)
