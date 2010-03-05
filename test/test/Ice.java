@@ -114,6 +114,9 @@ public class Ice
     {
         List<Candidate> remoteCandidates = remoteComponent.getLocalCandidates();
 
+        localComponent.setDefaultRemoteCandidate(
+                        remoteComponent.getDefaultCandidate());
+
         for(Candidate rCand : remoteCandidates)
         {
             localComponent.addRemoteCandidate(new RemoteCandidate(
