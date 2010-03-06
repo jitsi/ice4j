@@ -37,7 +37,7 @@ public class CandidatePair
     /**
      * The remote candidate of this pair.
      */
-    private final RemoteCandidate remoteCandidate;
+    private final Candidate remoteCandidate;
 
     /**
      * Priority of the candidate-pair
@@ -60,7 +60,7 @@ public class CandidatePair
      * @param remoteCandidate the remote candidate of the pair.
      */
     public CandidatePair(LocalCandidate localCandidate,
-                         RemoteCandidate remoteCandidate)
+                         Candidate      remoteCandidate)
     {
 
         this.localCandidate = localCandidate;
@@ -103,7 +103,7 @@ public class CandidatePair
      *
      * @return the remote <tt>Candidate</tt> of this <tt>CandidatePair</tt>.
      */
-    public RemoteCandidate getRemoteCandidate()
+    public Candidate getRemoteCandidate()
     {
         return remoteCandidate;
     }

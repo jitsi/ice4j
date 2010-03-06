@@ -54,4 +54,23 @@ public abstract class LocalCandidate
     {
         getSocket().close();
     }
+
+    /**
+     * Determines whether this <tt>Candidate</tt> is the default one for its
+     * parent component.
+     *
+     * @return <tt>true</tt> if this <tt>Candidate</tt> is the default for its
+     * parent component and <tt>false</tt> if it isn't or if it has no parent
+     * Component yet.
+     */
+    @Override
+    public boolean isDefault()
+    {
+        Component parentCmp = getParentComponent();
+
+        if (parentCmp == null)
+            return false;
+
+        return equals(parentCmp.getDefaultCandidate());
+    }
 }

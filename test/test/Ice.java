@@ -41,6 +41,11 @@ public class Ice
 
         System.out.println("LocalAgent:\n" + localAgent);
 
+        localAgent.startChecks();
+
+        System.out.println("Local audio clist:\n"
+                        + localAgent.getStream("audio").getCheckList());
+
         System.out.println("Total execution time: "
                         + (endTime - startTime) + "ms");
     }
@@ -112,7 +117,8 @@ public class Ice
     private static void transferRemoteCandidates(Component localComponent,
                                                  Component remoteComponent)
     {
-        List<Candidate> remoteCandidates = remoteComponent.getLocalCandidates();
+        List<LocalCandidate> remoteCandidates
+                                = remoteComponent.getLocalCandidates();
 
         localComponent.setDefaultRemoteCandidate(
                         remoteComponent.getDefaultCandidate());

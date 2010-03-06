@@ -645,4 +645,35 @@ public abstract class Candidate
         //WTF?
         return 5;
     }
+
+    /**
+     * Determines whether this <tt>Candidate</tt>'s<tt>TransportAddress</tt> is
+     * theoretically usable for communication with that of <tt>dst</tt>. Same
+     * as calling:
+     * <p>
+     *  <tt>getTransportAddress().canReach(dst.getTransportAddress())</tt>
+     * </p>
+     *
+     * @param dst the <tt>Candidate</tt> that we'd like to check for
+     * reachability from this one.
+     *
+     * @return <tt>true</tt> if this {@link Candidate} shares the same
+     * <tt>Transport</tt> and family as <tt>dst</tt> or <tt>false</tt>
+     * otherwise.
+     *
+     */
+    public boolean canReach(Candidate dst)
+    {
+        return getTransportAddress().canReach(dst.getTransportAddress());
+    }
+
+    /**
+     * Determines whether this <tt>Candidate</tt> is the default one for its
+     * parent component.
+     *
+     * @return <tt>true</tt> if this <tt>Candidate</tt> is the default for its
+     * parent component and <tt>false</tt> if it isn't or if it has no parent
+     * Component yet.
+     */
+    public abstract boolean isDefault();
 }

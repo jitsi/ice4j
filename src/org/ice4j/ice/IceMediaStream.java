@@ -49,6 +49,12 @@ public class IceMediaStream
     private int lastComponentID = 0;
 
     /**
+     * The CHECK-LIST for this stream as described in the ICE specification.
+     */
+    private final List<CandidatePair> checkList
+                                        = new LinkedList<CandidatePair>();
+
+    /**
      * The agent that this media stream belongs to.
      */
     private final Agent parentAgent;
@@ -242,5 +248,61 @@ public class IceMediaStream
             components.remove(component.getComponentID());
             component.free();
         }
+    }
+
+    /**
+     * Creates, initializes and orders the list of candidate pairs that would
+     * be used for the connectivity checks for all components in this stream.
+     */
+    protected void initCheckList()
+    {
+        synchronized(checkList)
+        {
+            checkList.clear();
+            List<Component> componentsList = getComponents();
+
+            for(Component cmp : componentsList)
+            {
+                createCheckList(cmp, checkList);
+            }
+        }
+    }
+
+    /**
+     * Creates and adds to <tt>checkList</tt> all the <tt>CandidatePair</tt>s
+     * in <tt>component</tt>.
+     *
+     * @param component the <tt>Component</tt> whose candidates we need to
+     * pair and extract.
+     * @param checkList the list that we need to update with the new pairs.
+     */
+    private void createCheckList(Component           component,
+                                 List<CandidatePair> checkList)
+    {
+        List<LocalCandidate> localCnds = component.getLocalCandidates();
+        List<Candidate> remoteCnds = component.getRemoteCandidates();
+
+        for(LocalCandidate localCnd : localCnds)
+        {
+            for(Candidate remoteCnd : remoteCnds)
+            {
+                if(!localCnd.canReach(remoteCnd))
+                    continue;
+
+                CandidatePair pair = new CandidatePair(localCnd, remoteCnd);
+
+                checkList.add(pair);
+            }
+        }
+    }
+
+    /**
+     * Returns the list of <tt>CandidatePair</tt>s for this stream.
+     *
+     * @return the list of <tt>CandidatePair</tt>s for this stream.
+     */
+    public List<CandidatePair> getCheckList()
+    {
+        return checkList;
     }
 }
