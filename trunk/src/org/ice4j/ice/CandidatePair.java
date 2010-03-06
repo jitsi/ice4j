@@ -6,6 +6,7 @@
  */
 package org.ice4j.ice;
 
+import java.util.*;
 import java.util.logging.*;
 
 /**
@@ -32,17 +33,23 @@ public class CandidatePair
     /**
      * The local candidate of this pair.
      */
-    private final LocalCandidate localCandidate;
+    private LocalCandidate localCandidate;
 
     /**
      * The remote candidate of this pair.
      */
-    private final Candidate remoteCandidate;
+    private Candidate remoteCandidate;
 
     /**
      * Priority of the candidate-pair
      */
     private final long priority;
+
+    /**
+     * A <tt>Comparator</tt> using the <tt>compareTo</tt> method of the
+     * <tt>CandidatePair</tt>.
+     */
+    public static final PairComparator comparator = new PairComparator();
 
     /**
      * Each candidate pair has a a state that is assigned once the check list
@@ -99,6 +106,17 @@ public class CandidatePair
     }
 
     /**
+     * Sets the <tt>LocalCandidate</tt> of this <tt>CandidatePair</tt>.
+     *
+     * @param localCnd the local <tt>Candidate</tt> of this
+     * <tt>CandidatePair</tt>.
+     */
+    protected void setLocalCandidate( LocalCandidate localCnd)
+    {
+        this.localCandidate = localCnd;;
+    }
+
+    /**
      * Returns the remote candidate of this <tt>CandidatePair</tt>.
      *
      * @return the remote <tt>Candidate</tt> of this <tt>CandidatePair</tt>.
@@ -106,6 +124,17 @@ public class CandidatePair
     public Candidate getRemoteCandidate()
     {
         return remoteCandidate;
+    }
+
+    /**
+     * Sets the <tt>RemoteCandidate</tt> of this <tt>CandidatePair</tt>.
+     *
+     * @param remoteCnd the local <tt>Candidate</tt> of this
+     * <tt>CandidatePair</tt>.
+     */
+    protected void setRemoteCandidate( Candidate remoteCnd)
+    {
+        this.remoteCandidate = remoteCnd;;
     }
 
     /**
@@ -218,20 +247,52 @@ public class CandidatePair
     /**
      * Compares this <tt>CandidatePair</tt> with the specified object for order.
      * Returns a negative integer, zero, or a positive integer as this
-     * <tt>CandidatePair</tt> is less than, equal to, or greater than the
-     * specified object.<p>
+     * <tt>CandidatePair</tt>'s priority is greater than, equal to, or less than
+     * the one of the specified object thus insuring that higher priority pairs
+     * will come first.<p>
      *
      * @param   candidatePair the Object to be compared.
      * @return  a negative integer, zero, or a positive integer as this
-     * <tt>CandidatePair</tt> is less than, equal to, or greater than the
-     * specified object.
+     * <tt>CandidatePair</tt>'s priority is greater than, equal to, or less than
+     * the one of the specified object.
      *
      * @throws ClassCastException if the specified object's type prevents it
      *         from being compared to this Object.
      */
     public int compareTo(CandidatePair candidatePair)
     {
-        return (int)(getPriority() - candidatePair.getPriority());
+        long thisPri = getPriority();
+        long otherPri = candidatePair.getPriority();
+
+        return (thisPri < otherPri
+                        ? 1
+                        : (thisPri==otherPri
+                                        ? 0
+                                        : -1));
+    }
+
+    /**
+     * Compares this <tt>CandidatePair</tt> to <tt>targetPair</tt> and returns
+     * <tt>true</tt> if pairs have equal local and equal remote candidates and
+     * <tt>false</tt> otherwise.
+     *
+     * @param targetPair the <tt>Object</tt> that we'd like to compare this
+     * target pair to.
+     *
+     * @return <tt>true</tt> if pairs have equal local and equal remote
+     * candidates and <tt>false</tt> otherwise.
+     */
+    public boolean equals(Object targetPair)
+    {
+        if (! (targetPair instanceof CandidatePair)
+            || targetPair == null
+            || !localCandidate.equals(((CandidatePair)targetPair)
+                            .localCandidate)
+            || !remoteCandidate.equals(((CandidatePair)targetPair)
+                            .remoteCandidate))
+            return false;
+
+        return true;
     }
 
     /**
@@ -245,5 +306,60 @@ public class CandidatePair
             + " Priority=" + getPriority()
             + "):\n\tLocalCandidate=" + getLocalCandidate()
             + "\n\tRemoteCandidate=" + getRemoteCandidate();
+    }
+
+    /**
+     * A <tt>Comparator</tt> using the <tt>compareTo</tt> method of the
+     * <tt>CandidatePair</tt>
+     */
+    public static class PairComparator implements Comparator<CandidatePair>
+    {
+        /**
+         * Compares <tt>pair1</tt> and <tt>pair2</tt> for order. Returns a
+         * negative integer, zero, or a positive integer as <tt>pair1</tt>'s
+         * priority is greater than, equal to, or less than the one of the
+         * pair2, thus insuring that higher priority pairs will come first.
+         *
+         * @param pair1 the first <tt>CandidatePair</tt> to be compared.
+         * @param pair2 the second <tt>CandidatePair</tt> to be compared.
+         *
+         * @return  a negative integer, zero, or a positive integer as the first
+         * pair's priority priority is greater than, equal to, or less than
+         * the one of the second pair.
+         *
+         * @throws ClassCastException if the specified object's type prevents it
+         *         from being compared to this Object.
+         */
+        public int compare(CandidatePair pair1, CandidatePair pair2)
+        {
+            return pair1.compareTo(pair2);
+        }
+
+        /**
+         * Indicates whether some other object is &quot;equal to&quot; to this
+         * Comparator.  This method must obey the general contract of
+         * <tt>Object.equals(Object)</tt>.  Additionally, this method can return
+         * <tt>true</tt> <i>only</i> if the specified Object is also a comparator
+         * and it imposes the same ordering as this comparator.  Thus,
+         * <code>comp1.equals(comp2)</code> implies that <tt>sgn(comp1.compare(o1,
+         * o2))==sgn(comp2.compare(o1, o2))</tt> for every object reference
+         * <tt>o1</tt> and <tt>o2</tt>.<p>
+         *
+         * Note that it is <i>always</i> safe <i>not</i> to override
+         * <tt>Object.equals(Object)</tt>.  However, overriding this method may,
+         * in some cases, improve performance by allowing programs to determine
+         * that two distinct Comparators impose the same order.
+         *
+         * @param   obj   the reference object with which to compare.
+         * @return  <code>true</code> only if the specified object is also
+         *      a comparator and it imposes the same ordering as this
+         *      comparator.
+         * @see     java.lang.Object#equals(java.lang.Object)
+         * @see java.lang.Object#hashCode()
+         */
+        public boolean equals(Object obj)
+        {
+            return obj instanceof PairComparator;
+        }
     }
 }
