@@ -57,7 +57,7 @@ public abstract class Candidate
      * a base, equal to that candidate itself. Similarly, the base of a
      * relayed candidate is that candidate itself.
      */
-    private Candidate base = null;
+    private LocalCandidate base = null;
 
     /**
      * A unique priority number that MUST be a positive integer between 1 and
@@ -206,7 +206,7 @@ public abstract class Candidate
      *
      * @return the base <tt>Candidate</tt> for this <tt>Candidate</tt>.
      */
-    public Candidate getBase()
+    public LocalCandidate getBase()
     {
         return base;
     }
@@ -220,7 +220,7 @@ public abstract class Candidate
      *
      * @param base the base <tt>Candidate</tt> of this <tt>Candidate</tt>.
      */
-    public void setBase(Candidate base)
+    public void setBase(LocalCandidate base)
     {
         this.base = base;
     }

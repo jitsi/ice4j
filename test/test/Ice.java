@@ -35,10 +35,15 @@ public class Ice
         Agent localAgent = createAgent(9090);
         Agent remotePeer = createAgent(6060);
 
+        localAgent.setControlling(true);
+        remotePeer.setControlling(false);
+
         long endTime = System.currentTimeMillis();
 
         transferRemoteCandidates(localAgent, remotePeer);
 
+        System.out.println("Total candidate gathering time: "
+                        + (endTime - startTime) + "ms");
         System.out.println("LocalAgent:\n" + localAgent);
 
         localAgent.startChecks();
