@@ -216,6 +216,18 @@ public class Agent
     }
 
     /**
+     * Initializes all stream check lists and begins the checks.
+     */
+    public void startChecks()
+    {
+        List<IceMediaStream> streams = getStreams();
+
+        for(IceMediaStream stream : streams)
+        {
+            stream.initCheckList();
+        }
+    }
+    /**
      * Computes and sets the foundations foundation for all <tt>Candidate</tt>s
      * currently found in <tt>component</tt>.
      *
@@ -224,7 +236,7 @@ public class Agent
      */
     private void computeFoundations(Component component)
     {
-        List<Candidate> candidates = component.getLocalCandidates();
+        List<LocalCandidate> candidates = component.getLocalCandidates();
 
         for (Candidate cand : candidates)
         {

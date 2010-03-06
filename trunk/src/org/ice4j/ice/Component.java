@@ -137,11 +137,11 @@ public class Component
      * @return Returns a copy of the list containing all local candidates
      * currently registered in this <tt>Component</tt>.
      */
-    public List<Candidate> getLocalCandidates()
+    public List<LocalCandidate> getLocalCandidates()
     {
         synchronized(localCandidates)
         {
-            return new ArrayList<Candidate>(localCandidates);
+            return new ArrayList<LocalCandidate>(localCandidates);
         }
     }
 
@@ -447,7 +447,7 @@ public class Component
      */
     protected void eliminateRedundantCandidates()
     {
-        List<Candidate> candidatesCopy = getLocalCandidates();
+        List<LocalCandidate> candidatesCopy = getLocalCandidates();
 
         for (Candidate cand : candidatesCopy)
         {
