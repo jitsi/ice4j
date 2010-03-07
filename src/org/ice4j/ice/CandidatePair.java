@@ -365,4 +365,14 @@ public class CandidatePair
             return obj instanceof PairComparator;
         }
     }
+
+    /**
+     * Returns the <tt>Component</tt> that this pair belongs to.
+     *
+     * @return the <tt>Component</tt> that this pair belongs to.
+     */
+    public Component getParentComponent()
+    {
+        return getLocalCandidate().getParentComponent();
+    }
 }

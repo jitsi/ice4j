@@ -53,8 +53,7 @@ public class IceMediaStream
      * is one check list per in-use media stream resulting from the offer/answer
      * exchange.
      */
-    private final List<CandidatePair> checkList
-                                        = new LinkedList<CandidatePair>();
+    private final CheckList checkList = new CheckList();
 
     /**
      * The agent that this media stream belongs to.
@@ -277,6 +276,51 @@ public class IceMediaStream
 
             orderCheckList();
             pruneCheckList();
+            computeInitialCheckListPairStates();
+        }
+    }
+
+    /**
+     * Creates, initializes and orders the list of candidate pairs that would
+     * be used for the connectivity checks for all components in this stream.
+     *
+     * @param checkList the list that we need to update with the new pairs.
+     */
+    protected void createCheckList(List<CandidatePair> checkList)
+    {
+        List<Component> componentsList = getComponents();
+
+        for(Component cmp : componentsList)
+        {
+            createCheckList(cmp, checkList);
+        }
+    }
+
+    /**
+     * Creates and adds to <tt>checkList</tt> all the <tt>CandidatePair</tt>s
+     * in <tt>component</tt>.
+     *
+     * @param component the <tt>Component</tt> whose candidates we need to
+     * pair and extract.
+     * @param checkList the list that we need to update with the new pairs.
+     */
+    private void createCheckList(Component           component,
+                                 List<CandidatePair> checkList)
+    {
+        List<LocalCandidate> localCnds = component.getLocalCandidates();
+        List<Candidate> remoteCnds = component.getRemoteCandidates();
+
+        for(LocalCandidate localCnd : localCnds)
+        {
+            for(Candidate remoteCnd : remoteCnds)
+            {
+                if(!localCnd.canReach(remoteCnd))
+                    continue;
+
+                CandidatePair pair = new CandidatePair(localCnd, remoteCnd);
+
+                checkList.add(pair);
+            }
         }
     }
 
@@ -345,46 +389,59 @@ public class IceMediaStream
     }
 
     /**
-     * Creates, initializes and orders the list of candidate pairs that would
-     * be used for the connectivity checks for all components in this stream.
-     *
-     * @param checkList the list that we need to update with the new pairs.
+     * Computes and resets states of all pairs in this check list. For all pairs
+     * with the same foundation, we set the state of the pair with the lowest
+     * component ID to Waiting. If there is more than one such pair, the one
+     * with the highest priority is used.
      */
-    protected void createCheckList(List<CandidatePair> checkList)
+    protected void computeInitialCheckListPairStates()
     {
-        List<Component> componentsList = getComponents();
+        Map<String, CandidatePair> pairsToWait
+                                    = new Hashtable<String, CandidatePair>();
 
-        for(Component cmp : componentsList)
+        //first, determine the pairs that we'd need to put in the waiting state.
+        for(CandidatePair pair : checkList)
         {
-            createCheckList(cmp, checkList);
-        }
-    }
+            //we need to check whether the pair is already in the wait list. if
+            //so we'll compare it with this one and determine which of the two
+            //needs to stay.
+            CandidatePair prevPair = pairsToWait.get(pair.getFoundation());
 
-    /**
-     * Creates and adds to <tt>checkList</tt> all the <tt>CandidatePair</tt>s
-     * in <tt>component</tt>.
-     *
-     * @param component the <tt>Component</tt> whose candidates we need to
-     * pair and extract.
-     * @param checkList the list that we need to update with the new pairs.
-     */
-    private void createCheckList(Component           component,
-                                 List<CandidatePair> checkList)
-    {
-        List<LocalCandidate> localCnds = component.getLocalCandidates();
-        List<Candidate> remoteCnds = component.getRemoteCandidates();
-
-        for(LocalCandidate localCnd : localCnds)
-        {
-            for(Candidate remoteCnd : remoteCnds)
+            if(prevPair == null)
             {
-                if(!localCnd.canReach(remoteCnd))
-                    continue;
-
-                CandidatePair pair = new CandidatePair(localCnd, remoteCnd);
-
-                checkList.add(pair);
+                //first pair with this foundation.
+                pairsToWait.put(pair.getFoundation(), pair);
+                continue;
             }
+
+            //we already have a pair with the same foundation. determine which
+            //of the two has the lower component id and higher priority and
+            //keep that one in the list.
+            if( prevPair.getParentComponent() == pair.getParentComponent())
+            {
+                if(pair.getPriority() > prevPair.getPriority())
+                {
+                    //need to replace the pair in the list.
+                    pairsToWait.put(pair.getFoundation(), pair);
+                }
+            }
+            else
+            {
+                if(pair.getParentComponent().getComponentID()
+                            < prevPair.getParentComponent().getComponentID())
+                {
+                    //need to replace the pair in the list.
+                    pairsToWait.put(pair.getFoundation(), pair);
+                }
+            }
+        }
+
+        //now put the pairs we've selected in the Waiting state.
+        Iterator<CandidatePair> pairsIter = pairsToWait.values().iterator();
+
+        while(pairsIter.hasNext())
+        {
+            pairsIter.next().setState(CandidatePairState.WAITING);
         }
     }
 
