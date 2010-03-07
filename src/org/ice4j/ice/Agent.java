@@ -239,9 +239,30 @@ public class Agent
     }
 
     /**
+     * Returns the list of <tt>CandidatePair</tt>s to be used in checks for
+     * this agent.
+     *
+     * @return the list of <tt>CandidatePair</tt>s to be used in checks for
+     * this agent.
+     */
+    public List<CandidatePair> getCheckList()
+    {
+        return checkList;
+    }
+
+    /**
      * Initializes all stream check lists and begins the checks.
      */
     public void startChecks()
+    {
+        initCheckList();
+    }
+
+    /**
+     * Creates, initializes and orders the list of candidate pairs that would
+     * be used for the connectivity checks for all components in this stream.
+     */
+    protected void initCheckList()
     {
         //first init the check list.
         synchronized(checkList)
