@@ -59,11 +59,34 @@ public class Agent
                                         = new ArrayList<CandidateHarvester>();
 
     /**
+     * The name of the System property that allows us to set a custom maximum
+     * for check list sizes.
+     */
+    public static final String PNAME_MAX_CHECK_LIST_SIZE
+                                        = "org.ice4j.MAX_CHECK_LIST_SIZE";
+
+    /**
+     * The default maximum size for check lists.
+     */
+    public static final int DEFAULT_MAX_CHECK_LIST_SIZE = 100;
+
+    /**
      * We use the <tt>FoundationsRegistry</tt> to keep track of the foundations
      * we assign within a session (i.e. the entire life time of an
      * <tt>Agent</tt>)
      */
     private FoundationsRegistry foundationsRegistry = new FoundationsRegistry();
+
+    /**
+     * The CHECK-LIST for this agent described in the ICE specification. Note
+     * that even though this may sound a bit unclear in the spec,
+     * <tt>checkList</tt>s are supposed to be created on a per-agent basis so
+     * that we could, for example, freeze candidates with common foundations
+     * across streams and not only across components, and so that we could
+     * limit the total number of candidate pairs for all streams.
+     */
+    private final List<CandidatePair> checkList
+                                        = new LinkedList<CandidatePair>();
 
     /**
      * The user fragment that we should use for the ice-ufrag attribute.
@@ -220,13 +243,90 @@ public class Agent
      */
     public void startChecks()
     {
-        List<IceMediaStream> streams = getStreams();
-
-        for(IceMediaStream stream : streams)
+        //first init the check list.
+        synchronized(checkList)
         {
-            stream.initCheckList();
+            checkList.clear();
+            List<IceMediaStream> streams = getStreams();
+
+            for(IceMediaStream stream : streams)
+            {
+                stream.createCheckList(checkList);
+            }
+
+            orderCheckList();
+            pruneCheckList();
         }
     }
+
+    /**
+     * Orders this stream's pair check list in decreasing order of pair
+     * priority. If two pairs have identical priority, the ordering amongst
+     * them is arbitrary.
+     */
+    private void orderCheckList()
+    {
+        Collections.sort(checkList, CandidatePair.comparator);
+    }
+
+    /**
+     *  Removes or, as per the ICE spec, "prunes" pairs that we don't need to
+     *  run checks for. For example, since we cannot send requests directly
+     *  from a reflexive candidate, but only from its base, we go through the
+     *  sorted list of candidate pairs and in every pair where the local
+     *  candidate is server reflexive, we replace the local server reflexive
+     *  candidate with its base. Once this has been done, we remove each pair
+     *  where the local and remote candidates are identical to the local and
+     *  remote candidates of a pair higher up on the priority list.
+     *  <p/>
+     *  In addition, in order to limit the attacks described in Section 18.5.2
+     *  of the ICE spec, we limit the total number of pairs and hence
+     *  (connectivity checks) to a specific value, (100 by default).
+     */
+    private void pruneCheckList()
+    {
+        //a list that we only use for storing pairs that we've already gone
+        //through. The list is destroyed at the end of this method.
+        List<CandidatePair> tmpCheckList
+            = new ArrayList<CandidatePair>(checkList.size());
+
+        Iterator<CandidatePair> ckListIter = checkList.iterator();
+
+        int maxCheckListSize = Integer.getInteger(
+            PNAME_MAX_CHECK_LIST_SIZE, DEFAULT_MAX_CHECK_LIST_SIZE);
+
+        while(ckListIter.hasNext())
+        {
+            CandidatePair pair = ckListIter.next();
+
+            //drop all pairs above MAX_CHECK_LIST_SIZE.
+            if(tmpCheckList.size() > maxCheckListSize)
+            {
+                ckListIter.remove();
+                continue;
+            }
+
+            //replace local server reflexive candidates with their base.
+            LocalCandidate localCnd = pair.getLocalCandidate();
+            if( localCnd.getType()
+                            == CandidateType.SERVER_REFLEXIVE_CANDIDATE)
+            {
+                pair.setLocalCandidate(localCnd.getBase());
+
+                //if the new pair corresponds to another one with a higher
+                //priority, then remove it.
+                if(tmpCheckList.contains(pair))
+                {
+                    ckListIter.remove();
+                    continue;
+                }
+            }
+
+            tmpCheckList.add(pair);
+        }
+    }
+
+
     /**
      * Computes and sets the foundations foundation for all <tt>Candidate</tt>s
      * currently found in <tt>component</tt>.

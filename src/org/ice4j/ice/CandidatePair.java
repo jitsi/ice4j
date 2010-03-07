@@ -52,12 +52,15 @@ public class CandidatePair
     public static final PairComparator comparator = new PairComparator();
 
     /**
-     * Each candidate pair has a a state that is assigned once the check list
+     * Each candidate pair has a state that is assigned once the check list
      * for each media stream has been computed. The ICE RFC defines five
      * potential values that the state can have and they are all represented
-     * in the <tt>CandidatePairState</tt> enumeration.
+     * in the <tt>CandidatePairState</tt> enumeration. The ICE spec stipulates
+     * that the first step of the state initialization process is: The agent
+     * sets all of the pairs in each check list to the Frozen state, and hence
+     * our default state.
      */
-    private CandidatePairState state = CandidatePairState.WAITING;
+    private CandidatePairState state = CandidatePairState.FROZEN;
 
     /**
      * Creates a <tt>CandidatePair</tt> instance mapping <tt>localCandidate</tt>
