@@ -48,7 +48,10 @@ public class Ice
 
         localAgent.startChecks();
 
-        System.out.println("Local audio clist:\n" + localAgent.getCheckList());
+        System.out.println("Local audio clist:\n"
+                        + localAgent.getStream("audio").getCheckList());
+        System.out.println("Local audio clist:\n"
+                        + localAgent.getStream("video").getCheckList());
 
         System.out.println("Total execution time: "
                         + (endTime - startTime) + "ms");
@@ -196,7 +199,7 @@ public class Ice
         //simultaneously with the others.
 
         //rtp
-        Component rtpComp = agent.createComponent(
+        agent.createComponent(
                 stream, Transport.UDP, rtpPort, rtpPort, rtpPort + 100);
 
         long endTime = System.currentTimeMillis();
@@ -204,7 +207,7 @@ public class Ice
                         + (endTime - startTime) +" ms");
         startTime = endTime;
         //rtcpComp
-        Component rtcpComp = agent.createComponent(
+        agent.createComponent(
                 stream, Transport.UDP, rtpPort + 1, rtpPort + 1, rtpPort + 101);
 
         endTime = System.currentTimeMillis();

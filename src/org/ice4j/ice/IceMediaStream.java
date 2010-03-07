@@ -49,9 +49,28 @@ public class IceMediaStream
     private int lastComponentID = 0;
 
     /**
+     * The CHECK-LIST for this agent described in the ICE specification: There
+     * is one check list per in-use media stream resulting from the offer/answer
+     * exchange.
+     */
+    private final List<CandidatePair> checkList
+                                        = new LinkedList<CandidatePair>();
+
+    /**
      * The agent that this media stream belongs to.
      */
     private final Agent parentAgent;
+
+    /**
+     * The maximum number of candidate pairs that we should have in our check
+     * list. This value depends on the total number of media streams which is
+     * why it should be set by the agent:
+     * In addition, in order to limit the attacks described in Section 18.5.2,
+     * an agent MUST limit the total number of connectivity checks they perform
+     * across all check lists to a specific value, adn this value MUST be
+     * configurable.  A default of 100 is RECOMMENDED.
+     */
+    private int maxCheckListSize = Agent.DEFAULT_MAX_CHECK_LIST_SIZE;
 
     /**
      * Initializes a new <tt>IceMediaStream</tt> object.
@@ -247,6 +266,87 @@ public class IceMediaStream
     /**
      * Creates, initializes and orders the list of candidate pairs that would
      * be used for the connectivity checks for all components in this stream.
+     */
+    protected void initCheckList()
+    {
+        //first init the check list.
+        synchronized(checkList)
+        {
+            checkList.clear();
+            createCheckList(checkList);
+
+            orderCheckList();
+            pruneCheckList();
+        }
+    }
+
+    /**
+     * Orders this stream's pair check list in decreasing order of pair
+     * priority. If two pairs have identical priority, the ordering amongst
+     * them is arbitrary.
+     */
+    private void orderCheckList()
+    {
+        Collections.sort(checkList, CandidatePair.comparator);
+    }
+
+    /**
+     *  Removes or, as per the ICE spec, "prunes" pairs that we don't need to
+     *  run checks for. For example, since we cannot send requests directly
+     *  from a reflexive candidate, but only from its base, we go through the
+     *  sorted list of candidate pairs and in every pair where the local
+     *  candidate is server reflexive, we replace the local server reflexive
+     *  candidate with its base. Once this has been done, we remove each pair
+     *  where the local and remote candidates are identical to the local and
+     *  remote candidates of a pair higher up on the priority list.
+     *  <p/>
+     *  In addition, in order to limit the attacks described in Section 18.5.2
+     *  of the ICE spec, we limit the total number of pairs and hence
+     *  (connectivity checks) to a specific value, (a total of 100 by default).
+     */
+    private void pruneCheckList()
+    {
+        //a list that we only use for storing pairs that we've already gone
+        //through. The list is destroyed at the end of this method.
+        List<CandidatePair> tmpCheckList
+            = new ArrayList<CandidatePair>(checkList.size());
+
+        Iterator<CandidatePair> ckListIter = checkList.iterator();
+
+        while(ckListIter.hasNext())
+        {
+            CandidatePair pair = ckListIter.next();
+
+            //drop all pairs above MAX_CHECK_LIST_SIZE.
+            if(tmpCheckList.size() > maxCheckListSize)
+            {
+                ckListIter.remove();
+                continue;
+            }
+
+            //replace local server reflexive candidates with their base.
+            LocalCandidate localCnd = pair.getLocalCandidate();
+            if( localCnd.getType()
+                            == CandidateType.SERVER_REFLEXIVE_CANDIDATE)
+            {
+                pair.setLocalCandidate(localCnd.getBase());
+
+                //if the new pair corresponds to another one with a higher
+                //priority, then remove it.
+                if(tmpCheckList.contains(pair))
+                {
+                    ckListIter.remove();
+                    continue;
+                }
+            }
+
+            tmpCheckList.add(pair);
+        }
+    }
+
+    /**
+     * Creates, initializes and orders the list of candidate pairs that would
+     * be used for the connectivity checks for all components in this stream.
      *
      * @param checkList the list that we need to update with the new pairs.
      */
@@ -286,5 +386,27 @@ public class IceMediaStream
                 checkList.add(pair);
             }
         }
+    }
+
+    /**
+     * Returns the list of <tt>CandidatePair</tt>s to be used in checks for
+     * this stream.
+     *
+     * @return the list of <tt>CandidatePair</tt>s to be used in checks for
+     * this stream.
+     */
+    public List<CandidatePair> getCheckList()
+    {
+        return checkList;
+    }
+
+    /**
+     * Sets the maximum number of pairs that we should have in our check list.
+     *
+     * @param nSize the size of our check list.
+     */
+    protected void setMaxCheckListSize(int nSize)
+    {
+        this.maxCheckListSize = nSize;
     }
 }
