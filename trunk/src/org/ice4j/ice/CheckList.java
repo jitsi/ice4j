@@ -19,5 +19,28 @@ import java.util.*;
 public class CheckList
     extends LinkedList<CandidatePair>
 {
+    /**
+     * The state of this check list.
+     */
+    private CheckListState state = CheckListState.RUNNING;
 
+    /**
+     * Returns the state of this check list.
+     *
+     * @return the <tt>CheckListState</tt> of this check list.
+     */
+    public CheckListState getState()
+    {
+        return state;
+    }
+
+    /**
+     * Sets the state of this list.
+     *
+     * @param state the <tt>CheckListState</tt> for this list.
+     */
+    protected void setState(CheckListState state)
+    {
+        this.state = state;
+    }
 }
