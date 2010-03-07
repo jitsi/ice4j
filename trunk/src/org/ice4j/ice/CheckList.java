@@ -20,6 +20,11 @@ public class CheckList
     extends LinkedList<CandidatePair>
 {
     /**
+     * A dummy serialization id.
+     */
+    private static final long serialVersionUID = 1L;
+
+    /**
      * The state of this check list.
      */
     private CheckListState state = CheckListState.RUNNING;
