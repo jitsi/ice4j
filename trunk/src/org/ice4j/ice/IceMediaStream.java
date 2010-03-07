@@ -252,12 +252,12 @@ public class IceMediaStream
      */
     protected void createCheckList(List<CandidatePair> checkList)
     {
-            List<Component> componentsList = getComponents();
+        List<Component> componentsList = getComponents();
 
-            for(Component cmp : componentsList)
-            {
-                createCheckList(cmp, checkList);
-            }
+        for(Component cmp : componentsList)
+        {
+            createCheckList(cmp, checkList);
+        }
     }
 
     /**
@@ -286,15 +286,5 @@ public class IceMediaStream
                 checkList.add(pair);
             }
         }
-    }
-
-    /**
-     * Returns the list of <tt>CandidatePair</tt>s for this stream.
-     *
-     * @return the list of <tt>CandidatePair</tt>s for this stream.
-     */
-    public List<CandidatePair> getCheckList()
-    {
-        return checkList;
     }
 }

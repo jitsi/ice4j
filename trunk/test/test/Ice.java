@@ -48,8 +48,7 @@ public class Ice
 
         localAgent.startChecks();
 
-        System.out.println("Local audio clist:\n"
-                        + localAgent.getStream("audio").getCheckList());
+        System.out.println("Local audio clist:\n" + localAgent.getCheckList());
 
         System.out.println("Total execution time: "
                         + (endTime - startTime) + "ms");
@@ -140,8 +139,8 @@ public class Ice
     }
 
     /**
-     * Creates an ICE <tt>Agent</tt> and adds to it an audio stream with RTP
-     * and RTCP components.
+     * Creates an ICE <tt>Agent</tt> and adds to it an audio and a video stream
+     * with RTP and RTCP components.
      *
      * @param rtpPort the port that we should try to bind the RTP component on
      * (the RTCP one would automatically go to rtpPort + 1)
@@ -164,9 +163,38 @@ public class Ice
         agent.addCandidateHarvester(stunHarv);
         agent.addCandidateHarvester(stun6Harv);
 
-        IceMediaStream stream = agent.createMediaStream("audio");
+        createStream(rtpPort, "audio", agent);
+        createStream(rtpPort + 2, "video", agent);
+
+        return agent;
+    }
+
+    /**
+     * Creates an <tt>IceMediaStrean</tt> and adds to it an RTP and and RTCP
+     * component.
+     *
+     * @param rtpPort the port that we should try to bind the RTP component on
+     * (the RTCP one would automatically go to rtpPort + 1)
+     * @param streamName the name of the stream to create
+     * @param agent the <tt>Agent</tt> that should create the stream.
+     *
+     *@return the newly created <tt>IceMediaStream</tt>.
+     * @throws Throwable if anything goes wrong.
+     */
+    private static IceMediaStream createStream(int    rtpPort,
+                                               String streamName,
+                                               Agent  agent)
+        throws Throwable
+    {
+        IceMediaStream stream = agent.createMediaStream(streamName);
 
         long startTime = System.currentTimeMillis();
+
+        //TODO: component creation should probably be part of the library. it
+        //should also be started after we've defined all components to be
+        //created so that we could run the harvesting for everyone of them
+        //simultaneously with the others.
+
         //rtp
         Component rtpComp = agent.createComponent(
                 stream, Transport.UDP, rtpPort, rtpPort, rtpPort + 100);
@@ -183,7 +211,7 @@ public class Ice
         System.out.println("RTCP Component created in "
                         + (endTime - startTime) +" ms");
 
-        return agent;
+        return stream;
     }
 
     /**
