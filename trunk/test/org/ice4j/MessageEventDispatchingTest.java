@@ -297,7 +297,7 @@ public class MessageEventDispatchingTest extends TestCase
          * transaction and the runtime type of which specifies the failure reason
          * @see AbstractResponseCollector#processFailure(BaseStunMessageEvent)
          */
-        protected void processFailure(BaseStunMessageEvent event)
+        protected synchronized void processFailure(BaseStunMessageEvent event)
         {
             String receivedResponse;
 
