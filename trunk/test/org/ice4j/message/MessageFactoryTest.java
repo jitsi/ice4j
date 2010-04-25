@@ -170,7 +170,7 @@ public class MessageFactoryTest extends TestCase {
         bindingResponse.addAttribute(changedAddress);
 
         Message expectedReturn = bindingResponse;
-        Message actualReturn = messageFactory.createBindingResponse(
+        Message actualReturn = messageFactory.create3482BindingResponse(
             new TransportAddress( msgFixture.ADDRESS_ATTRIBUTE_ADDRESS,
                                   msgFixture.ADDRESS_ATTRIBUTE_PORT,
                                   Transport.UDP),

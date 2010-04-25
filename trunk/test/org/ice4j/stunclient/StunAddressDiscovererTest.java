@@ -103,10 +103,10 @@ public class StunAddressDiscovererTest
     public void testRecognizeSymmetricNat() throws Exception
     {
         //define the server response sequence
-        Response testIResponse1 = MessageFactory.createBindingResponse(
+        Response testIResponse1 = MessageFactory.create3482BindingResponse(
             mappedClientAddress, responseServerAddress, responseServerAddress);
         Response testIResponse2 = null;
-        Response testIResponse3 = MessageFactory.createBindingResponse(
+        Response testIResponse3 = MessageFactory.create3482BindingResponse(
             mappedClientAddressPort2,
             responseServerAddress,
             responseServerAddress);
@@ -139,10 +139,10 @@ public class StunAddressDiscovererTest
         throws Exception
     {
         //define the server response sequence
-        Response testIResponse1 = MessageFactory.createBindingResponse(
+        Response testIResponse1 = MessageFactory.create3482BindingResponse(
             mappedClientAddress, responseServerAddress, responseServerAddress);
         Response testIResponse2 = null;
-        Response testIResponse3 = MessageFactory.createBindingResponse(
+        Response testIResponse3 = MessageFactory.create3482BindingResponse(
             mappedClientAddress, responseServerAddress, responseServerAddress);
         Response testIResponse4 = null;
 
@@ -172,12 +172,12 @@ public class StunAddressDiscovererTest
     public void testRecognizeRestrictedCone() throws Exception
     {
         //define the server response sequence
-        Response testIResponse1 = MessageFactory.createBindingResponse(
+        Response testIResponse1 = MessageFactory.create3482BindingResponse(
             mappedClientAddress, responseServerAddress, responseServerAddress);
         Response testIResponse2 = null;
-        Response testIResponse3 = MessageFactory.createBindingResponse(
+        Response testIResponse3 = MessageFactory.create3482BindingResponse(
             mappedClientAddress, responseServerAddress, responseServerAddress);
-        Response testIResponse4 = MessageFactory.createBindingResponse(
+        Response testIResponse4 = MessageFactory.create3482BindingResponse(
             mappedClientAddress, responseServerAddress, responseServerAddress);
 
         responseServer.addMessage(testIResponse1);
@@ -207,9 +207,9 @@ public class StunAddressDiscovererTest
         throws Exception
     {
         //define the server response sequence
-        Response testIResponse1 = MessageFactory.createBindingResponse(
+        Response testIResponse1 = MessageFactory.create3482BindingResponse(
             mappedClientAddress, responseServerAddress, responseServerAddress);
-        Response testIResponse2 = MessageFactory.createBindingResponse(
+        Response testIResponse2 = MessageFactory.create3482BindingResponse(
             mappedClientAddress, responseServerAddress, responseServerAddress);
 
         responseServer.addMessage(testIResponse1);
@@ -238,7 +238,7 @@ public class StunAddressDiscovererTest
         throws Exception
     {
         //define the server response sequence
-        Response testIResponse1 = MessageFactory.createBindingResponse(
+        Response testIResponse1 = MessageFactory.create3482BindingResponse(
             discovererAddress, responseServerAddress, responseServerAddress);
         Response testIResponse2 = null;
 
@@ -268,9 +268,9 @@ public class StunAddressDiscovererTest
         throws Exception
     {
         //define the server response sequence
-        Response testIResponse1 = MessageFactory.createBindingResponse(
+        Response testIResponse1 = MessageFactory.create3482BindingResponse(
             discovererAddress, responseServerAddress, responseServerAddress);
-        Response testIResponse2 = MessageFactory.createBindingResponse(
+        Response testIResponse2 = MessageFactory.create3482BindingResponse(
             discovererAddress, responseServerAddress, responseServerAddress);
 
         responseServer.addMessage(testIResponse1);
