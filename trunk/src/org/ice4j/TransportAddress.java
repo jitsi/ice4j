@@ -25,13 +25,6 @@ public class TransportAddress
     private static final long serialVersionUID = 5076001401234631237L;
 
     /**
-     * A property that allows us to specify whether we would expect link local
-     * IPv6 addresses to be able to reach globally routable ones.
-     */
-    public static final String PNAME_ALLOW_LINK_TO_GLOBAL_REACHABILITY
-                                = "org.ice4j.ALLOW_LINK_TO_GLOBAL_REACHABILITY";
-
-    /**
      * The variable that we are using to store the transport that this address
      * is pertaining to.
      */
@@ -260,10 +253,15 @@ public class TransportAddress
                 //trying to reach a distant global address through one of our
                 //own. Therefore we would return false here by default.
 
-                if(Boolean.getBoolean(PNAME_ALLOW_LINK_TO_GLOBAL_REACHABILITY))
+                if(Boolean.getBoolean(
+                            StackProperties.ALLOW_LINK_TO_GLOBAL_REACHABILITY))
+                {
                     return true;
+                }
                 else
+                {
                     return false;
+                }
             }
         }
 

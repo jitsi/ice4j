@@ -192,7 +192,7 @@ public class HostCandidateHarvester
         }
 
         int bindRetries = StackProperties.getInt(
-                        StackProperties.BIND_RETRIES_PROPERTY_NAME,
+                        StackProperties.BIND_RETRIES,
                         StackProperties.BIND_RETRIES_DEFAULT_VALUE);
 
         int port = preferredPort;

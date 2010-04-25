@@ -12,6 +12,7 @@ import java.util.logging.*;
 /**
  * The class contains a number of property names and their default values that
  * we use to configure the behavior of the ice4j stack.
+ *
  * @author Emil Ivov
  */
 public class StackProperties
@@ -27,8 +28,7 @@ public class StackProperties
      * should execute in case a port is already bound to (each retry would be on
      * a new random port).
      */
-    public static final String BIND_RETRIES_PROPERTY_NAME
-        = "org.ice4j.BIND_RETRIES";
+    public static final String BIND_RETRIES = "org.ice4j.BIND_RETRIES";
 
     /**
      * The default number of binds that we would try
@@ -36,6 +36,60 @@ public class StackProperties
      * retry would be on a different port).
      */
     public static final int BIND_RETRIES_DEFAULT_VALUE = 50;
+
+    /**
+     * The number of milliseconds a client transaction should wait before
+     * retransmitting, after it has sent a request for the first time.
+     */
+    public static final String FIRST_CTRAN_RETRANS_AFTER
+                                        = "org.ice4j.FIRST_CTRAN_RETRANS_AFTER";
+
+    /**
+     * The maximum number of milliseconds that an exponential client
+     * retransmission timer can reach.
+     */
+    public static final String MAX_CTRAN_RETRANS_TIMER
+                                    = "org.ice4j.MAX_CTRAN_RETRANS_TIMER";
+
+    /**
+     * Indicates whether a client transaction should be kept after a response
+     * is received rather than destroying it which is the default.
+     */
+    public static final String KEEP_CRANS_AFTER_A_RESPONSE
+                                = "org.ice4j.KEEP_CRANS_AFTER_A_RESPONSE";
+
+    /**
+     * The maximum number of retransmissions a client transaction should send.
+     */
+    public static final String MAX_CTRAN_RETRANSMISSIONS
+                                = "org.ice4j.MAX_RETRANSMISSIONS";
+
+    /**
+     * The name of the System property that allows us to set a custom maximum
+     * for check list sizes.
+     */
+    public static final String MAX_CHECK_LIST_SIZE
+                                        = "org.ice4j.MAX_CHECK_LIST_SIZE";
+
+    /**
+     * The value of the SOFTWARE attribute that ice4j should include in all
+     * outgoing messages.
+     */
+    public static final String SOFTWARE = "org.ice4j.SOFTWARE";
+
+    /**
+     * The name of the property that tells the stack whether or not it should
+     * let the application see retransmissions of incoming requests.
+     */
+    public static final String PROPAGATE_RECEIVED_RETRANSMISSIONS
+                        = "org.ice4j.PROPAGATE_RECEIVED_RETRANSMISSIONS";
+
+    /**
+     * A property that allows us to specify whether we would expect link local
+     * IPv6 addresses to be able to reach globally routable ones.
+     */
+    public static final String ALLOW_LINK_TO_GLOBAL_REACHABILITY
+                                = "org.ice4j.ALLOW_LINK_TO_GLOBAL_REACHABILITY";
 
     /**
      * Returns the String value of the specified property (minus all

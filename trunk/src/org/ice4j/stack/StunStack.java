@@ -400,10 +400,8 @@ public class StunStack
                                "Failed to retransmit a stun response", ex);
                 }
 
-                String propagate = System.getProperty(
-                    "org.ice4j.PROPAGATE_RECEIVED_RETRANSMISSIONS");
-                if(propagate == null
-                    || !propagate.trim().equalsIgnoreCase("true"))
+                if(Boolean.getBoolean(
+                        StackProperties.PROPAGATE_RECEIVED_RETRANSMISSIONS))
                 {
                     return;
                 }
