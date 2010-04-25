@@ -50,16 +50,11 @@ public class FingerprintAttribute
     public static final String NAME = "FINGERPRINT";
 
     /**
-     * CRC value.
-     */
-    private long crc = 0;
-
-
-    /**
      * The value that we need to XOR the CRC with. The XOR helps in cases where
      * an application packet is also using CRC-32 in it).
      */
-    public static final int XOR_MASK = 0x5354554e;
+    public static final byte[] XOR_MASK = { 0x53, 0x54, 0x55, 0x4e};
+
 
     /**
      * Creates a <tt>FingerPrintAttribute</tt> instance.
@@ -107,36 +102,12 @@ public class FingerprintAttribute
 
         FingerprintAttribute att = (FingerprintAttribute) obj;
         if (att.getAttributeType() != getAttributeType()
-                || att.getDataLength() != getDataLength()
-                || att.crc ==  crc)
+                || att.getDataLength() != getDataLength())
         {
             return false;
         }
 
         return true;
-    }
-
-    /**
-     * Returns a (cloned) byte array containing the data value of the CRC
-     * attribute.
-     *
-     * @return the value of the CRC.
-     */
-    public long getCrc()
-    {
-        return crc;
-    }
-
-
-    /**
-     * Copies the specified binary array into the the CRC value of the CRC
-     * attribute.
-     *
-     * @param crc the CRC value.
-     */
-    public void setCrc(long crc)
-    {
-        this.crc = crc;
     }
 
     /**
@@ -180,16 +151,13 @@ public class FingerprintAttribute
         binValue[3] = (byte)(getDataLength()&0x00FF);
 
         //calculate the check sum
-        CRC32 checksum = new CRC32();
-        checksum.update(content, offset, length);
+        byte[] xorCrc32 = calculateXorCRC32(content, offset, length);
 
-        this.crc = checksum.getValue();
-
-        /* CRC */
-        binValue[4] = (byte)((crc >> 24) & 0xff);
-        binValue[5] = (byte)((crc >> 16) & 0xff);
-        binValue[6] = (byte)((crc >> 8)  & 0xff);
-        binValue[7] = (byte) (crc        & 0xff);
+        //copy into the attribute;
+        binValue[4] = xorCrc32[0];
+        binValue[5] = xorCrc32[1];
+        binValue[6] = xorCrc32[2];
+        binValue[7] = xorCrc32[3];
 
         return binValue;
     }
@@ -226,31 +194,72 @@ public class FingerprintAttribute
             throw new StunException("length invalid");
         }
 
-        crc = ((attributeValue[0] << 24) & 0xff000000)
-            + ((attributeValue[1] << 16) & 0x00ff0000)
-            + ((attributeValue[2] << 8)  & 0x0000ff00)
-            +  (attributeValue[3]        & 0x000000ff);
+        byte[] incomingCrcBytes = new byte[4];
+
+        incomingCrcBytes[0] = attributeValue[offset];
+        incomingCrcBytes[1] = attributeValue[offset + 1];
+        incomingCrcBytes[2] = attributeValue[offset + 2];
+        incomingCrcBytes[3] = attributeValue[offset + 3];
 
         //now check whether the CRC really is what it's supposed to be.
         //re calculate the check sum
-        CRC32 checksum = new CRC32();
-        checksum.update(messageHead, mhOffset, mhLen);
+        byte[] realCrcBytes = calculateXorCRC32(messageHead, mhOffset, mhLen);
 
-        //CRC failure.
-        /*this currently doesn't work for some reason so we'll let everyone pass
-        long realChecksum = checksum.getValue();
-
-        if (realChecksum != crc)
+        //CRC validation.
+        if ( ! Arrays.equals(incomingCrcBytes, realCrcBytes))
             throw new StunException(StunException.ILLEGAL_ARGUMENT,
                 "An incoming message arrived with a wrong FINGERPRINT "
                 +"attribute value. "
-                +"CRC Was: 0x" + Long.toHexString(attributeValue[0])
-                               + Long.toHexString(attributeValue[1])
-                               + Long.toHexString(attributeValue[2])
-                               + Long.toHexString(attributeValue[3])
-                + ". Should have been:" + Long.toHexString(realChecksum)
+                +"CRC Was:"  + Arrays.toString(incomingCrcBytes)
+                + ". Should have been:" + Arrays.toString(realCrcBytes)
                 +". Will ignore.");
-        */
+    }
+
+    /**
+     * Calculates and returns the CRC32 checksum for <tt>message</tt> after
+     * applying the <tt>XOR_MASK</tt> specified by RFC 5389.
+     *
+     * @param message the message whose checksum we'd like to have
+     * @param offset the location in <tt>message</tt> where the actual message
+     * starts.
+     * @param len the number of message bytes in <tt>message</tt>
+     *
+     * @return the CRC value that should be sent in a <tt>FINGERPRINT</tt>
+     * attribute traveling in the <tt>message</tt> message.
+     */
+    private static byte[] calculateXorCRC32(byte[] message, int offset, int len)
+    {
+        //now check whether the CRC really is what it's supposed to be.
+        //re calculate the check sum
+        CRC32 checksum = new CRC32();
+        checksum.update(message, offset, len);
+
+        long crc = checksum.getValue();
+        byte[] xorCRC32 = new byte[4];
+
+        xorCRC32[0] = (byte)((byte)((crc >> 24) & 0xff) ^ XOR_MASK[0]);
+        xorCRC32[1] = (byte)((byte)((crc >> 16) & 0xff) ^ XOR_MASK[1]);
+        xorCRC32[2] = (byte)((byte)((crc >> 8)  & 0xff) ^ XOR_MASK[2]);
+        xorCRC32[3] = (byte)((byte) (crc        & 0xff) ^ XOR_MASK[3]);
+
+        return xorCRC32;
+    }
+
+    /**
+     * Creates a <tt>long</tt> CRC value out of the specified <tt>bytes</tt>.
+     *
+     * @param bytes the byte array to convert into a <tt>long</tt>.
+     *
+     * @return the CRC value contained by the <tt>bytes</tt> array.
+     */
+    private long byteArrayToCRC(byte[] bytes)
+    {
+        long crc = ((bytes[0] << 24) & 0xff000000)
+                 + ((bytes[1] << 16) & 0x00ff0000)
+                 + ((bytes[2] << 8)  & 0x0000ff00)
+                 +  (bytes[3]        & 0x000000ff);
+
+        return crc;
     }
 
     /**
