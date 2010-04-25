@@ -1,8 +1,8 @@
 /*
- * Ice4j, the OpenSource Java Solution for NAT and Firewall Traversal.
+ * ice4j, the OpenSource Java Solution for NAT and Firewall Traversal.
+ * Maintained by the SIP Communicator community (http://sip-communicator.org).
  *
- * Distributable under LGPL license.
- * See terms of license at gnu.org.
+ * Distributable under LGPL license. See terms of license at gnu.org.
  */
 package org.ice4j.attribute;
 
@@ -11,11 +11,10 @@ import java.util.*;
 import org.ice4j.*;
 
 /**
- * The REALM attribute contains a text whcih meets the grammar for 
+ * The REALM attribute contains a text whcih meets the grammar for
  * "realm value" as described in RFC3261 but without the double quotes.
  *
  * @author Sebastien Vincent
- * @version 0.1
  */
 public class RealmAttribute extends Attribute
 {

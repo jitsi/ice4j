@@ -1,8 +1,8 @@
 /*
- * Stun4j, the OpenSource Java Solution for NAT and Firewall Traversal.
+ * ice4j, the OpenSource Java Solution for NAT and Firewall Traversal.
+ * Maintained by the SIP Communicator community (http://sip-communicator.org).
  *
- * Distributable under LGPL license.
- * See terms of license at gnu.org.
+ * Distributable under LGPL license. See terms of license at gnu.org.
  */
 package org.ice4j.attribute;
 
@@ -30,11 +30,7 @@ import org.ice4j.*;
  *    server to send the Binding Response with a different port than the
  *    one the Binding Request was received on.
  *
- * <p>Copyright: Copyright (c) 2003</p>
- * <p>Organisation: Louis Pasteur University, Strasbourg, France</p>
- * <p>Network Research Team (http://www-r2.u-strasbg.fr)</p></p>
  * @author Emil Ivov
- * @version 0.1
  */
 
 public class ChangeRequestAttribute
@@ -197,8 +193,8 @@ public class ChangeRequestAttribute
       * @param attributeValue a binary array containing this attribute's field
       *                       values and NOT containing the attribute header.
       * @param offset the position where attribute values begin (most often
-      * 				 offset is equal to the index of the first byte after
-      * 				 length)
+      *                  offset is equal to the index of the first byte after
+      *                  length)
       * @param length the length of the binary array.
       * @throws StunException if attrubteValue contains invalid data.
       */

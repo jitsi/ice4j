@@ -1,8 +1,8 @@
 /*
- * Ice4j, the OpenSource Java Solution for NAT and Firewall Traversal.
+ * ice4j, the OpenSource Java Solution for NAT and Firewall Traversal.
+ * Maintained by the SIP Communicator community (http://sip-communicator.org).
  *
- * Distributable under LGPL license.
- * See terms of license at gnu.org.
+ * Distributable under LGPL license. See terms of license at gnu.org.
  */
 package org.ice4j.attribute;
 
@@ -16,7 +16,6 @@ import org.ice4j.*;
  * Support of TCP is detailed in draft-ietf-behave-turn-tcp-05.
  *
  * @author Sebastien Vincent
- * @version 0.1
  */
 public class RequestedTransportAttribute extends Attribute
 {
@@ -30,7 +29,7 @@ public class RequestedTransportAttribute extends Attribute
      */
     public static final char DATA_LENGTH = 4;
 
-    /** 
+    /**
      * Transport protocol.
      *
      * 17 = UDP;

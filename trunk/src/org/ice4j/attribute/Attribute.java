@@ -1,8 +1,8 @@
 /*
- * Stun4j, the OpenSource Java Solution for NAT and Firewall Traversal.
+ * ice4j, the OpenSource Java Solution for NAT and Firewall Traversal.
+ * Maintained by the SIP Communicator community (http://sip-communicator.org).
  *
- * Distributable under LGPL license.
- * See terms of license at gnu.org.
+ * Distributable under LGPL license. See terms of license at gnu.org.
  */
 package org.ice4j.attribute;
 
@@ -51,20 +51,16 @@ import org.ice4j.*;
  *    0x0019: REQUESTED-TRANSPORT                                          <br/>
  *    0x001A: DONT-FRAGMENT                                                <br/>
  *    0x0022: RESERVATION-TOKEN                                            <br/>
- * 
+ *
  * ICE attributes:<br/>
  *    0x0024: PRIORITY                                                     <br/>
  *    0x0025: USE-CANDIDATE                                                <br/>
  *    0x8029: ICE-CONTROLLED                                               <br/>
  *    0x802A: ICE-CONTROLLING                                              <br/>
  *
- * <p>Copyright: Copyright (c) 2003-2008</p>
- * <p> Organisation: Louis Pasteur University, Strasbourg, France</p>
- * 					<p> Network Research Team (http://www-r2.u-strasbg.fr)</p>
  * @author Emil Ivov
  * @author Sebastien Vincent
  * @author Namal Senarathne
- * @version 0.1
  */
 public abstract class Attribute
 {
@@ -180,8 +176,8 @@ public abstract class Attribute
      * @param attributeValue a binary array containing this attribute's field
      *                       values and NOT containing the attribute header.
      * @param offset the position where attribute values begin (most often
-     * 				 offset is equal to the index of the first byte after
-     * 				 length)
+     *                  offset is equal to the index of the first byte after
+     *                  length)
      * @param length the length of the binary array.
      * @throws StunException if attrubteValue contains invalid data.
      */

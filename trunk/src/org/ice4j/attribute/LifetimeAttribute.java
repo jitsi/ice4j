@@ -1,8 +1,8 @@
 /*
- * Ice4j, the OpenSource Java Solution for NAT and Firewall Traversal.
+ * ice4j, the OpenSource Java Solution for NAT and Firewall Traversal.
+ * Maintained by the SIP Communicator community (http://sip-communicator.org).
  *
- * Distributable under LGPL license.
- * See terms of license at gnu.org.
+ * Distributable under LGPL license. See terms of license at gnu.org.
  */
 package org.ice4j.attribute;
 
@@ -13,7 +13,6 @@ import org.ice4j.*;
  * of TURN allocations.
  *
  * @author Sebastien Vincent
- * @version 0.1
  */
 public class LifetimeAttribute extends Attribute
 {
@@ -126,7 +125,7 @@ public class LifetimeAttribute extends Attribute
             throw new StunException("length invalid");
         }
 
-        lifetime = ((attributeValue[0] << 24) & 0xff000000) + ((attributeValue[1] << 16) & 0x00ff0000) 
+        lifetime = ((attributeValue[0] << 24) & 0xff000000) + ((attributeValue[1] << 16) & 0x00ff0000)
             + ((attributeValue[2] << 8) & 0x0000ff00) + (attributeValue[3] & 0x000000ff);
     }
 

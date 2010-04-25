@@ -8,7 +8,7 @@ package org.ice4j.attribute;
 
 /**
  * The ALTERNATE-SERVER attribute indicates the IP address and
- * port of an alternate server the client could use. For example, 
+ * port of an alternate server the client could use. For example,
  * alternate servers may contains special capabilities.
  *
  * It consists of an eight bit address family, and a sixteen bit
@@ -28,11 +28,7 @@ package org.ice4j.attribute;
  * aligning parameters on natural boundaries.  The IPv4 address is 32
  * bits.
  *
- * <p>Copyright: Copyright (c) 2008</p>
- * <p>Organisation: Louis Pasteur University, Strasbourg, France</p>
- *                   <p>Network Research Team (http://www-r2.u-strasbg.fr)</p></p>
  * @author Sebastien Vincent
- * @version 0.1
  */
 
 public class AlternateServerAttribute extends AddressAttribute

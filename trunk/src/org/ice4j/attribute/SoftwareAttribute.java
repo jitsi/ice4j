@@ -1,8 +1,8 @@
 /*
- * Stun4j, the OpenSource Java Solution for NAT and Firewall Traversal.
+ * ice4j, the OpenSource Java Solution for NAT and Firewall Traversal.
+ * Maintained by the SIP Communicator community (http://sip-communicator.org).
  *
- * Distributable under LGPL license.
- * See terms of license at gnu.org.
+ * Distributable under LGPL license. See terms of license at gnu.org.
  */
 package org.ice4j.attribute;
 
@@ -19,10 +19,8 @@ import org.ice4j.*;
  * multiple of 4 (measured in bytes) in order to guarantee alignment of
  * attributes on word boundaries.
  *
- * <p>Organization Network Research Team, Louis Pasteur University</p>
  * @author Emil Ivov
  * @author Sebastien Vincent
- * @version 0.1
  */
 public class SoftwareAttribute
     extends Attribute
