@@ -567,6 +567,8 @@ public abstract class Message
         throws StunException
     {
         arrayLen = (char)Math.min(binMessage.length, arrayLen);
+        char initialOffset = offset;
+
 
         if(binMessage == null || arrayLen - offset < Message.HEADER_LENGTH)
             throw new StunException(StunException.ILLEGAL_ARGUMENT,
@@ -608,9 +610,10 @@ public abstract class Message
 
         while(offset - Message.HEADER_LENGTH< length)
         {
-            Attribute att = AttributeDecoder.decode(binMessage,
-                                                    offset,
-                                                    (char)(length - offset));
+            Attribute att = AttributeDecoder.decode(
+                binMessage, offset, (char)(length - offset), //attribute
+                binMessage, (char)initialOffset,
+                    (char)(offset - initialOffset)); // message head
             message.addAttribute(att);
             offset += att.getDataLength() + Attribute.HEADER_LENGTH;
         }
