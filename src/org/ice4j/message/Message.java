@@ -12,6 +12,8 @@ import org.ice4j.*;
 import org.ice4j.attribute.*;
 import org.ice4j.stack.*;
 
+import sun.tools.tree.*;
+
 /**
  * This class represents a STUN message. STUN messages are TLV (type-length-value)
  * encoded using big endian (network ordered) binary.  All STUN messages start
@@ -568,7 +570,7 @@ public abstract class Message
     {
         //remove MESSAGE-INTEGRITY and FINGERPRINT attributes so that we can
         //make sure they are added at the end.
-        Attribute msgIntegrity = removeAttribute(Attribute.MESSAGE_INTEGRITY);
+        Attribute msgIntAttr = removeAttribute(Attribute.MESSAGE_INTEGRITY);
         Attribute fingerprint  = removeAttribute(Attribute.FINGERPRINT);
 
         //add a SOFTWARE attribute if the user said so, and unless they did it
@@ -582,7 +584,24 @@ public abstract class Message
                             .createSoftwareAttribute(software.getBytes()));
         }
 
+        //re-add MESSAGE-INTEGRITY if there was one.
+        if (msgIntAttr != null)
+        {
+            addAttribute(msgIntAttr);
+        }
 
+        //add FINGERPRINT if there was one or if user told us to add it
+        //everywhere.
+        if (fingerprint == null
+            && Boolean.getBoolean(StackProperties.ALWAYS_SIGN));
+        {
+            fingerprint = AttributeFactory.createFingerprintAttribute();
+        }
+
+        if (fingerprint != null)
+        {
+            addAttribute(fingerprint);
+        }
 
     }
 
