@@ -583,7 +583,7 @@ public abstract class Message
         }
 
 
-        //if ( getAttribute(Attribute.SOFTWARE) != null )
+
     }
 
     /**
@@ -603,10 +603,13 @@ public abstract class Message
 
 
         if(binMessage == null || arrayLen - offset < Message.HEADER_LENGTH)
+        {
             throw new StunException(StunException.ILLEGAL_ARGUMENT,
-                                    "The given binary array is not a valid StunMessage");
+                         "The given binary array is not a valid StunMessage");
+        }
 
-        char messageType = (char)((binMessage[offset++]<<8) | (binMessage[offset++]&0xFF));
+        char messageType = (char)((binMessage[offset++]<<8)
+                               | (binMessage[offset++]&0xFF));
         Message message;
         if (Message.isResponseType(messageType))
         {

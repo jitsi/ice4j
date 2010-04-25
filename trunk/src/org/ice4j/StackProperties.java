@@ -92,6 +92,13 @@ public class StackProperties
                                 = "org.ice4j.ALLOW_LINK_TO_GLOBAL_REACHABILITY";
 
     /**
+     * The name of the property that allows us to tell the stack to always
+     * sign STUN messages with a FINGERPRINT attribute.
+     */
+    public static final String ALWAYS_SIGN
+                                = "org.ice4j.ALWAYS_SIGN";
+
+    /**
      * Returns the String value of the specified property (minus all
      * encompassing whitespaces)and null in case no property value was mapped
      * against the specified propertyName, or in case the returned property
