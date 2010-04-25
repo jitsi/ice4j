@@ -85,8 +85,6 @@ public class ConnectivityCheckDispatcher
                                             .getTieBreaker()));
         }
 
-        request.addAttribute(software);
-
         //credentials
         UsernameAttribute unameAttr = AttributeFactory.createUsernameAttribute(
                         parentAgent.generateLocalUserName());
