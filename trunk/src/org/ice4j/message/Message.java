@@ -256,12 +256,12 @@ public abstract class Message
 
         for (Attribute att : attributes.values())
         {
-            length += att.getDataLength() + Attribute.HEADER_LENGTH;
-        }
+             int attLen = att.getDataLength() + Attribute.HEADER_LENGTH;
 
-        if((length % 4) > 0)
-        {
-            length += (4 - (length % 4));
+            //take attribute padding into account:
+            attLen += (4 - attLen%4)%4;
+
+            length += attLen;
         }
 
         return length;
