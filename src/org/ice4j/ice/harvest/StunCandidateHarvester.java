@@ -78,8 +78,8 @@ public class StunCandidateHarvester
         this.stunServer = stunServer;
 
         //these should be configurable.
-        System.setProperty("org.ice4j.MAX_WAIT_INTERVAL", "400");
-        System.setProperty("org.ice4j.MAX_RETRANSMISSIONS", "2");
+        System.setProperty(StackProperties.MAX_CTRAN_RETRANS_TIMER, "400");
+        System.setProperty(StackProperties.MAX_CTRAN_RETRANSMISSIONS, "2");
     }
 
     /**

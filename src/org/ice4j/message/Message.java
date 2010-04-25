@@ -89,10 +89,10 @@ public abstract class Message
     public static final byte TRANSACTION_ID_LENGTH = 12;
 
     /**
-     * The list of attributes contained by the message. We are using a hastable
+     * The list of attributes contained by the message. We are using a Map
      * rather than a uni-dimensional list, in order to facilitate attribute
      * search (even though it introduces some redundancies). Order is important
-     * so we'll be using a LinkedHashMap
+     * so we'll be using a <tt>LinkedHashMap</tt>
      */
     //not sure this is the best solution but I'm trying to keep entry order
     protected LinkedHashMap<Character, Attribute> attributes
@@ -303,28 +303,21 @@ public abstract class Message
         return attributes.get(new Character(attributeType));
     }
 
-    /*
-     * Returns an enumeration containing all message attributes.
-     * @return an enumeration containing all message attributes..
-     */
-    /*
-    public Iterator getAttributes()
-    {
-        return attributes.entrySet().iterator();
-    }
-    */
-
     /**
      * Removes the specified attribute.
+     *
      * @param attributeType the attribute to remove.
+     *
+     * @return the <tt>Attribute</tt> we've just removed.
      */
-    public void removeAttribute(char attributeType)
+    public Attribute removeAttribute(char attributeType)
     {
-        attributes.remove(new Character(attributeType));
+        return attributes.remove(new Character(attributeType));
     }
 
     /**
      * Returns the number of attributes, currently contained by the message.
+     *
      * @return the number of attributes, currently contained by the message.
      */
     public int getAttributeCount()
@@ -339,6 +332,7 @@ public abstract class Message
      * as it should not permit changing the type of message once it has been
      * initialized (could provoke attribute discrepancies). Called by
      * messageFactory.
+     *
      * @param messageType the message type.
      */
     protected void setMessageType(char messageType)
@@ -348,6 +342,7 @@ public abstract class Message
 
     /**
      * The message type of this message.
+     *
      * @return the message type of the message.
      */
     public char getMessageType()
@@ -357,7 +352,9 @@ public abstract class Message
 
     /**
      * Copies the specified tranID and sets it as this message's transactionID.
+     *
      * @param tranID the transaction id to set in this message.
+     *
      * @throws StunException ILLEGAL_ARGUMENT if the transaction id is not valid.
      */
     public void setTransactionID(byte[] tranID)
@@ -375,6 +372,7 @@ public abstract class Message
 
     /**
      * Returns a reference to this message's transaction id.
+     *
      * @return a reference to this message's transaction id.
      */
     public byte[] getTransactionID()
@@ -384,7 +382,9 @@ public abstract class Message
 
     /**
      * Returns whether an attribute could be present in this message.
+     *
      * @param attributeType the id of the attribute to check .
+     *
      * @return Message.N_A - for not applicable <br/>
      *         Message.C   - for case depending <br/>
      *         Message.N_A - for not applicable <br/>
@@ -451,6 +451,7 @@ public abstract class Message
      * Returns the human readable name of this message. Message names do
      * not really matter from the protocol point of view. They are only used
      * for debugging and readability.
+     *
      * @return this message's name.
      */
     public String getName()
@@ -473,6 +474,7 @@ public abstract class Message
      * type, length, and all their attributes are equal.
      *
      * @param obj the object to compare this message with.
+     *
      * @return true if the messages are equal and false otherwise.
      */
     public boolean equals(Object obj)
@@ -504,12 +506,16 @@ public abstract class Message
      * Returns a binary representation of this message.
      *
      * @return a binary representation of this message.
+     *
      * @throws IllegalStateException if the message does not have all
      * required attributes.
      */
     public byte[] encode()
         throws IllegalStateException
     {
+        prepareForEncoding();
+
+        //make sure that
         //make sure we have everything necessary to encode a proper message
         validateAttributePresentity();
         char dataLength = getDataLength();
@@ -552,6 +558,32 @@ public abstract class Message
         }
 
         return binMsg;
+    }
+
+    /**
+     * Adds attributes that have been requested vis configuration properties.
+     * Asserts attribute order where necessary.
+     */
+    private void prepareForEncoding()
+    {
+        //remove MESSAGE-INTEGRITY and FINGERPRINT attributes so that we can
+        //make sure they are added at the end.
+        Attribute msgIntegrity = removeAttribute(Attribute.MESSAGE_INTEGRITY);
+        Attribute fingerprint  = removeAttribute(Attribute.FINGERPRINT);
+
+        //add a SOFTWARE attribute if the user said so, and unless they did it
+        //themselves.
+        String software = System.getProperty(StackProperties.SOFTWARE);
+
+        if (getAttribute(Attribute.SOFTWARE) == null
+            && software != null)
+        {
+            addAttribute(AttributeFactory
+                            .createSoftwareAttribute(software.getBytes()));
+        }
+
+
+        //if ( getAttribute(Attribute.SOFTWARE) != null )
     }
 
     /**

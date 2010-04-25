@@ -312,7 +312,7 @@ class StunClientTransaction
     void handleResponse(StunMessageEvent evt)
     {
         String keepTran = System.getProperty(
-            "org.ice4j.KEEP_CLIENT_TRANS_AFTER_A_RESPONSE");
+                        StackProperties.KEEP_CRANS_AFTER_A_RESPONSE);
 
         if( keepTran == null || !keepTran.trim().equalsIgnoreCase("true"))
             this.cancel();
@@ -337,8 +337,8 @@ class StunClientTransaction
     private void initTransactionConfiguration()
     {
         //Max Retransmissions
-        String maxRetransmissionsStr =
-            System.getProperty("org.ice4j.MAX_RETRANSMISSIONS");
+        String maxRetransmissionsStr
+            = System.getProperty(StackProperties.MAX_CTRAN_RETRANSMISSIONS);
 
         if(maxRetransmissionsStr != null
            && maxRetransmissionsStr.trim().length() > 0){
@@ -356,8 +356,8 @@ class StunClientTransaction
         }
 
         //Original Wait Interval
-        String originalWaitIntervalStr =
-            System.getProperty("org.ice4j.ORIGINAL_WAIT_INTERVAL");
+        String originalWaitIntervalStr
+            = System.getProperty(StackProperties.FIRST_CTRAN_RETRANS_AFTER);
 
         if(originalWaitIntervalStr != null
            && originalWaitIntervalStr.trim().length() > 0){
@@ -376,8 +376,8 @@ class StunClientTransaction
         }
 
         //Max Wait Interval
-        String maxWaitIntervalStr =
-            System.getProperty("org.ice4j.MAX_WAIT_INTERVAL");
+        String maxWaitIntervalStr
+                = System.getProperty(StackProperties.MAX_CTRAN_RETRANS_TIMER);
 
         if(maxWaitIntervalStr != null
            && maxWaitIntervalStr.trim().length() > 0){

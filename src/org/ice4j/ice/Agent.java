@@ -38,13 +38,6 @@ public class Agent
         = Logger.getLogger(Agent.class.getName());
 
     /**
-     * The name of the System property that allows us to set a custom maximum
-     * for check list sizes.
-     */
-    public static final String PNAME_MAX_CHECK_LIST_SIZE
-                                        = "org.ice4j.MAX_CHECK_LIST_SIZE";
-
-    /**
      * The default maximum size for check lists.
      */
     public static final int DEFAULT_MAX_CHECK_LIST_SIZE = 100;
@@ -267,7 +260,8 @@ public class Agent
 
         //init the maximum number of check list entries per stream.
         int maxCheckListSize = Integer.getInteger(
-                        PNAME_MAX_CHECK_LIST_SIZE, DEFAULT_MAX_CHECK_LIST_SIZE);
+               StackProperties.MAX_CHECK_LIST_SIZE,
+               DEFAULT_MAX_CHECK_LIST_SIZE);
 
         int maxPerStreamSize = maxCheckListSize / streams.size();
 

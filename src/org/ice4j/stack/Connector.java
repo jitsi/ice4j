@@ -221,7 +221,7 @@ class Connector
     @Override
     public String toString()
     {
-        return "org.ice4j.stack.AccessPoint@"
+        return "ice4j.Connector@"
                 + listenAddress
                 +" status: "
                 + (isRunning? "not":"")
