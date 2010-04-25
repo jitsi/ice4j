@@ -18,13 +18,6 @@ import org.ice4j.*;
  */
 public class AttributeFactory
 {
-    private AttributeFactory()
-    {
-    }
-
-    // ------------------------------------ CHANGE REQUEST
-    // --------------------------
-
     /**
      * Creates a ChangeRequestAttribute with "false" values for the changeIP and
      * changePort flags.
@@ -53,9 +46,6 @@ public class AttributeFactory
 
         return attribute;
     };
-
-    // ------------------------------------ CHANGED ADDRESS
-    // -------------------------
 
     /**
      * Creates a changedAddressAttribute of the specified type and with the
@@ -202,8 +192,6 @@ public class AttributeFactory
 
     };
 
-    // ------------------------------------ RESPONSE ADRESS
-    // -------------------------
     /**
      * Creates a ResponseFromAddressAttribute of the specified type and with the
      * specified address and port
@@ -222,8 +210,6 @@ public class AttributeFactory
 
     };
 
-    // ------------------------------------ SOURCE ADDRESS
-    // --------------------------
     /**
      * Creates a SourceFromAddressAttribute of the specified type and with the
      * specified address and port
@@ -242,8 +228,6 @@ public class AttributeFactory
 
     };
 
-    // ------------------------------------ UNKNOWN ATTRIBUTES
-    // ----------------------
     /**
      * Creates an empty UnknownAttributesAttribute.
      *
@@ -256,10 +240,6 @@ public class AttributeFactory
         return attribute;
     };
 
-    /*
-     * ------------------------------------ XOR-RELAYED-ADRESS attribute
-     * ------------------------
-     */
     /**
      * Creates a XorRelayedAddressAttribute of the specified type and with the
      * specified address and port.
@@ -280,10 +260,6 @@ public class AttributeFactory
         return attribute;
     }
 
-    /*
-     * ------------------------------------ XOR-PEER-ADRESS attribute
-     * ------------------------
-     */
     /**
      * Creates a XorPeerAddressAttribute of the specified type and with the
      * specified address and port
@@ -303,8 +279,6 @@ public class AttributeFactory
         return attribute;
     }
 
-    // ------------------------------------ XOR MAPPED ADDRESS
-    // --------------------------
     /**
      * Creates a XorMappedAddressAttribute for the specified <tt>address</tt>.
      *
@@ -312,7 +286,7 @@ public class AttributeFactory
      * @param tranID the ID of the transaction that we will be using for the XOR
      * mask.
      *
-     * @return the newly created xor address attribute.
+     * @return the newly created XOR address attribute.
      */
     public static XorMappedAddressAttribute createXorMappedAddressAttribute(
                     TransportAddress address, byte[] tranID)
@@ -325,14 +299,11 @@ public class AttributeFactory
 
     };
 
-    /*
-     * --------------------------------- USERNAME attribute
-     * -----------------------------
-     */
     /**
      * Create a UsernameAttribute.
      *
      * @param username username value
+     *
      * @return newly created UsernameAttribute
      */
     public static UsernameAttribute createUsernameAttribute(byte username[])
@@ -343,10 +314,58 @@ public class AttributeFactory
         return attribute;
     }
 
-    /*
-     * --------------------------------- CHANNEL-NUMBER attribute
-     * -----------------------------
+    /**
+     * Create a UsernameAttribute.
+     *
+     * @param username the String value of the username
+     *
+     * @return newly created UsernameAttribute
      */
+    public static UsernameAttribute createUsernameAttribute(String username)
+    {
+        UsernameAttribute attribute = new UsernameAttribute();
+
+        attribute.setUsername(username.getBytes());
+        return attribute;
+    }
+
+    /**
+     * Creates an empty <tt>MessageIntegrityAttribute</tt>. When included in a
+     * message the stack would set the body of this attribute so that the
+     * the HMAC-SHA1 (RFC 2104) would correspond to the actual message that's
+     * transporting the attribute.
+     *
+     * @param key the key that we should use when creating the HMAC-SHA1.
+     *
+     * @return the newly created address attribute.
+     */
+    public static MessageIntegrityAttribute createMessageIntegrityAttribute(
+                                                    byte[] key)
+    {
+        MessageIntegrityAttribute attribute = new MessageIntegrityAttribute();
+
+        attribute.setKey(key);
+
+        //todo: implement saslprep one day even though I don't think it's
+        //necessary for the ICE use case.
+
+        return attribute;
+    };
+
+    /**
+     * Creates an empty <tt>FingerprintAttribute</tt> with a 0 check sum. Once
+     * included in a message, the value of this attribute will be calculated
+     * by the stack just before sending it.
+     *
+     * @return the newly created <tt>FingerprintAttribute</tt>.
+     */
+    public static FingerprintAttribute createFingerprintAttribute()
+    {
+        FingerprintAttribute attribute = new FingerprintAttribute();
+
+        return attribute;
+    };
+
     /**
      * Create a ChannelNumberAttribute.
      *
@@ -362,10 +381,6 @@ public class AttributeFactory
         return attribute;
     }
 
-    /*
-     * --------------------------------- REALM attribute
-     * -----------------------------
-     */
     /**
      * Create a RealmAttribute.
      *
@@ -380,10 +395,6 @@ public class AttributeFactory
         return attribute;
     }
 
-    /*
-     * --------------------------------- NONCE attribute
-     * -----------------------------
-     */
     /**
      * Create a NonceAttribute.
      *
@@ -398,10 +409,6 @@ public class AttributeFactory
         return attribute;
     }
 
-    /*
-     * --------------------------------- SOFTWARE attribute
-     * -----------------------------
-     */
     /**
      * Create a SoftwareAttribute.
      *
@@ -416,7 +423,6 @@ public class AttributeFactory
         return attribute;
     }
 
-    /* --------------------------------- EVEN-PORT attribute ---------------- */
     /**
      * Create a EventAttribute.
      *
@@ -431,10 +437,6 @@ public class AttributeFactory
         return attribute;
     }
 
-    /*
-     * --------------------------------- LIFETIME attribute
-     * ---------------------------
-     */
     /**
      * Create a LifetimeAttribute.
      *
@@ -448,11 +450,6 @@ public class AttributeFactory
         attribute.setLifetime(lifetime);
         return attribute;
     }
-
-    /*
-     * --------------------------------- REQUESTED-TRANSPORT attribute
-     * ----------------
-     */
 
     /**
      * Create a RequestedTransportAttribute.
@@ -469,10 +466,6 @@ public class AttributeFactory
         return attribute;
     }
 
-    /*
-     * -------------------------------- RESERVATION-TOKEN attribute
-     * --------------------
-     */
     /**
      * Create a ReservationTokenAttribute.
      *
@@ -488,10 +481,6 @@ public class AttributeFactory
         return attribute;
     }
 
-    /*
-     * -------------------------------- DATA attribute
-     * ---------------------------------
-     */
     /**
      * Create a DataAtttribute.
      *
@@ -506,8 +495,6 @@ public class AttributeFactory
         return attribute;
     }
 
-    // -------------------------------- ICE-CONTROLLED ATTRIBUTE
-    // -----------------------
     /**
      * Creates an IceControlledAttribute object with the specified tie-breaker
      * value
@@ -537,9 +524,6 @@ public class AttributeFactory
 
         return attribute;
     }
-
-    // ---------------------------------- PRIORITY ATTRIBUTE
-    // -----------------------
 
     /**
      * Creates a Priority attribute with the specified priority value

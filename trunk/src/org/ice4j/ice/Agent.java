@@ -318,7 +318,7 @@ public class Agent
      * @return that user name that should be advertised in session descriptions
      * containing ICE data from this agent.
      */
-    public String getUserName()
+    public String getLocalUfrag()
     {
         return ufrag;
     }
@@ -342,7 +342,7 @@ public class Agent
      * @return the user name that we received from the remote peer or
      * <tt>null</tt> if we haven't received a user name from them yet.
      */
-    public String getRemoteUserName()
+    public String getRemoteUfrag()
     {
         return remoteUfrag;
     }
@@ -364,17 +364,57 @@ public class Agent
      *
      * @param remoteUfrag the user name that we received from the remote peer.
      */
-    public void setRemoteUserName(String remoteUfrag)
+    public void setRemoteUfrag(String remoteUfrag)
     {
         this.remoteUfrag = remoteUfrag;
     }
 
     /**
-     * Returns the
+     * Returns the user name that this <tt>Agent</tt> should use in connectivity
+     * checks for outgoing Binding Requests. According to RFC 5245, a Binding
+     * Request serving as a connectivity check MUST utilize the STUN short term
+     * credential mechanism. The username for the credential is formed by
+     * concatenating the username fragment provided by the peer with the
+     * username fragment of the agent sending the request, separated by a
+     * colon (":").  The password is equal to the password provided by the peer.
+     * For example, consider the case where agent L is the offerer, and agent R
+     * is the answerer.  Agent L included a username fragment of LFRAG for its
+     * candidates, and a password of LPASS.  Agent R provided a username
+     * fragment of RFRAG and a password of RPASS.  A connectivity check from L
+     * to R (and its response of course) utilize the username RFRAG:LFRAG and a
+     * password of RPASS.  A connectivity check from R to L (and its response)
+     * utilize the username LFRAG:RFRAG and a password of LPASS.
+     *
+     * @return a user name that this <tt>Agent</tt> can use in connectivity
+     * check for outgoing Binding Requests.
      */
-    public String generateUserName()
+    public String generateLocalUserName()
     {
-        return getUserName();
+        return getRemoteUfrag() + ":" + getLocalUfrag();
+    }
+
+    /**
+     * Returns the user name that we should respect a peer <tt>Agent</tt> to use
+     * in connectivity checks for outgoing Binding Requests. According to RFC
+     * 5245, a Binding Request serving as a connectivity check MUST utilize the
+     * STUN short term credential mechanism. The username for the credential is
+     * formed by concatenating the username fragment provided by the peer with
+     * the username fragment of the agent sending the request, separated by a
+     * colon (":").  The password is equal to the password provided by the peer.
+     * For example, consider the case where agent L is the offerer, and agent R
+     * is the answerer.  Agent L included a username fragment of LFRAG for its
+     * candidates, and a password of LPASS.  Agent R provided a username
+     * fragment of RFRAG and a password of RPASS.  A connectivity check from L
+     * to R (and its response of course) utilize the username RFRAG:LFRAG and a
+     * password of RPASS.  A connectivity check from R to L (and its response)
+     * utilize the username LFRAG:RFRAG and a password of LPASS.
+     *
+     * @return a user name that a peer <tt>Agent</tt> would use in connectivity
+     * check for outgoing Binding Requests.
+     */
+    public String generateRemoteUserName()
+    {
+        return getLocalUfrag() + ":" + getRemoteUfrag();
     }
 
     /**
@@ -466,7 +506,7 @@ public class Agent
 
         buff.append(getStreamCount()).append(" ice-pwd:").append(getPassword());
         buff.append(getStreamCount()).append(" ice-ufrag:")
-                                                    .append(getUserName());
+                                                    .append(getLocalUfrag());
         buff.append(getStreamCount()).append(" tie-breaker:" + getTieBreaker());
         buff.append("):\n");
 
