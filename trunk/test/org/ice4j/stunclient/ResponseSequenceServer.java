@@ -22,10 +22,7 @@ import org.ice4j.stack.*;
  * behaves correctly in different use cases.
  *
  *
- * <p>Organisation: <p> Louis Pasteur University, Strasbourg, France</p>
- * <p>Network Research Team (http://www-r2.u-strasbg.fr)</p></p>
  * @author Emil Ivov
- * @version 0.1
  */
 public class ResponseSequenceServer
     implements RequestListener
