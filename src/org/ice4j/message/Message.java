@@ -593,7 +593,7 @@ public abstract class Message
         //add FINGERPRINT if there was one or if user told us to add it
         //everywhere.
         if (fingerprint == null
-            && Boolean.getBoolean(StackProperties.ALWAYS_SIGN));
+            && Boolean.getBoolean(StackProperties.ALWAYS_SIGN))
         {
             fingerprint = AttributeFactory.createFingerprintAttribute();
         }
@@ -602,7 +602,6 @@ public abstract class Message
         {
             addAttribute(fingerprint);
         }
-
     }
 
     /**

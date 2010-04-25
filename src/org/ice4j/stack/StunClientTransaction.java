@@ -184,7 +184,7 @@ class StunClientTransaction
      */
     public void run()
     {
-        retransmissionsThread.setName("CliTran");
+        retransmissionsThread.setName("ice4j.ClientTransaction");
         nextWaitInterval = originalWaitInterval;
 
         for (retransmissionCounter = 0;

@@ -400,7 +400,7 @@ public class StunStack
                                "Failed to retransmit a stun response", ex);
                 }
 
-                if(Boolean.getBoolean(
+                if(!Boolean.getBoolean(
                         StackProperties.PROPAGATE_RECEIVED_RETRANSMISSIONS))
                 {
                     return;
