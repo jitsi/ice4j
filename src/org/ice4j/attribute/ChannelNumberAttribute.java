@@ -1,19 +1,18 @@
 /*
- * Ice4j, the OpenSource Java Solution for NAT and Firewall Traversal.
+ * ice4j, the OpenSource Java Solution for NAT and Firewall Traversal.
+ * Maintained by the SIP Communicator community (http://sip-communicator.org).
  *
- * Distributable under LGPL license.
- * See terms of license at gnu.org.
+ * Distributable under LGPL license. See terms of license at gnu.org.
  */
 package org.ice4j.attribute;
 
 import org.ice4j.*;
 
 /**
- * The CHANNEL-NUMBER attribute is used to known on which 
+ * The CHANNEL-NUMBER attribute is used to known on which
  * channel the TURN client want to send data.
  *
  * @author Sebastien Vincent
- * @version 0.1
  */
 public class ChannelNumberAttribute extends Attribute
 {

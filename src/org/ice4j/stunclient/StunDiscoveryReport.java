@@ -1,8 +1,8 @@
 /*
- * Stun4j, the OpenSource Java Solution for NAT and Firewall Traversal.
+ * ice4j, the OpenSource Java Solution for NAT and Firewall Traversal.
+ * Maintained by the SIP Communicator community (http://sip-communicator.org).
  *
- * Distributable under LGPL license.
- * See terms of license at gnu.org.
+ * Distributable under LGPL license. See terms of license at gnu.org.
  */
 package org.ice4j.stunclient;
 
@@ -13,11 +13,7 @@ import org.ice4j.*;
  * contains information about the NAT Server (or firewall )this client is behind,
  * and a mapped address value (if discovered)
  *
- *
- * <p>Organisation: <p> Louis Pasteur University, Strasbourg, France</p>
- * <p>Network Research Team (http://www-r2.u-strasbg.fr)</p></p>
  * @author Emil Ivov
- * @version 0.1
  */
 
 public class StunDiscoveryReport
@@ -25,12 +21,12 @@ public class StunDiscoveryReport
     /**
      * Indicates that NAT detection has failed or not yet initiated.
      */
-    public static final String UNKNOWN               = "Unknown Network Configuration";
+    public static final String UNKNOWN = "Unknown Network Configuration";
 
     /**
      * Means, there's no NAT or firewall.
      */
-    public static final String OPEN_INTERNET         = "Open Internet Configuration";
+    public static final String OPEN_INTERNET = "Open Internet Configuration";
 
     /**
      * Indicates that UDP communication is not possible.
@@ -45,22 +41,23 @@ public class StunDiscoveryReport
     /**
      * NAT type is full cone.
      */
-    public static final String FULL_CONE_NAT         = "Full Cone NAT";
+    public static final String FULL_CONE_NAT = "Full Cone NAT";
 
     /**
      * We are behind a symmetric nat.
      */
-    public static final String SYMMETRIC_NAT         = "Symmetric NAT";
+    public static final String SYMMETRIC_NAT = "Symmetric NAT";
 
     /**
      * NAT type is Restricted Cone.
      */
-    public static final String RESTRICTED_CONE_NAT   = "Restricted Cone NAT";
+    public static final String RESTRICTED_CONE_NAT = "Restricted Cone NAT";
 
     /**
      * NAT type is port restricted cone.
      */
-    public static final String PORT_RESTRICTED_CONE_NAT= "Port Restricted Cone NAT";
+    public static final String PORT_RESTRICTED_CONE_NAT
+                                        = "Port Restricted Cone NAT";
 
     private String natType = UNKNOWN;
 

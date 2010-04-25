@@ -1,8 +1,8 @@
 /*
- * Ice4j, the OpenSource Java Solution for NAT and Firewall Traversal.
+ * ice4j, the OpenSource Java Solution for NAT and Firewall Traversal.
+ * Maintained by the SIP Communicator community (http://sip-communicator.org).
  *
- * Distributable under LGPL license.
- * See terms of license at gnu.org.
+ * Distributable under LGPL license. See terms of license at gnu.org.
  */
 package org.ice4j.attribute;
 
@@ -19,7 +19,6 @@ import org.ice4j.*;
  * attributes on word boundaries.
  *
  * @author Sebastien Vincent
- * @version 0.1
  */
 public class DataAttribute
     extends Attribute

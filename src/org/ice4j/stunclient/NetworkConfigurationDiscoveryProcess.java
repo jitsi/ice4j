@@ -76,11 +76,9 @@ import org.ice4j.stack.*;
  * local address and port for subsequent tests resolves this problem.
  * An alternative is to wait sufficiently long to be confident that the
  * old bindings have expired (half an hour should more than suffice).
- * </p><p>
- * <p>Organisation: <p> Louis Pasteur University, Strasbourg, France</p>
- * <p>Network Research Team (http://www-r2.u-strasbg.fr)</p></p>
+ * </p>
+ *
  * @author Emil Ivov
- * @version 0.1
  */
 
 public class NetworkConfigurationDiscoveryProcess

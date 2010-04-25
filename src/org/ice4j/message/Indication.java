@@ -1,12 +1,10 @@
 /*
- * Ice4j, the OpenSource Java Solution for NAT and Firewall Traversal.
+ * ice4j, the OpenSource Java Solution for NAT and Firewall Traversal.
+ * Maintained by the SIP Communicator community (http://sip-communicator.org).
  *
- * Distributable under LGPL license.
- * See terms of license at gnu.org.
+ * Distributable under LGPL license. See terms of license at gnu.org.
  */
 package org.ice4j.message;
-
-import org.ice4j.*;
 
 /**
  * An indication descendant of the message class.
@@ -14,10 +12,7 @@ import org.ice4j.*;
  * For example, indication messages is used by TURN protocol
  * to send and receive encapsulated data.
  *
- * <p>Organisation: <p> Louis Pasteur University, Strasbourg, France</p>
- * <p>Network Research Team (http://www-r2.u-strasbg.fr)</p></p>
  * @author Sebastien Vincent
- * @version 0.1
  */
 public class Indication extends Message
 {

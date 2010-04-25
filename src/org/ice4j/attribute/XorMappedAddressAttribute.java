@@ -44,10 +44,7 @@ import org.ice4j.message.*;
  * equal to the IP address in MAPPED-ADDRESS, exclusive or'ed with the
  * entire 128 bit transaction ID.
  *
- * <p>Copyright: Copyright (c) 2005.</p>
- * <p>Organization: Network Research Team, Louis Pasteur University</p>
  * @author Emil Ivov
- * @version 1.0
  */
 public class XorMappedAddressAttribute
     extends AddressAttribute

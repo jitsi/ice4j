@@ -1,8 +1,8 @@
 /*
- * Stun4j, the OpenSource Java Solution for NAT and Firewall Traversal.
+ * ice4j, the OpenSource Java Solution for NAT and Firewall Traversal.
+ * Maintained by the SIP Communicator community (http://sip-communicator.org).
  *
- * Distributable under LGPL license.
- * See terms of license at gnu.org.
+ * Distributable under LGPL license. See terms of license at gnu.org.
  */
 package org.ice4j.attribute;
 
@@ -19,9 +19,7 @@ import org.ice4j.*;
  * This attribute has a length of zero, and therefore contains no other
  * information past the common attribute header.
  *
- * <p>Organization: Net Research Team, Louis Pasteur University</p>
  * @author Emil Ivov
- * @version 0.1
  */
 public class XorOnlyAttribute
     extends Attribute

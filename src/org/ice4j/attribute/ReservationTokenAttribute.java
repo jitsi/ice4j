@@ -1,8 +1,8 @@
 /*
- * Ice4j, the OpenSource Java Solution for NAT and Firewall Traversal.
+ * ice4j, the OpenSource Java Solution for NAT and Firewall Traversal.
+ * Maintained by the SIP Communicator community (http://sip-communicator.org).
  *
- * Distributable under LGPL license.
- * See terms of license at gnu.org.
+ * Distributable under LGPL license. See terms of license at gnu.org.
  */
 package org.ice4j.attribute;
 
@@ -14,9 +14,7 @@ import org.ice4j.*;
  * The RESERVATION-TOKEN attribute contains a token that identifie a reservation port
  * on a TURN server. The value is on 64 bits (8 bytes).
  *
- * <p>Organization Network Research Team, Louis Pasteur University</p>
  * @author Sebastien Vincent
- * @version 0.1
  */
 public class ReservationTokenAttribute
 extends Attribute

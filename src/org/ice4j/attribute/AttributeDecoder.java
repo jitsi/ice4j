@@ -1,8 +1,8 @@
 /*
- * Stun4j, the OpenSource Java Solution for NAT and Firewall Traversal.
+ * ice4j, the OpenSource Java Solution for NAT and Firewall Traversal.
+ * Maintained by the SIP Communicator community (http://sip-communicator.org).
  *
- * Distributable under LGPL license.
- * See terms of license at gnu.org.
+ * Distributable under LGPL license. See terms of license at gnu.org.
  */
 package org.ice4j.attribute;
 
@@ -12,12 +12,8 @@ import org.ice4j.*;
  * The class provides utilities for decoding a binary stream into an Attribute
  * class.
  *
- * <p>Copyright: Copyright (c) 2003-2008</p>
- * <p>Organization: Louis Pasteur University, Strasbourg, France</p>
- * <p>Network Research Team (http://www-r2.u-strasbg.fr)</p>
  * @author Emil Ivov
  * @author Sebastien Vincent
- * @version 0.1
  */
 public class AttributeDecoder
 {
