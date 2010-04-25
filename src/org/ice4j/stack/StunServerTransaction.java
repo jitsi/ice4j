@@ -324,4 +324,18 @@ class StunServerTransaction
     {
         return requestSource;
     }
+
+    /**
+     * Returns the <tt>Response</tt> that the <tt>StunStack</tt> has sent
+     * through this transaction or <tt>null</tt> if no <tt>Response</tt> has
+     * been sent yet.
+     *
+     * @return the <tt>Response</tt> that the <tt>StunStack</tt> has sent
+     * through this transaction or <tt>null</tt> if no <tt>Response</tt> has
+     * been sent yet.
+     */
+    protected Response getResponse()
+    {
+        return response;
+    }
 }

@@ -143,24 +143,36 @@ public class TransactionID
 
     /**
      * Returns a string representation of the ID
+     *
      * @return a hex string representing the id
      */
     public String toString()
     {
+        return TransactionID.toString(transactionID);
+    }
+
+    /**
+     * Returns a string representation of the ID
+     *
+     * @param transactionID the transaction ID to convert into <tt>String</tt>.
+     *
+     * @return a hex string representing the id
+     */
+    public static String toString(byte[] transactionID)
+    {
         StringBuffer idStr = new StringBuffer();
 
+        idStr.append("0x");
         for(int i = 0; i < transactionID.length; i++)
         {
-            idStr.append("0x");
+
             if((transactionID[i]&0xFF) <= 15)
             {
                 idStr.append("0");
             }
 
-            idStr.append(Integer.toHexString(transactionID[i]&0xff).toUpperCase());
-
-            if(i < transactionID.length)
-                idStr.append(" ");
+            idStr.append(Integer.toHexString(transactionID[i]&0xff)
+                            .toUpperCase());
         }
 
         return idStr.toString();

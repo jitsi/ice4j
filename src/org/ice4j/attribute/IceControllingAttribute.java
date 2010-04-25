@@ -1,3 +1,9 @@
+/*
+ * ice4j, the OpenSource Java Solution for NAT and Firewall Traversal.
+ * Maintained by the SIP Communicator community (http://sip-communicator.org).
+ *
+ * Distributable under LGPL license. See terms of license at gnu.org.
+ */
 package org.ice4j.attribute;
 
 import java.util.Arrays;
@@ -120,24 +126,21 @@ public class IceControllingAttribute
      * Sets the Tie Breaker byte array to the specified byte array
      * An exact copy of the specified byte array is made
      *
-     * @param tieBreaker    the byte array containing the 64 bit tie-breaker value
+     * @param tieBreaker the byte array containing the 64 bit tie-breaker value
      *
-     * @throws StunException if tieBreaker contains invalid data
+     * @throws IllegalArgumentException if tieBreaker contains invalid data
      */
     public void setTieBreaker(byte[] tieBreaker)
-        throws StunException
+        throws IllegalArgumentException
     {
         if(tieBreaker.length != DATA_LENGTH_ICE_CONTROLLING)
         {
-            throw new StunException(StunException.ILLEGAL_ARGUMENT,
+            throw new IllegalArgumentException(
                 "The supplied byte array does not contain the correct number "
                             +"of bytes");
         }
-        else
-        {
-            //FIXME - uncomment
-            //this.tieBreaker = Arrays.copyOf(tieBreaker, tieBreaker.length);
-        }
+
+        this.tieBreaker = tieBreaker;
     }
 
     /**
@@ -149,12 +152,8 @@ public class IceControllingAttribute
     {
         if(tieBreaker == null)
             return null;
-        else
-        {
-            //FIXME -- uncomment
-            //return Arrays.copyOf(tieBreaker, tieBreaker.length);
-            return null;
-        }
+
+        return tieBreaker;
     }
 
 }

@@ -88,6 +88,16 @@ public class Agent
     private final String password;
 
     /**
+     * The user fragment that we received from the remote party.
+     */
+    private String remoteUfrag;
+
+    /**
+     * The password that we received from the remote party.
+     */
+    private String remotePassword;
+
+    /**
      * The tie-breaker number is used in connectivity checks to detect and
      * repair the case where both agents believe to have the controlling or the
      * controlled role.
@@ -236,12 +246,13 @@ public class Agent
 
         List<IceMediaStream> streams = getStreams();
 
+        ConnectivityCheckDispatcher client
+                = new ConnectivityCheckDispatcher(this);
         for(IceMediaStream stream : streams)
         {
             CheckList list = stream.getCheckList();
 
-            ConnectivityCheckDispatcher client = new ConnectivityCheckDispatcher(list);
-            client.startChecks();
+            client.startChecks(list);
         }
     }
 
@@ -322,6 +333,59 @@ public class Agent
     public String getPassword()
     {
         return password;
+    }
+
+    /**
+     * Returns the user name that we received from the remote peer or
+     * <tt>null</tt> if we haven't received a user name from them yet.
+     *
+     * @return the user name that we received from the remote peer or
+     * <tt>null</tt> if we haven't received a user name from them yet.
+     */
+    public String getRemoteUserName()
+    {
+        return remoteUfrag;
+    }
+
+    /**
+     * Returns the password that we received from the remote peer or
+     * <tt>null</tt> if we haven't received a password from them yet.
+     *
+     * @return the password that we received from the remote peer or
+     * <tt>null</tt> if we haven't received a password from them yet.
+     */
+    public String getRemotePassword()
+    {
+        return remotePassword;
+    }
+
+    /**
+     * Specifies the user name that we received from the remote peer.
+     *
+     * @param remoteUfrag the user name that we received from the remote peer.
+     */
+    public void setRemoteUserName(String remoteUfrag)
+    {
+        this.remoteUfrag = remoteUfrag;
+    }
+
+    /**
+     * Returns the
+     */
+    public String generateUserName()
+    {
+        return getUserName();
+    }
+
+    /**
+     * Specifies the password that we received from the remote peer.
+     *
+     * @param remotePassword the user name that we received from the remote
+     * peer.
+     */
+    public void setRemotePassword(String remotePassword)
+    {
+        this.remotePassword = remotePassword;
     }
 
     /**

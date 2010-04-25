@@ -122,27 +122,25 @@ public class IceControlledAttribute
     }
 
     /**
-     * Sets the Tie Breaker byte array to the specified byte array
-     * An exact copy of the specified byte array is made
+     * Sets the <tt>tieBreaker</tt> byte array.
      *
      * @param tieBreaker the byte array containing the 64 bit tie-breaker
      * value
      *
-     * @throws StunException if tieBreaker contains invalid data
+     * @throws IllegalArgumentException if tieBreaker contains invalid data
      */
     public void setTieBreaker(byte[] tieBreaker)
-        throws StunException
+        throws IllegalArgumentException
     {
         if(tieBreaker.length != DATA_LENGTH_ICE_CONTROLLED)
         {
-            throw new StunException(StunException.ILLEGAL_ARGUMENT,
+            throw new IllegalArgumentException(
                 "The supplied byte array does not contain the correct number"
                 +" of bytes");
         }
         else
         {
-            //FIXME - uncomment.
-            //this.tieBreaker = Arrays.copyOf(tieBreaker, tieBreaker.length);
+            this.tieBreaker = tieBreaker;
         }
     }
 
@@ -153,16 +151,7 @@ public class IceControlledAttribute
      */
     public byte[] getTieBreaker()
     {
-        if(tieBreaker == null)
-        {
-            return null;
-        }
-        else
-        {
-            //FIXME uncomment
-            //return Arrays.copyOf(tieBreaker, tieBreaker.length);
-            return null;
-        }
+        return tieBreaker;
     }
 
 }

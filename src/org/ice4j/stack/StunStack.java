@@ -47,15 +47,17 @@ public class StunStack
     /**
      * Stores active client transactions mapped against TransactionID-s.
      */
-    private final Hashtable<TransactionID, StunClientTransaction> clientTransactions
-                        = new Hashtable<TransactionID, StunClientTransaction>();
+    private final Hashtable<TransactionID, StunClientTransaction>
+        clientTransactions
+            = new Hashtable<TransactionID, StunClientTransaction>();
 
     /**
      * Currently open server transactions. The vector contains transaction ids
      * for transactions corresponding to all non-answered received requests.
      */
-    private final Hashtable<TransactionID, StunServerTransaction> serverTransactions
-                        = new Hashtable<TransactionID, StunServerTransaction>();
+    private final Hashtable<TransactionID, StunServerTransaction>
+        serverTransactions
+            = new Hashtable<TransactionID, StunServerTransaction>();
 
     /**
      * A dispatcher for incoming requests event;
@@ -279,12 +281,21 @@ public class StunStack
         StunServerTransaction sTran =
             serverTransactions.get(tid);
 
-        if(sTran == null || sTran.isReransmitting())
+        if(sTran == null)
+        {
+            throw new StunException(StunException.TRANSACTION_DOES_NOT_EXIST,
+                                "The transaction specified in the response "
+                                + "(tid="+ tid.toString() +") "
+                                + "object does not exist.");
+        }
+        else if( sTran.isReransmitting())
         {
             throw new StunException(StunException.TRANSACTION_DOES_NOT_EXIST,
                                     "The transaction specified in the response "
-                                    + "object does not exist or has already "
-                                    + "transmitted a response.");
+                                    + "(tid="+ tid.toString() +") "
+                                    + "has already seen a previous response. "
+                                    + "Response was:\n"
+                                    + sTran.getResponse());
         }
         else
         {

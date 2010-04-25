@@ -315,20 +315,41 @@ public abstract class Candidate
      */
     public long computePriority()
     {
+        this.priority = computePriorityForType(getType());
+
+        return this.priority;
+    }
+
+    /**
+     * Computes the priority this <tt>Candidate</tt> would have if it were of
+     * the specified <tt>candidateType</tt> and based on the procedures
+     * defined in the ICE specification. The reason we need this method in
+     * addition to the {@link #computePriority()} one is the need to be able
+     * to compute the priority of a peer reflexive <tt>candidate</tt> that we
+     * might learn during connectivity checks through this <tt>Candidate</tt>.
+     *
+     * @param candidateType the hypothetical type that we'd like to use when
+     * computing the priority for this <tt>Candidate</tt>.
+     *
+     * @return the priority this <tt>Candidate</tt> would have had if it were
+     * of the specified <tt>candidateType</tt>.
+     */
+    public long computePriorityForType(CandidateType candidateType)
+    {
         //According to the ICE speck we compute priority this way:
         //priority = (2^24)*(type preference) +
         //           (2^8)*(local preference) +
         //           (2^0)*(256 - component ID)
 
-        this.priority = (long)( getTypePreference()  << 24 )+
-                        (long)( getLocalPreference() << 8  )+
-                        (long) (256 - getParentComponent().getComponentID());
+        return (long)( getTypePreference(candidateType)  << 24 )+
+               (long)( getLocalPreference()              << 8  )+
+               (long) (256 - getParentComponent().getComponentID());
 
-        return priority;
     }
 
     /**
-     * Returns the type preference for this candidate according to its type.
+     * Returns the type preference that should be used when computing priority
+     * for <tt>Candidate</tt>s of the specified <tt>candidateType</tt>.
      * The type preference MUST be an integer from <tt>0</tt> to <tt>126</tt>
      * inclusive, and represents the preference for the type of the candidate
      * (where the types are local, server reflexive, peer reflexive and
@@ -340,13 +361,16 @@ public abstract class Candidate
      * reflexive candidates MUST be higher than that of server reflexive
      * candidates.
      *
+     * @param candidateType the <tt>CandidateType</tt> that we'd like to obtain
+     * a preference for.
+     *
      * @return the type preference for this <tt>Candidate</tt> as per the
      * procedures in the ICE specification.
      */
-    private int getTypePreference()
+    private static int getTypePreference(CandidateType candidateType)
     {
         int typePreference;
-        CandidateType candidateType = getType();
+
         if(candidateType == CandidateType.HOST_CANDIDATE)
         {
             typePreference = MAX_TYPE_PREFERENCE; // 126
