@@ -20,16 +20,29 @@ public class AttributeDecoder
     /**
      * Decodes the specified binary array and returns the corresponding
      * attribute object.
+     *
      * @param bytes the binary array that should be decoded.
      * @param offset the index where the message starts.
      * @param length the number of bytes that the message is long.
+     * @param messageHeadBytes the binary array that contains the all the bytes
+     * of the message that brought this attribute up until the beginning of the
+     * attribute (at least).
+     * @param messageHeadOffset the start of the container message in the
+     * <tt>messageHeadBytes</tt> array.
+     * @param messageHeadLen the length of the message head in the
+     * <tt>messageHeadBytes</tt> array, up until the beginning of the attribute.
+     *
      * @return An object representing the attribute encoded in bytes or null if
-     *         the attribute was not recognized.
+     * the attribute was not recognized.
+     *
      * @throws StunException if bytes does is not a valid STUN attribute.
      */
-    public static Attribute decode(byte bytes[],
+    public static Attribute decode(byte[] bytes,
                                    char offset,
-                                   char length)
+                                   char length,
+                                   byte[] messageHeadBytes,
+                                   char messageHeadOffset,
+                                   char messageHeadLen)
         throws StunException
     {
         if(bytes == null || bytes.length < Attribute.HEADER_LENGTH)
@@ -119,9 +132,19 @@ public class AttributeDecoder
 
         decodedAttribute.setAttributeType(attributeType);
 
-        decodedAttribute.decodeAttributeBody(bytes,
+        if (decodedAttribute instanceof ContentDependentAttribute)
+        {
+            ((ContentDependentAttribute)decodedAttribute).decodeAttributeBody(
+                 bytes, (char)(Attribute.HEADER_LENGTH + offset),
+                 attributeLength,
+                 messageHeadBytes, messageHeadOffset, messageHeadLen );
+        }
+        else
+        {
+            decodedAttribute.decodeAttributeBody(bytes,
                         (char)(Attribute.HEADER_LENGTH + offset),
                         attributeLength);
+        }
 
         return decodedAttribute;
     }

@@ -194,17 +194,30 @@ public class FingerprintAttribute
     }
 
     /**
-     * Sets this attribute's fields according to attributeValue array.
+     * Sets this attribute's fields according to the message and attributeValue
+     * arrays. This method allows the stack to validate the content of content
+     * dependent attributes such as the {@link MessageIntegrityAttribute} or
+     * the {@link FingerprintAttribute} and hide invalid ones from the
+     * application.
      *
      * @param attributeValue a binary array containing this attribute's field
      * values and NOT containing the attribute header.
      * @param offset the position where attribute values begin (most often
      * offset is equal to the index of the first byte after length)
      * @param length the length of the binary array.
+     * @param messageHead the bytes of the message that brought this attribute.
+     * @param mhOffset the start of the message that brought this attribute
+     * @param mhLen the length of the message in the messageHead param up until
+     * the start of this attribute.
      *
      * @throws StunException if attrubteValue contains invalid data.
      */
-    void decodeAttributeBody(byte[] attributeValue, char offset, char length)
+    public void decodeAttributeBody( byte[] attributeValue,
+                                     char offset,
+                                     char length,
+                                     byte[] messageHead,
+                                     char mhOffset,
+                                     char mhLen)
         throws StunException
     {
         if(length != 4)
@@ -216,6 +229,40 @@ public class FingerprintAttribute
             + ((attributeValue[1] << 16) & 0x00ff0000)
             + ((attributeValue[2] << 8)  & 0x0000ff00)
             +  (attributeValue[3]        & 0x000000ff);
+
+        //now check whether the CRC really is what it's supposed to be.
+        //re calculate the check sum
+        CRC32 checksum = new CRC32();
+        checksum.update(messageHead, mhOffset, mhLen);
+
+        long realChecksum = checksum.getValue();
+
+        //CRC failure.
+        if (realChecksum != crc)
+            throw new StunException(StunException.ILLEGAL_ARGUMENT,
+                "An incoming message arrived with a wrong FINGERPRINT "
+                +"attribute value. Will ignore.");
+    }
+
+    /**
+     * Always throws an {@link UnsupportedOperationException} since this
+     * attribute should be decoded through the content specific decode method.
+     *
+     * @param attributeValue a binary array containing this attribute's
+     * field values and NOT containing the attribute header.
+     * @param offset the position where attribute values begin (most often
+     * offset is equal to the index of the first byte after length)
+     * @param length the length of the binary array.
+     *
+     * @throws UnsupportedOperationException since we are supposed to decode
+     * through the content specific decode method.
+     */
+    void decodeAttributeBody(byte[] attributeValue, char offset, char length)
+        throws UnsupportedOperationException
+    {
+        throw new UnsupportedOperationException(
+                        "ContentDependentAttributes should be decoded "
+                        +"through the contend-dependent decode method");
     }
 }
 

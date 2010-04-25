@@ -159,8 +159,8 @@ public abstract class Attribute
     }
 
    /**
-    * Compares two STUN Attributes. Two attributes are considered equal when they
-    * have the same type length and value.
+    * Compares two STUN Attributes. Two attributes are considered equal when
+    * they have the same type length and value.
     *
     * @param obj the object to compare this attribute with.
     *
@@ -187,7 +187,8 @@ public abstract class Attribute
      *
      * @throws StunException if attrubteValue contains invalid data.
      */
-    abstract void decodeAttributeBody(
-                    byte[] attributeValue, char offset, char length)
+    abstract void decodeAttributeBody( byte[] attributeValue,
+                                       char   offset,
+                                       char   length)
         throws StunException;
 }
