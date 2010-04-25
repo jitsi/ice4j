@@ -6,10 +6,34 @@
  */
 package org.ice4j.ice;
 
+import org.ice4j.*;
+import org.ice4j.stack.*;
 /**
  * @author Emil Ivov
  */
 public class ConnectivityCheckServer
+    implements RequestListener
 {
+    StunStack stunStack = StunStack.getInstance();
+
+    public ConnectivityCheckServer()
+    {
+        stunStack.addRequestListener(this);
+    }
+
+    public void startListening(LocalCandidate candidate)
+    {
+        stunStack.addSocket(candidate.getSocket());
+    }
+
+    public void stopListenint(LocalCandidate candidate)
+    {
+        stunStack.removeSocket(candidate.getTransportAddress());
+    }
+
+    public void requestReceived(StunMessageEvent evt)
+    {
+        System.out.println("evt=" + evt);
+    }
 
 }

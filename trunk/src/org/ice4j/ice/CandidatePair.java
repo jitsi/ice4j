@@ -7,7 +7,6 @@
 package org.ice4j.ice;
 
 import java.util.*;
-import java.util.logging.*;
 
 /**
  * <tt>CandidatePair</tt>s map local to remote <tt>Candidate</tt>s so that they
@@ -23,13 +22,6 @@ import java.util.logging.*;
 public class CandidatePair
     implements Comparable<CandidatePair>
 {
-    /**
-     * The <tt>Logger</tt> used by the <tt>CandidatePair</tt>
-     * class and its instances for logging output.
-     */
-    private static final Logger logger = Logger
-                    .getLogger(CandidatePair.class.getName());
-
     /**
      * The local candidate of this pair.
      */

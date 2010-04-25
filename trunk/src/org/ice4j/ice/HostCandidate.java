@@ -8,8 +8,10 @@
 package org.ice4j.ice;
 
 import java.net.*;
+import java.util.logging.*;
 
 import org.ice4j.*;
+import org.ice4j.socket.*;
 
 /**
  * <tt>HostCandidate</tt>s are obtained by binding to a specific port from an
@@ -27,12 +29,23 @@ import org.ice4j.*;
  */
 public class HostCandidate extends LocalCandidate
 {
+    /**
+     * The <tt>Logger</tt> used by the <tt>HostCandidate</tt>
+     * class and its instances for logging output.
+     */
+    private static final Logger logger = Logger
+                    .getLogger(HostCandidate.class.getName());
 
     /**
      * If this is a local candidate the field contains the socket that is
      * actually associated with the candidate.
      */
     private final DatagramSocket socket;
+
+    /**
+     * The <tt>DatagramPacketFilter</tt> that only accepts STUN messages.
+     */
+    private DatagramPacketFilter stunDatagramPacketFilter;
 
     /**
      * Creates a HostCandidate for the specified transport address.
@@ -64,5 +77,42 @@ public class HostCandidate extends LocalCandidate
     public DatagramSocket getSocket()
     {
         return socket;
+    }
+
+    /**
+     * Returns the <tt>DatagramSocket</tt> that this candidate uses when sending
+     * and receiving STUN packets, while harvesting STUN candidates or
+     * performing connectivity checks.
+     *
+     * @return the <tt>DatagramSocket</tt> that this candidate uses when sending
+     * and receiving STUN packets, while harvesting STUN candidates or
+     * performing connectivity checks.
+     */
+    public DatagramSocket getStunSocket(TransportAddress serverAddress)
+    {
+        DatagramSocket hostSocket = getSocket();
+        DatagramSocket stunSocket = null;
+        Throwable exception = null;
+
+        if (hostSocket instanceof MultiplexingDatagramSocket)
+            try
+            {
+                stunSocket
+                    = ((MultiplexingDatagramSocket) hostSocket)
+                        .getSocket( new StunDatagramPacketFilter(
+                                        serverAddress));
+            }
+            catch (SocketException sex)//don't u just luv da name? ;)
+            {
+                logger.log( Level.SEVERE,
+                             "Failed to acquire DatagramSocket"
+                            + " specific to STUN communication.",
+                            sex);
+                exception = sex;
+            }
+        if (stunSocket == null)
+            throw new IllegalArgumentException("hostCand", exception);
+        else
+            return stunSocket;
     }
 }
