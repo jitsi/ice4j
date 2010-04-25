@@ -277,6 +277,7 @@ public class IceMediaStream
             orderCheckList();
             pruneCheckList();
             computeInitialCheckListPairStates();
+            logger.finest("Checklist initialized.");
         }
     }
 

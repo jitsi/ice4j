@@ -171,7 +171,7 @@ public class StunCandidateHarvester
      * the <tt>DatagramSocket</tt> to be used for communication with
      * {@link #stunServer} when gathering <tt>Candidate</tt>s for a specific
      * <tt>HostCandidate</tt>.
-     * 
+     *
      * @return the <tt>DatagramPacketFilter</tt> which is to be associated with
      * the <tt>DatagramSocket</tt> to be used for communication with
      * {@link #stunServer} when gathering <tt>Candidate</tt>s for a specific
