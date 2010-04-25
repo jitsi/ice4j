@@ -112,12 +112,12 @@ public class StunAddressDiscovererTest_v4v6 extends TestCase {
         throws Exception
     {
         //define the server response sequence
-        Response testIResponse1 = MessageFactory.createBindingResponse(
+        Response testIResponse1 = MessageFactory.create3482BindingResponse(
             mappedClientAddress_v4,
             responseServerAddress_v6,
             responseServerAddress_v6);
         Response testIResponse2 = null;
-        Response testIResponse3 = MessageFactory.createBindingResponse(
+        Response testIResponse3 = MessageFactory.create3482BindingResponse(
             mappedClientAddress_v4_Port2,
             responseServerAddress_v6,
             responseServerAddress_v6);
@@ -147,12 +147,12 @@ public class StunAddressDiscovererTest_v4v6 extends TestCase {
     public void testRecognizeSymmetricNat_Local_v4_Public_v6() throws Exception
     {
         //define the server response sequence
-        Response testIResponse1 = MessageFactory.createBindingResponse(
+        Response testIResponse1 = MessageFactory.create3482BindingResponse(
             mappedClientAddress_v6,
             responseServerAddress_v4,
             responseServerAddress_v4);
         Response testIResponse2 = null;
-        Response testIResponse3 = MessageFactory.createBindingResponse(
+        Response testIResponse3 = MessageFactory.create3482BindingResponse(
             mappedClientAddress_v6_Port2,
             responseServerAddress_v4,
             responseServerAddress_v4);
@@ -184,11 +184,11 @@ public class StunAddressDiscovererTest_v4v6 extends TestCase {
     public void testRecognizeFullCone_Local_v6_Public_v4() throws Exception
     {
         //define the server response sequence
-        Response testIResponse1 = MessageFactory.createBindingResponse(
+        Response testIResponse1 = MessageFactory.create3482BindingResponse(
             mappedClientAddress_v4,
             responseServerAddress_v6,
             responseServerAddress_v6);
-        Response testIResponse2 = MessageFactory.createBindingResponse(
+        Response testIResponse2 = MessageFactory.create3482BindingResponse(
             mappedClientAddress_v4,
             responseServerAddress_v6,
             responseServerAddress_v6);
@@ -217,11 +217,11 @@ public class StunAddressDiscovererTest_v4v6 extends TestCase {
     public void testRecognizeFullCone_Local_v4_Public_v6() throws Exception
     {
         //define the server response sequence
-        Response testIResponse1 = MessageFactory.createBindingResponse(
+        Response testIResponse1 = MessageFactory.create3482BindingResponse(
             mappedClientAddress_v6,
             responseServerAddress_v4,
             responseServerAddress_v4);
-        Response testIResponse2 = MessageFactory.createBindingResponse(
+        Response testIResponse2 = MessageFactory.create3482BindingResponse(
             mappedClientAddress_v6,
             responseServerAddress_v4,
             responseServerAddress_v4);

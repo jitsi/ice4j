@@ -50,7 +50,7 @@ public class Ice
 
         System.out.println("Local audio clist:\n"
                         + localAgent.getStream("audio").getCheckList());
-        System.out.println("Local audio clist:\n"
+        System.out.println("Local video clist:\n"
                         + localAgent.getStream("video").getCheckList());
 
         System.out.println("Total execution time: "

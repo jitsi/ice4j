@@ -100,7 +100,7 @@ public class MessageEventDispatchingTest extends TestCase
         stunStack.addSocket(serverSock2);
 
         bindingRequest = MessageFactory.createBindingRequest();
-        bindingResponse = MessageFactory.createBindingResponse(
+        bindingResponse = MessageFactory.create3482BindingResponse(
             clientAddress, clientAddress, serverAddress);
 
         requestCollector = new PlainRequestCollector();

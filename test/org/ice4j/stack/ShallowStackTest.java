@@ -213,7 +213,7 @@ public class ShallowStackTest extends TestCase {
                    Arrays.equals(expectedReturn, actualReturn));
 
         //---------- create the response ---------------------------------------
-        Response bindingResponse = MessageFactory.createBindingResponse(
+        Response bindingResponse = MessageFactory.create3482BindingResponse(
             new TransportAddress( MsgFixture.ADDRESS_ATTRIBUTE_ADDRESS,
                  MsgFixture.ADDRESS_ATTRIBUTE_PORT, Transport.UDP ),
             new TransportAddress( MsgFixture.ADDRESS_ATTRIBUTE_ADDRESS_2,

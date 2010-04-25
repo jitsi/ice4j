@@ -83,7 +83,7 @@ public class TransactionSupportTests extends TestCase
         StunStack.getInstance().addSocket(serverSock);
 
         bindingRequest = MessageFactory.createBindingRequest();
-        bindingResponse = MessageFactory.createBindingResponse(
+        bindingResponse = MessageFactory.create3482BindingResponse(
             clientAddress, clientAddress, serverAddress);
 
         requestCollector = new PlainRequestCollector();
