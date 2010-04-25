@@ -25,8 +25,14 @@ import org.ice4j.*;
 public class SoftwareAttribute
     extends Attribute
 {
+    /**
+     * The value that this <tt>SoftwareAttribute</tt> is transporting.
+     */
     private byte[] software = null;
 
+    /**
+     * Creates a new <tt>SoftwareAttribute</tt>.
+     */
     protected SoftwareAttribute ()
     {
         super(SOFTWARE);
@@ -37,14 +43,12 @@ public class SoftwareAttribute
      * attributeValue.
      *
      * @param attributeValue a binary array containing this attribute's
-     *   field values and NOT containing the attribute header.
+     * field values and NOT containing the attribute header.
      * @param offset the position where attribute values begin (most often
-     *   offset is equal to the index of the first byte after length)
+     * offset is equal to the index of the first byte after length)
      * @param length the length of the binary array.
-     * @throws StunException if attributeValue contains invalid data.
      */
-    void decodeAttributeBody(byte[] attributeValue, char offset, char length) throws
-        StunException
+    void decodeAttributeBody(byte[] attributeValue, char offset, char length)
     {
         software = new byte[length];
         System.arraycopy(attributeValue, offset, software, 0, length);
@@ -58,7 +62,9 @@ public class SoftwareAttribute
     public byte[] encode()
     {
         char type = getAttributeType();
-        byte binValue[] = new byte[HEADER_LENGTH + getDataLength() + (getDataLength() % 4)];
+        byte binValue[] = new byte[HEADER_LENGTH + getDataLength()
+                                   //add padding
+                                   + (4 - getDataLength()%4)%4];
 
         //Type
         binValue[0] = (byte)(type>>8);
