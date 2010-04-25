@@ -62,11 +62,14 @@ public class AttributeDecoderTest extends TestCase {
         MappedAddressAttribute expectedReturn = new MappedAddressAttribute();
 
         expectedReturn.setAddress(new TransportAddress(
-                       msgFixture.ADDRESS_ATTRIBUTE_ADDRESS,
-                       msgFixture.ADDRESS_ATTRIBUTE_PORT,
+                       MsgFixture.ADDRESS_ATTRIBUTE_ADDRESS,
+                       MsgFixture.ADDRESS_ATTRIBUTE_PORT,
                        Transport.UDP));
 
-        Attribute actualReturn = attributeDecoder.decode(bytes, offset, length);
+        Attribute actualReturn = AttributeDecoder.decode(
+                        bytes, offset, length, //attribute
+                        bytes, (char)0, offset);//message head
+
         assertEquals(
             "AttributeDecoder.decode() failed for a MAPPED-ADDRESS attribute",
             expectedReturn, actualReturn);
@@ -84,11 +87,14 @@ public class AttributeDecoderTest extends TestCase {
         MappedAddressAttribute expectedReturn = new MappedAddressAttribute();
 
         expectedReturn.setAddress( new TransportAddress(
-                        msgFixture.ADDRESS_ATTRIBUTE_ADDRESS_V6,
-                        msgFixture.ADDRESS_ATTRIBUTE_PORT,
+                        MsgFixture.ADDRESS_ATTRIBUTE_ADDRESS_V6,
+                        MsgFixture.ADDRESS_ATTRIBUTE_PORT,
                         Transport.UDP));
 
-        Attribute actualReturn = attributeDecoder.decode(bytes, offset, length);
+        Attribute actualReturn = AttributeDecoder.decode(
+                        bytes, offset, length, //attribute
+                        bytes, (char)0, offset);//message head
+
         assertEquals(
             "AttributeDecoder.decode() failed for a MAPPED-ADDRESS attribute",
             expectedReturn, actualReturn);
@@ -104,10 +110,12 @@ public class AttributeDecoderTest extends TestCase {
 
         //create the message
         ChangeRequestAttribute expectedReturn = new ChangeRequestAttribute();
-        expectedReturn.setChangeIpFlag(msgFixture.CHANGE_IP_FLAG_1);
-        expectedReturn.setChangePortFlag(msgFixture.CHANGE_PORT_FLAG_1);
+        expectedReturn.setChangeIpFlag(MsgFixture.CHANGE_IP_FLAG_1);
+        expectedReturn.setChangePortFlag(MsgFixture.CHANGE_PORT_FLAG_1);
 
-        Attribute actualReturn = attributeDecoder.decode(bytes, offset, length);
+        Attribute actualReturn = AttributeDecoder.decode(
+                        bytes, offset, length, //attribute
+                        bytes, (char)0, offset);//message head
         assertEquals("AttributeDecoder.decode() failed for a CHANGE-REQUEST attribute",
                      expectedReturn, actualReturn);
 
@@ -124,13 +132,16 @@ public class AttributeDecoderTest extends TestCase {
 
        //create the message
        ErrorCodeAttribute expectedReturn = new ErrorCodeAttribute();
-       expectedReturn.setErrorClass(msgFixture.ERROR_CLASS);
-       expectedReturn.setErrorNumber(msgFixture.ERROR_NUMBER);
-       expectedReturn.setReasonPhrase(msgFixture.REASON_PHRASE);
+       expectedReturn.setErrorClass(MsgFixture.ERROR_CLASS);
+       expectedReturn.setErrorNumber(MsgFixture.ERROR_NUMBER);
+       expectedReturn.setReasonPhrase(MsgFixture.REASON_PHRASE);
 
-       Attribute actualReturn = attributeDecoder.decode(bytes, offset, length);
-       assertEquals("AttributeDecoder.decode() failed for a ERROR-CODE attribute",
-                    expectedReturn, actualReturn);
+       Attribute actualReturn = AttributeDecoder.decode(
+                       bytes, offset, length, //attribute
+                       bytes, (char)0, offset);//message head
+       assertEquals(
+                "AttributeDecoder.decode() failed for a ERROR-CODE attribute",
+                expectedReturn, actualReturn);
 
    }
 
@@ -144,11 +155,14 @@ public class AttributeDecoderTest extends TestCase {
 
        //create the message
        UnknownAttributesAttribute expectedReturn = new UnknownAttributesAttribute();
-       expectedReturn.addAttributeID(msgFixture.UNKNOWN_ATTRIBUTES_1ST_ATT);
-       expectedReturn.addAttributeID(msgFixture.UNKNOWN_ATTRIBUTES_2ND_ATT);
-       expectedReturn.addAttributeID(msgFixture.UNKNOWN_ATTRIBUTES_3D_ATT);
+       expectedReturn.addAttributeID(MsgFixture.UNKNOWN_ATTRIBUTES_1ST_ATT);
+       expectedReturn.addAttributeID(MsgFixture.UNKNOWN_ATTRIBUTES_2ND_ATT);
+       expectedReturn.addAttributeID(MsgFixture.UNKNOWN_ATTRIBUTES_3D_ATT);
 
-       Attribute actualReturn = attributeDecoder.decode(bytes, offset, length);
+       Attribute actualReturn = AttributeDecoder.decode(
+                       bytes, offset, length, //attribute
+                       bytes, (char)0, offset);//message head
+
        assertEquals("AttributeDecoder.decode() failed for a ERROR-CODE attribute",
                     expectedReturn, actualReturn);
 
@@ -168,9 +182,12 @@ public class AttributeDecoderTest extends TestCase {
        expectedReturn.setBody(expectedAttributeValue, 0,
                               expectedAttributeValue.length);
 
-       Attribute actualReturn = attributeDecoder.decode(bytes, offset, length);
-       assertEquals("AttributeDecoder.decode() failed for a UNKNOWN_OPTIONAL attribute",
-                    expectedReturn, actualReturn);
+       Attribute actualReturn = AttributeDecoder.decode(
+                       bytes, offset, length, //attribute
+                       bytes, (char)0, offset);//message head
+       assertEquals(
+           "AttributeDecoder.decode() failed for a UNKNOWN_OPTIONAL attribute",
+           expectedReturn, actualReturn);
 
    }
 
