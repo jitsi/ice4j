@@ -137,8 +137,8 @@ public class MessageEventDispatchingTest extends TestCase
     public void testClientTransactionTimeouts() throws Exception
     {
         String oldRetransValue = System.getProperty(
-                            "org.ice4j.MAX_RETRANSMISSIONS");
-        System.setProperty("org.ice4j.MAX_RETRANSMISSIONS", "1");
+                        StackProperties.MAX_CTRAN_RETRANSMISSIONS);
+        System.setProperty(StackProperties.MAX_CTRAN_RETRANSMISSIONS, "1");
         stunStack.sendRequest(bindingRequest, serverAddress, clientAddress,
                         responseCollector);
         responseCollector.waitForTimeout();
@@ -154,10 +154,10 @@ public class MessageEventDispatchingTest extends TestCase
         //restore the retransmissions prop in case others are counting on
         //defaults.
         if(oldRetransValue != null)
-            System.getProperty( "org.ice4j.MAX_RETRANSMISSIONS",
+            System.getProperty( StackProperties.MAX_CTRAN_RETRANSMISSIONS,
                                 oldRetransValue);
         else
-            System.clearProperty("org.ice4j.MAX_RETRANSMISSIONS");
+            System.clearProperty(StackProperties.MAX_CTRAN_RETRANSMISSIONS);
     }
 
     /**

@@ -80,15 +80,15 @@ public class StunAddressDiscovererTest_v4v6 extends TestCase {
         responseServer_v6.start();
         responseServer_v4.start();
 
-        System.setProperty("org.ice4j.MAX_WAIT_INTERVAL", "100");
-        System.setProperty("org.ice4j.MAX_RETRANSMISSIONS", "2");
+        System.setProperty(StackProperties.MAX_CTRAN_RETRANS_TIMER , "100");
+        System.setProperty(StackProperties.MAX_CTRAN_RETRANSMISSIONS, "2");
     }
 
     protected void tearDown()
         throws Exception
     {
-        System.clearProperty("org.ice4j.MAX_WAIT_INTERVAL");
-        System.clearProperty("org.ice4j.MAX_RETRANSMISSIONS");
+        System.clearProperty(StackProperties.MAX_CTRAN_RETRANS_TIMER);
+        System.clearProperty(StackProperties.MAX_CTRAN_RETRANSMISSIONS);
 
         responseServer_v6.shutDown();
         responseServer_v4.shutDown();
