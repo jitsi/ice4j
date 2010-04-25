@@ -113,6 +113,9 @@ public class Agent
         password = new BigInteger(128, random).toString(32);
 
         tieBreaker = Math.abs(random.nextLong());
+
+        System.setProperty(StackProperties.SOFTWARE, "ice4j.org");
+        System.setProperty(StackProperties.ALWAYS_SIGN, "true");
     }
 
     /**
