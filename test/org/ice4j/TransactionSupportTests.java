@@ -140,9 +140,9 @@ public class TransactionSupportTests extends TestCase
     public void testClientRetransmissions() throws Exception
     {
         String oldRetransValue = System.getProperty(
-                                            StackProperties.MAX_CTRAN_RETRANSMISSIONS);
+                                     StackProperties.MAX_CTRAN_RETRANSMISSIONS);
         String oldMaxWaitValue = System.getProperty(
-                                            StackProperties.MAX_CTRAN_RETRANS_TIMER);
+                                     StackProperties.MAX_CTRAN_RETRANS_TIMER);
 
         System.setProperty(StackProperties.MAX_CTRAN_RETRANS_TIMER, "100");
         System.setProperty(StackProperties.MAX_CTRAN_RETRANSMISSIONS, "2");
@@ -156,6 +156,7 @@ public class TransactionSupportTests extends TestCase
         //send
         StunStack.getInstance().sendRequest(bindingRequest,
                          serverAddress, clientAddress, responseCollector);
+
         //wait for retransmissions
         Thread.sleep(1000);
 
@@ -163,10 +164,12 @@ public class TransactionSupportTests extends TestCase
         Vector<StunMessageEvent> reqs
             = requestCollector.getRequestsForTransaction(
                                 bindingRequest.getTransactionID());
+
         assertTrue("No retransmissions of the request have been received",
             reqs.size() > 1);
-        assertTrue("The binding request has not been retransmitted enough!",
-            reqs.size() >= 3);
+        assertTrue("The binding request has been retransmitted more than it "
+                        +"should have!",
+                    reqs.size() >= 3);
 
         //restore the retransmissions prop in case others are counting on
         //defaults.
@@ -467,6 +470,7 @@ public class TransactionSupportTests extends TestCase
          */
         public void requestReceived(StunMessageEvent evt)
         {
+
             synchronized(this)
             {
                 receivedRequestsVector.add(evt);
