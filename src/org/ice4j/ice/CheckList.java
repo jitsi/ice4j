@@ -48,4 +48,28 @@ public class CheckList
     {
         this.state = state;
     }
+
+    /**
+     * Returns a <tt>String</tt> representation of this check list. It
+     * consists of a list of the <tt>CandidatePair</tt>s in the order they
+     * were inserted and enclosed in square brackets (<tt>"[]"</tt>). The method
+     * would also call and use the content returned by every member
+     * <tt>CandidatePair</tt>.
+     *
+     * @return A <tt>String</tt> representation of this collection.
+     */
+    public String toString()
+    {
+        StringBuffer buff = new StringBuffer("CheckList. (num pairs=");
+        buff.append(size() + ")\n");
+
+        Iterator<CandidatePair> pairs = iterator();
+
+        while(pairs.hasNext())
+        {
+            buff.append(pairs.next().toString()).append("\n");
+        }
+
+        return buff.toString();
+    }
 }

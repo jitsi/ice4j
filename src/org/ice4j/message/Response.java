@@ -29,14 +29,14 @@ public class Response extends Message
      * Checks whether responseType is a valid response type and if yes sets it
      * as the type of the current instance.
      * @param responseType the type to set
-     * @throws StunException ILLEGAL_ARGUMENT if responseType is not a valid
+     * @throws IllegalArgumentException if responseType is not a valid
      * response type
      */
     public void setMessageType(char responseType)
-        throws StunException
+        throws IllegalArgumentException
     {
         if(!isResponseType(responseType))
-            throw new StunException(StunException.ILLEGAL_ARGUMENT,
+            throw new IllegalArgumentException(
                                     (int)(responseType)
                                     + " - is not a valid response type.");
 

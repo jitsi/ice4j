@@ -34,14 +34,14 @@ public class Request extends Message
      * Checks whether requestType is a valid request type and if yes sets it
      * as the type of the current instance.
      * @param requestType the type to set
-     * @throws StunException ILLEGAL_ARGUMENT if requestType is not a valid
+     * @throws IllegalArgumentException if requestType is not a valid
      * request type
      */
     public void setMessageType(char requestType)
-        throws StunException
+        throws IllegalArgumentException
     {
         if(!isRequestType(requestType))
-            throw new StunException(StunException.ILLEGAL_ARGUMENT,
+            throw new IllegalArgumentException(
                                     (int)(requestType)
                                     + " - is not a valid request type.");
 

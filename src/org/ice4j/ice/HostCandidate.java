@@ -80,9 +80,13 @@ public class HostCandidate extends LocalCandidate
     }
 
     /**
-     * Returns the <tt>DatagramSocket</tt> that this candidate uses when sending
-     * and receiving STUN packets, while harvesting STUN candidates or
-     * performing connectivity checks.
+     * Creates if necessary and returns a <tt>DatagramSocket</tt> that would
+     * capture all STUN packets arriving on this candidate's socket. If the
+     * <tt>serverAddress</tt> parameter is not <tt>null</tt> this socket would
+     * only intercept packets originating at this address.
+     *
+     * @param serverAddress the address of the source we'd like to receive
+     * packets from or <tt>null</tt> if we'd like to intercept all stun packets.
      *
      * @return the <tt>DatagramSocket</tt> that this candidate uses when sending
      * and receiving STUN packets, while harvesting STUN candidates or

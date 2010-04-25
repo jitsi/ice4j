@@ -339,13 +339,12 @@ public class StunCandidateHarvester
      */
     private void refreshCandidate(ServerReflexiveCandidate srflxCand)
     {
-        DatagramSocket sock = srflxCand.getSocket();
-        stunStack.addSocket(sock);
-
         try
         {
             stunStack.sendRequest( MessageFactory.createBindingRequest(),
-                            stunServer, sock, this);
+                            stunServer,
+                            srflxCand.getBase().getTransportAddress(),
+                            this);
 
         }
         catch (Exception exception)
@@ -369,10 +368,6 @@ public class StunCandidateHarvester
         if (!hostCand.getTransportAddress().canReach(stunServer))
             return;
 
-        DatagramSocket socket = getStunSocket(hostCand);
-
-        stunStack.addSocket(socket);
-
         synchronized(resolveMap)
         {
             Request request = createRequestToStartResolvingCandidate(hostCand);
@@ -380,7 +375,8 @@ public class StunCandidateHarvester
 
             try
             {
-                tran = stunStack.sendRequest(request, stunServer, socket, this);
+                tran = stunStack.sendRequest(request, stunServer,
+                                hostCand.getTransportAddress(), this);
             }
             catch (Exception exception)
             {
@@ -388,7 +384,7 @@ public class StunCandidateHarvester
                         Level.INFO,
                         "Failed to send "
                             + request
-                            + " through " + socket.getLocalSocketAddress(),
+                            + " through " + hostCand.getTransportAddress(),
                         exception);
                 return;
             }

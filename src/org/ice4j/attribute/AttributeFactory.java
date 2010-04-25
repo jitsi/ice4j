@@ -253,19 +253,26 @@ public class AttributeFactory
 
         return attribute;
     };
- 
+
 /* ------------------------------------ XOR-RELAYED-ADRESS attribute ------------------------ */
     /**
      * Creates a XorRelayedAddressAttribute of the specified type and with
-     * the specified address and port
+     * the specified address and port.
+     *
      * @param address the address value of the address attribute
+     * @param tranID the ID of the transaction that we will be using for the XOR
+     * mask.
+     *
      * @return the newly created address attribute.
      */
-    public static XorRelayedAddressAttribute createXorRelayedAddressAttribute(TransportAddress address)
+    public static XorRelayedAddressAttribute createXorRelayedAddressAttribute(
+                                                    TransportAddress address,
+                                                    byte[]           tranID)
     {
         XorRelayedAddressAttribute attribute = new XorRelayedAddressAttribute();
 
-        attribute.setAddress(address);
+        //TODO (Emil): shouldn't we be XORing the address before setting it?
+        attribute.setAddress(address, tranID);
         return attribute;
     }
 
@@ -273,16 +280,44 @@ public class AttributeFactory
     /**
      * Creates a XorPeerAddressAttribute of the specified type and with
      * the specified address and port
+     *
      * @param address the address value of the address attribute
+     * @param tranID the ID of the transaction that we will be using for the XOR
+     * mask.
      * @return the newly created address attribute.
      */
-    public static XorPeerAddressAttribute createXorPeerAddressAttribute(TransportAddress address)
+    public static XorPeerAddressAttribute createXorPeerAddressAttribute(
+                                                       TransportAddress address,
+                                                       byte[]           tranID)
     {
         XorPeerAddressAttribute attribute = new XorPeerAddressAttribute();
 
-        attribute.setAddress(address);
+        //TODO (Emil): shouldn't we be XORing the address before setting it?
+        attribute.setAddress(address, tranID);
         return attribute;
     }
+
+//------------------------------------ XOR MAPPED ADDRESS --------------------------
+    /**
+     * Creates a XorMappedAddressAttribute for the specified <tt>address</tt>.
+     *
+     * @param address the address value of the address attribute
+     * @param tranID the ID of the transaction that we will be using for the XOR
+     * mask.
+     *
+     * @return the newly created xor address attribute.
+     */
+    public static XorMappedAddressAttribute createXorMappedAddressAttribute(
+                                                TransportAddress address,
+                                                byte[]           tranID)
+    {
+        XorMappedAddressAttribute attribute = new XorMappedAddressAttribute();
+
+        attribute.setAddress(address, tranID);
+
+        return attribute;
+
+    };
 
 /* --------------------------------- USERNAME attribute ----------------------------- */
     /**
@@ -401,7 +436,7 @@ public class AttributeFactory
 /* -------------------------------- RESERVATION-TOKEN attribute -------------------- */
     /**
      * Create a ReservationTokenAttribute.
-     * @param token the token 
+     * @param token the token
      * @return newly created RequestedTransportAttribute
      */
     public static ReservationTokenAttribute createReservationTokenAttribute(byte token[])
