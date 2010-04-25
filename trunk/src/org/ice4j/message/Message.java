@@ -10,6 +10,7 @@ import java.util.*;
 
 import org.ice4j.*;
 import org.ice4j.attribute.*;
+import org.ice4j.stack.*;
 
 /**
  * This class represents a STUN message. STUN messages are TLV (type-length-value)
@@ -689,7 +690,7 @@ public abstract class Message
         return getName()+"(0x"+Integer.toHexString(getMessageType())
             +")[attrib.count=" + getAttributeCount()
             +" len=" + (int) this.getDataLength()
-            +" tranID=" + this.getTransactionID() + "]";
+            +" tranID=" + TransactionID.toString(getTransactionID()) + "]";
     }
 
 }

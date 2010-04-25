@@ -154,17 +154,19 @@ public class PriorityAttribute
     /**
      * Sets the priority of the PRIORITY Attribute with the specified value
      *
-     * @param     priority     the long variable specifying the priority value
+     * @param priority     the long variable specifying the priority value
      *
-     * @throws    StunException  throws StunException if indicated priority value is illegal
+     * @throws IllegalArgumentException if indicated priority value is illegal.
      */
     public void setPriority(long priority)
-        throws StunException
+        throws IllegalArgumentException
     {
         /* Priority must be between 1 and (2^31 - 1) */
         if(priority <= 0 || priority > 0x7FFFFFFFL)
-            throw new StunException(StunException.ILLEGAL_ARGUMENT, "Priority must be " +
+        {
+            throw new IllegalArgumentException("Priority must be " +
                     "between 0 and (2**31 - 1)");
+        }
         else
             this.priority = priority;
     }
