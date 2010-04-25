@@ -15,6 +15,7 @@ import java.util.logging.*;
 import org.ice4j.*;
 import org.ice4j.ice.*;
 import org.ice4j.socket.*;
+import org.ice4j.stack.*;
 
 /**
  * A <tt>HostCandidateHarvester</tt> gathers host <tt>Candidate</tt>s for a
@@ -107,6 +108,12 @@ public class HostCandidateHarvester
                 HostCandidate candidate = new HostCandidate(sock, component);
                 candidate.setVirtual(NetworkUtils.isInterfaceVirtual(iface));
                 component.addLocalCandidate(candidate);
+
+                //We are most certainly going to use all local host candidates
+                //for sending and receiving STUN connectivity checks. In case
+                //we have enabled STUN, we are going to use them as well while
+                //harvesting reflexive candidates.
+                createAndRegisterStunSocket(candidate);
             }
         }
 
@@ -220,5 +227,21 @@ public class HostCandidateHarvester
 
         throw new BindException("Could not bind to any port between "
                         + minPort + " and " + (port -1));
+    }
+
+    /**
+     * Since we are most certainly going to use all local host candidates for
+     * sending and receiving STUN connectivity checks, and possibly for STUN
+     * harvesting too, we might as well create their STUN sockets here and
+     * register them with the StunStack. This allows us to avoid conflicts
+     * between the STUN harvester and the connectivity checks later on.
+     *
+     * @param candidate the candidate whose stun socket we'd like to initialize
+     * and register with the StunStack.
+     */
+    private void createAndRegisterStunSocket(HostCandidate candidate)
+    {
+        DatagramSocket stunSocket = candidate.getStunSocket(null);
+        StunStack.getInstance().addSocket(stunSocket);
     }
 }

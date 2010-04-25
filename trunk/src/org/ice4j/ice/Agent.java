@@ -109,7 +109,7 @@ public class Agent
         ufrag = new BigInteger(24, random).toString(32);
         password = new BigInteger(128, random).toString(32);
 
-        tieBreaker = random.nextLong();
+        tieBreaker = Math.abs(random.nextLong());
     }
 
     /**
@@ -233,6 +233,16 @@ public class Agent
     public void startChecks()
     {
         initCheckLists();
+
+        List<IceMediaStream> streams = getStreams();
+
+        for(IceMediaStream stream : streams)
+        {
+            CheckList list = stream.getCheckList();
+
+            ConnectivityCheckDispatcher client = new ConnectivityCheckDispatcher(list);
+            client.startChecks();
+        }
     }
 
     /**

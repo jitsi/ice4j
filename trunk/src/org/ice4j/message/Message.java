@@ -97,6 +97,15 @@ public abstract class Message
     protected LinkedHashMap<Character, Attribute> attributes
                                 = new LinkedHashMap<Character, Attribute>();
 
+
+    /**
+     * Attribute presentity is a thing of RFC 3489 and no longer exists in
+     * 5389. we are not using it any longer and if at some point we decide we
+     * need it in certain situations, then make extend use of the following
+     * field.
+     */
+    private static boolean rfc3489CompatibilityMode = false;
+
     /**
      * Desribes which attributes are present in which messages.  An
      * M indicates that inclusion of the attribute in the message is
@@ -258,17 +267,19 @@ public abstract class Message
     /**
      * Adds the specified attribute to this message. If an attribute with that
      * name was already added, it would be replaced.
+     *
      * @param attribute the attribute to add to this message.
-     * @throws StunException if the message cannot contain
+     *
+     * @throws IllegalArgumentException if the message cannot contain
      * such an attribute.
      */
     public void addAttribute(Attribute attribute)
-        throws StunException
+        throws IllegalArgumentException
     {
         Character attributeType = new Character(attribute.getAttributeType());
         if (getAttributePresentity(attributeType.charValue()) == N_A)
         {
-            throw new StunException(StunException.ILLEGAL_ARGUMENT,
+            throw new IllegalArgumentException(
                                     "The attribute "
                                     + attribute.getName()
                                     + " is not allowed in a "
@@ -328,12 +339,8 @@ public abstract class Message
      * initialized (could provoke attribute discrepancies). Called by
      * messageFactory.
      * @param messageType the message type.
-     * @throws StunException ILLEGAL_ARGUMENT if message type is not valid in
-     * the current context (e.g. when trying to set a Response type to a Request
-     * and vice versa)
      */
     protected void setMessageType(char messageType)
-        throws StunException
     {
         this.messageType = messageType;
     }
@@ -607,6 +614,10 @@ public abstract class Message
     protected void validateAttributePresentity()
         throws IllegalStateException
     {
+        //the
+        if(! rfc3489CompatibilityMode )
+            return;
+
         for(char i = Attribute.MAPPED_ADDRESS; i < Attribute.REFLECTED_FROM; i++)
             if(getAttributePresentity(i) == M && getAttribute(i) == null)
                 throw new IllegalStateException(

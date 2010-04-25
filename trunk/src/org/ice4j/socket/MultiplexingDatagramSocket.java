@@ -372,7 +372,9 @@ public class MultiplexingDatagramSocket
                                 {
                                     socket.received.add(clone(p));
                                     accepted = true;
-                                    break;
+                                    //emil: don't break, we want all
+                                    //filtering sockets to get this
+                                    //break;
                                 }
 
                             if (!accepted)

@@ -34,11 +34,13 @@ public class StunDatagramPacketFilter
     /**
      * Initializes a new <tt>StunDatagramPacketFilter</tt> which will accept
      * <tt>DatagramPacket</tt>s which represent STUN messages and which are part
-     * of the communication with a specific STUN server.
+     * of the communication with a specific STUN server (or any server if
+     * <tt>stunServer</tt> is <tt>null</tt>).
      *
-     * @param turnServer the <tt>TransportAddress</tt> of the STUN server
+     * @param stunServer the <tt>TransportAddress</tt> of the STUN server
      * <tt>DatagramPacket</tt>s representing STUN messages from and to which
-     * will be accepted by the new instance
+     * will be accepted by the new instance or <tt>null</tt> if we would like
+     * to accept stun messages from any destination.
      */
     public StunDatagramPacketFilter(TransportAddress stunServer)
     {
@@ -46,9 +48,19 @@ public class StunDatagramPacketFilter
     }
 
     /**
+     * Initializes a new <tt>StunDatagramPacketFilter</tt> which will accept
+     * <tt>DatagramPacket</tt>s which represent STUN messages received from
+     * any destination.
+     */
+    public StunDatagramPacketFilter()
+    {
+        this(null);
+    }
+
+    /**
      * Determines whether a specific <tt>DatagramPacket</tt> represents a STUN
-     * message which is part of the communication with the STUN server
-     * associated with this instance.
+     * message and whether it is part of the communication with the STUN server
+     * if one was associated with this instance.
      *
      * @param p the <tt>DatagramPacket</tt> which is to be checked whether it is
      * a STUN message which is part of the communicator with the STUN server
@@ -59,31 +71,36 @@ public class StunDatagramPacketFilter
      */
     public boolean accept(DatagramPacket p)
     {
-        if (stunServer.equals(p.getSocketAddress()))
+        //if we were instantiated for a specific stun server, and the packet
+        //did not originate there, we reject it.
+        if (stunServer != null
+            && !stunServer.equals(p.getSocketAddress()))
+        {
+            return false;
+        }
+
+        /*
+         * All STUN messages MUST start with a 20-byte header followed by
+         * zero or more Attributes.
+         */
+        if (p.getLength() >= 20)
         {
             /*
-             * All STUN messages MUST start with a 20-byte header followed by
-             * zero or more Attributes.
+             * The most significant 2 bits of every STUN message MUST be
+             * zeroes. This can be used to differentiate STUN packets from
+             * other protocols when STUN is multiplexed with other protocols
+             * on the same port.
              */
-            if (p.getLength() >= 20)
+            byte[] data = p.getData();
+            int offset = p.getOffset();
+            byte b0 = data[offset];
+
+            if ((b0 & 0xC0) == 0)
             {
-                /*
-                 * The most significant 2 bits of every STUN message MUST be
-                 * zeroes. This can be used to differentiate STUN packets from
-                 * other protocols when STUN is multiplexed with other protocols
-                 * on the same port.
-                 */
-                byte[] data = p.getData();
-                int offset = p.getOffset();
-                byte b0 = data[offset];
-    
-                if ((b0 & 0xC0) == 0)
-                {
-                    byte b1 = data[offset + 1];
-                    char method = (char) ((b0 & 0xFE) | (b1 & 0xEF));
-    
-                    return acceptMethod(method);
-                }
+                byte b1 = data[offset + 1];
+                char method = (char) ((b0 & 0xFE) | (b1 & 0xEF));
+
+                return acceptMethod(method);
             }
         }
         return false;

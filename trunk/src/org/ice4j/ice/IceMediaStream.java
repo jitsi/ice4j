@@ -453,7 +453,7 @@ public class IceMediaStream
      * @return the list of <tt>CandidatePair</tt>s to be used in checks for
      * this stream.
      */
-    public List<CandidatePair> getCheckList()
+    public CheckList getCheckList()
     {
         return checkList;
     }

@@ -143,4 +143,25 @@ public class XorMappedAddressAttribute
     {
         return applyXor(getAddress(), xorMask);
     }
+
+    /**
+     * Applies a XOR mask to the specified address and then sets it as the value
+     * transported by this attribute.
+     *
+     * @param address the address that we should xor and then record in this
+     * attribute.
+     * @param transactionID the transaction identifier that we should use
+     * when creating the XOR mask.
+     */
+    public void setAddress(TransportAddress address, byte[] transactionID)
+    {
+        byte[] xorMask = new byte[16];
+
+        System.arraycopy(Message.MAGIC_COOKIE, 0, xorMask, 0, 4);
+        System.arraycopy(transactionID, 0, xorMask, 4, 12);
+
+        TransportAddress xorAddress = applyXor(address, xorMask);
+
+        super.setAddress(xorAddress);
+    }
 }
