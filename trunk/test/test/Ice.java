@@ -41,10 +41,10 @@ public class Ice
         long endTime = System.currentTimeMillis();
 
         transferRemoteCandidates(localAgent, remotePeer);
-        localAgent.setRemoteUserName(remotePeer.getUserName());
+        localAgent.setRemoteUfrag(remotePeer.getLocalUfrag());
         localAgent.setRemotePassword(remotePeer.getPassword());
 
-        remotePeer.setRemoteUserName(localAgent.getUserName());
+        remotePeer.setRemoteUfrag(localAgent.getLocalUfrag());
         remotePeer.setRemotePassword(localAgent.getPassword());
 
         System.out.println("Total candidate gathering time: "
