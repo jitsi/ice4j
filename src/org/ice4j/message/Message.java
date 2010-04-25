@@ -238,7 +238,7 @@ public abstract class Message
     };
 
     /**
-     * Creates an empty STUN Mesage.
+     * Creates an empty STUN Message.
      */
     protected Message()
     {
@@ -391,6 +391,9 @@ public abstract class Message
      */
     protected byte getAttributePresentity(char attributeType)
     {
+        if(!rfc3489CompatibilityMode)
+            return O;
+
         byte msgIndex = -1;
         byte attributeIndex = -1;
 
@@ -529,11 +532,22 @@ public abstract class Message
             = attributes.entrySet().iterator();
         while (iter.hasNext())
         {
-
             Attribute attribute = iter.next().getValue();
-            byte[] attBinValue = attribute.encode();
 
-            System.arraycopy(attBinValue, 0, binMsg, offset, attBinValue.length);
+            //special handling for message integrity and fingerprint values
+            byte[] attBinValue;
+            if (attribute instanceof ContentDependentAttribute)
+            {
+                 attBinValue = ((ContentDependentAttribute)attribute)
+                     .encode(binMsg, 0, offset);
+            }
+            else
+            {
+                attBinValue = attribute.encode();
+            }
+
+            System.arraycopy(
+                        attBinValue, 0, binMsg, offset, attBinValue.length);
             offset += attBinValue.length;
         }
 

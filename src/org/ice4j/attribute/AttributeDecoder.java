@@ -34,7 +34,7 @@ public class AttributeDecoder
     {
         if(bytes == null || bytes.length < Attribute.HEADER_LENGTH)
             throw new StunException(StunException.ILLEGAL_ARGUMENT,
-                                    "Could not decode the specified binary array.");
+                         "Could not decode the specified binary array.");
 
         //Discover attribute type
         char attributeType   = (char)((bytes[offset]<<8)|bytes[offset + 1]);
@@ -47,8 +47,8 @@ public class AttributeDecoder
 
         if(attributeLength > bytes.length - offset )
             throw new StunException(StunException.ILLEGAL_ARGUMENT,
-                                    "The indicated attribute length ("+attributeLength+") "
-                                    +"does not match the length of the passed binary array");
+                     "The indicated attribute length ("+attributeLength+") "
+                     +"does not match the length of the passed binary array");
 
         Attribute decodedAttribute = null;
 
@@ -64,8 +64,7 @@ public class AttributeDecoder
             case Attribute.ERROR_CODE:
                 decodedAttribute = new ErrorCodeAttribute(); break;
             case Attribute.MESSAGE_INTEGRITY:
-                throw new UnsupportedOperationException(
-                    "The MESSAGE-INTEGRITY Attribute is not yet implemented.");
+                decodedAttribute = new MessageIntegrityAttribute(); break;
             case Attribute.PASSWORD:
                 throw new UnsupportedOperationException(
                     "The PASSWORD Attribute is not yet implemented.");
@@ -113,13 +112,16 @@ public class AttributeDecoder
                 decodedAttribute = new ReservationTokenAttribute(); break;
 
             //According to rfc3489 we should silently ignore unknown attributes.
-            default: decodedAttribute = new OptionalAttribute(Attribute.UNKNOWN_OPTIONAL_ATTRIBUTE);
+            default: decodedAttribute
+                = new OptionalAttribute(Attribute.UNKNOWN_OPTIONAL_ATTRIBUTE);
                 break;
         }
 
         decodedAttribute.setAttributeType(attributeType);
 
-        decodedAttribute.decodeAttributeBody(bytes, (char)(Attribute.HEADER_LENGTH + offset), attributeLength);
+        decodedAttribute.decodeAttributeBody(bytes,
+                        (char)(Attribute.HEADER_LENGTH + offset),
+                        attributeLength);
 
         return decodedAttribute;
     }

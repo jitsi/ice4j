@@ -124,6 +124,7 @@ public abstract class Attribute
 
     /**
      * Returns the length of this attribute's body.
+     *
      * @return the length of this attribute's value.
      */
     public abstract char getDataLength();
@@ -132,12 +133,14 @@ public abstract class Attribute
      * Returns the human readable name of this attribute. Attribute names do
      * not really matter from the protocol point of view. They are only used
      * for debugging and readability.
+     *
      * @return this attribute's name.
      */
     public abstract String getName();
 
     /**
      * Returns the attribute's type.
+     *
      * @return the type of this attribute.
      */
     public char getAttributeType()
@@ -147,6 +150,7 @@ public abstract class Attribute
 
     /**
      * Sets the attribute's type.
+     *
      * @param type the new type of this attribute
      */
     protected void setAttributeType(char type)
@@ -159,6 +163,7 @@ public abstract class Attribute
     * have the same type length and value.
     *
     * @param obj the object to compare this attribute with.
+    *
     * @return true if the attributes are equal and false otherwise.
     */
 
@@ -166,6 +171,7 @@ public abstract class Attribute
 
     /**
      * Returns a binary representation of this attribute.
+     *
      * @return a binary representation of this attribute.
      */
     public abstract byte[] encode();
@@ -174,14 +180,14 @@ public abstract class Attribute
      * Sets this attribute's fields according to attributeValue array.
      *
      * @param attributeValue a binary array containing this attribute's field
-     *                       values and NOT containing the attribute header.
+     * values and NOT containing the attribute header.
      * @param offset the position where attribute values begin (most often
-     *                  offset is equal to the index of the first byte after
-     *                  length)
+     * offset is equal to the index of the first byte after length)
      * @param length the length of the binary array.
+     *
      * @throws StunException if attrubteValue contains invalid data.
      */
-    abstract void decodeAttributeBody(byte[] attributeValue, char offset, char length)
+    abstract void decodeAttributeBody(
+                    byte[] attributeValue, char offset, char length)
         throws StunException;
-
 }

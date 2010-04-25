@@ -15,6 +15,7 @@ import org.ice4j.*;
  * The value of USERNAME is a variable length value.
  *
  * @author Sebastien Vincent
+ * @author Emil Ivov
  */
 public class UsernameAttribute extends Attribute
 {
@@ -39,14 +40,14 @@ public class UsernameAttribute extends Attribute
     /**
      * Copies the value of the username attribute from the specified
      * attributeValue.
+     *
      * @param attributeValue a binary array containing this attribute's
      *   field values and NOT containing the attribute header.
      * @param offset the position where attribute values begin (most often
      *   offset is equal to the index of the first byte after length)
      * @param length the length of the binary array.
-     * @throws StunException if attributeValue contains invalid data.
      */
-    void decodeAttributeBody(byte[] attributeValue, char offset, char length) throws StunException
+    void decodeAttributeBody(byte[] attributeValue, char offset, char length)
     {
         username = new byte[length];
         System.arraycopy(attributeValue, offset, username, 0, length);
@@ -54,12 +55,15 @@ public class UsernameAttribute extends Attribute
 
     /**
      * Returns a binary representation of this attribute.
+     *
      * @return a binary representation of this attribute.
      */
     public byte[] encode()
     {
         char type = getAttributeType();
-        byte binValue[] = new byte[HEADER_LENGTH + getDataLength() + (getDataLength() % 4)];
+        byte binValue[] = new byte[HEADER_LENGTH + getDataLength()
+                                   //add padding
+                                   + (4 - getDataLength()%4)%4];
 
         //Type
         binValue[0] = (byte)(type>>8);
@@ -69,7 +73,7 @@ public class UsernameAttribute extends Attribute
         binValue[2] = (byte)(getDataLength()>>8);
         binValue[3] = (byte)(getDataLength()&0x00FF);
 
-        /* username */
+        //username
         System.arraycopy(username, 0, binValue, 4, getDataLength());
 
         return binValue;
@@ -77,6 +81,7 @@ public class UsernameAttribute extends Attribute
 
     /**
      * Returns the length of this attribute's body.
+     *
      * @return the length of this attribute's value.
      */
     public char getDataLength()
@@ -94,7 +99,7 @@ public class UsernameAttribute extends Attribute
     }
 
     /**
-     * Returns a (cloned) byte array containg the data value of the username
+     * Returns a (cloned) byte array containing the data value of the username
      * attribute.
      * @return the binary array containing the username.
      */
@@ -111,6 +116,7 @@ public class UsernameAttribute extends Attribute
     /**
      * Copies the specified binary array into the the data value of the username
      * attribute.
+     *
      * @param username the binary array containing the username.
      */
     public void setUsername(byte[] username)
@@ -126,8 +132,9 @@ public class UsernameAttribute extends Attribute
     }
 
     /**
-     * Compares two STUN Attributes. Two attributes are considered equal when they
-     * have the same type length and value.
+     * Compares two STUN Attributes. Two attributes are considered equal when
+     * they have the same type length and value.
+     *
      * @param obj the object to compare this attribute with.
      * @return true if the attributes are equal and false otherwise.
      */
