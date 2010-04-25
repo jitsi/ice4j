@@ -89,15 +89,15 @@ public class TransactionSupportTests extends TestCase
         requestCollector = new PlainRequestCollector();
         responseCollector = new PlainResponseCollector();
 
-        System.setProperty("org.ice4j.PROPAGATE_RECEIVED_RETRANSMISSIONS",
+        System.setProperty(StackProperties.PROPAGATE_RECEIVED_RETRANSMISSIONS,
                            "false");
-        System.setProperty("org.ice4j.KEEP_CLIENT_TRANS_AFTER_A_RESPONSE",
+        System.setProperty(StackProperties.KEEP_CRANS_AFTER_A_RESPONSE,
                            "false");
-        System.setProperty("org.ice4j.MAX_RETRANSMISSIONS",
+        System.setProperty(StackProperties.MAX_CTRAN_RETRANSMISSIONS,
                            "");
-        System.setProperty("org.ice4j.MAX_WAIT_INTERVAL",
+        System.setProperty(StackProperties.MAX_CTRAN_RETRANS_TIMER,
                            "");
-        System.setProperty("org.ice4j.ORIGINAL_WAIT_INTERVAL",
+        System.setProperty(StackProperties.FIRST_CTRAN_RETRANS_AFTER,
                            "");
     }
 
@@ -118,15 +118,15 @@ public class TransactionSupportTests extends TestCase
         requestCollector = null;
         responseCollector = null;
 
-        System.setProperty("org.ice4j.PROPAGATE_RECEIVED_RETRANSMISSIONS",
+        System.setProperty(StackProperties.PROPAGATE_RECEIVED_RETRANSMISSIONS,
                            "false");
-        System.setProperty("org.ice4j.KEEP_CLIENT_TRANS_AFTER_A_RESPONSE",
+        System.setProperty(StackProperties.KEEP_CRANS_AFTER_A_RESPONSE,
                            "false");
-        System.setProperty("org.ice4j.MAX_RETRANSMISSIONS",
+        System.setProperty(StackProperties.MAX_CTRAN_RETRANSMISSIONS,
                            "");
-        System.setProperty("org.ice4j.MAX_WAIT_INTERVAL",
+        System.setProperty(StackProperties.MAX_CTRAN_RETRANS_TIMER,
                            "");
-        System.setProperty("org.ice4j.ORIGINAL_WAIT_INTERVAL",
+        System.setProperty(StackProperties.FIRST_CTRAN_RETRANS_AFTER,
                            "");
 
         super.tearDown();
@@ -140,15 +140,15 @@ public class TransactionSupportTests extends TestCase
     public void testClientRetransmissions() throws Exception
     {
         String oldRetransValue = System.getProperty(
-                                            "org.ice4j.MAX_RETRANSMISSIONS");
+                                            StackProperties.MAX_CTRAN_RETRANSMISSIONS);
         String oldMaxWaitValue = System.getProperty(
-                                            "org.ice4j.MAX_WAIT_INTERVAL");
+                                            StackProperties.MAX_CTRAN_RETRANS_TIMER);
 
-        System.setProperty("org.ice4j.MAX_WAIT_INTERVAL", "100");
-        System.setProperty("org.ice4j.MAX_RETRANSMISSIONS", "2");
+        System.setProperty(StackProperties.MAX_CTRAN_RETRANS_TIMER, "100");
+        System.setProperty(StackProperties.MAX_CTRAN_RETRANSMISSIONS, "2");
 
         //prepare to listen
-        System.setProperty("org.ice4j.PROPAGATE_RECEIVED_RETRANSMISSIONS",
+        System.setProperty(StackProperties.PROPAGATE_RECEIVED_RETRANSMISSIONS,
                            "true");
 
         StunStack.getInstance()
@@ -171,16 +171,16 @@ public class TransactionSupportTests extends TestCase
         //restore the retransmissions prop in case others are counting on
         //defaults.
         if(oldRetransValue != null)
-            System.getProperty( "org.ice4j.MAX_RETRANSMISSIONS",
+            System.getProperty( StackProperties.MAX_CTRAN_RETRANSMISSIONS,
                                 oldRetransValue);
         else
-            System.clearProperty("org.ice4j.MAX_RETRANSMISSIONS");
+            System.clearProperty(StackProperties.MAX_CTRAN_RETRANSMISSIONS);
 
         if(oldMaxWaitValue != null)
-            System.getProperty( "org.ice4j.MAX_WAIT_INTERVAL",
+            System.getProperty( StackProperties.MAX_CTRAN_RETRANS_TIMER,
                                 oldRetransValue);
         else
-            System.clearProperty("org.ice4j.MAX_WAIT_INTERVAL");
+            System.clearProperty(StackProperties.MAX_CTRAN_RETRANS_TIMER);
     }
 
     /**
@@ -192,8 +192,8 @@ public class TransactionSupportTests extends TestCase
     public void testServerRetransmissionHiding() throws Exception
     {
         String oldRetransValue = System.getProperty(
-                "org.ice4j.MAX_RETRANSMISSIONS");
-        System.setProperty("org.ice4j.MAX_RETRANSMISSIONS", "2");
+                StackProperties.MAX_CTRAN_RETRANSMISSIONS);
+        System.setProperty(StackProperties.MAX_CTRAN_RETRANSMISSIONS, "2");
         //prepare to listen
         StunStack.getInstance().addRequestListener(
                         serverAddress, requestCollector);
@@ -216,10 +216,10 @@ public class TransactionSupportTests extends TestCase
         //restore the retransmissions prop in case others are counting on
         //defaults.
         if(oldRetransValue != null)
-            System.getProperty( "org.ice4j.MAX_RETRANSMISSIONS",
+            System.getProperty( StackProperties.MAX_CTRAN_RETRANSMISSIONS,
                                 oldRetransValue);
         else
-            System.clearProperty("org.ice4j.MAX_RETRANSMISSIONS");
+            System.clearProperty(StackProperties.MAX_CTRAN_RETRANSMISSIONS);
     }
 
     /**
@@ -232,12 +232,12 @@ public class TransactionSupportTests extends TestCase
     public void testServerResponseRetransmissions() throws Exception
     {
         String oldRetransValue = System.getProperty(
-            "org.ice4j.MAX_RETRANSMISSIONS");
-        System.setProperty("org.ice4j.MAX_RETRANSMISSIONS", "2");
-        System.setProperty("org.ice4j.MAX_WAIT_INTERVAL", "100");
+            StackProperties.MAX_CTRAN_RETRANSMISSIONS);
+        System.setProperty(StackProperties.MAX_CTRAN_RETRANSMISSIONS, "2");
+        System.setProperty(StackProperties.MAX_CTRAN_RETRANS_TIMER, "100");
 
         //prepare to listen
-        System.setProperty("org.ice4j.KEEP_CLIENT_TRANS_AFTER_A_RESPONSE",
+        System.setProperty(StackProperties.KEEP_CRANS_AFTER_A_RESPONSE,
                            "true");
         StunStack.getInstance().addRequestListener(
                         serverAddress, requestCollector);
@@ -270,12 +270,12 @@ public class TransactionSupportTests extends TestCase
         //restore the retransmissions prop in case others are counting on
         //defaults.
         if(oldRetransValue != null)
-            System.getProperty( "org.ice4j.MAX_RETRANSMISSIONS",
+            System.getProperty( StackProperties.MAX_CTRAN_RETRANSMISSIONS,
                                 oldRetransValue);
         else
-            System.clearProperty("org.ice4j.MAX_RETRANSMISSIONS");
+            System.clearProperty(StackProperties.MAX_CTRAN_RETRANSMISSIONS);
 
-        System.clearProperty("org.ice4j.MAX_WAIT_INTERVAL");
+        System.clearProperty(StackProperties.MAX_CTRAN_RETRANS_TIMER);
     }
 
     /**
@@ -316,7 +316,8 @@ public class TransactionSupportTests extends TestCase
 
         StunMessageEvent evt2 = reqs2.get(0);
 
-        assertFalse("Consecutive requests were assigned the same transaction id",
+        assertFalse(
+            "Consecutive requests were assigned the same transaction id",
             Arrays.equals( evt1.getMessage().getTransactionID(),
                            evt2.getMessage().getTransactionID()));
     }
@@ -332,10 +333,10 @@ public class TransactionSupportTests extends TestCase
     {
         //MAX_RETRANSMISSIONS
 
-        System.setProperty("org.ice4j.MAX_RETRANSMISSIONS",
+        System.setProperty(StackProperties.MAX_CTRAN_RETRANSMISSIONS,
                            "2");
         //make sure we see retransmissions so that we may count them
-        System.setProperty("org.ice4j.PROPAGATE_RECEIVED_RETRANSMISSIONS",
+        System.setProperty(StackProperties.PROPAGATE_RECEIVED_RETRANSMISSIONS,
                            "true");
         StunStack.getInstance().addRequestListener(
                         serverAddress, requestCollector);
@@ -369,10 +370,10 @@ public class TransactionSupportTests extends TestCase
         throws Exception
     {
         //MAX_RETRANSMISSIONS
-        System.setProperty("org.ice4j.ORIGINAL_WAIT_INTERVAL",
+        System.setProperty(StackProperties.FIRST_CTRAN_RETRANS_AFTER,
                            "50");
         //make sure we see retransmissions so that we may count them
-        System.setProperty("org.ice4j.PROPAGATE_RECEIVED_RETRANSMISSIONS",
+        System.setProperty(StackProperties.PROPAGATE_RECEIVED_RETRANSMISSIONS,
                            "true");
         StunStack.getInstance().addRequestListener(
                         serverAddress, requestCollector);
@@ -410,12 +411,12 @@ public class TransactionSupportTests extends TestCase
         throws Exception
     {
         //MAX_RETRANSMISSIONS
-        System.setProperty("org.ice4j.MAX_WAIT_INTERVAL",
+        System.setProperty(StackProperties.MAX_CTRAN_RETRANS_TIMER,
                            "100");
         //make sure we see retransmissions so that we may count them
-        System.setProperty("org.ice4j.PROPAGATE_RECEIVED_RETRANSMISSIONS",
+        System.setProperty(StackProperties.PROPAGATE_RECEIVED_RETRANSMISSIONS,
                            "true");
-        System.setProperty("org.ice4j.MAX_RETRANSMISSIONS",
+        System.setProperty(StackProperties.MAX_CTRAN_RETRANSMISSIONS,
                            "11");
         StunStack.getInstance()
             .addRequestListener(serverAddress, requestCollector);
