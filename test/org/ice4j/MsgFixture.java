@@ -1,8 +1,8 @@
 /*
- * Stun4j, the OpenSource Java Solution for NAT and Firewall Traversal.
+ * ice4j, the OpenSource Java Solution for NAT and Firewall Traversal.
+ * Maintained by the SIP Communicator community (http://sip-communicator.org).
  *
- * Distributable under LGPL license.
- * See terms of license at gnu.org.
+ * Distributable under LGPL license. See terms of license at gnu.org.
  */
 package org.ice4j;
 
@@ -84,7 +84,7 @@ public class MsgFixture
     public static final char UNKNOWN_ATTRIBUTES_CNT_ENC_TST   = 2;
     public byte[] unknownAttsEncodeExpectedResult = new byte[]
     {0x00,        0x0a,       0x00,       0x04, //Type Length
-     0x00,	  0x20,       0x00,       0x21};
+     0x00,      0x20,       0x00,       0x21};
 
     //--- change request
     public static final boolean CHANGE_IP_FLAG_1 = false;
@@ -132,7 +132,7 @@ public class MsgFixture
                    0x09,       0x10,       0x11,       0x12,
                    0x13,       0x14,       0x15,       0x16
         };
-    
+
     public byte[]          bindingRequest = new byte[]
     {
        0x00,       0x01,       0x00,       0x08, //STUN Msg Type  |  Msg Length
@@ -177,7 +177,7 @@ public class MsgFixture
        0x00,       0x00,       0x00,       0x00 //Don't change neither IP nor port
     };
 
-    public byte[] 	   bindingResponse = new byte[]
+    public byte[]        bindingResponse = new byte[]
        {0x01,       0x01,       0x00,       0x24, //Type Length
         0x21,       0x12,       (byte)0xA4,       0x42, //Transaction ID
         0x05,       0x06,       0x07,       0x08,
