@@ -55,6 +55,12 @@ public class FingerprintAttribute
      */
     public static final byte[] XOR_MASK = { 0x53, 0x54, 0x55, 0x4e};
 
+    /**
+     * The CRC32 checksum that this attribute is carrying. Only used in incoming
+     * messages.
+     */
+    private byte[] crc;
+
 
     /**
      * Creates a <tt>FingerPrintAttribute</tt> instance.
@@ -64,6 +70,17 @@ public class FingerprintAttribute
         super(FINGERPRINT);
     }
 
+    /**
+     * Returns the CRC32 checksum that this attribute is carrying. Only makes
+     * sense for incoming messages and hence only set for them.
+     *
+     * @return the CRC32 checksum that this attribute is carrying or
+     * <tt>null</tt> if it has not been set.
+     */
+    public byte[] getChecksum()
+    {
+        return crc;
+    }
     /**
      * Returns the length of this attribute's body.
      *
@@ -201,18 +218,7 @@ public class FingerprintAttribute
         incomingCrcBytes[2] = attributeValue[offset + 2];
         incomingCrcBytes[3] = attributeValue[offset + 3];
 
-        //now check whether the CRC really is what it's supposed to be.
-        //re calculate the check sum
-        byte[] realCrcBytes = calculateXorCRC32(messageHead, mhOffset, mhLen);
-
-        //CRC validation.
-        if ( ! Arrays.equals(incomingCrcBytes, realCrcBytes))
-            throw new StunException(StunException.ILLEGAL_ARGUMENT,
-                "An incoming message arrived with a wrong FINGERPRINT "
-                +"attribute value. "
-                +"CRC Was:"  + Arrays.toString(incomingCrcBytes)
-                + ". Should have been:" + Arrays.toString(realCrcBytes)
-                +". Will ignore.");
+        this.crc = incomingCrcBytes;
     }
 
     /**
@@ -227,7 +233,7 @@ public class FingerprintAttribute
      * @return the CRC value that should be sent in a <tt>FINGERPRINT</tt>
      * attribute traveling in the <tt>message</tt> message.
      */
-    private static byte[] calculateXorCRC32(byte[] message, int offset, int len)
+    public static byte[] calculateXorCRC32(byte[] message, int offset, int len)
     {
         //now check whether the CRC really is what it's supposed to be.
         //re calculate the check sum
