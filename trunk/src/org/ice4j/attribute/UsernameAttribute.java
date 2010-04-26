@@ -8,8 +8,6 @@ package org.ice4j.attribute;
 
 import java.util.*;
 
-import org.ice4j.*;
-
 /**
  * The USERNAME attribute is used for message integrity.
  * The value of USERNAME is a variable length value.
@@ -91,6 +89,7 @@ public class UsernameAttribute extends Attribute
 
     /**
      * Returns the human readable name of this attribute.
+     *
      * @return this attribute's name.
      */
     public String getName()
@@ -101,6 +100,7 @@ public class UsernameAttribute extends Attribute
     /**
      * Returns a (cloned) byte array containing the data value of the username
      * attribute.
+     *
      * @return the binary array containing the username.
      */
     public byte[] getUsername()
@@ -136,6 +136,7 @@ public class UsernameAttribute extends Attribute
      * they have the same type length and value.
      *
      * @param obj the object to compare this attribute with.
+     *
      * @return true if the attributes are equal and false otherwise.
      */
     public boolean equals(Object obj)
