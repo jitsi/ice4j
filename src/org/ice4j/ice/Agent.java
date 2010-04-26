@@ -337,7 +337,7 @@ public class Agent
      * @return that password that should be advertised in session descriptions
      * containing ICE data from this agent.
      */
-    public String getPassword()
+    public String getLocalPassword()
     {
         return password;
     }
@@ -401,7 +401,7 @@ public class Agent
     }
 
     /**
-     * Returns the user name that we should respect a peer <tt>Agent</tt> to use
+     * Returns the user name that we should tell a peer <tt>Agent</tt> to use
      * in connectivity checks for outgoing Binding Requests. According to RFC
      * 5245, a Binding Request serving as a connectivity check MUST utilize the
      * STUN short term credential mechanism. The username for the credential is
@@ -511,7 +511,7 @@ public class Agent
     {
         StringBuffer buff = new StringBuffer("ICE Agent (stream-count=");
 
-        buff.append(getStreamCount()).append(" ice-pwd:").append(getPassword());
+        buff.append(getStreamCount()).append(" ice-pwd:").append(getLocalPassword());
         buff.append(getStreamCount()).append(" ice-ufrag:")
                                                     .append(getLocalUfrag());
         buff.append(getStreamCount()).append(" tie-breaker:" + getTieBreaker());
