@@ -678,6 +678,7 @@ public abstract class Message
                 binMessage, (char)initialOffset,
                     (char)(offset - initialOffset)); // message head
 
+            //assert Message Integrity
             if (att instanceof MessageIntegrityAttribute)
             {
                 if (!message.validateMessageIntegrity(
@@ -690,10 +691,68 @@ public abstract class Message
 
             }
 
+            //check finger print CRC
+            if (att instanceof FingerprintAttribute)
+            {
+                if (!validateFingerprint((FingerprintAttribute)att,
+                                binMessage, originalOffset, offset))
+                {
+                    throw new StunException(StunException.ILLEGAL_ARGUMENT,
+                                    "Wrong value in FINGERPRINT");
+                }
+
+            }
+
             message.addAttribute(att);
             offset += att.getDataLength() + Attribute.HEADER_LENGTH;
         }
         return message;
+    }
+
+    /**
+     * Recalculates the fingerprint CRC32 checksum of the <tt>message</tt>
+     * array so that we could compare it with the value brought by the
+     * {@link FingerprintAttribute}.
+     *
+     * @param fingerprint the attribute that we need to validate.
+     * @param message the message whose CRC32 checksum we'd need to recalculate.
+     * @param offset the index in <tt>message</tt> where data starts.
+     * @param length the number of bytes in <tt>message</tt> that the CRC32
+     * would need to be calculated over.
+     *
+     * @return <tt>true</tt> if <tt>fingerprint</tt> contains a valid CRC32
+     * value and <tt>false</tt> otherwise.
+     */
+    public static boolean validateFingerprint(FingerprintAttribute fingerprint,
+                                              byte[]               message,
+                                              int                  offset,
+                                              int                  length)
+    {
+
+        byte[] incomingCrcBytes = fingerprint.getChecksum();
+
+        //now check whether the CRC really is what it's supposed to be.
+        //re calculate the check sum
+        byte[] realCrcBytes = FingerprintAttribute.calculateXorCRC32(
+                        message, offset, length);
+
+        //CRC validation.
+        if ( ! Arrays.equals(incomingCrcBytes, realCrcBytes))
+        {
+            if (logger.isLoggable(Level.FINE))
+            {
+                logger.fine(
+                        "An incoming message arrived with a wrong FINGERPRINT "
+                        +"attribute value. "
+                        +"CRC Was:"  + Arrays.toString(incomingCrcBytes)
+                        + ". Should have been:" + Arrays.toString(realCrcBytes)
+                        +". Will ignore.");
+            }
+
+            return false;
+        }
+
+        return true;
     }
 
     /**
