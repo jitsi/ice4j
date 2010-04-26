@@ -206,8 +206,8 @@ class StunServerTransaction
             return;
 
         stackCallback.getNetAccessManager().sendMessage(response,
-                                                           localSendingAddress,
-                                                           responseDestination);
+                        localSendingAddress,
+                        responseDestination);
     }
 
     /**

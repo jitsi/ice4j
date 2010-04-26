@@ -44,7 +44,7 @@ public class StunStack
      * The {@link CredentialsManager} that we are using for retrieving
      * passwords.
      */
-    private static final CredentialsManager credentialsManager
+    private final CredentialsManager credentialsManager
         = new CredentialsManager();
 
     /**
@@ -426,6 +426,7 @@ public class StunStack
             }
 
             eventDispatcher.fireMessageEvent(event);
+
         }
         //response
         else if(msg instanceof Response)
@@ -456,7 +457,7 @@ public class StunStack
      * @return the {@link CredentialsManager} that this stack is using for
      * verification of {@link MessageIntegrityAttribute}s.
      */
-    public static CredentialsManager getCredentialsManager()
+    public CredentialsManager getCredentialsManager()
     {
         return credentialsManager;
     }

@@ -7,6 +7,7 @@
 package org.ice4j.message;
 
 import java.util.*;
+import java.util.logging.*;
 
 import org.ice4j.*;
 import org.ice4j.attribute.*;
@@ -26,6 +27,13 @@ import sun.tools.tree.*;
  */
 public abstract class Message
 {
+    /**
+     * The <tt>Logger</tt> used by the <tt>Message</tt>
+     * class and its instances for logging output.
+     */
+    private static final Logger logger = Logger.getLogger(Message.class
+                    .getName());
+
     /* general declaration */
     public static final char STUN_REQUEST         = 0x0000;
     public static final char STUN_INDICATION      = 0x0010;
@@ -616,6 +624,7 @@ public abstract class Message
     public static Message decode(byte binMessage[], char offset, char arrayLen)
         throws StunException
     {
+        int originalOffset = offset;
         arrayLen = (char)Math.min(binMessage.length, arrayLen);
         char initialOffset = offset;
 
@@ -644,7 +653,8 @@ public abstract class Message
 
         message.setMessageType(messageType);
 
-        int length = (char)((binMessage[offset++]<<8) | (binMessage[offset++]&0xFF));
+        int length = (char)((binMessage[offset++] << 8)
+                          | (binMessage[offset++]  & 0xFF));
 
         /* copy the cookie */
         byte cookie[] = new byte[4];
@@ -670,23 +680,94 @@ public abstract class Message
 
             if (att instanceof MessageIntegrityAttribute)
             {
-                message
-                    .validateMessageIntegrity((MessageIntegrityAttribute)att);
+                if (!message.validateMessageIntegrity(
+                                (MessageIntegrityAttribute)att,
+                                binMessage, originalOffset, offset))
+                {
+                    throw new StunException(StunException.ILLEGAL_ARGUMENT,
+                                    "Wrong value in MESSAGE-INTEGRITY");
+                }
+
             }
 
             message.addAttribute(att);
             offset += att.getDataLength() + Attribute.HEADER_LENGTH;
         }
-
         return message;
     }
 
+    /**
+     * Recalculates the HMAC-SHA1 signature of the <tt>message</tt> array so
+     * that we could compare it with the value brought by the
+     * {@link MessageIntegrityAttribute}.
+     *
+     * @param msgInt the attribute that we need to validate.
+     * @param message the message whose SHA1 checksum we'd need to recalculate.
+     * @param offset the index in <tt>message</tt> where data starts.
+     * @param length the number of bytes in <tt>message</tt> that the SHA1 would
+     * need to be calculated over.
+     *
+     * @return <tt>true</tt> if <tt>msgInt</tt> contains a valid SHA1 value and
+     * <tt>false</tt> otherwise.
+     */
     public boolean validateMessageIntegrity(MessageIntegrityAttribute msgInt,
-                                            byte[] message)
+                                            byte[]                    message,
+                                            int                       offset,
+                                            int                       length)
     {
-        msgInt
+        //first get a password for the username specified with this message.
+        UsernameAttribute unameAttr
+            = (UsernameAttribute)getAttribute(Attribute.USERNAME);
 
-        return false;
+        if (unameAttr == null)
+        {
+            logger.info( "Received a message containing a "
+                            +" MESSAGE-INTEGRITY attribute and no USERNAME");
+            return false;
+        }
+
+
+        String username = new String(unameAttr.getUsername());
+
+        int colon = username.indexOf(":");
+
+        if( username.length() < 1
+            || colon < 1)
+        {
+            if(logger.isLoggable(Level.FINE))
+            {
+                logger.log(Level.FINE, "Received a message with an improperly "
+                        +"formatted username");
+            }
+            return false;
+        }
+
+        String lfrag = username.substring(0, colon);
+
+        byte[] key = StunStack.getInstance()
+                .getCredentialsManager().getKey(lfrag);
+
+        if(key == null)
+            return false;
+
+        //now check whether the SHA1 matches.
+        byte[] expectedSha1 = MessageIntegrityAttribute
+            .calculateHmacSha1(message, offset, length, key);
+
+        if (!Arrays.equals(expectedSha1, msgInt.getHmacSha1Content()))
+        {
+            if(logger.isLoggable(Level.FINE))
+            {
+                logger.log(Level.FINE, "Received a message with a wrong "
+                            +"MESSAGE-INTEGRITY HMAC-SHA1 signature");
+            }
+            return false;
+        }
+
+        if (logger.isLoggable(Level.FINEST))
+            logger.finest("Successfully verified msg integrity");
+
+        return true;
     }
 
     /**
