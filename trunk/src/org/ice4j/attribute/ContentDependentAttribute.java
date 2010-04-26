@@ -33,31 +33,4 @@ public interface ContentDependentAttribute
      * with the specified <tt>content</tt>.
      */
     public byte[] encode(byte[] content, int offset, int length);
-
-    /**
-     * Sets this attribute's fields according to the message and attributeValue
-     * arrays. This method allows the stack to validate the content of content
-     * dependent attributes such as the {@link MessageIntegrityAttribute} or
-     * the {@link FingerprintAttribute} and hide invalid ones from the
-     * application.
-     *
-     * @param attributeValue a binary array containing this attribute's field
-     * values and NOT containing the attribute header.
-     * @param offset the position where attribute values begin (most often
-     * offset is equal to the index of the first byte after length)
-     * @param length the length of the binary array.
-     * @param messageHead the bytes of the message that brought this attribute.
-     * @param mhOffset the start of the message that brought this attribute
-     * @param mhLen the length of the message in the messageHead param up until
-     * the start of this attribute.
-     *
-     * @throws StunException if attrubteValue contains invalid data.
-     */
-    public void decodeAttributeBody( byte[] attributeValue,
-                                     char offset,
-                                     char length,
-                                     byte[] messageHead,
-                                     char mhOffset,
-                                     char mhLen)
-        throws StunException;
 }

@@ -132,19 +132,9 @@ public class AttributeDecoder
 
         decodedAttribute.setAttributeType(attributeType);
 
-        if (decodedAttribute instanceof ContentDependentAttribute)
-        {
-            ((ContentDependentAttribute)decodedAttribute).decodeAttributeBody(
-                 bytes, (char)(Attribute.HEADER_LENGTH + offset),
-                 attributeLength,
-                 messageHeadBytes, messageHeadOffset, messageHeadLen );
-        }
-        else
-        {
-            decodedAttribute.decodeAttributeBody(bytes,
+        decodedAttribute.decodeAttributeBody(bytes,
                         (char)(Attribute.HEADER_LENGTH + offset),
                         attributeLength);
-        }
 
         return decodedAttribute;
     }
