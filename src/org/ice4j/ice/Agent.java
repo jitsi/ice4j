@@ -103,6 +103,13 @@ public class Agent
     private boolean isControlling = true;
 
     /**
+     * The entity that will be taking care of all incoming and outgoing
+     * connectivity checks.
+     */
+    private final ConnectivityCheckHandler connCheckHandler
+                                = new ConnectivityCheckHandler(this);
+
+    /**
      * Creates an empty <tt>Agent</tt> with no streams, and no address
      */
     public Agent()
@@ -114,7 +121,12 @@ public class Agent
 
         tieBreaker = Math.abs(random.nextLong());
 
-        System.setProperty(StackProperties.SOFTWARE, "ice4j.org");
+        //add the software attribute to all messages
+        String sware = StackProperties.getString(StackProperties.SOFTWARE);
+        if( sware == null)
+            System.setProperty(StackProperties.SOFTWARE, "ice4j.org");
+
+        //add the FINGERPRINT attribute to all messages.
         System.setProperty(StackProperties.ALWAYS_SIGN, "true");
     }
 
@@ -242,13 +254,11 @@ public class Agent
 
         List<IceMediaStream> streams = getStreams();
 
-        ConnectivityCheckDispatcher client
-                = new ConnectivityCheckDispatcher(this);
         for(IceMediaStream stream : streams)
         {
             CheckList list = stream.getCheckList();
 
-            client.startChecks(list);
+            connCheckHandler.startChecks(list);
         }
     }
 
