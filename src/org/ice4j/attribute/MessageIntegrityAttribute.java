@@ -125,6 +125,16 @@ public class MessageIntegrityAttribute
     }
 
     /**
+     * Returns the HMAC-SHA1 value stored in this attribute.
+     *
+     * @return the HMAC-SHA1 value stored in this attribute.
+     */
+    public byte[] getHmacSha1Content()
+    {
+        return hmacSha1Content;
+    }
+
+    /**
      * Encodes <tt>message</tt> using <tt>key</tt> and the HMAC-SHA1 algorithm
      * as per RFC 2104 and returns the resulting byte array. This is a utility
      * method that generates content for the {@link MessageIntegrityAttribute}
@@ -132,6 +142,9 @@ public class MessageIntegrityAttribute
      *
      * @param message the STUN message that the resulting content will need to
      * travel in.
+     * @param offset the index where data starts in <tt>message</tt>.
+     * @param length the length of the data in <tt>message</tt> that the method
+     * should consider.
      * @param key the key that we should be using for the encoding (which
      * depends on whether we are using short or long term credentials).
      *
@@ -140,7 +153,10 @@ public class MessageIntegrityAttribute
      *
      * @throws IllegalArgumentException if the encoding fails for some reason.
      */
-    public static byte[] createHmacSha1(byte[] message, byte[] key)
+    public static byte[] calculateHmacSha1(byte[] message,
+                                           int    offset,
+                                           int    length,
+                                           byte[] key)
         throws IllegalArgumentException
     {
         byte[] hmac;
@@ -155,7 +171,14 @@ public class MessageIntegrityAttribute
             mac.init(signingKey);
 
             // compute the hmac on input data bytes
-            hmac = mac.doFinal(message);
+            byte[] macInput = new byte[length];
+
+            //doFinal seems incapable to only work with a part of an array
+            //so we'd need to create an array that only contains what we
+            //actually need to work with.
+            System.arraycopy(message, offset, macInput, 0, length);
+
+            hmac = mac.doFinal(macInput);
         }
         catch (Exception exc)
         {
@@ -266,7 +289,8 @@ public class MessageIntegrityAttribute
         binValue[3] = (byte)(getDataLength()&0x00FF);
 
         //now calculate the HMAC-SHA1
-        this.hmacSha1Content = createHmacSha1(content, this.key);
+        this.hmacSha1Content = calculateHmacSha1(
+                        content, offset, length, this.key);
 
         //username
         System.arraycopy(hmacSha1Content, 0, binValue, 4, getDataLength());

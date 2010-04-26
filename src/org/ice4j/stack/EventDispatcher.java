@@ -130,18 +130,19 @@ public class EventDispatcher
      */
     public void fireMessageEvent(StunMessageEvent evt)
     {
+
         TransportAddress localAddr = evt.getLocalAddress();
+            List<RequestListener> listenersCopy = null;
+
         synchronized(requestListeners)
         {
-            List<RequestListener> listenersCopy = null;
-            synchronized(requestListeners)
-            {
-                listenersCopy
-                    = new ArrayList<RequestListener>(requestListeners);
-            }
+            listenersCopy
+                = new ArrayList<RequestListener>(requestListeners);
+        }
 
-            for (RequestListener target : listenersCopy)
-                target.requestReceived(evt);
+        for (RequestListener target : listenersCopy)
+        {
+            target.requestReceived(evt);
         }
 
         synchronized(requestListenersChildren)

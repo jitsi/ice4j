@@ -6,6 +6,7 @@
  */
 package org.ice4j.ice;
 
+import java.io.*;
 import java.net.*;
 import java.util.logging.*;
 
@@ -55,8 +56,9 @@ public class ConnectivityCheckHandler
      */
     public ConnectivityCheckHandler(Agent parentAgent)
     {
-        stunStack.addRequestListener(this);
         this.parentAgent = parentAgent;
+        stunStack.addRequestListener(this);
+        stunStack.getCredentialsManager().registerAuthority(this);
     }
 
     public void startChecks(CheckList checkList)
@@ -110,7 +112,7 @@ public class ConnectivityCheckHandler
         //todo: also implement SASL prepare
         MessageIntegrityAttribute msgIntegrity
             = AttributeFactory.createMessageIntegrityAttribute(
-                            parentAgent.getLocalPassword().getBytes());
+                            parentAgent.getRemotePassword().getBytes());
 
 
         request.addAttribute(msgIntegrity);
@@ -189,7 +191,10 @@ System.out.println("checking pair " + pair + " with tran=" + tran.toString());
 
         if (unameAttr == null)
         {
-            logger.log(Level.INFO, "Received a request without a USERNAME");
+            if(logger.isLoggable(Level.FINE))
+            {
+                logger.log(Level.FINE, "Received a request without a USERNAME");
+            }
             return false;
         }
 
@@ -198,8 +203,11 @@ System.out.println("checking pair " + pair + " with tran=" + tran.toString());
         if( username.length() < 1
             || colon < 1)
         {
-            logger.log(Level.INFO, "Received a request with an improperly "
+            if(logger.isLoggable(Level.FINE))
+            {
+                logger.log(Level.FINE, "Received a request with an improperly "
                             +"formatted username");
+            }
             return false;
         }
 
@@ -207,34 +215,11 @@ System.out.println("checking pair " + pair + " with tran=" + tran.toString());
 
         if( !lfrag.equals(parentAgent.getLocalUfrag()))
         {
-            logger.log(Level.INFO, "Remote peer using a wrong user name: "
-                        + username);
-            return false;
-        }
-
-        return true;
-    }
-
-    /**
-     * Verifies whether <tt>request</tt> comes with the proper
-     * <tt>MESSAGE-INTEGRITY</tt> attribute and returns <tt>true</tt> if it does
-     * and <tt>false</tt> otherwise.
-     *
-     * @param request the <tt>Request</tt> that we'd like to check for a
-     * proper <tt>MESSAGE-INTEGRITY</tt> attribute.
-     *
-     * @return <tt>true</tt> if the <tt>request</tt> contains the proper message
-     * integrity attribute and false otherwise.
-     */
-    public boolean checkMessageIntegrity(Request request)
-    {
-        MessageIntegrityAttribute msgIntegrityAttr = (MessageIntegrityAttribute)
-            request.getAttribute(Attribute.USERNAME);
-
-        if (msgIntegrityAttr == null)
-        {
-            logger.log(Level.INFO, "Received a request without a "
-                            +"MESSAGE-INTEGRITY attribute");
+            if(logger.isLoggable(Level.FINE))
+            {
+                logger.log(Level.FINE, "Remote peer using a wrong user name: "
+                                       + username);
+            }
             return false;
         }
 
@@ -257,11 +242,9 @@ System.out.println("checking pair " + pair + " with tran=" + tran.toString());
         //support both the case where username is the local fragment or the
         //entire user name.
         int colon = username.indexOf(":");
-        if( colon > 0)
+        if( colon < 0)
         {
             //caller gave us a ufrag
-            username = username.substring(0, colon);
-
             if (username.equals(parentAgent.getLocalUfrag()))
                 return parentAgent.getLocalPassword().getBytes();
         }

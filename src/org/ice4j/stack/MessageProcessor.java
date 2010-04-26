@@ -139,6 +139,7 @@ class MessageProcessor
                         rawMessage.getLocalAddress(),
                         stunMessage,
                         rawMessage.getRemoteAddress());
+
                 messageHandler.handleMessageEvent(stunMessageEvent);
             }
         }
