@@ -2,12 +2,14 @@
 
 <project name="ice4j" basedir="." default="rebuild">
     <property name="dest" value="classes"/>
-    <property name="JUnit.home" value="lib"/>
+    <property name="lib" value="lib"/>
+    <property name="JUnit.home" value="${lib}"/>
     <property name="src" value="src"/>
     <property name="src2" value="test"/>
     <property name="junit.reports" value="junit-reports"/>
     <property name="junit.html.reports" value="${junit.reports}/html"/>
     <property name="ice4j.jar" value="ice4j.jar"/>
+
     <path id="project.class.path">
         <pathelement location="${dest}"/>
         <pathelement location="${JUnit.home}/junit.jar"/>
@@ -154,6 +156,10 @@
         <java fork="true"
             classname="test.Ice"
             classpathref="project.class.path">
+
+            <!-- Tell java.util.logging about our logging preferences -->
+            <sysproperty key="java.util.logging.config.file"
+                value="lib/logging.properties"/>
         </java>
     </target>
 
