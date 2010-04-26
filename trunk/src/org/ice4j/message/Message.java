@@ -667,12 +667,26 @@ public abstract class Message
                 binMessage, offset, (char)(length - offset), //attribute
                 binMessage, (char)initialOffset,
                     (char)(offset - initialOffset)); // message head
+
+            if (att instanceof MessageIntegrityAttribute)
+            {
+                message
+                    .validateMessageIntegrity((MessageIntegrityAttribute)att);
+            }
+
             message.addAttribute(att);
             offset += att.getDataLength() + Attribute.HEADER_LENGTH;
         }
 
         return message;
+    }
 
+    public boolean validateMessageIntegrity(MessageIntegrityAttribute msgInt,
+                                            byte[] message)
+    {
+        msgInt
+
+        return false;
     }
 
     /**

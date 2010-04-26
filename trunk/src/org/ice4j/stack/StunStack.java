@@ -12,7 +12,9 @@ import java.util.*;
 import java.util.logging.*;
 
 import org.ice4j.*;
+import org.ice4j.attribute.*;
 import org.ice4j.message.*;
+import org.ice4j.security.*;
 
 /**
  * The entry point to the Stun4J stack. The class is used to start, stop and
@@ -37,6 +39,13 @@ public class StunStack
      * The number of threads to split our flow in.
      */
     public static final int DEFAULT_THREAD_POOL_SIZE = 3;
+
+    /**
+     * The {@link CredentialsManager} that we are using for retrieving
+     * passwords.
+     */
+    private static final CredentialsManager credentialsManager
+        = new CredentialsManager();
 
     /**
      * Our class logger.
@@ -438,6 +447,18 @@ public class StunStack
                 logger.fine("all tids in stock were" + clientTransactions);
             }
         }
+    }
+
+    /**
+     * Returns the {@link CredentialsManager} that this stack is using for
+     * verification of {@link MessageIntegrityAttribute}s.
+     *
+     * @return the {@link CredentialsManager} that this stack is using for
+     * verification of {@link MessageIntegrityAttribute}s.
+     */
+    public static CredentialsManager getCredentialsManager()
+    {
+        return credentialsManager;
     }
 
     /**
