@@ -678,35 +678,75 @@ public abstract class Message
                 binMessage, (char)initialOffset,
                     (char)(offset - initialOffset)); // message head
 
-            //assert Message Integrity
-            if (att instanceof MessageIntegrityAttribute)
-            {
-                if (!message.validateMessageIntegrity(
-                                (MessageIntegrityAttribute)att,
-                                binMessage, originalOffset, offset))
-                {
-                    throw new StunException(StunException.ILLEGAL_ARGUMENT,
-                                    "Wrong value in MESSAGE-INTEGRITY");
-                }
-
-            }
-
-            //check finger print CRC
-            if (att instanceof FingerprintAttribute)
-            {
-                if (!validateFingerprint((FingerprintAttribute)att,
-                                binMessage, originalOffset, offset))
-                {
-                    throw new StunException(StunException.ILLEGAL_ARGUMENT,
-                                    "Wrong value in FINGERPRINT");
-                }
-
-            }
+            performAttributeSpecificActions(att, binMessage, message,
+                            originalOffset, offset);
 
             message.addAttribute(att);
             offset += att.getDataLength() + Attribute.HEADER_LENGTH;
         }
+
         return message;
+    }
+
+    /**
+     * Executes actions related specific attributes like asserting proper
+     * checksums or verifying the validity of user names.
+     *
+     * @param attribute the <tt>Attribute</tt> we'd like to process.
+     * @param binMessage the byte array that the message arrived with.
+     * @param message the <tt>Message</tt> that we're parsing
+     * <tt>binMessage</tt> into.
+     * @param offset the index where data starts in <tt>binMessage</tt>.
+     * @param msgLen the number of message bytes in <tt>binMessage</tt>.
+     *
+     * @throws StunException if there's something in the <tt>attribute</tt>
+     * that caused us to discard the whole message (e.g. an invalid checksum
+     * or username)
+     */
+    private static void performAttributeSpecificActions(Attribute attribute,
+                                                        byte[]    binMessage,
+                                                        Message   message,
+                                                        int       offset,
+                                                        int       msgLen)
+        throws StunException
+    {
+        //assert valid username
+        if (attribute instanceof UsernameAttribute)
+        {
+            if (!validateUsername( (UsernameAttribute)attribute))
+            {
+                throw new StunException(StunException.ILLEGAL_ARGUMENT,
+                    "Non-recognized username: "
+                    + new String(((UsernameAttribute)attribute)
+                                        .getUsername()) );
+            }
+
+        }
+
+        //assert Message Integrity
+        if (attribute instanceof MessageIntegrityAttribute)
+        {
+            if (!message.validateMessageIntegrity(
+                            (MessageIntegrityAttribute)attribute,
+                            binMessage, offset, msgLen))
+            {
+                throw new StunException(StunException.ILLEGAL_ARGUMENT,
+                                "Wrong value in MESSAGE-INTEGRITY");
+            }
+
+        }
+
+        //check finger print CRC
+        if (attribute instanceof FingerprintAttribute)
+        {
+            if (!validateFingerprint((FingerprintAttribute)attribute,
+                            binMessage, offset, msgLen))
+            {
+                throw new StunException(StunException.ILLEGAL_ARGUMENT,
+                                "Wrong value in FINGERPRINT");
+            }
+
+        }
     }
 
     /**
@@ -723,10 +763,10 @@ public abstract class Message
      * @return <tt>true</tt> if <tt>fingerprint</tt> contains a valid CRC32
      * value and <tt>false</tt> otherwise.
      */
-    public static boolean validateFingerprint(FingerprintAttribute fingerprint,
-                                              byte[]               message,
-                                              int                  offset,
-                                              int                  length)
+    private static boolean validateFingerprint(FingerprintAttribute fingerprint,
+                                               byte[]               message,
+                                               int                  offset,
+                                               int                  length)
     {
 
         byte[] incomingCrcBytes = fingerprint.getChecksum();
@@ -769,10 +809,10 @@ public abstract class Message
      * @return <tt>true</tt> if <tt>msgInt</tt> contains a valid SHA1 value and
      * <tt>false</tt> otherwise.
      */
-    public boolean validateMessageIntegrity(MessageIntegrityAttribute msgInt,
-                                            byte[]                    message,
-                                            int                       offset,
-                                            int                       length)
+    private boolean validateMessageIntegrity(MessageIntegrityAttribute msgInt,
+                                             byte[]                    message,
+                                             int                       offset,
+                                             int                       length)
     {
         //first get a password for the username specified with this message.
         UsernameAttribute unameAttr
@@ -827,6 +867,38 @@ public abstract class Message
             logger.finest("Successfully verified msg integrity");
 
         return true;
+    }
+
+    /**
+     * Asserts the validity of the user name we've received in
+     * <tt>unameAttr</tt>.
+     *
+     * @param unameAttr the attribute that we need to validate.
+     *
+     * @return <tt>true</tt> if <tt>unameAttr</tt> contains a valid user name
+     * and <tt>false</tt> otherwise.
+     */
+    private static boolean validateUsername(UsernameAttribute unameAttr)
+    {
+        String username = new String(unameAttr.getUsername());
+
+        int colon = username.indexOf(":");
+
+        if( username.length() < 1
+            || colon < 1)
+        {
+            if(logger.isLoggable(Level.FINE))
+            {
+                logger.log(Level.FINE, "Received a message with an improperly "
+                        +"formatted username");
+            }
+            return false;
+        }
+
+        String lfrag = username.substring(0, colon);
+
+        return StunStack.getInstance()
+                .getCredentialsManager().checkUserName(lfrag);
     }
 
     /**

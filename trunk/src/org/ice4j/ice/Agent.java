@@ -103,11 +103,16 @@ public class Agent
     private boolean isControlling = true;
 
     /**
-     * The entity that will be taking care of all incoming and outgoing
-     * connectivity checks.
+     * The entity that will be taking care of outgoing connectivity checks.
      */
-    private final ConnectivityCheckHandler connCheckHandler
-                                = new ConnectivityCheckHandler(this);
+    private final ConnectivityCheckClient connCheckHandler
+                                = new ConnectivityCheckClient(this);
+
+    /**
+     * The entity that will be taking care of incoming connectivity checks.
+     */
+    private final ConnectivityCheckServer connCheckServer
+                                = new ConnectivityCheckServer(this);
 
     /**
      * Creates an empty <tt>Agent</tt> with no streams, and no address
