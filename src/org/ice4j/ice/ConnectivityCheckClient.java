@@ -89,8 +89,9 @@ public class ConnectivityCheckClient
         }
 
         //credentials
+        String localUserName = parentAgent.generateLocalUserName();
         UsernameAttribute unameAttr = AttributeFactory.createUsernameAttribute(
-                        parentAgent.generateLocalUserName());
+                        localUserName);
 
         request.addAttribute(unameAttr);
 
@@ -99,8 +100,7 @@ public class ConnectivityCheckClient
         //for example.
         //todo: also implement SASL prepare
         MessageIntegrityAttribute msgIntegrity = AttributeFactory
-            .createMessageIntegrityAttribute(parentAgent
-                            .generateRemoteUserName());
+            .createMessageIntegrityAttribute(localUserName);
 
 
         request.addAttribute(msgIntegrity);
