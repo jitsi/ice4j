@@ -29,4 +29,15 @@ public interface CredentialsAuthority
      * <tt>CredentialsAuthority</tt>.
      */
     public byte[] getKey(String username);
+
+    /**
+     * Verifies whether <tt>username</tt> is currently known to this authority
+     * and returns <tt>true</tt> if so. Returns <tt>false</tt> otherwise.
+     *
+     * @param username the user name whose validity we'd like to check.
+     *
+     * @return <tt>true</tt> if <tt>username</tt> is known to this
+     * <tt>CredentialsAuthority</tt> and <tt>false</tt> otherwise.
+     */
+    public boolean checkUserName(String username);
 }

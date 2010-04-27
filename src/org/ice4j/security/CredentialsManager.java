@@ -52,10 +52,35 @@ public class CredentialsManager
             byte[] passwd = auth.getKey(username);
 
             if (passwd != null)
+            {
+                /** @todo: we should probably add SASLprep here.*/
                 return passwd;
+            }
         }
 
         return null;
+    }
+
+    /**
+     * Verifies whether <tt>username</tt> is currently known to any of the
+     * {@link CredentialsAuthority}s registered with this manager and
+     * and returns <tt>true</tt> if so. Returns <tt>false</tt> otherwise.
+     *
+     * @param username the user name whose validity we'd like to check.
+     *
+     * @return <tt>true</tt> if <tt>username</tt> is known to any of the
+     * <tt>CredentialsAuthority</tt>s registered here and <tt>false</tt>
+     * otherwise.
+     */
+    public boolean checkUserName(String username)
+    {
+        for (CredentialsAuthority auth : authorities)
+        {
+            if( auth.checkUserName(username))
+                return true;
+        }
+
+        return false;
     }
 
     /**

@@ -93,7 +93,10 @@ class NetAccessManager
         /**
          * apart from logging, i am not sure what else we could do here.
          */
-        logger.log( Level.WARNING, "The following error occurred", error);
+        logger.log( Level.FINE,
+                        "The following error occurred with "
+                        +"an incoming message:",
+                        error);
     }
 
     /**

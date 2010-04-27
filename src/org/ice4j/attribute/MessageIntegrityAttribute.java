@@ -14,6 +14,7 @@ import javax.crypto.*;
 import javax.crypto.spec.*;
 
 import org.ice4j.*;
+import org.ice4j.stack.*;
 
 /**
  * The MESSAGE-INTEGRITY attribute contains an HMAC-SHA1 [RFC2104] of
@@ -100,9 +101,11 @@ public class MessageIntegrityAttribute
     private byte[] hmacSha1Content;
 
     /**
-     * The key that we should be using when creating the hmacSha1Content.
+     * The username that we should use to obtain an encryption
+     * key (password) that the {@link #encode()} method should use when
+     * creating the content of this message.
      */
-    private byte[] key;
+    private String username;
 
     /**
      * Creates a <tt>MessageIntegrityAttribute</tt>.
@@ -113,15 +116,17 @@ public class MessageIntegrityAttribute
     }
 
     /**
-     * Sets the key that the {@link #encode()} method should use when creating
-     * the content of this message.
+     * Sets the username that we should use to obtain an encryption
+     * key (password) that the {@link #encode()} method should use when
+     * creating the content of this message.
      *
-     * @param key the key that the {@link #encode()} method should use when
+     * @param username the username that we should use to obtain an encryption
+     * key (password) that the {@link #encode()} method should use when
      * creating the content of this message.
      */
-    public void setKey(byte[] key)
+    public void setUsername(String username)
     {
-        this.key = key;
+        this.username = username;
     }
 
     /**
@@ -249,9 +254,11 @@ public class MessageIntegrityAttribute
         binValue[2] = (byte)(getDataLength()>>8);
         binValue[3] = (byte)(getDataLength()&0x00FF);
 
+        byte[] key = StunStack.getInstance().getCredentialsManager()
+            .getKey(username);
+
         //now calculate the HMAC-SHA1
-        this.hmacSha1Content = calculateHmacSha1(
-                        content, offset, length, this.key);
+        this.hmacSha1Content = calculateHmacSha1(content, offset, length, key);
 
         //username
         System.arraycopy(hmacSha1Content, 0, binValue, 4, getDataLength());

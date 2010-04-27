@@ -335,19 +335,17 @@ public class AttributeFactory
      * the HMAC-SHA1 (RFC 2104) would correspond to the actual message that's
      * transporting the attribute.
      *
-     * @param key the key that we should use when creating the HMAC-SHA1.
+     * @param username the username that we should use to obtain an encryption
+     * key (password) that the {@link Attribute#encode()} method should use when
+     * creating the content of this message.
      *
      * @return the newly created address attribute.
      */
     public static MessageIntegrityAttribute createMessageIntegrityAttribute(
-                                                    byte[] key)
+                                                    String username)
     {
         MessageIntegrityAttribute attribute = new MessageIntegrityAttribute();
-
-        attribute.setKey(key);
-
-        //todo: implement saslprep one day even though I don't think it's
-        //necessary for the ICE use case.
+        attribute.setUsername(username);
 
         return attribute;
     };
