@@ -384,7 +384,8 @@ public class StunCandidateHarvester
                         Level.INFO,
                         "Failed to send "
                             + request
-                            + " through " + hostCand.getTransportAddress(),
+                            + " through " + hostCand.getTransportAddress()
+                            + " to " + stunServer,
                         exception);
                 return;
             }

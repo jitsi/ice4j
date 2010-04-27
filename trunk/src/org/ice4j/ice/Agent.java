@@ -406,17 +406,18 @@ public class Agent
     }
 
     /**
-     * Returns the user name that we should tell a peer <tt>Agent</tt> to use
-     * in connectivity checks for outgoing Binding Requests. According to RFC
-     * 5245, a Binding Request serving as a connectivity check MUST utilize the
-     * STUN short term credential mechanism. The username for the credential is
-     * formed by concatenating the username fragment provided by the peer with
-     * the username fragment of the agent sending the request, separated by a
-     * colon (":").  The password is equal to the password provided by the peer.
-     * For example, consider the case where agent L is the offerer, and agent R
-     * is the answerer.  Agent L included a username fragment of LFRAG for its
-     * candidates, and a password of LPASS.  Agent R provided a username
-     * fragment of RFRAG and a password of RPASS.  A connectivity check from L
+     * Returns the user name that we should expect a peer <tt>Agent</tt> to use
+     * in connectivity checks for Binding Requests its sending our way.
+     * According to RFC 5245, a Binding Request serving as a connectivity check
+     * MUST utilize the STUN short term credential mechanism. The username for
+     * the credential is formed by concatenating the username fragment provided
+     * by the peer with the username fragment of the agent sending the request,
+     * separated by a colon (":").  The password is equal to the password
+     * provided by the peer. For example, consider the case where agent
+     * L is the offerer, and agent R is the answerer.  Agent L
+     * included a username fragment of LFRAG for its candidates,
+     * and a password of LPASS.  Agent R provided a username fragment
+     * of RFRAG and a password of RPASS.  A connectivity check from L
      * to R (and its response of course) utilize the username RFRAG:LFRAG and a
      * password of RPASS.  A connectivity check from R to L (and its response)
      * utilize the username LFRAG:RFRAG and a password of LPASS.

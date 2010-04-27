@@ -136,7 +136,7 @@ public class ConnectivityCheckServer
         else
         {
             //caller gave us the entire username.
-            if (username.equals(parentAgent.generateRemoteUserName()))
+            if(username.substring(0, colon).equals(parentAgent.getLocalUfrag()))
                 return parentAgent.getLocalPassword().getBytes();
         }
 
