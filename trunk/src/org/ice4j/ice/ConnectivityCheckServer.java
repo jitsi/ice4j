@@ -63,7 +63,7 @@ public class ConnectivityCheckServer
             .getAttribute(Attribute.USERNAME);
 
         if(uname == null
-           || !checkUserName(new String(uname.getUsername())))
+           || !checkLocalUserName(new String(uname.getUsername())))
         {
             return;
         }
@@ -92,7 +92,7 @@ public class ConnectivityCheckServer
      * @return <tt>true</tt> if <tt>username</tt> is known to this
      * <tt>ConnectivityCheckServer</tt> and <tt>false</tt> otherwise.
      */
-    public boolean checkUserName(String username)
+    public boolean checkLocalUserName(String username)
     {
         boolean accept = false;
         int colon = username.indexOf(":");
@@ -112,7 +112,7 @@ public class ConnectivityCheckServer
     }
 
     /**
-     * Implements the {@link CredentialsAuthority#getKey(String)} method in a
+     * Implements the {@link CredentialsAuthority#getLocalKey(String)} method in a
      * way that would return this handler's parent agent password if
      * <tt>username</tt> is either the local ufrag or the username that the
      * agent's remote peer was expected to use.
@@ -122,7 +122,7 @@ public class ConnectivityCheckServer
      * @return this handler's parent agent local password if <tt>username</tt>
      * equals the local ufrag and <tt>null</tt> otherwise.
      */
-    public byte[] getKey(String username)
+    public byte[] getLocalKey(String username)
     {
         //support both the case where username is the local fragment or the
         //entire user name.
@@ -138,6 +138,38 @@ public class ConnectivityCheckServer
             //caller gave us the entire username.
             if (username.equals(parentAgent.generateRemoteUserName()))
                 return parentAgent.getLocalPassword().getBytes();
+        }
+
+        return null;
+    }
+
+    /**
+     * Implements the {@link CredentialsAuthority#getRemoteKey(String)} method
+     * in a way that would return this handler's parent agent remote password if
+     * <tt>username</tt> is either the remote ufrag or the username that we
+     * are expected to use when querying the remote peer.
+     *
+     * @param username the remote ufrag that we should return a password for.
+     *
+     * @return this handler's parent agent remote password if <tt>username</tt>
+     * equals the remote ufrag and <tt>null</tt> otherwise.
+     */
+    public byte[] getRemoteKey(String username)
+    {
+        //support both the case where username is the local fragment or the
+        //entire user name.
+        int colon = username.indexOf(":");
+        if( colon < 0)
+        {
+            //caller gave us a ufrag
+            if (username.equals(parentAgent.getRemoteUfrag()))
+                return parentAgent.getRemotePassword().getBytes();
+        }
+        else
+        {
+            //caller gave us the entire username.
+            if (username.equals(parentAgent.generateLocalUserName()))
+                return parentAgent.getRemotePassword().getBytes();
         }
 
         return null;

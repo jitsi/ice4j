@@ -16,19 +16,36 @@ package org.ice4j.security;
 public interface CredentialsAuthority
 {
     /**
-     * Returns the key (password) that corresponds to the specified username,
-     * an empty array if there was no password for that username or
-     * <tt>null</tt> if the username is not known to this
-     * <tt>CredentialsAuthority</tt>.
+     * Returns the key (password) that corresponds to the specified local
+     * username or user frag,  an empty array if there was no password for that
+     * username or <tt>null</tt> if the username is not a local user name
+     * recognized by this <tt>CredentialsAuthority</tt>.
      *
-     * @param username the user name whose credentials we'd like to obtain.
+     * @param username the local user name or user frag whose credentials we'd
+     * like to obtain.
      *
-     * @return the key (password) that corresponds to the specified username,
-     * an empty array if there was no password for that username or
-     * <tt>null</tt> if the username is not known to this
-     * <tt>CredentialsAuthority</tt>.
+     * @return the key (password) that corresponds to the specified local
+     * username or user frag,  an empty array if there was no password for that
+     * username or <tt>null</tt> if the username is not a local user name
+     * recognized by this <tt>CredentialsAuthority</tt>.
      */
-    public byte[] getKey(String username);
+    public byte[] getLocalKey(String username);
+
+    /**
+     * Returns the key (password) that corresponds to the specified remote
+     * username or user frag,  an empty array if there was no password for that
+     * username or <tt>null</tt> if the username is not a remote user name
+     * recognized by this <tt>CredentialsAuthority</tt>.
+     *
+     * @param username the remote user name or user frag whose credentials we'd
+     * like to obtain.
+     *
+     * @return the key (password) that corresponds to the specified remote
+     * username or user frag,  an empty array if there was no password for that
+     * username or <tt>null</tt> if the username is not a remote user name
+     * recognized by this <tt>CredentialsAuthority</tt>.
+     */
+    public byte[] getRemoteKey(String username);
 
     /**
      * Verifies whether <tt>username</tt> is currently known to this authority
@@ -39,5 +56,5 @@ public interface CredentialsAuthority
      * @return <tt>true</tt> if <tt>username</tt> is known to this
      * <tt>CredentialsAuthority</tt> and <tt>false</tt> otherwise.
      */
-    public boolean checkUserName(String username);
+    public boolean checkLocalUserName(String username);
 }

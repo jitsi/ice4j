@@ -844,7 +844,7 @@ public abstract class Message
         String lfrag = username.substring(0, colon);
 
         byte[] key = StunStack.getInstance()
-                .getCredentialsManager().getKey(lfrag);
+                .getCredentialsManager().getLocalKey(lfrag);
 
         if(key == null)
             return false;
@@ -898,7 +898,7 @@ public abstract class Message
         String lfrag = username.substring(0, colon);
 
         return StunStack.getInstance()
-                .getCredentialsManager().checkUserName(lfrag);
+                .getCredentialsManager().checkLocalUserName(lfrag);
     }
 
     /**
