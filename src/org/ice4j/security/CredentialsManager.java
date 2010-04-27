@@ -35,21 +35,50 @@ public class CredentialsManager
 
     /**
      * Queries all currently registered {@link CredentialsAuthority}s for a
-     * password corresponding to <tt>username</tt> and returns the first
-     * non-<tt>null</tt> one.
+     * password corresponding to the specified local <tt>username</tt> or user
+     * frag and returns the first non-<tt>null</tt> one.
      *
-     * @param username the user name whose credentials we'd like to obtain.
+     * @param username a local user name or user frag whose credentials we'd
+     * like to obtain.
      *
-     * @return <tt>null</tt> if username was not known to neither of the
-     * currently registered <tt>CredentialsAuthority</tt>s or a <tt>byte</tt>
-     * array containing the first non-<tt>null</tt> password that one of them
-     * returned.
+     * @return <tt>null</tt> if username was not a recognized local user name
+     * for none of the currently registered <tt>CredentialsAuthority</tt>s or
+     * a <tt>byte</tt> array containing the first non-<tt>null</tt> password
+     * that one of them returned.
      */
-    public byte[] getKey(String username)
+    public byte[] getLocalKey(String username)
     {
         for (CredentialsAuthority auth : authorities)
         {
-            byte[] passwd = auth.getKey(username);
+            byte[] passwd = auth.getLocalKey(username);
+
+            if (passwd != null)
+            {
+                return passwd;
+            }
+        }
+
+        return null;
+    }
+
+    /**
+     * Queries all currently registered {@link CredentialsAuthority}s for a
+     * password corresponding to the specified remote <tt>username</tt> or user
+     * frag and returns the first non-<tt>null</tt> one.
+     *
+     * @param username a remote user name or user frag whose credentials we'd
+     * like to obtain.
+     *
+     * @return <tt>null</tt> if username was not a recognized remote user name
+     * for none of the currently registered <tt>CredentialsAuthority</tt>s or
+     * a <tt>byte</tt> array containing the first non-<tt>null</tt> password
+     * that one of them returned.
+     */
+    public byte[] getRemoteKey(String username)
+    {
+        for (CredentialsAuthority auth : authorities)
+        {
+            byte[] passwd = auth.getRemoteKey(username);
 
             if (passwd != null)
             {
@@ -72,11 +101,11 @@ public class CredentialsManager
      * <tt>CredentialsAuthority</tt>s registered here and <tt>false</tt>
      * otherwise.
      */
-    public boolean checkUserName(String username)
+    public boolean checkLocalUserName(String username)
     {
         for (CredentialsAuthority auth : authorities)
         {
-            if( auth.checkUserName(username))
+            if( auth.checkLocalUserName(username))
                 return true;
         }
 

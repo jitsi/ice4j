@@ -255,7 +255,7 @@ public class MessageIntegrityAttribute
         binValue[3] = (byte)(getDataLength()&0x00FF);
 
         byte[] key = StunStack.getInstance().getCredentialsManager()
-            .getKey(username);
+            .getLocalKey(username);
 
         //now calculate the HMAC-SHA1
         this.hmacSha1Content = calculateHmacSha1(content, offset, length, key);
