@@ -467,4 +467,30 @@ public class IceMediaStream
     {
         this.maxCheckListSize = nSize;
     }
+
+    /**
+     * Returns the local <tt>LocalCandidate</tt> with the specified
+     * <tt>localAddress</tt> if it belongs to any of this stream's components
+     * or <tt>null</tt> otherwise.
+     *
+     * @param localAddress the {@link TransportAddress} we are looking for.
+     *
+     * @return  the local <tt>LocalCandidate</tt> with the specified
+     * <tt>localAddress</tt> if it belongs to any of this stream's components
+     * or <tt>null</tt> otherwise.
+     */
+    public LocalCandidate findLocalCandidate(TransportAddress localAddress)
+    {
+        Collection<Component> cmpCol = components.values();
+
+        for( Component cmp : cmpCol)
+        {
+            LocalCandidate cnd = cmp.findLocalCandidate(localAddress);
+
+            if(cnd != null)
+                return cnd;
+        }
+
+        return null;
+    }
 }
