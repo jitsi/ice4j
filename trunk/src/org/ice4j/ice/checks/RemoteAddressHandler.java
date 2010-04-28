@@ -22,7 +22,10 @@ public interface RemoteAddressHandler
     /**
      * Notifies the implementation that the {@link ConnectivityCheckServer} has
      * just received a message on <tt>localAddress</tt> originating at
-     * <tt>remoteAddress</tt> carrying the specified <tt>priority</tt>.
+     * <tt>remoteAddress</tt> carrying the specified <tt>priority</tt>. This
+     * will cause us to schedule a triggered check for the corresponding
+     * remote candidate and potentially to the discovery of a PEER-REFLEXIVE
+     * candidate.
      *
      * @param remoteAddress the address that we've just seen, and that is
      * potentially a peer-reflexive address.

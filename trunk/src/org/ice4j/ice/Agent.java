@@ -15,10 +15,11 @@ import java.util.*;
 import java.util.logging.*;
 
 import org.ice4j.*;
+import org.ice4j.ice.checks.*;
 import org.ice4j.ice.harvest.*;
 
 /**
- * An IceAgent could be described as the main class (i.e. the chef d'orchestre)
+ * An <tt>Agent</tt> could be described as the main class (i.e. the chef d'orchestre)
  * of an ICE implementation.
  * <p>
  * As defined in RFC 3264, an agent is the protocol implementation involved in
@@ -27,9 +28,9 @@ import org.ice4j.ice.harvest.*;
  * <p>
  *
  * @author Emil Ivov
- * @author Namal Senarathne
  */
 public class Agent
+    implements RemoteAddressHandler
 {
     /**
      * Our class logger.
@@ -68,7 +69,29 @@ public class Agent
      * we assign within a session (i.e. the entire life time of an
      * <tt>Agent</tt>)
      */
-    private FoundationsRegistry foundationsRegistry = new FoundationsRegistry();
+    private final FoundationsRegistry foundationsRegistry
+                                          = new FoundationsRegistry();
+
+    /**
+     * The <tt>triggeredCheckQueue</tt> is a FIFO queue containing candidate
+     * pairs for which checks are to be sent at the next available opportunity.
+     * A pair would get into a triggered check queue as soon as we receive
+     * a check on its local candidate.
+     */
+    private final List<CandidatePair> triggeredCheckQueue
+                                          = new Vector<CandidatePair>();
+
+    /**
+     * The <tt>List</tt> of remote addresses that we have discovered through
+     * incoming connectivity checks, before actually receiving a session
+     * description from the peer and that may potentially contain peer reflexive
+     * addresses. This list is stored and only if and while connectivity checks
+     * are not running. Once they start, we are able to determine whether the
+     * addresses in here are actually peer-reflexive or not, and schedule
+     * the necessary triggered checks.
+     */
+    private final List<RemoteCandidate> preDiscoveredRemoteCandidatesQueue
+        = new Vector<RemoteCandidate>();
 
     /**
      * The user fragment that we should use for the ice-ufrag attribute.
@@ -105,14 +128,25 @@ public class Agent
     /**
      * The entity that will be taking care of outgoing connectivity checks.
      */
-    private final ConnectivityCheckClient connCheckHandler
+    private final ConnectivityCheckClient connCheckClient
                                 = new ConnectivityCheckClient(this);
 
     /**
      * The entity that will be taking care of incoming connectivity checks.
      */
     private final ConnectivityCheckServer connCheckServer
-                                = new ConnectivityCheckServer(this);
+                                = new ConnectivityCheckServer(this, this);
+
+    /**
+     * Indicates whether this agent has both sent and received candidate lists
+     * and started connectivity establishment. This is important in cases like
+     * determining whether a remote address we've just discovered is peer
+     * reflexive or not. If iceStarted is true and we don't know about the
+     * address then we should add it to the list of candidates. Otherwise
+     * we should wait for the remote party to send their media description
+     * before being able to determine.
+     */
+    private boolean iceStarted = false;
 
     /**
      * Creates an empty <tt>Agent</tt> with no streams, and no address
@@ -253,18 +287,51 @@ public class Agent
     /**
      * Initializes all stream check lists and begins the checks.
      */
-    public void startChecks()
+    public void startConnectivityEstablishment()
     {
-        initCheckLists();
-
-        List<IceMediaStream> streams = getStreams();
-
-        for(IceMediaStream stream : streams)
+        synchronized(this)
         {
-            CheckList list = stream.getCheckList();
+            initCheckLists();
 
-            connCheckHandler.startChecks(list);
+            List<IceMediaStream> streams = getStreams();
+
+            for(IceMediaStream stream : streams)
+            {
+                CheckList list = stream.getCheckList();
+
+                connCheckClient.startChecks(list);
+            }
+
+            iceStarted = true;
         }
+    }
+
+    /**
+     * Indicates whether this {@link Agent} is currently in the process of
+     * running connectivity checks and establishing connectivity. Connectivity
+     * establishment is considered to have started after both {@link Agent}s
+     * have exchanged their media descriptions. Determining whether the actual
+     * process has started is important, for example, when determining whether
+     * a remote address we've just discovered is peer reflexive or not.
+     * If CE has started and we don't know about the address then we should
+     * add it to the list of candidates. Otherwise we should hold to it until
+     * it does and check later.
+     * <p>
+     * Note that an {@link Agent} would be ready to and will send responses to
+     * connectivity checks as soon as it streams get created, which is well
+     * before we actually start the checks.
+     *
+     * @return <tt>true</tt> after media descriptions have been exchanged both
+     * ways and connectivity checks have started (regardless of their current
+     * state) and <tt>false</tt> otherwise.
+     */
+    public boolean isStarted()
+    {
+        synchronized(this)
+        {
+            return iceStarted;
+        }
+
     }
 
     /**
@@ -581,5 +648,73 @@ public class Agent
     public boolean isControlling()
     {
         return isControlling;
+    }
+
+    /**
+     * Returns the local <tt>LocalCandidate</tt> with the specified
+     * <tt>localAddress</tt> if it belongs to any of this {@link Agent}'s
+     * streams or <tt>null</tt> if it doesn't.
+     *
+     * @param localAddress the {@link TransportAddress} we are looking for.
+     *
+     * @return the local <tt>LocalCandidate</tt> with the specified
+     * <tt>localAddress</tt> if it belongs to any of this {@link Agent}'s
+     * streams or <tt>null</tt> if it doesn't.
+     */
+    public LocalCandidate findLocalCandidate(TransportAddress localAddress)
+    {
+        Collection<IceMediaStream> streamsCollection = mediaStreams.values();
+
+        for( IceMediaStream cmp : streamsCollection)
+        {
+            LocalCandidate cnd = cmp.findLocalCandidate(localAddress);
+
+            if(cnd != null)
+                return cnd;
+        }
+
+        return null;
+    }
+
+    /**
+     * Notifies the implementation that the {@link ConnectivityCheckServer} has
+     * just received a message on <tt>localAddress</tt> originating at
+     * <tt>remoteAddress</tt> carrying the specified <tt>priority</tt>. This
+     * will cause us to schedule a triggered check for the corresponding
+     * remote candidate and potentially to the discovery of a PEER-REFLEXIVE
+     * candidate.
+     *
+     * @param remoteAddress the address that we've just seen, and that is
+     * potentially a peer-reflexive address.
+     * @param localAddress the address that we were contacted on.
+     * @param priority the priority that the remote party assigned to
+     * @param remoteUFrag the user fragment that we should be using when and if
+     * we decide to send a check to <tt>remoteAddress</tt>.
+     *
+     */
+    public void handleRemoteAddress(TransportAddress remoteAddress,
+                                    TransportAddress localAddress,
+                                    long             priority,
+                                    String           remoteUFrag)
+    {
+        this.createMediaStream(null).createComponent(null).
+
+        if(iceStarted)
+        {
+            /*
+            if remoteAddress is not known
+            {
+                create peer reflexive candidate
+            }
+
+            schedule triggered check
+            */
+        }
+        else
+        {
+            RemoteCandidate remoteCand = new RemoteCandidate(
+                remoteAddres, );
+        }
+
     }
 }

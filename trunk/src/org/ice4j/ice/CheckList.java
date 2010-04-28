@@ -13,11 +13,13 @@ import java.util.*;
  * <tt>CheckListState</tt>). The pairs in a check list are those that an ICE
  * agent will run STUN connectivity checks for. There is one check list per
  * in-use media stream resulting from the offer/answer exchange.
- *
+ * <p>
+ * Given the asynchronous nature of ice, a check list may be accessed from
+ * different locations. This class therefore stores pairs in a <tt>Vector</tt>
  * @author Emil Ivov
  */
 public class CheckList
-    extends LinkedList<CandidatePair>
+    extends Vector<CandidatePair>
 {
     /**
      * A dummy serialization id.
