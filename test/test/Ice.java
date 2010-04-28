@@ -51,7 +51,7 @@ public class Ice
                         + (endTime - startTime) + "ms");
         System.out.println("LocalAgent:\n" + localAgent);
 
-        localAgent.startChecks();
+        localAgent.startConnectivityEstablishment();
 
         System.out.println("Local audio clist:\n"
                         + localAgent.getStream("audio").getCheckList());
