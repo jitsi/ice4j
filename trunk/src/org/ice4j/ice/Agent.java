@@ -30,7 +30,7 @@ import org.ice4j.ice.harvest.*;
  * @author Emil Ivov
  */
 public class Agent
-    implements RemoteAddressHandler
+    implements IncomingCheckProcessor
 {
     /**
      * Our class logger.
@@ -90,8 +90,13 @@ public class Agent
      * addresses in here are actually peer-reflexive or not, and schedule
      * the necessary triggered checks.
      */
-    private final List<RemoteCandidate> preDiscoveredRemoteCandidatesQueue
-        = new Vector<RemoteCandidate>();
+    private final List<CandidatePair> preDiscoveredPairsQueue
+        = new Vector<CandidatePair>();
+
+    /**
+     * The lock that we use while starting connectivity establishment.
+     */
+    private final Object startLock = new Object();
 
     /**
      * The user fragment that we should use for the ice-ufrag attribute.
@@ -289,7 +294,7 @@ public class Agent
      */
     public void startConnectivityEstablishment()
     {
-        synchronized(this)
+        synchronized(startLock)
         {
             initCheckLists();
 
@@ -327,11 +332,7 @@ public class Agent
      */
     public boolean isStarted()
     {
-        synchronized(this)
-        {
-            return iceStarted;
-        }
-
+        return iceStarted;
     }
 
     /**
@@ -665,9 +666,9 @@ public class Agent
     {
         Collection<IceMediaStream> streamsCollection = mediaStreams.values();
 
-        for( IceMediaStream cmp : streamsCollection)
+        for( IceMediaStream stream : streamsCollection)
         {
-            LocalCandidate cnd = cmp.findLocalCandidate(localAddress);
+            LocalCandidate cnd = stream.findLocalCandidate(localAddress);
 
             if(cnd != null)
                 return cnd;
@@ -692,29 +693,50 @@ public class Agent
      * we decide to send a check to <tt>remoteAddress</tt>.
      *
      */
-    public void handleRemoteAddress(TransportAddress remoteAddress,
-                                    TransportAddress localAddress,
-                                    long             priority,
-                                    String           remoteUFrag)
+    public void incomingCheckReceived(TransportAddress remoteAddress,
+                                      TransportAddress localAddress,
+                                      long             priority,
+                                      String           remoteUFrag)
     {
-        this.createMediaStream(null).createComponent(null).
+        LocalCandidate localCandidate = findLocalCandidate(localAddress);
+        Component parentComponent = localCandidate.getParentComponent();
 
-        if(iceStarted)
+        RemoteCandidate remoteCandidate = new RemoteCandidate(
+            remoteAddress, parentComponent,
+            CandidateType.PEER_REFLEXIVE_CANDIDATE,
+            foundationsRegistry.obtainFoundationForPeerReflexiveCandidate(),
+            priority);
+
+        CandidatePair triggeredPair
+            = new CandidatePair(localCandidate, remoteCandidate);
+
+        synchronized(startLock)
         {
-            /*
-            if remoteAddress is not known
+            if(isStarted())
             {
-                create peer reflexive candidate
+                //we are started, which means we have the remote candidates
+                //so it's now safe to go and see whether this is a new PR cand.
+                triggerCheck(triggeredPair);
             }
+            else
+            {
+                //we are not started yet so we'd better wait until we get the
+                //remote candidates incase we are holding to a new PR one.
+                this.preDiscoveredPairsQueue.add(triggeredPair);
+            }
+        }
+    }
 
-            schedule triggered check
-            */
-        }
-        else
-        {
-            RemoteCandidate remoteCand = new RemoteCandidate(
-                remoteAddres, );
-        }
+    /**
+     * Either queues a triggered check for <tt>triggeredPair</tt> or, in case
+     * there's already a pair with the specified remote and local addresses,
+     * puts it in the queue instead.
+     *
+     * @param triggeredPair the pair containing the local and remote candidate
+     * that we'd need to trigger a check for.
+     */
+    private void triggerCheck(CandidatePair triggeredPair)
+    {
 
     }
 }

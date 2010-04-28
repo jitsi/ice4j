@@ -23,6 +23,12 @@ public class FoundationsRegistry
     private int lastAssignedFoundation = 0;
 
     /**
+     * The foundation number that was last assigned to a PEER-REFLEXIVE
+     * <tt>RemoteCandidate</tt>
+     */
+    private int lastAssignedRemoteFoundation = 10000;
+
+    /**
      * Contains mappings between a type+baseIP+server+transport
      * <tt>String</tt>s and the foundation that has been assigned to them.
      */
@@ -30,8 +36,8 @@ public class FoundationsRegistry
 
     /**
      * Assigns to <tt>candidate</tt> the foundation that corresponds to its
-     * bas type and transport properties or a new one if no foundation has been
-     * generated yet for the specific combination.
+     * base, type and transport properties or a new one if no foundation has
+     * been generated yet for the specific combination.
      *
      * @param candidate the <tt>Candidate</tt> that we'd like to assign a
      * foundation to.
@@ -77,6 +83,18 @@ public class FoundationsRegistry
         }
 
         candidate.setFoundation(foundationValue);
+    }
+
+    /**
+     * Returns an (as far as you care) random foundation that could be assigned
+     * to a learned PEER-REFLEXIVE candidate.
+     *
+     * @return  a foundation <tt>String</tt> that could be assigned to a
+     * learned PEER-REFLEXIVE candidate.
+     */
+    public String obtainFoundationForPeerReflexiveCandidate()
+    {
+        return Integer.toString(lastAssignedRemoteFoundation++);
     }
 
     /**

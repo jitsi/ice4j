@@ -34,10 +34,10 @@ public class ConnectivityCheckServer
     private final Agent parentAgent;
 
     /**
-     * The {@link RemoteAddressHandler} that we should notify when we notice
+     * The {@link IncomingCheckProcessor} that we should notify when we notice
      * new remote transport addresses.
      */
-    private final RemoteAddressHandler addressHandler;
+    private final IncomingCheckProcessor addressHandler;
 
     /**
      * The stun stack that we will use for connectivity checks.
@@ -53,7 +53,7 @@ public class ConnectivityCheckServer
      * @param addressHandler the handler that
      */
     public ConnectivityCheckServer(Agent                parentAgent,
-                                   RemoteAddressHandler addressHandler)
+                                   IncomingCheckProcessor addressHandler)
     {
         this.parentAgent = parentAgent;
         this.addressHandler = addressHandler;
@@ -102,7 +102,7 @@ public class ConnectivityCheckServer
         long priority = priorityAttr.getPriority();
 
         //tell our address handler we saw a new remote address;
-        addressHandler.handleRemoteAddress(evt.getRemoteAddress(),
+        addressHandler.incomingCheckReceived(evt.getRemoteAddress(),
                                          evt.getLocalAddress(),
                                          priority, remoteUfrag);
 
