@@ -124,6 +124,54 @@ public class StunStack
     }
 
     /**
+     * Returns the transaction with the specified <tt>transactionID</tt> or
+     * <tt>null</tt> if no such transaction exists.
+     *
+     * @param transactionID the ID of the transaction we are looking for.
+     *
+     * @return the {@link StunClientTransaction} we are looking for.
+     */
+    protected StunClientTransaction getClientTransaction(byte[] transactionID)
+    {
+        synchronized (clientTransactions)
+        {
+            Collection<StunClientTransaction> cTrans
+                = clientTransactions.values();
+
+            for (StunClientTransaction tran : cTrans)
+            {
+                if (tran.getTransactionID().equals(transactionID))
+                    return tran;
+            }
+        }
+        return null;
+    }
+
+    /**
+     * Returns the transaction with the specified <tt>transactionID</tt> or
+     * <tt>null</tt> if no such transaction exists.
+     *
+     * @param transactionID the ID of the transaction we are looking for.
+     *
+     * @return the {@link StunClientTransaction} we are looking for.
+     */
+    protected StunServerTransaction getServerTransaction(byte[] transactionID)
+    {
+        synchronized (serverTransactions)
+        {
+            Collection<StunServerTransaction> sTrans
+                = serverTransactions.values();
+
+            for (StunServerTransaction tran : sTrans)
+            {
+                if (tran.getTransactionID().equals(transactionID))
+                    return tran;
+            }
+        }
+        return null;
+    }
+
+    /**
      * Cancels the {@link StunClientTransaction} with the specified
      * <tt>transactionID</tt>. Cancellation means that the stack will not
      * retransmit the request, will not treat the lack of response to be a
@@ -238,12 +286,43 @@ public class StunStack
                                        ResponseCollector collector )
         throws IOException, IllegalArgumentException
     {
+        return sendRequest(request, sendTo, sendThrough, collector,
+                        TransactionID.createNewTransactionID());
+    }
+
+    /**
+     * Sends the specified request through the specified access point, and
+     * registers the specified ResponseCollector for later notification.
+     * @param  request     the request to send
+     * @param  sendTo      the destination address of the request.
+     * @param  sendThrough the local address to use when sending the request
+     * @param  collector   the instance to notify when a response arrives or the
+     * the transaction timeouts
+     * @param transactionID the ID that we'd like the new transaction to use
+     * in case the application created it in order to use it for application
+     * data correlation.
+     *
+     * @return the <tt>TransactionID</tt> of the <tt>StunClientTransaction</tt>
+     * that we used in order to send the request.
+     *
+     * @throws IOException  if an error occurs while sending message bytes
+     * through the network socket.
+     * @throws IllegalArgumentException if the apDescriptor references an
+     * access point that had not been installed,
+     */
+    public TransactionID sendRequest(  Request           request,
+                                       TransportAddress  sendTo,
+                                       TransportAddress  sendThrough,
+                                       ResponseCollector collector,
+                                       TransactionID     transactionID)
+        throws IOException, IllegalArgumentException
+    {
         StunClientTransaction clientTransaction
             = new StunClientTransaction(this, request, sendTo, sendThrough,
-                                        collector);
+                                    collector, transactionID);
 
         clientTransactions.put(clientTransaction.getTransactionID(),
-                               clientTransaction);
+                            clientTransaction);
 
         clientTransaction.sendRequest();
 
@@ -406,8 +485,8 @@ public class StunStack
         if(msg instanceof Request)
         {
             logger.finest("parsing request");
-            TransactionID serverTid = TransactionID.
-                                    createTransactionID(msg.getTransactionID());
+
+            TransactionID serverTid = event.getTransactionID();
 
             StunServerTransaction sTran  = serverTransactions.get(serverTid);
             if( sTran != null)
@@ -450,8 +529,7 @@ public class StunStack
         //response
         else if(msg instanceof Response)
         {
-            TransactionID tid
-                = TransactionID.createTransactionID(msg.getTransactionID());
+            TransactionID tid = event.getTransactionID();
             StunClientTransaction tran = clientTransactions.remove(tid);
 
             if(tran != null)

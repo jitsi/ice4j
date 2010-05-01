@@ -31,13 +31,4 @@ public interface ResponseCollector
      */
     public void processTimeout(StunTimeoutEvent event);
 
-    /**
-     * Notifies this collector that the destination of the request has been
-     * determined to be unreachable and that the request should be considered
-     * unanswered.
-     *
-     * @param event the <tt>StunFailureEvent</tt> containing the
-     * <tt>PortUnreachableException</tt> that has just occurred.
-     */
-    public void processUnreachable(StunFailureEvent event);
 }

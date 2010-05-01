@@ -77,19 +77,32 @@ public class ConnectivityCheckClient
         paceMaker.start();
     }
 
-
-    private TransactionID startCheckForPair(CandidatePair pair)
+    /**
+     * Creates a STUN {@link Request} containing the necessary PRIORITY and
+     * CONTROLLING/CONTROLLED attributes. Also stores a reference to
+     * <tt>candidatePair</tt> in the newly created transactionID so that we
+     * could then refer back to it in subsequent response or failure events.
+     *
+     * @param candidatePair that {@link CandidatePair} that we'd like to start
+     * a check for.
+     *
+     * @return a reference to the {@link TransactionID} used in the connectivity
+     * check client transaction or <tt>null</tt> if sending the check has
+     * failed for some reason.
+     */
+    private TransactionID startCheckForPair(CandidatePair candidatePair)
     {
         //we don't need to do a canReach() verification here as it has been
         //already verified during the gathering process.
-        DatagramSocket stunSocket = ((HostCandidate)pair.getLocalCandidate())
-            .getStunSocket(null);
+        DatagramSocket stunSocket = ((HostCandidate)candidatePair
+                        .getLocalCandidate()) .getStunSocket(null);
 
         Request request = MessageFactory.createBindingRequest();
 
-        //priority
+        //the priority we'd like the remote party to use for a peer reflexive
+        //candidate if one is discovered as a consequence of this check.
         PriorityAttribute priority = AttributeFactory.createPriorityAttribute(
-            pair.getLocalCandidate().computePriorityForType(
+            candidatePair.getLocalCandidate().computePriorityForType(
                             CandidateType.PEER_REFLEXIVE_CANDIDATE));
 
         request.addAttribute(priority);
@@ -115,26 +128,24 @@ public class ConnectivityCheckClient
 
         request.addAttribute(unameAttr);
 
-        //todo: do this in the stun stack so that we could do the
-        //calculation once the request is ready (we'd need the transaction id
-        //for example.
         //todo: also implement SASL prepare
         MessageIntegrityAttribute msgIntegrity = AttributeFactory
             .createMessageIntegrityAttribute(localUserName);
 
-
         request.addAttribute(msgIntegrity);
 
-        TransactionID tran;
+        TransactionID tran = TransactionID.createNewTransactionID();
+        tran.setApplicationData(candidatePair);
 
         try
         {
-            tran = stunStack.sendRequest(request,
-                    pair.getRemoteCandidate().getTransportAddress(), stunSocket,
-                    this);
+            stunStack.sendRequest(request,
+                candidatePair.getRemoteCandidate().getTransportAddress(),
+                candidatePair.getLocalCandidate().getTransportAddress(),
+                this, tran);
 
             if(logger.isLoggable(Level.FINEST))
-                logger.finest("checking pair " + pair + " with tran="
+                logger.finest("checking pair " + candidatePair + " with tran="
                                 + tran.toString());
 
             return tran;
@@ -159,18 +170,18 @@ public class ConnectivityCheckClient
         System.out.println("timeout event=" + event);
     }
 
-    public void processUnreachable(StunFailureEvent event)
-    {
-        System.out.println("failure event=" + event);
-    }
-
     /**
      * The thread that actually sends the checks for a particular check list
      * in the pace defined in RFC 5245.
      */
     private static class PaceMaker extends Thread
     {
+        /**
+         * Indicates whether this thread is still running. Not really used at
+         * this point.
+         */
         public boolean isRunning = true;
+
         /**
          * The {@link ConnectivityCheckClient} that created us.
          */
@@ -225,6 +236,9 @@ public class ConnectivityCheckClient
                     {
                         logger.log(Level.FINER, "PaceMake got interrupted", e);
                     }
+
+                    if (!isRunning)
+                        return;
                 }
 
                 checkList.setState(CheckListState.RUNNING);
@@ -242,6 +256,7 @@ public class ConnectivityCheckClient
                     //we are done sending checks for this list. we'll send its
                     //final state in either the processResponse()
                     //processTimeout() or processFailure() method.
+                    isRunning = false;
                     return;
                 }
 
