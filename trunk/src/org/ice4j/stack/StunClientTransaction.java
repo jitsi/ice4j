@@ -142,11 +142,36 @@ class StunClientTransaction
      * @param responseCollector the instance that should receive this request's
      * response retransmit.
      */
-    public StunClientTransaction(StunStack        stackCallback,
-                                Request           request,
-                                TransportAddress  requestDestination,
-                                TransportAddress  localAddress,
-                                ResponseCollector responseCollector)
+    public StunClientTransaction(StunStack         stackCallback,
+                                 Request           request,
+                                 TransportAddress  requestDestination,
+                                 TransportAddress  localAddress,
+                                 ResponseCollector responseCollector)
+    {
+        this(stackCallback, request, requestDestination, localAddress,
+                   responseCollector, TransactionID.createNewTransactionID());
+    }
+
+    /**
+     * Creates a client transaction.
+     *
+     * @param stackCallback the stack that created us.
+     * @param request the request that we are living for.
+     * @param requestDestination the destination of the request.
+     * @param localAddress the local <tt>TransportAddress</tt> this transaction
+     * will be communication through.
+     * @param responseCollector the instance that should receive this request's
+     * response retransmit.
+     * @param transactionID the ID that we'd like the new transaction to have
+     * in case the application created it in order to use it for application
+     * data correlation.
+     */
+    public StunClientTransaction(StunStack         stackCallback,
+                                 Request           request,
+                                 TransportAddress  requestDestination,
+                                 TransportAddress  localAddress,
+                                 ResponseCollector responseCollector,
+                                 TransactionID     transactionID)
     {
         this.stackCallback      = stackCallback;
         this.request            = request;
@@ -156,7 +181,8 @@ class StunClientTransaction
 
         initTransactionConfiguration();
 
-        this.transactionID = TransactionID.createTransactionID();
+        this.transactionID = transactionID;
+
         try
         {
             request.setTransactionID(transactionID.getTransactionID());
@@ -220,8 +246,8 @@ class StunClientTransaction
 
         waitFor(nextWaitInterval);
 
-        responseCollector.processTimeout(
-                        new StunTimeoutEvent(this.request, getLocalAddress()));
+        responseCollector.processTimeout( new StunTimeoutEvent(
+                        this.request, getLocalAddress(), transactionID));
         stackCallback.removeClientTransaction(this);
     }
 

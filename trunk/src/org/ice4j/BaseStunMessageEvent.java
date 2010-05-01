@@ -33,7 +33,7 @@ public class BaseStunMessageEvent
     /**
      * The ID of the transaction related to {@link #message}.
      */
-    private TransactionID transactionID;
+    private TransactionID transactionID = null;
 
     /**
      * Initializes a new <tt>BaseStunMessageEvent</tt> associated with a
@@ -84,5 +84,16 @@ public class BaseStunMessageEvent
                 = TransactionID
                     .createTransactionID(getMessage().getTransactionID());
         return transactionID;
+    }
+
+    /**
+     * Allows descendants of this class to set the transaction ID so that we
+     * don't need to look it up later. This is not mandatory.
+     *
+     * @param tranID the ID of the transaction associated with this event.
+     */
+    protected void setTransactionID(TransactionID tranID)
+    {
+        this.transactionID = tranID;
     }
 }

@@ -355,7 +355,6 @@ public class Agent
         streams.get(0).getCheckList().computeInitialCheckListPairStates();
     }
 
-
     /**
      * Computes and sets the foundations foundation for all <tt>Candidate</tt>s
      * currently found in <tt>component</tt>.

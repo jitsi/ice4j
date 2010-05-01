@@ -7,6 +7,7 @@
 package org.ice4j;
 
 import org.ice4j.message.*;
+import org.ice4j.stack.*;
 
 /**
  * The class is used to dispatch events that occur when a STUN transaction
@@ -28,11 +29,14 @@ public class StunTimeoutEvent
      *
      * @param message the message itself
      * @param localAddress the local address that the message was sent from.
+     * @param transactionID the ID of the  associated with this event.
      */
     public StunTimeoutEvent(Message          message,
-                            TransportAddress localAddress)
+                            TransportAddress localAddress,
+                            TransactionID    transactionID)
     {
         super(localAddress, message);
+        super.setTransactionID(transactionID);
     }
 
     /**
