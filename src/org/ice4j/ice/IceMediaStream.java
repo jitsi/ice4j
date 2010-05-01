@@ -276,7 +276,6 @@ public class IceMediaStream
 
             orderCheckList();
             pruneCheckList();
-            computeInitialCheckListPairStates();
             logger.finest("Checklist initialized.");
         }
     }
@@ -442,7 +441,7 @@ public class IceMediaStream
 
         while(pairsIter.hasNext())
         {
-            pairsIter.next().setState(CandidatePairState.WAITING);
+            pairsIter.next().setState(CandidatePairState.WAITING, null);
         }
     }
 

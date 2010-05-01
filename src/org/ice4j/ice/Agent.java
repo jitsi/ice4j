@@ -352,7 +352,7 @@ public class Agent
         }
 
         //init the states of the first media stream as per 5245
-        streams.get(0).getCheckList().computeInitialStates();
+        streams.get(0).getCheckList().computeInitialCheckListPairStates();
     }
 
 
