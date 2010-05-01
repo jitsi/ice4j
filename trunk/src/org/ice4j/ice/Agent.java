@@ -583,8 +583,7 @@ public class Agent
             Collection<IceMediaStream> streams = mediaStreams.values();
             for (IceMediaStream stream : streams)
             {
-                if (stream.getCheckList().getState()
-                                == CheckListState.RUNNING)
+                if (stream.getCheckList().isActive())
                     i++;
             }
 
@@ -602,10 +601,12 @@ public class Agent
     {
         StringBuffer buff = new StringBuffer("ICE Agent (stream-count=");
 
-        buff.append(getStreamCount()).append(" ice-pwd:").append(getLocalPassword());
+        buff.append(getStreamCount()).append(" ice-pwd:")
+            .append(getLocalPassword());
         buff.append(getStreamCount()).append(" ice-ufrag:")
-                                                    .append(getLocalUfrag());
-        buff.append(getStreamCount()).append(" tie-breaker:" + getTieBreaker());
+            .append(getLocalUfrag());
+        buff.append(getStreamCount()).append(" tie-breaker:")
+            .append(getTieBreaker());
         buff.append("):\n");
 
         List<IceMediaStream> streams = getStreams();

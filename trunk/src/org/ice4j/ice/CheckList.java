@@ -144,6 +144,43 @@ public class CheckList
     }
 
     /**
+     * Determines whether this <tt>CheckList</tt> can be considered active.
+     * RFC 5245 says: A check list with at least one pair that is Waiting is
+     * called an active check list.
+     *
+     * @return <tt>true</tt> if this list is active and <tt>false</tt>
+     * otherwise.
+     */
+    public synchronized boolean isActive()
+    {
+        for (CandidatePair pair : this)
+        {
+            if (pair.getState() == CandidatePairState.WAITING)
+                return true;
+        }
+        return false;
+    }
+
+    /**
+     * Determines whether this <tt>CheckList</tt> can be considered frozen.
+     * RFC 5245 says: a check list with all pairs Frozen is called a frozen
+     * check list.
+     *
+     * @return <tt>true</tt> if all pairs in this list are frozen and
+     * <tt>false</tt> otherwise.
+     */
+    public synchronized boolean isFrozen()
+    {
+        for (CandidatePair pair : this)
+        {
+            if (pair.getState() != CandidatePairState.FROZEN)
+                return false;
+        }
+
+        return true;
+    }
+
+    /**
      * Returns a <tt>String</tt> representation of this check list. It
      * consists of a list of the <tt>CandidatePair</tt>s in the order they
      * were inserted and enclosed in square brackets (<tt>"[]"</tt>). The method
@@ -165,5 +202,53 @@ public class CheckList
         }
 
         return buff.toString();
+    }
+
+    /**
+     * If this check list {@link #isFrozen}, computes the state of each pair in
+     * it. To do so, the method groups together all of the pairs with the same
+     * foundation, and for each group, sets the state of the pair with the
+     * lowest component ID to Waiting.  If there is more than one such pair,
+     * the one with the highest priority is used.
+     * <p>
+     * If the check list is not frozen, this method has no effect.
+     */
+    public synchronized void computeInitialStates()
+    {
+        if(!isFrozen())
+            return;
+
+        Map<String, CandidatePair> foundationPairs
+                        = new Hashtable<String, CandidatePair>();
+
+        for (CandidatePair pair : this)
+        {
+            CandidatePair pairToUnfreeze
+                = foundationPairs.get(pair.getFoundation());
+
+            if( pairToUnfreeze == null)
+            {
+                pairToUnfreeze = pair;
+            }
+            else
+            {
+                if(pair.getParentComponent().getComponentID()
+                    < pairToUnfreeze.getParentComponent().getComponentID())
+                {
+                    //prefer the lower component ID.
+                    pairToUnfreeze = pair;
+                }
+                else if (pair.getParentComponent().getComponentID()
+                       == pairToUnfreeze.getParentComponent().getComponentID())
+                {
+                    //for equal component IDs prefer the higher priority
+                    if(pair.getPriority() > pairToUnfreeze.getPriority())
+                        pairToUnfreeze = pair;
+                }
+            }
+
+            foundationPairs.put(pairToUnfreeze.getFoundation(),
+                                pairToUnfreeze );
+        }
     }
 }
