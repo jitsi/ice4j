@@ -556,4 +556,41 @@ public class IceMediaStream
 
         return null;
     }
+
+    /**
+     * Returns the number of host {@link Candidate}s in this stream.
+     *
+     * @return the number of host {@link Candidate}s in this stream.
+     */
+    protected int countHostCandidates()
+    {
+        int num = 0;
+
+        synchronized (components)
+        {
+            Collection<Component> cmpCol = components.values();
+
+            for( Component cmp : cmpCol)
+            {
+                num += cmp.coundHostCandidates();
+            }
+        }
+
+        return num;
+    }
+
+    /**
+     * Adds <tt>candidatePair</tt> to this stream's check list. The method
+     * is meant for use during the connectivity checks phase when new pairs
+     * with remote PEER-REFLEXIVE-CANDIDATEs are discovered.
+     *
+     * @param candidatePair the pair that we'd like to add to this streams.
+     */
+    protected void addToCheckList(CandidatePair candidatePair)
+    {
+        synchronized(checkList)
+        {
+            this.checkList.add(candidatePair);
+        }
+    }
 }
