@@ -7,6 +7,7 @@
 package org.ice4j;
 
 import org.ice4j.message.*;
+import org.ice4j.stack.*;
 
 /**
  * The class is used to dispatch incoming stun messages. Apart from the message
@@ -26,28 +27,27 @@ public class StunMessageEvent
     private static final long serialVersionUID = 41267843L;
 
     /**
-     * The sending address.
+     * The message as we got it off the wire.
      */
-    private final TransportAddress remoteAddress;
+    private final RawMessage rawMessage;
 
     /**
      * Constructs a StunMessageEvent according to the specified message.
-     * @param sourceAddress the access point that received the message
-     * @param message the message itself
-     * @param remoteAddress the address that sent the message
+     *
+     * @param rawMessage the crude message we got off the wire.
+     * @param parsedMessage the message itself
      */
-    public StunMessageEvent(TransportAddress sourceAddress,
-                            Message          message,
-                            TransportAddress remoteAddress)
+    public StunMessageEvent(RawMessage rawMessage,
+                            Message    parsedMessage)
     {
-        super(sourceAddress, message);
-
-        this.remoteAddress  = remoteAddress;
+        super(rawMessage.getLocalAddress(), parsedMessage);
+        this.rawMessage = rawMessage;
     }
 
     /**
      * Returns a <tt>TransportAddress</tt> referencing the access point where
      * the message was received.
+     *
      * @return a descriptor of the access point where the message arrived.
      */
     public TransportAddress getLocalAddress()
@@ -57,11 +57,12 @@ public class StunMessageEvent
 
     /**
      * Returns the address that sent the message.
+     *
      * @return the address that sent the message.
      */
     public TransportAddress getRemoteAddress()
     {
-        return remoteAddress;
+        return rawMessage.getRemoteAddress();
     }
 
     /**
@@ -81,5 +82,15 @@ public class StunMessageEvent
         buff.append(" localAddr=").append(getLocalAddress());
 
         return buff.toString();
+    }
+
+    /**
+     * Returns the raw message that caused this event.
+     *
+     * @return the {@link RawMessage} that caused this event.
+     */
+    public RawMessage getRawMessage()
+    {
+        return rawMessage;
     }
 }

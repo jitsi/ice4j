@@ -15,7 +15,7 @@ import org.ice4j.*;
  *
  * @author Emil Ivov
  */
-class RawMessage
+public class RawMessage
 {
     /**
      * The message itself.

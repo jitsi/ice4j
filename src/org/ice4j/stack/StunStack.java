@@ -16,6 +16,8 @@ import org.ice4j.attribute.*;
 import org.ice4j.message.*;
 import org.ice4j.security.*;
 
+import com.sun.corba.se.impl.protocol.*;
+
 /**
  * The entry point to the Stun4J stack. The class is used to start, stop and
  * configure the stack.
@@ -524,6 +526,7 @@ public class StunStack
             }
 
             //validate attributes that need validation.
+            validateRequestAttributes((Request)msg, event.getRawMessage());
 
             eventDispatcher.fireMessageEvent(event);
 
@@ -591,72 +594,56 @@ public class StunStack
      * Executes actions related specific attributes like asserting proper
      * checksums or verifying the validity of user names.
      *
-     * @param attribute the <tt>Attribute</tt> we'd like to process.
-     * @param binMessage the byte array that the message arrived with.
-     * @param message the <tt>Message</tt> that we're parsing
-     * <tt>binMessage</tt> into.
-     * @param offset the index where data starts in <tt>binMessage</tt>.
-     * @param msgLen the number of message bytes in <tt>binMessage</tt>.
+     * @param request the {@link Request} to validate.
+     * @param rawMessage the {@link RawMessage} containing the bytes of the
+     * {@link Request} so that we could check MESSAGE-INTEGRITY if necessary..
      *
-     * @throws MessageDecodeException if there's something in the
+     * @throws IllegalArgumentException if there's something in the
      * <tt>attribute</tt> that caused us to discard the whole message (e.g. an
      * invalid checksum
      * or username)
      */
-    private void performAttributeSpecificActions(Attribute attribute,
-                                                 byte[]    binMessage,
-                                                 Message   message,
-                                                 int       offset,
-                                                 int       msgLen)
-        throws MessageDecodeException
+    private void validateRequestAttributes(Request request,
+                                           RawMessage rawMessage)
+        throws IllegalArgumentException
     {
-        ///HANDLE OPTIONAL ATTRIBUTES
-        byte[] tranID = message.getTransactionID();
+        ///HANDLE OPTIONAL ATTRIBUTES!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
         //assert valid username
-        if (attribute instanceof UsernameAttribute)
+        UsernameAttribute unameAttr = (UsernameAttribute)request
+            .getAttribute(Attribute.USERNAME);
+
+        if (unameAttr != null)
         {
-            if (!validateUsername( (UsernameAttribute)attribute))
+            if (!validateUsername( unameAttr))
             {
-                throw new MessageDecodeException(
+                throw new IllegalArgumentException(
                     "Non-recognized username: "
-                    + new String(((UsernameAttribute)attribute)
-                                        .getUsername()),
-                    ErrorCodeAttribute.UNAUTHORIZED, tranID);
+                    + new String(unameAttr.getUsername()));
             }
         }
 
         //assert Message Integrity
-        if (attribute instanceof MessageIntegrityAttribute)
+        MessageIntegrityAttribute msgIntAttr = (MessageIntegrityAttribute)
+            request.getAttribute(Attribute.MESSAGE_INTEGRITY);
+
+        if (msgIntAttr != null)
         {
             //we should complain if we have msg integrity and no username.
-            if (message.getAttribute(Attribute.USERNAME) == null)
+            if (unameAttr == null)
             {
-                throw new MessageDecodeException(
-                    "Missing USERNAME in the presence of MESSAGE-INTEGRITY: ",
-                    ErrorCodeAttribute.BAD_REQUEST, tranID);
+                throw new IllegalArgumentException(
+                    "Missing USERNAME in the presence of MESSAGE-INTEGRITY: ");
             }
 
-            if (!validateMessageIntegrity((MessageIntegrityAttribute)attribute,
-                            binMessage, offset, msgLen))
+            if (!validateMessageIntegrity(msgIntAttr,
+                            new String(unameAttr.getUsername())
+                            ,rawMessage.getBytes(), 0))
             {
-                throw new MessageDecodeException(
-                    "Wrong MESSAGE-INTEGRITY value.",
-                    ErrorCodeAttribute.UNAUTHORIZED, tranID);
+                throw new IllegalArgumentException(
+                    "Wrong MESSAGE-INTEGRITY value.");
             }
 
-        }
-
-        //check finger print CRC
-        if (attribute instanceof FingerprintAttribute)
-        {
-            if (!validateFingerprint((FingerprintAttribute)attribute,
-                            binMessage, offset, msgLen))
-            {
-                //RFC 5389 says that we should ignore bad CRCs rather than
-                //reply with an error response.
-                throw new MessageDecodeException(
-                                "Wrong value in FINGERPRINT");
-            }
         }
     }
 
@@ -712,32 +699,19 @@ public class StunStack
      * {@link MessageIntegrityAttribute}.
      *
      * @param msgInt the attribute that we need to validate.
+     * @param username the user name that the message integrity checksum is
+     * supposed to have been built for.
      * @param message the message whose SHA1 checksum we'd need to recalculate.
      * @param offset the index in <tt>message</tt> where data starts.
-     * @param length the number of bytes in <tt>message</tt> that the SHA1 would
-     * need to be calculated over.
      *
      * @return <tt>true</tt> if <tt>msgInt</tt> contains a valid SHA1 value and
      * <tt>false</tt> otherwise.
      */
     private boolean validateMessageIntegrity(MessageIntegrityAttribute msgInt,
+                                             String                    username,
                                              byte[]                    message,
-                                             int                       offset,
-                                             int                       length)
+                                             int                       offset)
     {
-        //first get a password for the username specified with this message.
-        UsernameAttribute unameAttr
-            = (UsernameAttribute)getAttribute(Attribute.USERNAME);
-
-        if (unameAttr == null)
-        {
-            logger.info( "Received a message containing a "
-                            +" MESSAGE-INTEGRITY attribute and no USERNAME");
-            return false;
-        }
-
-        String username = new String(unameAttr.getUsername());
-
         int colon = username.indexOf(":");
 
         if( username.length() < 1
@@ -761,7 +735,8 @@ public class StunStack
 
         //now check whether the SHA1 matches.
         byte[] expectedSha1 = MessageIntegrityAttribute
-            .calculateHmacSha1(message, offset, length, key);
+            .calculateHmacSha1(
+                message, offset, msgInt.getLocationInMessage(), key);
 
         if (!Arrays.equals(expectedSha1, msgInt.getHmacSha1Content()))
         {

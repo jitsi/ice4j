@@ -67,7 +67,7 @@ public class AttributeDecoderTest extends TestCase {
                        Transport.UDP));
 
         Attribute actualReturn = AttributeDecoder.decode(
-                        bytes, offset, length, null);
+                        bytes, offset, length);
 
         assertEquals(
             "AttributeDecoder.decode() failed for a MAPPED-ADDRESS attribute",
@@ -91,7 +91,7 @@ public class AttributeDecoderTest extends TestCase {
                         Transport.UDP));
 
         Attribute actualReturn = AttributeDecoder.decode(
-                        bytes, offset, length, null);
+                        bytes, offset, length);
 
         assertEquals(
             "AttributeDecoder.decode() failed for a MAPPED-ADDRESS attribute",
@@ -112,7 +112,7 @@ public class AttributeDecoderTest extends TestCase {
         expectedReturn.setChangePortFlag(MsgFixture.CHANGE_PORT_FLAG_1);
 
         Attribute actualReturn = AttributeDecoder.decode(
-                        bytes, offset, length, null);
+                        bytes, offset, length);
         assertEquals("AttributeDecoder.decode() failed for a CHANGE-REQUEST attribute",
                      expectedReturn, actualReturn);
 
@@ -134,7 +134,7 @@ public class AttributeDecoderTest extends TestCase {
        expectedReturn.setReasonPhrase(MsgFixture.REASON_PHRASE);
 
        Attribute actualReturn = AttributeDecoder.decode(
-                       bytes, offset, length, null);
+                       bytes, offset, length);
        assertEquals(
                 "AttributeDecoder.decode() failed for a ERROR-CODE attribute",
                 expectedReturn, actualReturn);
@@ -157,9 +157,10 @@ public class AttributeDecoderTest extends TestCase {
        expectedReturn.addAttributeID(MsgFixture.UNKNOWN_ATTRIBUTES_3D_ATT);
 
        Attribute actualReturn = AttributeDecoder.decode(
-                       bytes, offset, length, null);
+                       bytes, offset, length);
 
-       assertEquals("AttributeDecoder.decode() failed for a ERROR-CODE attribute",
+       assertEquals(
+              "AttributeDecoder.decode() failed for a ERROR-CODE attribute",
                     expectedReturn, actualReturn);
 
    }
@@ -179,7 +180,7 @@ public class AttributeDecoderTest extends TestCase {
                               expectedAttributeValue.length);
 
        Attribute actualReturn = AttributeDecoder.decode(
-                       bytes, offset, length, null);
+                       bytes, offset, length);
        assertEquals(
            "AttributeDecoder.decode() failed for a UNKNOWN_OPTIONAL attribute",
            expectedReturn, actualReturn);

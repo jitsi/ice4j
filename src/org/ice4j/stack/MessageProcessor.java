@@ -126,7 +126,7 @@ class MessageProcessor
                                          (char) 0,
                                          (char) rawMessage.getMessageLength());
                 }
-                catch (MessageDecodeException ex)
+                catch (StunException ex)
                 {
                     errorHandler.handleError("Failed to decode a stun mesage!",
                                              ex);
@@ -137,10 +137,7 @@ class MessageProcessor
                 logger.finest("Dispatching a StunMessageEvent.");
 
                 StunMessageEvent stunMessageEvent =
-                    new StunMessageEvent(
-                        rawMessage.getLocalAddress(),
-                        stunMessage,
-                        rawMessage.getRemoteAddress());
+                    new StunMessageEvent(rawMessage, stunMessage);
 
                 messageHandler.handleMessageEvent(stunMessageEvent);
             }
