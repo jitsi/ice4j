@@ -523,6 +523,8 @@ public class StunStack
                 sTran.start();
             }
 
+            //validate attributes that need validation.
+
             eventDispatcher.fireMessageEvent(event);
 
         }
@@ -583,5 +585,230 @@ public class StunStack
             if(tran != null)
                 tran.expire();
         }
+    }
+
+    /**
+     * Executes actions related specific attributes like asserting proper
+     * checksums or verifying the validity of user names.
+     *
+     * @param attribute the <tt>Attribute</tt> we'd like to process.
+     * @param binMessage the byte array that the message arrived with.
+     * @param message the <tt>Message</tt> that we're parsing
+     * <tt>binMessage</tt> into.
+     * @param offset the index where data starts in <tt>binMessage</tt>.
+     * @param msgLen the number of message bytes in <tt>binMessage</tt>.
+     *
+     * @throws MessageDecodeException if there's something in the
+     * <tt>attribute</tt> that caused us to discard the whole message (e.g. an
+     * invalid checksum
+     * or username)
+     */
+    private void performAttributeSpecificActions(Attribute attribute,
+                                                 byte[]    binMessage,
+                                                 Message   message,
+                                                 int       offset,
+                                                 int       msgLen)
+        throws MessageDecodeException
+    {
+        ///HANDLE OPTIONAL ATTRIBUTES
+        byte[] tranID = message.getTransactionID();
+        //assert valid username
+        if (attribute instanceof UsernameAttribute)
+        {
+            if (!validateUsername( (UsernameAttribute)attribute))
+            {
+                throw new MessageDecodeException(
+                    "Non-recognized username: "
+                    + new String(((UsernameAttribute)attribute)
+                                        .getUsername()),
+                    ErrorCodeAttribute.UNAUTHORIZED, tranID);
+            }
+        }
+
+        //assert Message Integrity
+        if (attribute instanceof MessageIntegrityAttribute)
+        {
+            //we should complain if we have msg integrity and no username.
+            if (message.getAttribute(Attribute.USERNAME) == null)
+            {
+                throw new MessageDecodeException(
+                    "Missing USERNAME in the presence of MESSAGE-INTEGRITY: ",
+                    ErrorCodeAttribute.BAD_REQUEST, tranID);
+            }
+
+            if (!validateMessageIntegrity((MessageIntegrityAttribute)attribute,
+                            binMessage, offset, msgLen))
+            {
+                throw new MessageDecodeException(
+                    "Wrong MESSAGE-INTEGRITY value.",
+                    ErrorCodeAttribute.UNAUTHORIZED, tranID);
+            }
+
+        }
+
+        //check finger print CRC
+        if (attribute instanceof FingerprintAttribute)
+        {
+            if (!validateFingerprint((FingerprintAttribute)attribute,
+                            binMessage, offset, msgLen))
+            {
+                //RFC 5389 says that we should ignore bad CRCs rather than
+                //reply with an error response.
+                throw new MessageDecodeException(
+                                "Wrong value in FINGERPRINT");
+            }
+        }
+    }
+
+    /**
+     * Recalculates the FINGERPRINT CRC32 checksum of the <tt>message</tt>
+     * array so that we could compare it with the value brought by the
+     * {@link FingerprintAttribute}.
+     *
+     * @param fingerprint the attribute that we need to validate.
+     * @param message the message whose CRC32 checksum we'd need to recalculate.
+     * @param offset the index in <tt>message</tt> where data starts.
+     * @param length the number of bytes in <tt>message</tt> that the CRC32
+     * would need to be calculated over.
+     *
+     * @return <tt>true</tt> if <tt>FINGERPRINT</tt> contains a valid CRC32
+     * value and <tt>false</tt> otherwise.
+     */
+    private static boolean validateFingerprint(FingerprintAttribute fingerprint,
+                                               byte[]               message,
+                                               int                  offset,
+                                               int                  length)
+    {
+
+        byte[] incomingCrcBytes = fingerprint.getChecksum();
+
+        //now check whether the CRC really is what it's supposed to be.
+        //re calculate the check sum
+        byte[] realCrcBytes = FingerprintAttribute.calculateXorCRC32(
+                        message, offset, length);
+
+        //CRC validation.
+        if ( ! Arrays.equals(incomingCrcBytes, realCrcBytes))
+        {
+            if (logger.isLoggable(Level.FINE))
+            {
+                logger.fine(
+                        "An incoming message arrived with a wrong FINGERPRINT "
+                        +"attribute value. "
+                        +"CRC Was:"  + Arrays.toString(incomingCrcBytes)
+                        + ". Should have been:" + Arrays.toString(realCrcBytes)
+                        +". Will ignore.");
+            }
+
+            return false;
+        }
+
+        return true;
+    }
+
+    /**
+     * Recalculates the HMAC-SHA1 signature of the <tt>message</tt> array so
+     * that we could compare it with the value brought by the
+     * {@link MessageIntegrityAttribute}.
+     *
+     * @param msgInt the attribute that we need to validate.
+     * @param message the message whose SHA1 checksum we'd need to recalculate.
+     * @param offset the index in <tt>message</tt> where data starts.
+     * @param length the number of bytes in <tt>message</tt> that the SHA1 would
+     * need to be calculated over.
+     *
+     * @return <tt>true</tt> if <tt>msgInt</tt> contains a valid SHA1 value and
+     * <tt>false</tt> otherwise.
+     */
+    private boolean validateMessageIntegrity(MessageIntegrityAttribute msgInt,
+                                             byte[]                    message,
+                                             int                       offset,
+                                             int                       length)
+    {
+        //first get a password for the username specified with this message.
+        UsernameAttribute unameAttr
+            = (UsernameAttribute)getAttribute(Attribute.USERNAME);
+
+        if (unameAttr == null)
+        {
+            logger.info( "Received a message containing a "
+                            +" MESSAGE-INTEGRITY attribute and no USERNAME");
+            return false;
+        }
+
+        String username = new String(unameAttr.getUsername());
+
+        int colon = username.indexOf(":");
+
+        if( username.length() < 1
+            || colon < 1)
+        {
+            if(logger.isLoggable(Level.FINE))
+            {
+                logger.log(Level.FINE, "Received a message with an improperly "
+                        +"formatted username");
+            }
+            return false;
+        }
+
+        String lfrag = username.substring(0, colon);
+
+        byte[] key = StunStack.getInstance()
+                .getCredentialsManager().getLocalKey(lfrag);
+
+        if(key == null)
+            return false;
+
+        //now check whether the SHA1 matches.
+        byte[] expectedSha1 = MessageIntegrityAttribute
+            .calculateHmacSha1(message, offset, length, key);
+
+        if (!Arrays.equals(expectedSha1, msgInt.getHmacSha1Content()))
+        {
+            if(logger.isLoggable(Level.FINE))
+            {
+                logger.log(Level.FINE, "Received a message with a wrong "
+                            +"MESSAGE-INTEGRITY HMAC-SHA1 signature");
+            }
+            return false;
+        }
+
+        if (logger.isLoggable(Level.FINEST))
+            logger.finest("Successfully verified msg integrity");
+
+        return true;
+    }
+
+    /**
+     * Asserts the validity of the user name we've received in
+     * <tt>unameAttr</tt>.
+     *
+     * @param unameAttr the attribute that we need to validate.
+     *
+     * @return <tt>true</tt> if <tt>unameAttr</tt> contains a valid user name
+     * and <tt>false</tt> otherwise.
+     */
+    private static boolean validateUsername(UsernameAttribute unameAttr)
+    {
+        String username = new String(unameAttr.getUsername());
+
+        int colon = username.indexOf(":");
+
+        if( username.length() < 1
+            || colon < 1)
+        {
+            if(logger.isLoggable(Level.FINE))
+            {
+                logger.log(Level.FINE, "Received a message with an improperly "
+                        +"formatted username");
+            }
+
+            return false;
+        }
+
+        String lfrag = username.substring(0, colon);
+
+        return StunStack.getInstance()
+                .getCredentialsManager().checkLocalUserName(lfrag);
     }
 }

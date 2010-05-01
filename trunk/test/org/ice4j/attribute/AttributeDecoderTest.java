@@ -67,8 +67,7 @@ public class AttributeDecoderTest extends TestCase {
                        Transport.UDP));
 
         Attribute actualReturn = AttributeDecoder.decode(
-                        bytes, offset, length, //attribute
-                        bytes, (char)0, offset);//message head
+                        bytes, offset, length, null);
 
         assertEquals(
             "AttributeDecoder.decode() failed for a MAPPED-ADDRESS attribute",
@@ -92,8 +91,7 @@ public class AttributeDecoderTest extends TestCase {
                         Transport.UDP));
 
         Attribute actualReturn = AttributeDecoder.decode(
-                        bytes, offset, length, //attribute
-                        bytes, (char)0, offset);//message head
+                        bytes, offset, length, null);
 
         assertEquals(
             "AttributeDecoder.decode() failed for a MAPPED-ADDRESS attribute",
@@ -101,7 +99,7 @@ public class AttributeDecoderTest extends TestCase {
     }
 
     public void testDecodeChangeRequest()
-        throws StunException
+        throws Exception
     {
         //
         byte[] bytes = msgFixture.chngReqTestValue1;
@@ -114,8 +112,7 @@ public class AttributeDecoderTest extends TestCase {
         expectedReturn.setChangePortFlag(MsgFixture.CHANGE_PORT_FLAG_1);
 
         Attribute actualReturn = AttributeDecoder.decode(
-                        bytes, offset, length, //attribute
-                        bytes, (char)0, offset);//message head
+                        bytes, offset, length, null);
         assertEquals("AttributeDecoder.decode() failed for a CHANGE-REQUEST attribute",
                      expectedReturn, actualReturn);
 
@@ -123,7 +120,7 @@ public class AttributeDecoderTest extends TestCase {
 
 
    public void testDecodeErrorCode()
-       throws StunException
+       throws Exception
    {
        //
        byte[] bytes = msgFixture.errCodeTestValue;
@@ -137,8 +134,7 @@ public class AttributeDecoderTest extends TestCase {
        expectedReturn.setReasonPhrase(MsgFixture.REASON_PHRASE);
 
        Attribute actualReturn = AttributeDecoder.decode(
-                       bytes, offset, length, //attribute
-                       bytes, (char)0, offset);//message head
+                       bytes, offset, length, null);
        assertEquals(
                 "AttributeDecoder.decode() failed for a ERROR-CODE attribute",
                 expectedReturn, actualReturn);
@@ -146,7 +142,7 @@ public class AttributeDecoderTest extends TestCase {
    }
 
    public void testDecodeUnknownAttributes()
-       throws StunException
+       throws Exception
    {
        //unknown attributes
        byte[] bytes = msgFixture.unknownAttsDecodeTestValue;
@@ -154,14 +150,14 @@ public class AttributeDecoderTest extends TestCase {
        char length = (char)msgFixture.mappedAddress.length;
 
        //create the message
-       UnknownAttributesAttribute expectedReturn = new UnknownAttributesAttribute();
+       UnknownAttributesAttribute expectedReturn
+           = new UnknownAttributesAttribute();
        expectedReturn.addAttributeID(MsgFixture.UNKNOWN_ATTRIBUTES_1ST_ATT);
        expectedReturn.addAttributeID(MsgFixture.UNKNOWN_ATTRIBUTES_2ND_ATT);
        expectedReturn.addAttributeID(MsgFixture.UNKNOWN_ATTRIBUTES_3D_ATT);
 
        Attribute actualReturn = AttributeDecoder.decode(
-                       bytes, offset, length, //attribute
-                       bytes, (char)0, offset);//message head
+                       bytes, offset, length, null);
 
        assertEquals("AttributeDecoder.decode() failed for a ERROR-CODE attribute",
                     expectedReturn, actualReturn);
@@ -169,7 +165,7 @@ public class AttributeDecoderTest extends TestCase {
    }
 
    public void testDecodeUnknownOptionalAttribute()
-       throws StunException
+       throws Exception
    {
        //unknown attributes
        byte[] bytes = msgFixture.unknownOptionalAttribute;
@@ -183,8 +179,7 @@ public class AttributeDecoderTest extends TestCase {
                               expectedAttributeValue.length);
 
        Attribute actualReturn = AttributeDecoder.decode(
-                       bytes, offset, length, //attribute
-                       bytes, (char)0, offset);//message head
+                       bytes, offset, length, null);
        assertEquals(
            "AttributeDecoder.decode() failed for a UNKNOWN_OPTIONAL attribute",
            expectedReturn, actualReturn);

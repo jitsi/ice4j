@@ -9,6 +9,7 @@ package org.ice4j.stack;
 import java.util.logging.*;
 
 import org.ice4j.*;
+import org.ice4j.attribute.*;
 import org.ice4j.message.*;
 
 /**
@@ -125,10 +126,11 @@ class MessageProcessor
                                          (char) 0,
                                          (char) rawMessage.getMessageLength());
                 }
-                catch (StunException ex)
+                catch (MessageDecodeException ex)
                 {
                     errorHandler.handleError("Failed to decode a stun mesage!",
                                              ex);
+
                     continue; //let this one go and for better luck next time.
                 }
 
