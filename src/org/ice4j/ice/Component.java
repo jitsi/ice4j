@@ -622,4 +622,24 @@ public class Component
 
         return null;
     }
+
+    /**
+     * Returns the number of host {@link Candidate}s in this <tt>Component</tt>.
+     *
+     * @return the number of host {@link Candidate}s in this <tt>Component</tt>.
+     */
+    protected int coundHostCandidates()
+    {
+        int num = 0;
+        synchronized (localCandidates)
+        {
+            for(LocalCandidate cand : localCandidates)
+            {
+                if (cand.getType() == CandidateType.HOST_CANDIDATE)
+                    num++;
+            }
+        }
+
+        return num;
+    }
 }

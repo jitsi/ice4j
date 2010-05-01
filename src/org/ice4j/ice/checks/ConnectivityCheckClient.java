@@ -177,6 +177,7 @@ public class ConnectivityCheckClient
      */
     private static class PaceMaker extends Thread
     {
+        public boolean isRunning = true;
         /**
          * The {@link ConnectivityCheckClient} that created us.
          */
@@ -195,9 +196,24 @@ public class ConnectivityCheckClient
             this.parentClient = parentClient;
         }
 
-        public void run()
+        /**
+         * Sends connectivity checks at the pace determined by the {@link
+         * Agent#calculateTa()} method and using either the trigger check queue
+         * or the regular check lists.
+         */
+        public synchronized void run()
         {
-
+            while(isRunning)
+            {
+                try
+                {
+                    wait(parentClient.parentAgent.calculateTa());
+                }
+                catch (InterruptedException e)
+                {
+                    logger.log(Level.FINER, "PaceMake got interrupted", e);
+                }
+            }
         }
     }
 }

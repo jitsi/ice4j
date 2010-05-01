@@ -19,6 +19,8 @@ import org.ice4j.ice.checks.*;
 import org.ice4j.ice.harvest.*;
 import org.ice4j.stack.*;
 
+import sun.management.resources.*;
+
 /**
  * An <tt>Agent</tt> could be described as the main class (i.e. the chef d'orchestre)
  * of an ICE implementation.
@@ -66,6 +68,12 @@ public class Agent
      */
     private final FoundationsRegistry foundationsRegistry
                                           = new FoundationsRegistry();
+
+    /**
+     * the value of <tt>Ta</tt> as specified by the application or <tt>-1</tt>
+     * if non was specified and we should calculate one ourselves.
+     */
+    private long taValue = -1;
 
     /**
      * The <tt>List</tt> of remote addresses that we have discovered through
@@ -829,8 +837,11 @@ public class Agent
              * The pair is inserted into the check list based on its priority
              * Its state is set to Waiting [and it] is enqueued into the
              * triggered check queue.
-             * Emil: This means we actually don't have anything to do here.
              */
+            IceMediaStream parentStream = triggeredPair.getLocalCandidate()
+                .getParentComponent().getParentStream();
+
+            parentStream.addToCheckList(triggeredPair);
         }
 
         /**
@@ -841,6 +852,141 @@ public class Agent
          * Emil: This actually applies for all case.
          */
         connCheckClient.scheduleTriggeredCheck(triggeredPair);
+    }
 
+    /**
+     * Returns the number of host {@link Candidate}s in this {@link Agent}.
+     *
+     * @return the number of host {@link Candidate}s in this {@link Agent}.
+     */
+    protected int countHostCandidates()
+    {
+        int num = 0;
+
+        synchronized (mediaStreams)
+        {
+            Collection<IceMediaStream> streamsCol = mediaStreams.values();
+
+            for( IceMediaStream stream : streamsCol)
+            {
+                num += stream.countHostCandidates();
+            }
+        }
+
+        return num;
+    }
+
+    /**
+     * Lets the application specify a custom value for the <tt>Ta</tt> timer
+     * so that we don't calculate one.
+     *
+     * @param taValue the value of the <tt>Ta</tt> timer that the application
+     * would like us to use rather than calculate one.
+     */
+    public void setTa(long taValue)
+    {
+        this.taValue = taValue;
+    }
+
+    /**
+     * Calculates the value of the <tt>Ta</tt> pace timer according to the
+     * number and type of {@link IceMediaStream}s this agent will be using.
+     * <p>
+     * During the gathering phase of ICE (Section 4.1.1) and while ICE is
+     * performing connectivity checks (Section 7), an agent sends STUN and
+     * TURN transactions.  These transactions are paced at a rate of one
+     * every <tt>Ta</tt> milliseconds.
+     * <p>
+     * As per RFC 5245, the value of <tt>Ta</tt> should be configurable so if
+     * someone has set a value of their own, we return that value rather than
+     * calculating a new one.
+     *
+     * @return the value of the <tt>Ta</tt> pace timer according to the
+     * number and type of {@link IceMediaStream}s this agent will be using or
+     * a pre-configured value if the application has set one.
+     * <p>
+     */
+    public long calculateTa()
+    {
+        //if application specified a value - use it. other wise return ....
+        // eeeer ... a "dynamically" calculated one ;)
+        if (taValue != -1)
+            return taValue;
+
+        /* RFC 5245 says that Ta is:
+         *
+         *     Ta_i = (stun_packet_size / rtp_packet_size) * rtp_ptime
+         *
+         *                               1
+         *         Ta = MAX (20ms, ------------------- )
+         *                               k
+         *                             ----
+         *                             \        1
+         *                              >    ------
+         *                             /       Ta_i
+         *                             ----
+         *                              i=1
+         *
+         * In this implementation we assume equal values of
+         * stun_packet_size and rtp_packet_size. rtp_ptime is also assumed to be
+         * 20ms. One day we should probably let the application modify them.
+         * Until then however the above formula would always be equal to.
+         *                            1
+         *         Ta = MAX (20ms, ------- )
+         *                            k
+         *                           ---
+         *                            20
+         * which gives us Ta = MAX (20ms, 20/k) which is always 20.
+         */
+        return 20;
+    }
+
+    /**
+     * Calculates the value of the retransmission timer to use in STUN
+     * transactions, while harvesting addresses (not to confuse with the RTO
+     * for the STUN transactions used in connectivity checks).
+     *
+     * @return the value of the retransmission timer to use in STUN
+     * transactions, while harvesting addresses.
+     */
+    public long calculateStunHarvestRTO()
+    {
+        /* RFC 5245 says:
+         * RTO = MAX (100ms, Ta * (number of pairs))
+         * where the number of pairs refers to the number of pairs of candidates
+         * with STUN or TURN servers.
+         *
+         * Go figure what "pairs of candidates with STUN or TURN servers" means.
+         * Let's assume they meant the number stun transactions we'll start
+         * while harvesting.
+         */
+
+        return Math.max(100, calculateTa() * 2 * countHostCandidates());
+    }
+
+    /**
+     * Calculates the value of the retransmission timer to use in STUN
+     * transactions, used in connectivity checks (not to confused with the RTO
+     * for the STUN address harvesting).
+     *
+     * @return the value of the retransmission timer to use in STUN connectivity
+     * check transactions..
+     */
+    public long calculateStunConnCheckRTO()
+    {
+        /* RFC 5245 says:
+         * For connectivity checks, RTO SHOULD be configurable and SHOULD have
+         * a default of:
+         *
+         * RTO = MAX (100ms, Ta*N * (Num-Waiting + Num-In-Progress))
+         *
+         * where Num-Waiting is the number of checks in the check list in the
+         * Waiting state, Num-In-Progress is the number of checks in the
+         * In-Progress state, and N is the number of checks to be performed.
+         *
+         * Emil: I am not sure I like the formula so we'll simply be returning
+         * 100 for the time being.
+         */
+        return 100;
     }
 }
