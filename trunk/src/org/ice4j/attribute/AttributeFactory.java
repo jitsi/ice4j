@@ -138,13 +138,13 @@ public class AttributeFactory
      * rfc3489.
      *
      * @return the newly created attribute.
-     * @throws StunException if errorCode is not a valid error code as defined
-     * by rfc3489
+     * @throws IllegalArgumentException if errorCode is not a valid error code
+     * as defined by rfc3489
      */
     public static ErrorCodeAttribute createErrorCodeAttribute(
                                                           char errorCode,
                                                           String reasonPhrase)
-        throws StunException
+        throws IllegalArgumentException
     {
         ErrorCodeAttribute attribute = new ErrorCodeAttribute();
 

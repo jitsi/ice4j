@@ -526,7 +526,15 @@ public class StunStack
             }
 
             //validate attributes that need validation.
-            validateRequestAttributes((Request)msg, event.getRawMessage());
+            try
+            {
+                validateRequestAttributes((Request)msg, event.getRawMessage());
+            }
+            catch(Exception exc)
+            {
+                //validation failed. get lost.
+                return;
+            }
 
             eventDispatcher.fireMessageEvent(event);
 
@@ -602,21 +610,32 @@ public class StunStack
      * <tt>attribute</tt> that caused us to discard the whole message (e.g. an
      * invalid checksum
      * or username)
+     * @throws StunException if we fail while sending an error response.
+     * @throws IOException if we fail while sending an error response.
      */
     private void validateRequestAttributes(Request request,
                                            RawMessage rawMessage)
-        throws IllegalArgumentException
+        throws IllegalArgumentException, StunException, IOException
     {
-        ///HANDLE OPTIONAL ATTRIBUTES!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
         //assert valid username
         UsernameAttribute unameAttr = (UsernameAttribute)request
             .getAttribute(Attribute.USERNAME);
+        String username;
 
         if (unameAttr != null)
         {
+            username = new String(unameAttr.getUsername());
             if (!validateUsername( unameAttr))
             {
+                Response error = MessageFactory.createBindingErrorResponse(
+                                ErrorCodeAttribute.UNAUTHORIZED,
+                                "unknown user " + username);
+
+                sendResponse(request.getTransactionID(), error,
+                                rawMessage.getLocalAddress(),
+                                rawMessage.getRemoteAddress());
+
                 throw new IllegalArgumentException(
                     "Non-recognized username: "
                     + new String(unameAttr.getUsername()));
@@ -632,65 +651,72 @@ public class StunStack
             //we should complain if we have msg integrity and no username.
             if (unameAttr == null)
             {
+                Response error = MessageFactory.createBindingErrorResponse(
+                                ErrorCodeAttribute.BAD_REQUEST,
+                                "missing username");
+
+                sendResponse(request.getTransactionID(), error,
+                                rawMessage.getLocalAddress(),
+                                rawMessage.getRemoteAddress());
+
                 throw new IllegalArgumentException(
                     "Missing USERNAME in the presence of MESSAGE-INTEGRITY: ");
             }
 
             if (!validateMessageIntegrity(msgIntAttr,
-                            new String(unameAttr.getUsername())
-                            ,rawMessage.getBytes(), 0))
+                            new String(unameAttr.getUsername()),
+                            rawMessage.getBytes(), 0))
             {
+                Response error = MessageFactory.createBindingErrorResponse(
+                                ErrorCodeAttribute.UNAUTHORIZED,
+                                "Wrong MESSAGE-INTEGRITY value");
+
+                sendResponse(request.getTransactionID(), error,
+                                rawMessage.getLocalAddress(),
+                                rawMessage.getRemoteAddress());
+
                 throw new IllegalArgumentException(
                     "Wrong MESSAGE-INTEGRITY value.");
             }
-
         }
-    }
-
-    /**
-     * Recalculates the FINGERPRINT CRC32 checksum of the <tt>message</tt>
-     * array so that we could compare it with the value brought by the
-     * {@link FingerprintAttribute}.
-     *
-     * @param fingerprint the attribute that we need to validate.
-     * @param message the message whose CRC32 checksum we'd need to recalculate.
-     * @param offset the index in <tt>message</tt> where data starts.
-     * @param length the number of bytes in <tt>message</tt> that the CRC32
-     * would need to be calculated over.
-     *
-     * @return <tt>true</tt> if <tt>FINGERPRINT</tt> contains a valid CRC32
-     * value and <tt>false</tt> otherwise.
-     */
-    private static boolean validateFingerprint(FingerprintAttribute fingerprint,
-                                               byte[]               message,
-                                               int                  offset,
-                                               int                  length)
-    {
-
-        byte[] incomingCrcBytes = fingerprint.getChecksum();
-
-        //now check whether the CRC really is what it's supposed to be.
-        //re calculate the check sum
-        byte[] realCrcBytes = FingerprintAttribute.calculateXorCRC32(
-                        message, offset, length);
-
-        //CRC validation.
-        if ( ! Arrays.equals(incomingCrcBytes, realCrcBytes))
+        else
         {
-            if (logger.isLoggable(Level.FINE))
-            {
-                logger.fine(
-                        "An incoming message arrived with a wrong FINGERPRINT "
-                        +"attribute value. "
-                        +"CRC Was:"  + Arrays.toString(incomingCrcBytes)
-                        + ". Should have been:" + Arrays.toString(realCrcBytes)
-                        +". Will ignore.");
-            }
+            // no message integrity
+            Response error = MessageFactory.createBindingErrorResponse(
+                            ErrorCodeAttribute.UNAUTHORIZED,
+                            "Missing MESSAGE-INTEGRITY.");
 
-            return false;
+            sendResponse(request.getTransactionID(), error,
+                            rawMessage.getLocalAddress(),
+                            rawMessage.getRemoteAddress());
+            throw new IllegalArgumentException(
+                "Missing MESSAGE-INTEGRITY.");
         }
 
-        return true;
+        //look for unknown attributes.
+        List<Attribute> allAttributes = request.getAttributes();
+        StringBuffer sBuff = new StringBuffer();
+        for(Attribute attr : allAttributes)
+        {
+            if(attr instanceof OptionalAttribute
+                && attr.getAttributeType()
+                    < Attribute.UNKNOWN_OPTIONAL_ATTRIBUTE)
+                sBuff.append(attr.getAttributeType());
+        }
+
+        if (sBuff.length() > 0)
+        {
+            Response error = MessageFactory.createBindingErrorResponse(
+                    ErrorCodeAttribute.UNKNOWN_ATTRIBUTE,
+                    "missing username", sBuff.toString().toCharArray());
+
+            sendResponse(request.getTransactionID(), error,
+                            rawMessage.getLocalAddress(),
+                            rawMessage.getRemoteAddress());
+
+            throw new IllegalArgumentException(
+                "Missing MESSAGE-INTEGRITY.");
+        }
     }
 
     /**
