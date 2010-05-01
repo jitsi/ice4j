@@ -296,11 +296,25 @@ class StunClientTransaction
     /**
      * Cancels the transaction. Once this method is called the transaction is
      * considered terminated and will stop retransmissions.
+     *
+     * @param waitForResponse indicates whether we should wait for the current
+     * RTO to expire before ending the transaction or immediately terminate.
+     */
+    synchronized void cancel(boolean waitForResponse)
+    {
+        this.cancelled = true;
+
+        if(!waitForResponse)
+            notifyAll();
+    }
+
+    /**
+     * Cancels the transaction. Once this method is called the transaction is
+     * considered terminated and will stop retransmissions.
      */
     synchronized void cancel()
     {
-        this.cancelled = true;
-        notifyAll();
+        cancel(false);
     }
 
     /**

@@ -6,6 +6,7 @@
  */
 package org.ice4j.ice.checks;
 
+import java.util.*;
 import java.util.logging.*;
 
 import org.ice4j.*;
@@ -43,6 +44,15 @@ public class ConnectivityCheckServer
      * The stun stack that we will use for connectivity checks.
      */
     private StunStack stunStack = StunStack.getInstance();
+
+    /**
+     * The <tt>triggeredCheckQueue</tt> is a FIFO queue containing candidate
+     * pairs for which checks are to be sent at the next available opportunity.
+     * A pair would get into a triggered check queue as soon as we receive
+     * a check on its local candidate.
+     */
+    private final List<CandidatePair> triggeredCheckQueue
+                                          = new Vector<CandidatePair>();
 
     /**
      * Creates a new <tt>ConnectivityCheckServer</tt> setting

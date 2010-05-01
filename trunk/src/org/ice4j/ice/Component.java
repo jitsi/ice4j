@@ -599,4 +599,27 @@ public class Component
 
         return null;
     }
+
+    /**
+     * Returns the remote <tt>Candidate</tt> with the specified
+     * <tt>remoteAddress</tt> if it belongs to this {@link Component} or
+     * <tt>null</tt> if it doesn't.
+     *
+     * @param remoteAddress the {@link TransportAddress} we are looking for.
+     *
+     * @return  the local <tt>LocalCandidate</tt> with the specified
+     * <tt>localAddress</tt> if it belongs to this component or <tt>null</tt>
+     * if it doesn't.
+     */
+    public Candidate findRemoteCandidate(TransportAddress remoteAddress)
+    {
+
+        for( Candidate remoteCnd : localCandidates)
+        {
+            if(remoteCnd.getTransportAddress().equals(remoteAddress))
+                return remoteCnd;
+        }
+
+        return null;
+    }
 }
