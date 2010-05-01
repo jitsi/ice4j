@@ -62,16 +62,16 @@ public class ConnectivityCheckClient
         this.parentAgent = parentAgent;
     }
 
-    public void startChecks(CheckList checkList)
+    /**
+     * Starts client connectivity checks using <tt>checkList</tt> as the
+     * {@link CheckList} of the first {@link IceMediaStream}.
+     *
+     * @param firstCheckList the check list that we should start our checks
+     * with.
+     */
+    public void startChecks(CheckList firstCheckList)
     {
-        //RFC 5245 says: Implementations SHOULD take care to spread out these
-        //timers so that they do not fire at the same time for each media
-        //stream.
-        //Emil: so let's make sure we spread the pace makers
-
-        System.currentTimeMillis();
-
-        PaceMaker paceMaker = new PaceMaker(this, checkList);
+        PaceMaker paceMaker = new PaceMaker(this, firstCheckList);
         paceMakers.add(paceMaker);
 
         paceMaker.start();
@@ -167,7 +167,8 @@ public class ConnectivityCheckClient
 
     public void processTimeout(StunTimeoutEvent event)
     {
-        System.out.println("timeout event=" + event);
+        System.out.println("timeout for pair=" + event.getTransactionID().getApplicationData());
+
     }
 
     /**
@@ -228,9 +229,7 @@ public class ConnectivityCheckClient
                     //any active check lists at that point yet.
                     try
                     {
-                        wait(parentClient.parentAgent.calculateTa()
-                             * parentClient.parentAgent
-                                 .getActiveCheckListCount());
+                        wait(waitFor);
                     }
                     catch (InterruptedException e)
                     {
@@ -241,21 +240,26 @@ public class ConnectivityCheckClient
                         return;
                 }
 
-                checkList.setState(CheckListState.RUNNING);
-
                 CandidatePair pairToCheck = checkList.popTriggeredCheck();
                 TransactionID transactionID = null;
+
+                //if there are no triggered checks, go for an ordinary one.
+                if(pairToCheck == null)
+                    pairToCheck = checkList.getNextOrdinaryPairToCheck();
 
                 if(pairToCheck != null)
                     transactionID = parentClient.startCheckForPair(pairToCheck);
 
-                pairToCheck = checkList.getNextOrdinaryPairToCheck();
+
 
                 if(pairToCheck == null)
                 {
                     //we are done sending checks for this list. we'll send its
                     //final state in either the processResponse()
                     //processTimeout() or processFailure() method.
+
+                    logger.finest("finished a checklist");
+
                     isRunning = false;
                     return;
                 }

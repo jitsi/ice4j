@@ -123,6 +123,8 @@ public class AttributeDecoder
                 decodedAttribute = new DontFragmentAttribute(); break;
             case Attribute.RESERVATION_TOKEN:
                 decodedAttribute = new ReservationTokenAttribute(); break;
+            case Attribute.PRIORITY:
+                decodedAttribute = new PriorityAttribute(); break;
 
             //According to rfc3489 we should silently ignore unknown attributes.
             default: decodedAttribute
