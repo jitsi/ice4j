@@ -207,19 +207,18 @@ public class MessageFactory
      * @param reasonPhrase a human readable description of the error
      * @param unknownAttributes a char[] array containing the ids of one or more
      * attributes that had not been recognized.
-     * @throws StunException INVALID_ARGUMENTS if one or more of the given
-     * parameters had an invalid value.
+     * @throws IllegalArgumentException INVALID_ARGUMENTS if one or more of the
+     * given parameters had an invalid value.
      *
      * @return a binding error response message containing an error code and a
      * UNKNOWN-ATTRIBUTES header
      */
-    private static Response createBindingErrorResponse(char errorCode,
+    public static Response createBindingErrorResponse(char errorCode,
                     String reasonPhrase, char[] unknownAttributes)
-                    throws StunException
+        throws IllegalArgumentException
     {
         Response bindingErrorResponse = new Response();
-        bindingErrorResponse
-                        .setMessageType(Message.BINDING_ERROR_RESPONSE);
+        bindingErrorResponse.setMessageType(Message.BINDING_ERROR_RESPONSE);
 
         // init attributes
         UnknownAttributesAttribute unknownAttributesAttribute = null;
@@ -290,14 +289,12 @@ public class MessageFactory
      *
      * @param errorCode the error code to encapsulate in this message
      * @param reasonPhrase a human readable description of the error.
-     * @throws StunException INVALID_ARGUMENTS if one or more of the given
-     * parameters had an invalid value.
      *
      * @return a binding error response message containing an error code and a
      * UNKNOWN-ATTRIBUTES header
      */
     public static Response createBindingErrorResponse(char errorCode,
-                    String reasonPhrase) throws StunException
+                    String reasonPhrase)
     {
         return createBindingErrorResponse(errorCode, reasonPhrase, null);
     }

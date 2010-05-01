@@ -101,10 +101,9 @@ public class ErrorCodeAttribute extends Attribute
 
     /**
      * The reason phrase is meant for user consumption, and can
-     * be anything appropriate for the response code.  The lengths of the
-     * reason phrases MUST be a multiple of 4 (measured in bytes).
+     * be anything appropriate for the response code.
      */
-    private String reasonPhrase = null;
+    private byte[] reasonPhrase = null;
 
     /**
      * Constructs a new ERROR-CODE attribute
@@ -121,10 +120,10 @@ public class ErrorCodeAttribute extends Attribute
      * code modulo 100, and its value MUST be between 0 and 99.
      *
      * @param errorCode the errorCode that this class encapsulates.
-     * @throws StunException if errorCode is not a valid error code.
+     * @throws IllegalArgumentException if errorCode is not a valid error code.
      */
     public void setErrorCode(char errorCode)
-        throws StunException
+        throws IllegalArgumentException
     {
         setErrorClass((byte)(errorCode/100));
         setErrorNumber((byte)(errorCode % 100));
@@ -144,14 +143,15 @@ public class ErrorCodeAttribute extends Attribute
     /**
      * Sets this attribute's error number.
      * @param errorNumber the error number to assign this attribute.
-     * @throws StunException if errorNumber is not a valid error number.
+     * @throws IllegalArgumentException if errorNumber is not a valid error
+     * number.
      */
     public void setErrorNumber(byte errorNumber)
-        throws StunException
+        throws IllegalArgumentException
     {
         if(errorNumber < 0 || errorNumber > 99)
-            throw new StunException(StunException.ILLEGAL_ARGUMENT,
-                                    errorNumber + " is not a valid error number!");
+            throw new IllegalArgumentException(
+                            errorNumber + " is not a valid error number!");
         this.errorNumber = errorNumber;
     }
 
@@ -167,13 +167,13 @@ public class ErrorCodeAttribute extends Attribute
     /**
      * Sets this error's error class.
      * @param errorClass this error's error class.
-     * @throws StunException if errorClass is not a valid error class.
+     * @throws IllegalArgumentException if errorClass is not a valid error class.
      */
     public void setErrorClass(byte errorClass)
-        throws StunException
+        throws IllegalArgumentException
     {
         if(errorClass < 0 || errorClass > 99)
-            throw new StunException(StunException.ILLEGAL_ARGUMENT,
+            throw new IllegalArgumentException(
                                     errorClass + " is not a valid error number!");
         this.errorClass = errorClass;
     }
@@ -237,7 +237,7 @@ public class ErrorCodeAttribute extends Attribute
      */
     public void setReasonPhrase(String reasonPhrase)
     {
-        this.reasonPhrase = reasonPhrase;
+        this.reasonPhrase = reasonPhrase.getBytes();
     }
 
     /**
@@ -249,7 +249,10 @@ public class ErrorCodeAttribute extends Attribute
      */
     public String getReasonPhrase()
     {
-        return this.reasonPhrase;
+        if(reasonPhrase == null)
+            return null;
+
+        return new String(reasonPhrase);
     }
 
     /**
@@ -272,16 +275,8 @@ public class ErrorCodeAttribute extends Attribute
     public char getDataLength()
     {
         char len = (char)( 4 //error code numbers
-                           + (char)(
-                                    reasonPhrase == null? 0
-                                                          :reasonPhrase.length()*2
-                                    ));
+           + (char)(reasonPhrase == null? 0:reasonPhrase.length));
 
-        /*
-         * According to rfc 3489 The length of the
-         * reason phrases MUST be a multiple of 4 (measured in bytes)
-         */
-        len += 4 - (len%4);
         return len;
     }
 
@@ -291,7 +286,9 @@ public class ErrorCodeAttribute extends Attribute
      */
     public byte[] encode()
     {
-        byte binValue[] =  new byte[HEADER_LENGTH + getDataLength()];
+        byte binValue[] =  new byte[HEADER_LENGTH + getDataLength()
+                                    //add padding
+                                    + (4 - getDataLength()%4)%4];
 
         //Type
         binValue[0] = (byte) (getAttributeType() >> 8);
@@ -308,20 +305,8 @@ public class ErrorCodeAttribute extends Attribute
         binValue[6] = getErrorClass();
         binValue[7] = getErrorNumber();
 
-        int offset = 8;
-        char chars[] = reasonPhrase.toCharArray();
-        for (int i = 0; i < reasonPhrase.length(); i++, offset += 2) {
-            binValue[offset]   = (byte)(chars[i]>>8);
-            binValue[offset+1] = (byte)(chars[i] & 0xFF);
-        }
-
-        //The lengths of the reason phrases MUST be a multiple of 4 (measured
-        //in bytes)
-        if( reasonPhrase.length()%4 != 0)
-        {
-            binValue[binValue.length - 2] = (byte) ( ( (int) ' ') >> 8);
-            binValue[binValue.length - 1] = (byte) ( ( (int) ' ') & 0x00FF);
-        }
+        if(reasonPhrase != null)
+            System.arraycopy(reasonPhrase, 0, binValue, 8, reasonPhrase.length);
 
         return binValue;
     }
