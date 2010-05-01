@@ -34,6 +34,9 @@ public class PriorityAttribute
      */
     private long priority = 0;
 
+    /**
+     * Creates a priority attribute.
+     */
     public PriorityAttribute()
     {
         super(PRIORITY);

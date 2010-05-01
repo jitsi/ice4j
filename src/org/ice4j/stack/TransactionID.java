@@ -218,4 +218,16 @@ public class TransactionID
     {
         this.applicationData = applicationData;
     }
+
+    /**
+     * Returns whatever <tt>applicationData</tt> was previously stored in this
+     * ID.
+     *
+     * @return a reference to the {@link Object} that the application may have
+     * stored in this ID's application data field.
+     */
+    public Object getApplicationData()
+    {
+        return applicationData;
+    }
 }

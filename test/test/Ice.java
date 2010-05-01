@@ -60,6 +60,8 @@ public class Ice
 
         System.out.println("Total execution time: "
                         + (endTime - startTime) + "ms");
+
+        Thread.sleep(2500);
     }
 
     /**

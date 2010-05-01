@@ -294,12 +294,8 @@ public class Agent
 
             List<IceMediaStream> streams = getStreams();
 
-            for(IceMediaStream stream : streams)
-            {
-                CheckList list = stream.getCheckList();
-
-                connCheckClient.startChecks(list);
-            }
+            CheckList list = streams.get(0).getCheckList();
+            connCheckClient.startChecks(list);
 
             iceStarted = true;
         }
