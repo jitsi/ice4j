@@ -350,6 +350,9 @@ public class Agent
             stream.setMaxCheckListSize(maxPerStreamSize);
             stream.initCheckList();
         }
+
+        //init the states of the first media stream as per 5245
+        streams.get(0).getCheckList().computeInitialStates();
     }
 
 
