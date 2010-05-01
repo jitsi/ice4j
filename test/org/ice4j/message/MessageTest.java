@@ -157,14 +157,14 @@ public class MessageTest extends TestCase {
      * @throws StunException java.lang.Exception if we fail
      */
     public void testDecode()
-        throws StunException
+        throws Exception
     {
         //Binding Request
         Message expectedReturn = bindingRequest;
 
         Message actualReturn = Message.decode(msgFixture.bindingRequest,
-                                             (char)0,
-                                             (char)msgFixture.bindingRequest.length);
+                                     (char)0,
+                                     (char)msgFixture.bindingRequest.length);
 
         assertEquals("A binding request was not properly decoded",
                      expectedReturn, actualReturn );
@@ -173,8 +173,8 @@ public class MessageTest extends TestCase {
         expectedReturn = bindingResponse;
 
         actualReturn = Message.decode(msgFixture.bindingResponse,
-                                      (char)0,
-                                      (char)msgFixture.bindingResponse.length);
+                                     (char)0,
+                                     (char)msgFixture.bindingResponse.length);
 
         assertEquals("A binding response was not properly decoded",
                      expectedReturn, actualReturn );
@@ -192,36 +192,44 @@ public class MessageTest extends TestCase {
         Object target = null;
         boolean expectedReturn = false;
         boolean actualReturn = bindingRequest.equals(target);
-        assertEquals("Equals failed against a null target", expectedReturn, actualReturn);
+        assertEquals("Equals failed against a null target",
+                        expectedReturn, actualReturn);
 
         actualReturn = bindingResponse.equals(target);
-        assertEquals("Equals failed against a null target", expectedReturn, actualReturn);
+        assertEquals("Equals failed against a null target",
+                        expectedReturn, actualReturn);
 
         //different
         actualReturn = bindingRequest.equals(bindingResponse);
-        assertEquals("Equals failed against a different target", expectedReturn, actualReturn);
+        assertEquals("Equals failed against a different target",
+                        expectedReturn, actualReturn);
 
         actualReturn = bindingResponse.equals(bindingRequest);
-        assertEquals("Equals failed against a different target", expectedReturn, actualReturn);
+        assertEquals("Equals failed against a different target",
+                        expectedReturn, actualReturn);
 
         //same
         expectedReturn = true;
 
-        //Create a binding request with the same attributes as this.bindingRequest
+        //Create a binding request with the same attributes as
+        //this.bindingRequest
         Request binReqTarget = new Request();
         binReqTarget.setMessageType(Message.BINDING_REQUEST);
         binReqTarget.addAttribute(changeRequest);
         actualReturn = bindingRequest.equals(binReqTarget);
-        assertEquals("Equals failed against an equal target", expectedReturn, actualReturn);
+        assertEquals("Equals failed against an equal target",
+                        expectedReturn, actualReturn);
 
-        //Create a binding response with the same attributes as this.bindingRequest
+        //Create a binding response with the same attributes as
+        //this.bindingRequest
         Response binResTarget = new Response();
         binResTarget.setMessageType(Message.BINDING_RESPONSE);
         binResTarget.addAttribute(mappedAddress);
         binResTarget.addAttribute(sourceAddress);
         binResTarget.addAttribute(changedAddress);
         actualReturn = bindingResponse.equals(binResTarget);
-        assertEquals("Equals failed against a different target", expectedReturn, actualReturn);
+        assertEquals("Equals failed against a different target",
+                        expectedReturn, actualReturn);
     }
 
     /**
@@ -246,12 +254,13 @@ public class MessageTest extends TestCase {
         bindingRequest.removeAttribute(changeRequest.getAttributeType());
 
         assertNull("An attribute was still in the request after being removed",
-                   bindingRequest.getAttribute(changeRequest.getAttributeType()));
+               bindingRequest.getAttribute(changeRequest.getAttributeType()));
 
         //test count
         int expectedReturn = 0;
         int actualReturn = bindingRequest.getAttributeCount();
-        assertEquals("Attribute count did not change after removing an attribute",
-                     expectedReturn, actualReturn);
+        assertEquals(
+            "Attribute count did not change after removing an attribute",
+            expectedReturn, actualReturn);
     }
 }

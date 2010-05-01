@@ -24,30 +24,22 @@ public class AttributeDecoder
      * @param bytes the binary array that should be decoded.
      * @param offset the index where the message starts.
      * @param length the number of bytes that the message is long.
-     * @param messageHeadBytes the binary array that contains the all the bytes
-     * of the message that brought this attribute up until the beginning of the
-     * attribute (at least).
-     * @param messageHeadOffset the start of the container message in the
-     * <tt>messageHeadBytes</tt> array.
-     * @param messageHeadLen the length of the message head in the
-     * <tt>messageHeadBytes</tt> array, up until the beginning of the attribute.
      *
      * @return An object representing the attribute encoded in bytes or null if
      * the attribute was not recognized.
      *
-     * @throws StunException if bytes does is not a valid STUN attribute.
+     * @throws StunException if bytes is not a valid STUN attribute.
      */
     public static Attribute decode(byte[] bytes,
-                                   char offset,
-                                   char length,
-                                   byte[] messageHeadBytes,
-                                   char messageHeadOffset,
-                                   char messageHeadLen)
+                                   char   offset,
+                                   char   length)
         throws StunException
     {
         if(bytes == null || bytes.length < Attribute.HEADER_LENGTH)
-            throw new StunException(StunException.ILLEGAL_ARGUMENT,
+        {
+            throw new StunException( StunException.ILLEGAL_ARGUMENT,
                          "Could not decode the specified binary array.");
+        }
 
         //Discover attribute type
         char attributeType   = (char)((bytes[offset]<<8)|bytes[offset + 1]);
@@ -59,9 +51,8 @@ public class AttributeDecoder
         }
 
         if(attributeLength > bytes.length - offset )
-            throw new StunException(StunException.ILLEGAL_ARGUMENT,
-                     "The indicated attribute length ("+attributeLength+") "
-                     +"does not match the length of the passed binary array");
+            throw new StunException( StunException.ILLEGAL_ARGUMENT,
+                            "Could not decode the specified binary array.");
 
         Attribute decodedAttribute = null;
 
@@ -78,9 +69,7 @@ public class AttributeDecoder
                 decodedAttribute = new ErrorCodeAttribute(); break;
             case Attribute.MESSAGE_INTEGRITY:
                 decodedAttribute = new MessageIntegrityAttribute(); break;
-            case Attribute.PASSWORD:
-                throw new UnsupportedOperationException(
-                    "The PASSWORD Attribute is not yet implemented.");
+            //case Attribute.PASSWORD: //handle as an unknown attribute
             case Attribute.REFLECTED_FROM:
                 decodedAttribute = new ReflectedFromAttribute(); break;
             case Attribute.RESPONSE_ADDRESS:
@@ -128,15 +117,14 @@ public class AttributeDecoder
 
             //According to rfc3489 we should silently ignore unknown attributes.
             default: decodedAttribute
-                = new OptionalAttribute(Attribute.UNKNOWN_OPTIONAL_ATTRIBUTE);
+                = new OptionalAttribute( Attribute.UNKNOWN_OPTIONAL_ATTRIBUTE);
                 break;
         }
 
         decodedAttribute.setAttributeType(attributeType);
 
         decodedAttribute.decodeAttributeBody(bytes,
-                        (char)(Attribute.HEADER_LENGTH + offset),
-                        attributeLength);
+                (char)(Attribute.HEADER_LENGTH + offset), attributeLength);
 
         return decodedAttribute;
     }

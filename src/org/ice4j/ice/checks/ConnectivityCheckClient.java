@@ -250,8 +250,6 @@ public class ConnectivityCheckClient
                 if(pairToCheck != null)
                     transactionID = parentClient.startCheckForPair(pairToCheck);
 
-
-
                 if(pairToCheck == null)
                 {
                     //we are done sending checks for this list. we'll send its
