@@ -37,16 +37,18 @@ public class ConnectivityCheckClient
     /**
      * The stun stack that we will use for connectivity checks.
      */
-    private StunStack stunStack = StunStack.getInstance();
+    private static final StunStack stunStack = StunStack.getInstance();
 
     /**
-     * The <tt>triggeredCheckQueue</tt> is a FIFO queue containing candidate
-     * pairs for which checks are to be sent at the next available opportunity.
-     * A pair would get into a triggered check queue as soon as we receive
-     * a check on its local candidate.
+     * The {@link PaceMaker}s that are currently running checks in this client.
      */
-    private final List<CandidatePair> triggeredCheckQueue
-                                          = new LinkedList<CandidatePair>();
+    private final List<PaceMaker> paceMakers = new LinkedList<PaceMaker>();
+
+    /**
+     * Contains the system time at the moment we last started a {@link
+     * PaceMaker}.
+     */
+    private long lastPaceMakerStarted = 0;
 
     /**
      * Creates a new <tt>ConnectivityCheckHandler</tt> setting
@@ -62,14 +64,21 @@ public class ConnectivityCheckClient
 
     public void startChecks(CheckList checkList)
     {
-        for(CandidatePair pair : checkList)
-        {
-            startCheckForPair(pair);
-        }
+        //RFC 5245 says: Implementations SHOULD take care to spread out these
+        //timers so that they do not fire at the same time for each media
+        //stream.
+        //Emil: so let's make sure we spread the pace makers
+
+        System.currentTimeMillis();
+
+        PaceMaker paceMaker = new PaceMaker(this, checkList);
+        paceMakers.add(paceMaker);
+
+        paceMaker.start();
     }
 
 
-    private void startCheckForPair(CandidatePair pair)
+    private TransactionID startCheckForPair(CandidatePair pair)
     {
         //we don't need to do a canReach() verification here as it has been
         //already verified during the gathering process.
@@ -127,6 +136,8 @@ public class ConnectivityCheckClient
             if(logger.isLoggable(Level.FINEST))
                 logger.finest("checking pair " + pair + " with tran="
                                 + tran.toString());
+
+            return tran;
         }
         catch (Exception exception)
         {
@@ -134,7 +145,8 @@ public class ConnectivityCheckClient
                         "Failed to send " + request + " through "
                         + stunSocket.getLocalSocketAddress(),
                         exception);
-            return;
+
+            return null;
         }
     }
 
@@ -153,27 +165,8 @@ public class ConnectivityCheckClient
     }
 
     /**
-     * Adds <tt>pair</tt> to the local triggered check queue unless it's already
-     * there. Additionally, the method sets the pair's state to {@link
-     * CandidatePairState#WAITING}.
-     *
-     * @param pair the pair to schedule a triggered check for.
-     */
-    public void scheduleTriggeredCheck(CandidatePair pair)
-    {
-        synchronized(triggeredCheckQueue)
-        {
-            if(!triggeredCheckQueue.contains(pair))
-            {
-                triggeredCheckQueue.add(pair);
-                pair.setState(CandidatePairState.WAITING, null);
-            }
-        }
-    }
-
-    /**
-     * The thread that actually sends the checks in the pace defined in RFC
-     * 5245.
+     * The thread that actually sends the checks for a particular check list
+     * in the pace defined in RFC 5245.
      */
     private static class PaceMaker extends Thread
     {
@@ -184,16 +177,26 @@ public class ConnectivityCheckClient
         private final ConnectivityCheckClient parentClient;
 
         /**
+         * The {@link CheckList} that this <tt>PaceMaker</tt> will be running
+         * checks for.
+         */
+        private final CheckList checkList;
+
+        /**
          * Creates a new {@link PaceMaker} for the specified
          * <tt>parentClient</tt>
          *
          * @param parentClient the {@link ConnectivityCheckClient} that who's
          * checks we are going to run.
+         * @param checkList the {@link CheckList} that we'll be sending checks
+         * for
          */
-        public PaceMaker(ConnectivityCheckClient parentClient)
+        public PaceMaker(ConnectivityCheckClient parentClient,
+                         CheckList               checkList)
         {
             super("ICE PaceMaker:" + parentClient.parentAgent.getLocalUfrag());
             this.parentClient = parentClient;
+            this.checkList = checkList;
         }
 
         /**
@@ -205,14 +208,49 @@ public class ConnectivityCheckClient
         {
             while(isRunning)
             {
-                try
+                long waitFor = parentClient.parentAgent.calculateTa()
+                    * parentClient.parentAgent.getActiveCheckListCount();
+
+                if(waitFor > 0)
                 {
-                    wait(parentClient.parentAgent.calculateTa());
+                    //waitFor will be 0 for the first check since we won't have
+                    //any active check lists at that point yet.
+                    try
+                    {
+                        wait(parentClient.parentAgent.calculateTa()
+                             * parentClient.parentAgent
+                                 .getActiveCheckListCount());
+                    }
+                    catch (InterruptedException e)
+                    {
+                        logger.log(Level.FINER, "PaceMake got interrupted", e);
+                    }
                 }
-                catch (InterruptedException e)
+
+                checkList.setState(CheckListState.RUNNING);
+
+                CandidatePair pairToCheck = checkList.popTriggeredCheck();
+                TransactionID transactionID = null;
+
+                if(pairToCheck != null)
+                    transactionID = parentClient.startCheckForPair(pairToCheck);
+
+                pairToCheck = checkList.getNextOrdinaryPairToCheck();
+
+                if(pairToCheck == null)
                 {
-                    logger.log(Level.FINER, "PaceMake got interrupted", e);
+                    //we are done sending checks for this list. we'll send its
+                    //final state in either the processResponse()
+                    //processTimeout() or processFailure() method.
+                    return;
                 }
+
+                if(transactionID == null)
+                    pairToCheck.setState(CandidatePairState.FAILED, null);
+                else
+                    pairToCheck.setState(
+                            CandidatePairState.IN_PROGRESS, transactionID);
+
             }
         }
     }

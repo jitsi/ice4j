@@ -32,6 +32,15 @@ public class CheckList
     private CheckListState state = CheckListState.RUNNING;
 
     /**
+     * The <tt>triggeredCheckQueue</tt> is a FIFO queue containing candidate
+     * pairs for which checks are to be sent at the next available opportunity.
+     * A pair would get into a triggered check queue as soon as we receive
+     * a check on its local candidate.
+     */
+    private final List<CandidatePair> triggeredCheckQueue
+                                          = new LinkedList<CandidatePair>();
+
+    /**
      * Returns the state of this check list.
      *
      * @return the <tt>CheckListState</tt> of this check list.
@@ -46,9 +55,92 @@ public class CheckList
      *
      * @param state the <tt>CheckListState</tt> for this list.
      */
-    protected void setState(CheckListState state)
+    public void setState(CheckListState state)
     {
         this.state = state;
+    }
+
+    /**
+     * Adds <tt>pair</tt> to the local triggered check queue unless it's already
+     * there. Additionally, the method sets the pair's state to {@link
+     * CandidatePairState#WAITING}.
+     *
+     * @param pair the pair to schedule a triggered check for.
+     */
+    protected void scheduleTriggeredCheck(CandidatePair pair)
+    {
+        synchronized(triggeredCheckQueue)
+        {
+            if(!triggeredCheckQueue.contains(pair))
+            {
+                triggeredCheckQueue.add(pair);
+                pair.setState(CandidatePairState.WAITING, null);
+            }
+        }
+    }
+
+    /**
+     * Returns the first {@link CandidatePair} in the triggered check queue or
+     * <tt>null</tt> if that queue is empty.
+     *
+     * @return the first {@link CandidatePair} in the triggered check queue or
+     * <tt>null</tt> if that queue is empty.
+     */
+    public CandidatePair popTriggeredCheck()
+    {
+        synchronized(triggeredCheckQueue)
+        {
+            if(triggeredCheckQueue.size() > 0)
+                return triggeredCheckQueue.remove(0);
+        }
+
+        return null;
+    }
+
+    /**
+     * Returns the next {@link CandidatePair} that is eligible for a regular
+     * connectivity check. According to RFC 5245 this would be the highest
+     * priority pair that is in the <tt>Waiting</tt> state or, if there is
+     * no such pair, the highest priority <tt>Frozen</tt> {@link CandidatePair}.
+     *
+     * @return the next {@link CandidatePair} that is eligible for a regular
+     * connectivity check, which would either be the highest priority
+     * <tt>Waiting</tt> pair or, when there's no such pair, the highest priority
+     * <tt>Frozen</tt> pair or <tt>null</tt> otherwise
+     *
+     */
+    public synchronized CandidatePair getNextOrdinaryPairToCheck()
+    {
+        if (size() < 1)
+            return null;
+
+        CandidatePair highestPriorityWaitingPair = null;
+        CandidatePair highestPriorityFrozenPair = null;
+
+        for (CandidatePair pair : this)
+        {
+            if (pair.getState() == CandidatePairState.WAITING)
+            {
+                if(highestPriorityWaitingPair == null
+                   || pair.getPriority()
+                                    > highestPriorityWaitingPair.getPriority())
+                {
+                        highestPriorityWaitingPair = pair;
+                }
+            }
+            else if (pair.getState() == CandidatePairState.FROZEN)
+            {
+                if(highestPriorityFrozenPair == null
+                   || pair.getPriority()
+                                > highestPriorityFrozenPair.getPriority())
+                    highestPriorityFrozenPair = pair;
+            }
+        }
+
+        if(highestPriorityWaitingPair != null)
+            return highestPriorityWaitingPair;
+        else
+            return highestPriorityFrozenPair; //return even if null
     }
 
     /**
