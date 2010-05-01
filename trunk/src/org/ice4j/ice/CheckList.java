@@ -205,50 +205,59 @@ public class CheckList
     }
 
     /**
-     * If this check list {@link #isFrozen}, computes the state of each pair in
-     * it. To do so, the method groups together all of the pairs with the same
-     * foundation, and for each group, sets the state of the pair with the
-     * lowest component ID to Waiting.  If there is more than one such pair,
-     * the one with the highest priority is used.
-     * <p>
-     * If the check list is not frozen, this method has no effect.
+     * Computes and resets states of all pairs in this check list. For all pairs
+     * with the same foundation, we set the state of the pair with the lowest
+     * component ID to Waiting. If there is more than one such pair, the one
+     * with the highest priority is used.
      */
-    public synchronized void computeInitialStates()
+    public synchronized void computeInitialCheckListPairStates()
     {
-        if(!isFrozen())
-            return;
+        Map<String, CandidatePair> pairsToWait
+                                    = new Hashtable<String, CandidatePair>();
 
-        Map<String, CandidatePair> foundationPairs
-                        = new Hashtable<String, CandidatePair>();
-
-        for (CandidatePair pair : this)
+        //first, determine the pairs that we'd need to put in the waiting state.
+        for(CandidatePair pair : this)
         {
-            CandidatePair pairToUnfreeze
-                = foundationPairs.get(pair.getFoundation());
+            //we need to check whether the pair is already in the wait list. if
+            //so we'll compare it with this one and determine which of the two
+            //needs to stay.
+            CandidatePair prevPair = pairsToWait.get(pair.getFoundation());
 
-            if( pairToUnfreeze == null)
+            if(prevPair == null)
             {
-                pairToUnfreeze = pair;
+                //first pair with this foundation.
+                pairsToWait.put(pair.getFoundation(), pair);
+                continue;
+            }
+
+            //we already have a pair with the same foundation. determine which
+            //of the two has the lower component id and higher priority and
+            //keep that one in the list.
+            if( prevPair.getParentComponent() == pair.getParentComponent())
+            {
+                if(pair.getPriority() > prevPair.getPriority())
+                {
+                    //need to replace the pair in the list.
+                    pairsToWait.put(pair.getFoundation(), pair);
+                }
             }
             else
             {
                 if(pair.getParentComponent().getComponentID()
-                    < pairToUnfreeze.getParentComponent().getComponentID())
+                            < prevPair.getParentComponent().getComponentID())
                 {
-                    //prefer the lower component ID.
-                    pairToUnfreeze = pair;
-                }
-                else if (pair.getParentComponent().getComponentID()
-                       == pairToUnfreeze.getParentComponent().getComponentID())
-                {
-                    //for equal component IDs prefer the higher priority
-                    if(pair.getPriority() > pairToUnfreeze.getPriority())
-                        pairToUnfreeze = pair;
+                    //need to replace the pair in the list.
+                    pairsToWait.put(pair.getFoundation(), pair);
                 }
             }
+        }
 
-            foundationPairs.put(pairToUnfreeze.getFoundation(),
-                                pairToUnfreeze );
+        //now put the pairs we've selected in the Waiting state.
+        Iterator<CandidatePair> pairsIter = pairsToWait.values().iterator();
+
+        while(pairsIter.hasNext())
+        {
+            pairsIter.next().setState(CandidatePairState.WAITING, null);
         }
     }
 }
