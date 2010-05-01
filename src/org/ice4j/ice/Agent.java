@@ -570,6 +570,29 @@ public class Agent
     }
 
     /**
+     * Returns the number of {@link CheckList}s that are currently active.
+     *
+     * @return the number of {@link CheckList}s that are currently active.
+     *
+     */
+    public int getActiveCheckListCount()
+    {
+        synchronized(mediaStreams)
+        {
+            int i=0;
+            Collection<IceMediaStream> streams = mediaStreams.values();
+            for (IceMediaStream stream : streams)
+            {
+                if (stream.getCheckList().getState()
+                                == CheckListState.RUNNING)
+                    i++;
+            }
+
+            return i;
+        }
+    }
+
+    /**
      * Returns a <tt>String</tt> representation of this agent.
      *
      * @return a <tt>String</tt> representation of this agent.
@@ -800,6 +823,9 @@ public class Agent
                     triggeredPair.getLocalCandidate().getTransportAddress(),
                     triggeredPair.getRemoteCandidate().getTransportAddress());
 
+        IceMediaStream parentStream = triggeredPair.getLocalCandidate()
+            .getParentComponent().getParentStream();
+
         if (knownPair != null)
         {
             triggeredPair = knownPair;
@@ -838,9 +864,6 @@ public class Agent
              * Its state is set to Waiting [and it] is enqueued into the
              * triggered check queue.
              */
-            IceMediaStream parentStream = triggeredPair.getLocalCandidate()
-                .getParentComponent().getParentStream();
-
             parentStream.addToCheckList(triggeredPair);
         }
 
@@ -851,7 +874,7 @@ public class Agent
          * the pair is then changed to Waiting.
          * Emil: This actually applies for all case.
          */
-        connCheckClient.scheduleTriggeredCheck(triggeredPair);
+        parentStream.getCheckList().scheduleTriggeredCheck(triggeredPair);
     }
 
     /**
