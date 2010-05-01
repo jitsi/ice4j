@@ -389,63 +389,6 @@ public class IceMediaStream
     }
 
     /**
-     * Computes and resets states of all pairs in this check list. For all pairs
-     * with the same foundation, we set the state of the pair with the lowest
-     * component ID to Waiting. If there is more than one such pair, the one
-     * with the highest priority is used.
-     */
-    protected void computeInitialCheckListPairStates()
-    {
-        Map<String, CandidatePair> pairsToWait
-                                    = new Hashtable<String, CandidatePair>();
-
-        //first, determine the pairs that we'd need to put in the waiting state.
-        for(CandidatePair pair : checkList)
-        {
-            //we need to check whether the pair is already in the wait list. if
-            //so we'll compare it with this one and determine which of the two
-            //needs to stay.
-            CandidatePair prevPair = pairsToWait.get(pair.getFoundation());
-
-            if(prevPair == null)
-            {
-                //first pair with this foundation.
-                pairsToWait.put(pair.getFoundation(), pair);
-                continue;
-            }
-
-            //we already have a pair with the same foundation. determine which
-            //of the two has the lower component id and higher priority and
-            //keep that one in the list.
-            if( prevPair.getParentComponent() == pair.getParentComponent())
-            {
-                if(pair.getPriority() > prevPair.getPriority())
-                {
-                    //need to replace the pair in the list.
-                    pairsToWait.put(pair.getFoundation(), pair);
-                }
-            }
-            else
-            {
-                if(pair.getParentComponent().getComponentID()
-                            < prevPair.getParentComponent().getComponentID())
-                {
-                    //need to replace the pair in the list.
-                    pairsToWait.put(pair.getFoundation(), pair);
-                }
-            }
-        }
-
-        //now put the pairs we've selected in the Waiting state.
-        Iterator<CandidatePair> pairsIter = pairsToWait.values().iterator();
-
-        while(pairsIter.hasNext())
-        {
-            pairsIter.next().setState(CandidatePairState.WAITING, null);
-        }
-    }
-
-    /**
      * Returns the list of <tt>CandidatePair</tt>s to be used in checks for
      * this stream.
      *
