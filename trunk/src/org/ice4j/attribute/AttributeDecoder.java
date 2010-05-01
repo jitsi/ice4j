@@ -45,11 +45,6 @@ public class AttributeDecoder
         char attributeType   = (char)((bytes[offset]<<8)|bytes[offset + 1]);
         char attributeLength = (char)((bytes[offset + 2]<<8)|bytes[offset + 3]);
 
-        if((attributeLength % 4) > 0)
-        {
-          attributeLength += (4 - (attributeLength % 4));
-        }
-
         if(attributeLength > bytes.length - offset )
             throw new StunException( StunException.ILLEGAL_ARGUMENT,
                             "Could not decode the specified binary array.");

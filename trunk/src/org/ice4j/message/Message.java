@@ -702,6 +702,13 @@ public abstract class Message
 
             message.addAttribute(att);
             offset += att.getDataLength() + Attribute.HEADER_LENGTH;
+
+            //now also skip any potential padding that might have come with
+            //this attribute.
+            if((att.getDataLength() % 4) > 0)
+            {
+                offset += (4 - (att.getDataLength() % 4));
+            }
         }
 
         return message;

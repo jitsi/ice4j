@@ -679,7 +679,7 @@ public class StunStack
                     "Wrong MESSAGE-INTEGRITY value.");
             }
         }
-        else
+        else if(Boolean.getBoolean(StackProperties.REQUIRE_MESSAGE_INTEGRITY))
         {
             // no message integrity
             Response error = MessageFactory.createBindingErrorResponse(

@@ -97,6 +97,7 @@ public class ErrorCodeAttributeTest extends TestCase {
         errorCodeAttribute.setReasonPhrase(msgFixture.REASON_PHRASE);
 
         byte[] actualReturn = errorCodeAttribute.encode();
+
         assertTrue("encode() did not return the expected binary array.",
                    Arrays.equals( expectedReturn, actualReturn));
     }
@@ -158,16 +159,15 @@ public class ErrorCodeAttributeTest extends TestCase {
     public void testGetDataLength()
         throws StunException
     {
-        char expectedReturn =
-                     (char)(msgFixture.errCodeTestValue.length
-                            - Attribute.HEADER_LENGTH);
+        int expectedReturn = msgFixture.REASON_PHRASE.getBytes().length
+                            + 4; //error code specific header
 
         errorCodeAttribute.setErrorClass(msgFixture.ERROR_CLASS);
         errorCodeAttribute.setErrorNumber(msgFixture.ERROR_NUMBER);
         errorCodeAttribute.setReasonPhrase(msgFixture.REASON_PHRASE);
 
         char actualReturn = errorCodeAttribute.getDataLength();
-        assertEquals("return value", expectedReturn, actualReturn);
+        assertEquals("data length1", (int)expectedReturn, (int)actualReturn);
     }
 
     /**
