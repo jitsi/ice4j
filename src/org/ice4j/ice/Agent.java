@@ -17,6 +17,7 @@ import java.util.logging.*;
 import org.ice4j.*;
 import org.ice4j.ice.checks.*;
 import org.ice4j.ice.harvest.*;
+import org.ice4j.stack.*;
 
 /**
  * An <tt>Agent</tt> could be described as the main class (i.e. the chef d'orchestre)
@@ -32,12 +33,6 @@ import org.ice4j.ice.harvest.*;
 public class Agent
     implements IncomingCheckProcessor
 {
-    /**
-     * Our class logger.
-     */
-    private static final Logger logger
-        = Logger.getLogger(Agent.class.getName());
-
     /**
      * The default maximum size for check lists.
      */
@@ -71,15 +66,6 @@ public class Agent
      */
     private final FoundationsRegistry foundationsRegistry
                                           = new FoundationsRegistry();
-
-    /**
-     * The <tt>triggeredCheckQueue</tt> is a FIFO queue containing candidate
-     * pairs for which checks are to be sent at the next available opportunity.
-     * A pair would get into a triggered check queue as soon as we receive
-     * a check on its local candidate.
-     */
-    private final List<CandidatePair> triggeredCheckQueue
-                                          = new Vector<CandidatePair>();
 
     /**
      * The <tt>List</tt> of remote addresses that we have discovered through
@@ -678,6 +664,69 @@ public class Agent
     }
 
     /**
+     * Returns the remote <tt>Candidate</tt> with the specified
+     * <tt>remoteAddress</tt> if it belongs to any of this {@link Agent}'s
+     * streams or <tt>null</tt> if it doesn't.
+     *
+     * @param remoteAddress the {@link TransportAddress} we are looking for.
+     *
+     * @return the remote <tt>Candidate</tt> with the specified
+     * <tt>remoteAddress</tt> if it belongs to any of this {@link Agent}'s
+     * streams or <tt>null</tt> if it doesn't.
+     */
+    public Candidate findRemoteCandidate(TransportAddress remoteAddress)
+    {
+        Collection<IceMediaStream> streamsCollection = mediaStreams.values();
+
+        for( IceMediaStream stream : streamsCollection)
+        {
+            Candidate cnd = stream.findRemoteCandidate(remoteAddress);
+
+            if(cnd != null)
+                return cnd;
+        }
+
+        return null;
+    }
+
+    /**
+     * Returns the {@link CandidatePair} with the specified remote and local
+     * addresses or <tt>null</tt> if neither of the {@link CheckList}s in this
+     * {@link Agent}'s streams contain such a pair.
+     *
+     * @param localAddress the local {@link TransportAddress} of the pair we
+     * are looking for.
+     * @param remoteAddress the remote {@link TransportAddress} of the pair we
+     * are looking for.
+     *
+     * @return the {@link CandidatePair} with the specified remote and local
+     * addresses or <tt>null</tt> if neither of the {@link CheckList}s in this
+     * {@link Agent}'s streams contain such a pair.
+     */
+    public CandidatePair findCandidatePair(TransportAddress localAddress,
+                                           TransportAddress remoteAddress)
+    {
+
+        synchronized(mediaStreams)
+        {
+            Collection<IceMediaStream> streamsCollection
+                = mediaStreams.values();
+
+            for( IceMediaStream stream : streamsCollection)
+            {
+                CandidatePair pair = stream.findCandidatePair(
+                                localAddress, remoteAddress);
+                if( pair != null )
+                {
+                    return pair;
+                }
+            }
+        }
+
+        return null;
+    }
+
+    /**
      * Notifies the implementation that the {@link ConnectivityCheckServer} has
      * just received a message on <tt>localAddress</tt> originating at
      * <tt>remoteAddress</tt> carrying the specified <tt>priority</tt>. This
@@ -737,6 +786,61 @@ public class Agent
      */
     private void triggerCheck(CandidatePair triggeredPair)
     {
+        //first check whether we already know about the remote address in case
+        //we've just discovered a peer-reflexive candidate.
+        CandidatePair knownPair =  this.findCandidatePair(
+                    triggeredPair.getLocalCandidate().getTransportAddress(),
+                    triggeredPair.getRemoteCandidate().getTransportAddress());
+
+        if (knownPair != null)
+        {
+            triggeredPair = knownPair;
+
+            //we already know about the remote address so we only need to
+            //trigger a check for the existing pair
+
+            /**
+             * RFC 5245: If the state of that pair is Succeeded, nothing
+             * further is done.
+             */
+            if (knownPair.getState() == CandidatePairState.SUCCEEDED )
+            {
+                return;
+            }
+
+            /**
+             * RFC 5245: If the state of that pair is In-Progress, the agent
+             * cancels the in-progress transaction.
+             **/
+            if (knownPair.getState() == CandidatePairState.IN_PROGRESS )
+            {
+                TransactionID checkTransaction
+                    = knownPair.getConnectivityCheckTransaction();
+
+                StunStack.getInstance().cancelTransaction(checkTransaction);
+
+            }
+        }
+        else
+        {
+            //it appears that we've just discovered a peer-reflexive address.
+            /*
+             * RFC 5245: If the pair is not already on the check list:
+             * The pair is inserted into the check list based on its priority
+             * Its state is set to Waiting [and it] is enqueued into the
+             * triggered check queue.
+             * Emil: This means we actually don't have anything to do here.
+             */
+        }
+
+        /**
+         * RFC 5245: The agent MUST create a new connectivity check for that
+         * pair (representing a new STUN Binding request transaction) by
+         * enqueueing the pair in the triggered check queue.  The state of
+         * the pair is then changed to Waiting.
+         * Emil: This actually applies for all case.
+         */
+        connCheckClient.scheduleTriggeredCheck(triggeredPair);
 
     }
 }

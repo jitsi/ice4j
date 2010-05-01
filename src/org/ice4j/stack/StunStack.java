@@ -124,6 +124,25 @@ public class StunStack
     }
 
     /**
+     * Cancels the {@link StunClientTransaction} with the specified
+     * <tt>transactionID</tt>. Cancellation means that the stack will not
+     * retransmit the request, will not treat the lack of response to be a
+     * failure, but will wait the duration of the transaction timeout for a
+     * response.
+     *
+     * @param transactionID the {@link TransactionID} of the
+     * {@link StunClientTransaction} to cancel
+     */
+    public void cancelTransaction(TransactionID transactionID)
+    {
+        StunClientTransaction clientTransaction
+            = clientTransactions.get(transactionID);
+
+        if(clientTransaction != null)
+            clientTransaction.cancel();
+    }
+
+    /**
      * Stops all transactions for the specified <tt>localAddr</tt> so that they
      * won't send messages through any longer and so that we could remove the
      * associated socket.

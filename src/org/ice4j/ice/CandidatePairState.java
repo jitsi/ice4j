@@ -28,7 +28,7 @@ public enum CandidatePairState
      * means that a check has been sent for this pair, but the transaction is
      * in progress.
      */
-    PROGRESS("In-Progress"),
+    IN_PROGRESS("In-Progress"),
 
     /**
      * Indicates that the candidate pair is in a "Succeeded" state which means

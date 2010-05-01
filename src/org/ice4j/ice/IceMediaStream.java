@@ -493,4 +493,67 @@ public class IceMediaStream
 
         return null;
     }
+
+    /**
+     * Returns the local <tt>Candidate</tt> with the specified
+     * <tt>remoteAddress</tt> if it belongs to any of this stream's {@link
+     * Component}s or <tt>null</tt> if it doesn't.
+     *
+     * @param remoteAddress the {@link TransportAddress} we are looking for.
+     *
+     * @return the local <tt>Candidate</tt> with the specified
+     * <tt>remoteAddress</tt> if it belongs to any of this stream's {@link
+     * Component}s or <tt>null</tt> if it doesn't.
+     *
+     */
+    public Candidate findRemoteCandidate(TransportAddress remoteAddress)
+    {
+        Collection<Component> cmpCol = components.values();
+
+        for( Component cmp : cmpCol)
+        {
+            Candidate cnd = cmp.findRemoteCandidate(remoteAddress);
+
+            if(cnd != null)
+                return cnd;
+        }
+
+        return null;
+    }
+
+
+    /**
+     * Returns the {@link CandidatePair} with the specified remote and local
+     * addresses or <tt>null</tt> if neither of the {@link CheckList}s in this
+     * stream contain such a pair.
+     *
+     * @param localAddress the local {@link TransportAddress} of the pair we
+     * are looking for.
+     * @param remoteAddress the remote {@link TransportAddress} of the pair we
+     * are looking for.
+     *
+     * @return the {@link CandidatePair} with the specified remote and local
+     * addresses or <tt>null</tt> if neither of the {@link CheckList}s in this
+     * stream contain such a pair.
+     */
+    public CandidatePair findCandidatePair(TransportAddress localAddress,
+                                           TransportAddress remoteAddress)
+    {
+
+        synchronized(checkList)
+        {
+            for( CandidatePair pair : checkList)
+            {
+                if( pair.getLocalCandidate().getTransportAddress()
+                                .equals(localAddress)
+                    && pair.getRemoteCandidate().getTransportAddress()
+                                .equals(remoteAddress) )
+                {
+                    return pair;
+                }
+            }
+        }
+
+        return null;
+    }
 }

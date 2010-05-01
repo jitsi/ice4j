@@ -7,6 +7,7 @@
 package org.ice4j.ice.checks;
 
 import java.net.*;
+import java.util.*;
 import java.util.logging.*;
 
 import org.ice4j.*;
@@ -36,7 +37,16 @@ public class ConnectivityCheckClient
     /**
      * The stun stack that we will use for connectivity checks.
      */
-    StunStack stunStack = StunStack.getInstance();
+    private StunStack stunStack = StunStack.getInstance();
+
+    /**
+     * The <tt>triggeredCheckQueue</tt> is a FIFO queue containing candidate
+     * pairs for which checks are to be sent at the next available opportunity.
+     * A pair would get into a triggered check queue as soon as we receive
+     * a check on its local candidate.
+     */
+    private final List<CandidatePair> triggeredCheckQueue
+                                          = new LinkedList<CandidatePair>();
 
     /**
      * Creates a new <tt>ConnectivityCheckHandler</tt> setting
@@ -113,7 +123,10 @@ public class ConnectivityCheckClient
             tran = stunStack.sendRequest(request,
                     pair.getRemoteCandidate().getTransportAddress(), stunSocket,
                     this);
-System.out.println("checking pair " + pair + " with tran=" + tran.toString());
+
+            if(logger.isLoggable(Level.FINEST))
+                logger.finest("checking pair " + pair + " with tran="
+                                + tran.toString());
         }
         catch (Exception exception)
         {
@@ -139,5 +152,52 @@ System.out.println("checking pair " + pair + " with tran=" + tran.toString());
         System.out.println("failure event=" + event);
     }
 
+    /**
+     * Adds <tt>pair</tt> to the local triggered check queue unless it's already
+     * there. Additionally, the method sets the pair's state to {@link
+     * CandidatePairState#WAITING}.
+     *
+     * @param pair the pair to schedule a triggered check for.
+     */
+    public void scheduleTriggeredCheck(CandidatePair pair)
+    {
+        synchronized(triggeredCheckQueue)
+        {
+            if(!triggeredCheckQueue.contains(pair))
+            {
+                triggeredCheckQueue.add(pair);
+                pair.setState(CandidatePairState.WAITING, null);
+            }
+        }
+    }
 
+    /**
+     * The thread that actually sends the checks in the pace defined in RFC
+     * 5245.
+     */
+    private static class PaceMaker extends Thread
+    {
+        /**
+         * The {@link ConnectivityCheckClient} that created us.
+         */
+        private final ConnectivityCheckClient parentClient;
+
+        /**
+         * Creates a new {@link PaceMaker} for the specified
+         * <tt>parentClient</tt>
+         *
+         * @param parentClient the {@link ConnectivityCheckClient} that who's
+         * checks we are going to run.
+         */
+        public PaceMaker(ConnectivityCheckClient parentClient)
+        {
+            super("ICE PaceMaker:" + parentClient.parentAgent.getLocalUfrag());
+            this.parentClient = parentClient;
+        }
+
+        public void run()
+        {
+
+        }
+    }
 }

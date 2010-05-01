@@ -8,6 +8,8 @@ package org.ice4j.ice;
 
 import java.util.*;
 
+import org.ice4j.stack.*;
+
 /**
  * <tt>CandidatePair</tt>s map local to remote <tt>Candidate</tt>s so that they
  * could be added to check lists. Connectivity in ICE is always verified by
@@ -53,6 +55,13 @@ public class CandidatePair
      * our default state.
      */
     private CandidatePairState state = CandidatePairState.FROZEN;
+
+    /**
+     * The {@link TransactionID} of the client transaction for a connectivity
+     * check over this pair in case it is in the {@link CandidatePairState#
+     * IN_PROGRESS} state.
+     */
+    private TransactionID connCheckTranID = null;
 
     /**
      * Creates a <tt>CandidatePair</tt> instance mapping <tt>localCandidate</tt>
@@ -150,13 +159,44 @@ public class CandidatePair
     /**
      * Sets the <tt>CandidatePairState</tt> of this pair to <tt>state</tt>. This
      * method should only be called by the ice agent, during the execution of
-     * the ICE procedures.
+     * the ICE procedures. Note that passing a <tt>null</tt> transaction for the
+     * {@link CandidatePairState#IN_PROGRESS} or a non-<tt>null</tt> for any
+     * other state would cause an {@link IllegalArgumentException} to be thrown.
+     * I know this is not the most elegant way to handle it but this method is
+     * supposed to only be used internally and I prefer the exception rather
+     * than implementing one method for every state transition.
      *
      * @param state the state that this candidate pair is to enter.
+     * @param tranID the {@link TransactionID} that we are using for the
+     * connectivity check in case we are entering the <tt>In-Progress</tt>
+     * state and <tt>null</tt> otherwise.
+     *
+     * @throws IllegalArgumentException if state is {@link CandidatePairState
+     * #IN_PROGRESS} and <tt>tranID</tt> is <tt>null</tt>.
      */
-    protected void setState(CandidatePairState state)
+    public synchronized void setState(CandidatePairState state,
+                                      TransactionID      tranID)
+        throws IllegalArgumentException
     {
         this.state = state;
+
+        if(state != CandidatePairState.IN_PROGRESS)
+        {
+            if (tranID != null)
+                throw new IllegalArgumentException(
+                                "How could you have a transaction for a pair"
+                                + " that's not in the In-Progress state?");
+        }
+        else
+        {
+            if (tranID == null)
+                throw new IllegalArgumentException("Putting a pair into the "
+                                +"In-Progress state MUST be accomapnied with "
+                                +"the TransactionID of the conn check.");
+        }
+
+        this.connCheckTranID = tranID;
+
     }
 
     /**
@@ -366,5 +406,21 @@ public class CandidatePair
     public Component getParentComponent()
     {
         return getLocalCandidate().getParentComponent();
+    }
+
+    /**
+     * Returns the {@link TransactionID} used in the connectivity check
+     * associated with this {@link CandidatePair} when it's in the
+     * {@link CandidatePairState#IN_PROGRESS} or <tt>null</tt> if it's in
+     * any other state.
+     *
+     * @return the {@link TransactionID} used in the connectivity check
+     * associated with this {@link CandidatePair} when it's in the
+     * {@link CandidatePairState#IN_PROGRESS} or <tt>null</tt> if it's in
+     * any other state.
+     */
+    public TransactionID getConnectivityCheckTransaction()
+    {
+        return connCheckTranID;
     }
 }
