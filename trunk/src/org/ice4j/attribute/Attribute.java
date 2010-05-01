@@ -113,6 +113,13 @@ public abstract class Attribute
     public static final char HEADER_LENGTH = 4;
 
     /**
+     * For attributes that have arriving in incoming messages, this fiels
+     * contains their original location in the binary array so that we could
+     * later more easily verify attributes like MESSAGE-INTEGRITY.
+     */
+    private int locationInMessage = -1;
+
+    /**
      * Creates an empty STUN message attribute.
      *
      * @param attributeType the type of the attribute.
@@ -175,6 +182,32 @@ public abstract class Attribute
      * @return a binary representation of this attribute.
      */
     public abstract byte[] encode();
+
+    /**
+     * For attributes that have arriving in incoming messages, this method
+     * stores their original location in the binary array so that we could
+     * later more easily verify attributes like MESSAGE-INTEGRITY.
+     *
+     * @param index the original location of this attribute in the datagram
+     * we got off the wire
+     */
+    public void setLocationInMessage(int index)
+    {
+        this.locationInMessage = index;
+    }
+
+    /**
+     * For attributes that have arriving in incoming messages, this method
+     * returns their original location in the binary array so that we could
+     * later more easily verify attributes like MESSAGE-INTEGRITY.
+     *
+     * @return the original location of this attribute in the datagram
+     * we got off the wire or -1 if this is not an incoming {@link Attribute}
+     */
+    public int getLocationInMessage()
+    {
+        return this.locationInMessage;
+    }
 
     /**
      * Sets this attribute's fields according to attributeValue array.

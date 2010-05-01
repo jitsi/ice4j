@@ -122,6 +122,7 @@ public class AttributeDecoder
         }
 
         decodedAttribute.setAttributeType(attributeType);
+        decodedAttribute.setLocationInMessage(offset);
 
         decodedAttribute.decodeAttributeBody(bytes,
                 (char)(Attribute.HEADER_LENGTH + offset), attributeLength);
