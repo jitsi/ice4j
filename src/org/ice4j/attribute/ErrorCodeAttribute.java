@@ -6,6 +6,8 @@
  */
 package org.ice4j.attribute;
 
+import java.util.*;
+
 import org.ice4j.*;
 
 /**
@@ -350,10 +352,8 @@ public class ErrorCodeAttribute extends Attribute
      *                  offset is equal to the index of the first byte after
      *                  length)
      * @param length the length of the binary array.
-     * @throws StunException if attrubteValue contains invalid data.
      */
-    void decodeAttributeBody(byte[] attributeValue, char offset, char length) throws
-        StunException
+    void decodeAttributeBody(byte[] attributeValue, char offset, char length)
     {
 
         offset += 2; //skip the 0s
@@ -363,13 +363,11 @@ public class ErrorCodeAttribute extends Attribute
         setErrorNumber(attributeValue[offset++]);
 
         //Reason Phrase
-        char reasonPhrase[] = new char[(length-4)/2];
+        byte[] reasonBytes = new byte[length - 4];
 
-        for (int i = 0; i < reasonPhrase.length; i++, offset+=2) {
-            reasonPhrase[i] =
-                (char)(attributeValue[offset] | attributeValue[offset+1]);
-        }
-        setReasonPhrase(new String(reasonPhrase).trim());
+        System.arraycopy(attributeValue, offset, reasonBytes,
+                            0, reasonBytes.length);
+        setReasonPhrase(new String(reasonBytes));
 
     }
 

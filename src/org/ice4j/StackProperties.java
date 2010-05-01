@@ -99,6 +99,13 @@ public class StackProperties
                                 = "org.ice4j.ALWAYS_SIGN";
 
     /**
+     * Tells the stack whether to reject all incoming requests that do not
+     * carry a MESSAGE-INTEGRITY header.
+     */
+    public static final String REQUIRE_MESSAGE_INTEGRITY
+                                    = "org.ice4j.REQUIRE_MESSAGE_INTEGRITY";
+
+    /**
      * Returns the String value of the specified property (minus all
      * encompassing whitespaces)and null in case no property value was mapped
      * against the specified propertyName, or in case the returned property
