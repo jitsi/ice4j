@@ -558,4 +558,26 @@ public class IceMediaStream
             validList.add(pair);
         }
     }
+
+    /**
+     * Returns <tt>true</tt> if this stream's <tt>validList</tt> contains a
+     * pair with the specified <tt>foundation</tt> and <tt>false</tt> otherwise.
+     *
+     * @param foundation the foundation String we'd like to search our
+     * validList for.
+     *
+     * @return <tt>true</tt> if this stream's <tt>validList</tt> contains a
+     * pair with the specified <tt>foundation</tt> and <tt>false</tt> otherwise.
+     */
+    public boolean containsFoundation(String foundation)
+    {
+        synchronized(validList)
+        {
+            for(CandidatePair pair : validList)
+                if (pair.getFoundation().equals(foundation))
+                    return true;
+        }
+
+        return false;
+    }
 }

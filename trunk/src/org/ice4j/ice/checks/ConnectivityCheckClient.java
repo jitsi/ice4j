@@ -63,15 +63,29 @@ public class ConnectivityCheckClient
     }
 
     /**
-     * Starts client connectivity checks using <tt>checkList</tt> as the
-     * {@link CheckList} of the first {@link IceMediaStream}.
-     *
-     * @param firstCheckList the check list that we should start our checks
-     * with.
+     * Starts client connectivity checks for the first {@link IceMediaStream}
+     * in our parent {@link Agent}. This method should only be called by
+     * the parent {@link Agent} when connectivity establishment starts for a
+     * particular check list.
      */
-    public void startChecks(CheckList firstCheckList)
+    public void startChecks()
     {
-        PaceMaker paceMaker = new PaceMaker(this, firstCheckList);
+        CheckList firstCheckList = parentAgent.getStreams().get(0)
+            .getCheckList();
+
+        startChecks(firstCheckList);
+    }
+
+    /**
+     * Starts client connectivity checks for the {@link CandidatePair}s in
+     *  <tt>checkList</tt>
+     *
+     * @param checkList the {@link CheckList} to start client side connectivity
+     * checks for.
+     */
+    private void startChecks(CheckList checkList)
+    {
+        PaceMaker paceMaker = new PaceMaker(this, checkList);
         paceMakers.add(paceMaker);
 
         paceMaker.start();
@@ -289,6 +303,51 @@ public class ConnectivityCheckClient
 
         validPair.getParentComponent().getParentStream()
                 .addValidPair(validPair);
+
+        //The agent sets the state of the pair that *generated* the check to
+        //Succeeded.  Note that, the pair which *generated* the check may be
+        //different than the valid pair constructed above
+        checkedPair.setStateSucceeded();
+
+        //The agent changes the states for all other Frozen pairs for the
+        //same media stream and same foundation to Waiting.
+        IceMediaStream parentStream = checkedPair.getParentComponent()
+            .getParentStream();
+        CheckList parentCheckList = parentStream.getCheckList();
+
+        for(CandidatePair pair : parentCheckList)
+            if (pair.getState() == CandidatePairState.FROZEN)
+                pair.setStateWaiting();
+
+        // The agent examines the check list for all other streams in turn
+        // If the check list is active, the agent changes the state of
+        // all Frozen pairs in that check list whose foundation matches a
+        // pair in the valid list under consideration to Waiting.
+        List<IceMediaStream> allOtherStreams = parentAgent.getStreams();
+        allOtherStreams.remove(parentStream);
+
+        for (IceMediaStream stream : allOtherStreams)
+        {
+            CheckList checkList = stream.getCheckList();
+            boolean wasFrozen = checkList.isFrozen();
+
+            for(CandidatePair pair : checkList)
+                if (parentStream.containsFoundation(pair.getFoundation()))
+                    pair.setStateWaiting();
+
+            //if the checklList is still frozen after the above operations, and
+            //there are no pairs in the check list whose foundation matches a
+            //pair in the valid list under consideration, the agent groups
+            //together all of the pairs with the same foundation, and for each
+            //group, sets the state of the pair with the lowest component ID to
+            //Waiting.  If there is more than one such pair, the one with the
+            //highest priority is used.
+            if(!checkList.isFrozen())
+                checkList.computeInitialCheckListPairStates();
+
+            if (wasFrozen)
+                startChecks(checkList);
+        }
     }
 
     /**

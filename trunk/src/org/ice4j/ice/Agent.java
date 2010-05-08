@@ -291,12 +291,7 @@ public class Agent
         synchronized(startLock)
         {
             initCheckLists();
-
-            List<IceMediaStream> streams = getStreams();
-
-            CheckList list = streams.get(0).getCheckList();
-            connCheckClient.startChecks(list);
-
+            connCheckClient.startChecks();
             iceStarted = true;
         }
     }
