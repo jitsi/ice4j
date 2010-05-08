@@ -41,6 +41,21 @@ public class CheckList
                                           = new LinkedList<CandidatePair>();
 
     /**
+     * A name for this check list which we use for debugging purposes
+     */
+    private final String name;
+
+    /**
+     * Creates a check list with the specified name.
+     *
+     * @param name the name of the check list.
+     */
+    public CheckList(String name)
+    {
+        this.name = name;
+    }
+
+    /**
      * Returns the state of this check list.
      *
      * @return the <tt>CheckListState</tt> of this check list.
@@ -114,33 +129,36 @@ public class CheckList
         if (size() < 1)
             return null;
 
-        CandidatePair highestPriorityWaitingPair = null;
-        CandidatePair highestPriorityFrozenPair = null;
+        CandidatePair highestPriorityPair = null;
 
         for (CandidatePair pair : this)
         {
             if (pair.getState() == CandidatePairState.WAITING)
             {
-                if(highestPriorityWaitingPair == null
-                   || pair.getPriority()
-                                    > highestPriorityWaitingPair.getPriority())
+                if(highestPriorityPair == null
+                   || pair.getPriority() > highestPriorityPair.getPriority())
                 {
-                        highestPriorityWaitingPair = pair;
+                    highestPriorityPair = pair;
                 }
-            }
-            else if (pair.getState() == CandidatePairState.FROZEN)
-            {
-                if(highestPriorityFrozenPair == null
-                   || pair.getPriority()
-                                > highestPriorityFrozenPair.getPriority())
-                    highestPriorityFrozenPair = pair;
             }
         }
 
-        if(highestPriorityWaitingPair != null)
-            return highestPriorityWaitingPair;
-        else
-            return highestPriorityFrozenPair; //return even if null
+        if(highestPriorityPair != null)
+            return highestPriorityPair;
+
+       for (CandidatePair pair : this)
+       {
+            if (pair.getState() == CandidatePairState.FROZEN)
+            {
+                if(highestPriorityPair == null
+                   || pair.getPriority() > highestPriorityPair.getPriority())
+                {
+                    highestPriorityPair = pair;
+                }
+            }
+        }
+
+        return highestPriorityPair; //return even if null
     }
 
     /**
@@ -331,5 +349,17 @@ public class CheckList
                 }
             }
         }
+    }
+
+    /**
+     * Returns the name of this check list so that we could use it for debugging
+     * purposes.
+     *
+     * @return a name for this check list that we could use to distinguish it
+     * from other check lists while debugging.
+     */
+    public String getName()
+    {
+        return name;
     }
 }

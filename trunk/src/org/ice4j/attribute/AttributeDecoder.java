@@ -113,6 +113,8 @@ public class AttributeDecoder
                 decodedAttribute = new IceControllingAttribute(); break;
             case Attribute.ICE_CONTROLLED:
                 decodedAttribute = new IceControlledAttribute(); break;
+            case Attribute.USE_CANDIDATE:
+                decodedAttribute = new UseCandidateAttribute(); break;
 
             //According to rfc3489 we should silently ignore unknown attributes.
             default: decodedAttribute

@@ -740,7 +740,7 @@ t.printStackTrace();
         {
             Response error = MessageFactory.createBindingErrorResponse(
                     ErrorCodeAttribute.UNKNOWN_ATTRIBUTE,
-                    "missing username", sBuff.toString().toCharArray());
+                    "unknown attribute ", sBuff.toString().toCharArray());
 
             sendResponse(request.getTransactionID(), error,
                             evt.getLocalAddress(),

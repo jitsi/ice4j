@@ -62,7 +62,7 @@ public class IceMediaStream
      * is one check list per in-use media stream resulting from the offer/answer
      * exchange.
      */
-    private final CheckList checkList = new CheckList();
+    private final CheckList checkList;
 
     /**
      * The agent that this media stream belongs to.
@@ -91,6 +91,7 @@ public class IceMediaStream
     {
         this.name = name;
         this.parentAgent = parentAgent;
+        checkList = new CheckList(name);
     }
 
     /**

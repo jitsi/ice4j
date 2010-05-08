@@ -221,12 +221,24 @@ public class ConnectivityCheckClient
             processSuccessResponse(evt);
         }
 
-        //7.1.3.3. Check List and Timer State Updates
+        CandidatePair checkedPair = ((CandidatePair)evt.getTransactionID()
+                        .getApplicationData());
+
         //Regardless of whether the check was successful or failed, the
         //completion of the transaction may require updating of check list and
         //timer states.
-        CandidatePair checkedPair = ((CandidatePair)evt.getTransactionID()
-                        .getApplicationData());
+        updateCheckListAndTimerStates(checkedPair);
+    }
+
+    /**
+     * Updates all check list and timer states after a check has completed
+     * (both if completion was successful or not). The method implements
+     * section "7.1.3.3. Check List and Timer State Updates"
+     *
+     * @param checkedPair the pair whose check has just completed.
+     */
+    private void updateCheckListAndTimerStates(CandidatePair checkedPair)
+    {
         IceMediaStream stream = checkedPair.getParentComponent()
             .getParentStream();
         CheckList checkList = stream.getCheckList();
@@ -234,10 +246,17 @@ public class ConnectivityCheckClient
         //If all of the pairs in the check list are now either in the Failed or
         //Succeeded state:
         boolean allPairsDone = true;
-        for(CandidatePair pair : checkList)
-            if(pair.getState() != CandidatePairState.FAILED
-               && pair.getState() != CandidatePairState.SUCCEEDED)
-               allPairsDone = false;
+        synchronized(checkList)
+        {
+            for(CandidatePair pair : checkList)
+            {
+                if(pair.getState() != CandidatePairState.FAILED
+                   && pair.getState() != CandidatePairState.SUCCEEDED)
+                {
+                    allPairsDone = false;
+                }
+            }
+        }
 
         if (allPairsDone)
         {
@@ -265,6 +284,8 @@ public class ConnectivityCheckClient
                 }
             }
         }
+
+        parentAgent.checkListStatesUpdated();
     }
 
     /**
@@ -279,7 +300,6 @@ public class ConnectivityCheckClient
 
         CandidatePair checkedPair = ((CandidatePair)evt.getTransactionID()
                         .getApplicationData());
-
 
         if(! response.contains(Attribute.XOR_MAPPED_ADDRESS))
         {
@@ -347,10 +367,14 @@ public class ConnectivityCheckClient
         // by a STUN connectivity check.
         CandidatePair validPair;
         if(existingPair != null)
+        {
             validPair = existingPair;
+        }
         else
+        {
             validPair = new CandidatePair(validLocalCandidate,
                         validRemoteCandidate);
+        }
 
         parentAgent.validatePair(validPair);
 
@@ -381,10 +405,17 @@ public class ConnectivityCheckClient
             CheckList checkList = stream.getCheckList();
             boolean wasFrozen = checkList.isFrozen();
 
-            for(CandidatePair pair : checkList)
-                if (parentStream.validListContainsFoundation(pair.getFoundation())
-                    && pair.getState() == CandidatePairState.FROZEN)
-                    pair.setStateWaiting();
+            synchronized (checkList)
+            {
+                for(CandidatePair pair : checkList)
+                {
+                    if (parentStream.validListContainsFoundation(pair.getFoundation())
+                        && pair.getState() == CandidatePairState.FROZEN)
+                    {
+                        pair.setStateWaiting();
+                    }
+                }
+            }
 
             //if the checklList is still frozen after the above operations,
             //the agent groups together all of the pairs with the same
@@ -492,35 +523,26 @@ public class ConnectivityCheckClient
         }
     }
 
+    /**
+     * Sets the state of the corresponding {@link CandidatePair} to
+     * {@link CandidatePairState#FAILED} and updates check list and timer
+     * states.
+     *
+     * @param event the {@link StunTimeoutEvent} containing the original
+     * transaction and hence {@link CandidatePair} that's being checked.
+     */
     public void processTimeout(StunTimeoutEvent event)
     {
-        System.out.println("timeout for pair=" + event.getTransactionID().getApplicationData());
+        CandidatePair pair = ((CandidatePair)event.getTransactionID()
+                        .getApplicationData());
+        logger.fine("timeout for pair=" + pair);
+System.out.println("timeout for pair=" + pair);
+        pair.setStateFailed();
 
+        updateCheckListAndTimerStates(pair);
     }
 
-    /**
-     * Removes the corresponding local candidate from the list of candidates
-     * that we are waiting on in order to complete the harvest.
-     *
-     * @param transactionID the ID of the transaction that has just ended.
-     */
-/*
-    private void processFailure(TransactionID transactionID)
-    {
-        synchronized (resolveMap)
-        {
-            Candidate localCand = resolveMap.remove(transactionID);
 
-            //if this was the last candidate, we are done with the STUN
-            //resolution and need to notify the waiters.
-            if(resolveMap.isEmpty())
-                resolveMap.notify();
-
-            logger.finest("a tran expired tranid=" + transactionID);
-            logger.finest("localAddr=" + localCand);
-        }
-    }
-*/
     /**
      * The thread that actually sends the checks for a particular check list
      * in the pace defined in RFC 5245.
@@ -562,6 +584,28 @@ public class ConnectivityCheckClient
         }
 
         /**
+         * Returns the number milliseconds to wait before we send the next
+         * check.
+         *
+         * @return  the number milliseconds to wait before we send the next
+         * check.
+         */
+        private long getNextWaitInterval()
+        {
+            int activeCheckLists = parentClient
+                    .parentAgent.getActiveCheckListCount();
+
+            if (activeCheckLists < 1)
+            {
+                //don't multiply by 0. even when we no longer have active check
+                //lists we may still have nomination checks to
+                activeCheckLists = 1;
+            }
+
+            return parentClient.parentAgent.calculateTa() * activeCheckLists;
+        }
+
+        /**
          * Sends connectivity checks at the pace determined by the {@link
          * Agent#calculateTa()} method and using either the trigger check queue
          * or the regular check lists.
@@ -570,8 +614,8 @@ public class ConnectivityCheckClient
         {
             while(isRunning)
             {
-                long waitFor = parentClient.parentAgent.calculateTa()
-                    * parentClient.parentAgent.getActiveCheckListCount();
+                long waitFor = getNextWaitInterval();
+System.out.println("will wait for " + waitFor + " active clist cound="+parentClient.parentAgent.getActiveCheckListCount());
 
                 if(waitFor > 0)
                 {
@@ -587,7 +631,7 @@ public class ConnectivityCheckClient
                     }
 
                     if (!isRunning)
-                        return;
+                        break;
                 }
 
                 CandidatePair pairToCheck = checkList.popTriggeredCheck();
@@ -595,21 +639,34 @@ public class ConnectivityCheckClient
 
                 //if there are no triggered checks, go for an ordinary one.
                 if(pairToCheck == null)
+                {
+System.out.println("checklist " + checkList.getName() + " did not return triggered check");
                     pairToCheck = checkList.getNextOrdinaryPairToCheck();
+                }
+                else
+                {
+System.out.println("checklist " + checkList.getName() + " returned triggered check");
+                }
+
+
 
                 if(pairToCheck != null)
-                    transactionID = parentClient.startCheckForPair(pairToCheck);
-
-                if(pairToCheck == null)
                 {
-                    //we are done sending checks for this list. we'll send its
+System.out.println("checklist " + checkList.getName() + " returned regular check in state " + pairToCheck.getState());
+                    transactionID = parentClient.startCheckForPair(pairToCheck);
+                }
+                else
+                {
+logger.fine("checklist " + checkList.getName() + " ran out of checks");
+                    //we are done sending checks for this list. we'll set its
                     //final state in either the processResponse()
                     //processTimeout() or processFailure() method.
 
                     logger.finest("finished a checklist");
-
-                    isRunning = false;
-                    return;
+//maybe do this if the list is in the completed state.
+                    //isRunning = false;
+                    //break;
+                    continue;
                 }
 
                 if(transactionID == null)

@@ -89,6 +89,11 @@ public class Component
     private LocalCandidate defaultCandidate = null;
 
     /**
+     * The pair that has been selected for use by ICE processing
+     */
+    private CandidatePair selectedPair;
+
+    /**
      * The default <tt>RemoteCandidate</tt> for this component or in other
      * words, the candidate that we would have used to communicate with the
      * remote peer if we hadn't been using ICE.
@@ -641,5 +646,19 @@ public class Component
         }
 
         return num;
+    }
+
+    /**
+     * Returns the {@link CandidatePair} selected for use by ICE processing or
+     * <tt>null</tt> if no pair has been selected so far or if ICE processing
+     * has failed.
+     *
+     * @return the {@link CandidatePair} selected for use by ICE processing or
+     * <tt>null</tt> if no pair has been selected so far or if ICE processing
+     * has failed.
+     */
+    public CandidatePair getSelectedPair()
+    {
+        return selectedPair;
     }
 }
