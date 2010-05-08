@@ -1018,10 +1018,12 @@ public class Agent
 
         parentStream.addValidPair(validPair);
 
-System.out.println("valid pair was nominated " + validPair);
-        validPair.nominate();
-        validPair.getParentComponent().getParentStream()
+        if(!validPair.isNominated())
+        {
+            validPair.nominate();
+            validPair.getParentComponent().getParentStream()
                 .getCheckList().scheduleTriggeredCheck(validPair);
+        }
     }
 
     /**
@@ -1029,19 +1031,19 @@ System.out.println("valid pair was nominated " + validPair);
      * contained the <tt>USE-CANDIDATE</tt> attribute or was triggered by an
      * incoming request that did.
      *
-     * @param pairToNominate the {@link CandidatePair} whose nomination has
+     * @param nominatedPair the {@link CandidatePair} whose nomination has
      * just been confirmed.
      */
-    protected void nominationConfirmed(CandidatePair pairToNominate)
+    protected void nominationConfirmed(CandidatePair nominatedPair)
     {
-        pairToNominate.nominate();
-System.out.println("pair nomination confirmed");
-        Component parentComponent = pairToNominate.getParentComponent();
+        nominatedPair.nominate();
+
+        Component parentComponent = nominatedPair.getParentComponent();
         IceMediaStream parentStream = parentComponent.getParentStream();
         CheckList checkList = parentStream.getCheckList();
 
         if( checkList.getState() == CheckListState.RUNNING )
-            checkList.handleNomination(pairToNominate);
+            checkList.handleNomination(nominatedPair);
 
         //Once there is at least one nominated pair in the valid list for
         //every component of the media stream and the state of the
@@ -1052,7 +1054,6 @@ System.out.println("pair nomination confirmed");
             //The agent MUST change the state of processing for its check
             //list for that media stream to Completed.
             checkList.setState(CheckListState.COMPLETED);
-System.out.println("checklist " + checkList.getName() + " became " + checkList.getState());
         }
     }
 
@@ -1241,9 +1242,10 @@ System.out.println("checklist " + checkList.getName() + " became " + checkList.g
     private void scheduleTermination()
     {
         if (terminationThread == null)
+        {
             terminationThread = new TerminationThread(this);
-
-        terminationThread.start();
+            terminationThread.start();
+        }
     }
 
     /**
@@ -1280,7 +1282,7 @@ System.out.println("checklist " + checkList.getName() + " became " + checkList.g
          * interval the user has specified) and then moves this <tt>Agent</tt>
          * into the terminated state and frees all non-nominated candidates.
          */
-        public void run()
+        public synchronized void run()
         {
             long waitFor = Integer.getInteger(
                             StackProperties.TERMINATION_DELAY,
@@ -1289,11 +1291,12 @@ System.out.println("checklist " + checkList.getName() + " became " + checkList.g
             try
             {
                 wait(waitFor);
+
             }
             catch (Exception e)
             {
-                logger.log(Level.FINEST,
-                    "Interrupted while waiting. Will speed up termination", e);
+                logger.log(Level.FINEST, "Interrupted while waiting. Will "
+                                +"speed up termination", e);
             }
 
             parentAgent.terminate();
@@ -1308,6 +1311,8 @@ System.out.println("checklist " + checkList.getName() + " became " + checkList.g
     {
         // free candidates
         // stop listening for checks
+        connCheckClient.stop();
+        connCheckServer.stop();
 
         setState(IceProcessingState.TERMINATED);
     }

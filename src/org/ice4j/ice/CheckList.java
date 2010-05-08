@@ -316,6 +316,9 @@ public class CheckList
     protected synchronized void handleNomination(CandidatePair nominatedPair)
     {
         Component cmp = nominatedPair.getParentComponent();
+
+        cmp.setSelectedPair(nominatedPair);
+
         Iterator<CandidatePair> pairsIter = iterator();
         while(pairsIter.hasNext())
         {

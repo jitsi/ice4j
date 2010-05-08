@@ -372,7 +372,8 @@ class ConnectivityCheckClient
                         validRemoteCandidate);
         }
 
-        parentAgent.validatePair(validPair);
+        if(! validPair.isValid())
+            parentAgent.validatePair(validPair);
 
         //The agent sets the state of the pair that *generated* the check to
         //Succeeded.  Note that, the pair which *generated* the check may be
@@ -532,9 +533,8 @@ class ConnectivityCheckClient
         CandidatePair pair = ((CandidatePair)event.getTransactionID()
                         .getApplicationData());
         logger.fine("timeout for pair=" + pair);
-System.out.println("timeout for pair=" + pair);
-        pair.setStateFailed();
 
+        pair.setStateFailed();
         updateCheckListAndTimerStates(pair);
     }
 
@@ -611,7 +611,6 @@ System.out.println("timeout for pair=" + pair);
             while(isRunning)
             {
                 long waitFor = getNextWaitInterval();
-System.out.println("will wait for " + waitFor + " active clist cound="+parentClient.parentAgent.getActiveCheckListCount());
 
                 if(waitFor > 0)
                 {
@@ -636,32 +635,20 @@ System.out.println("will wait for " + waitFor + " active clist cound="+parentCli
                 //if there are no triggered checks, go for an ordinary one.
                 if(pairToCheck == null)
                 {
-System.out.println("checklist " + checkList.getName() + " did not return triggered check");
                     pairToCheck = checkList.getNextOrdinaryPairToCheck();
                 }
-                else
-                {
-System.out.println("checklist " + checkList.getName() + " returned triggered check");
-                }
-
-
 
                 if(pairToCheck != null)
                 {
-System.out.println("checklist " + checkList.getName() + " returned regular check in state " + pairToCheck.getState());
                     transactionID = parentClient.startCheckForPair(pairToCheck);
                 }
                 else
                 {
-logger.fine("checklist " + checkList.getName() + " ran out of checks");
                     //we are done sending checks for this list. we'll set its
                     //final state in either the processResponse()
                     //processTimeout() or processFailure() method.
 
-                    logger.finest("finished a checklist");
-//maybe do this if the list is in the completed state.
-                    //isRunning = false;
-                    //break;
+                    logger.finest("will skip a check beat.");
                     continue;
                 }
 
@@ -673,6 +660,30 @@ logger.fine("checklist " + checkList.getName() + " ran out of checks");
             }
 
             parentClient.paceMakers.remove(this);
+        }
+    }
+
+    /**
+     * Stops and removes all PaceMakers.
+     */
+    public void stop()
+    {
+        synchronized (paceMakers)
+        {
+            Iterator<PaceMaker> paceMakersIter = paceMakers.iterator();
+            while(paceMakersIter.hasNext())
+            {
+                PaceMaker paceMaker = paceMakersIter.next();
+
+                paceMaker.isRunning = false;
+                synchronized(paceMaker)
+                {
+
+                    paceMaker.notify();
+                }
+
+                paceMakersIter.remove();
+            }
         }
     }
 }

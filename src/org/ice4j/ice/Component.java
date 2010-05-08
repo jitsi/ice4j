@@ -649,6 +649,17 @@ public class Component
     }
 
     /**
+     * Sets the {@link CandidatePair} selected for use by ICE processing and
+     * that the application would use.
+     *
+     * @param pair the {@link CandidatePair} selected for use by ICE processing.
+     */
+    protected void setSelectedPair(CandidatePair pair)
+    {
+        this.selectedPair = pair;
+    }
+
+    /**
      * Returns the {@link CandidatePair} selected for use by ICE processing or
      * <tt>null</tt> if no pair has been selected so far or if ICE processing
      * has failed.
@@ -660,5 +671,22 @@ public class Component
     public CandidatePair getSelectedPair()
     {
         return selectedPair;
+    }
+
+    /**
+     * Returns a human readable name that can be used in debug logs associated
+     * with this component.
+     *
+     * @return "RTP" if the component ID is 1, "RTCP" if the component id is 2
+     * and the compoent id itself otherwise.
+     */
+    public String getName()
+    {
+        if (componentID == RTP)
+            return "RTP";
+        else if(componentID == RTCP)
+            return "RTCP";
+        else
+            return Integer.toString(componentID);
     }
 }

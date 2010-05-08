@@ -29,11 +29,6 @@ public class Ice
     static long startTime;
 
     /**
-     * Our local agent.
-     */
-    static Agent localAgent;
-
-    /**
      * Runs the test
      * @param args command line arguments
      *
@@ -43,7 +38,7 @@ public class Ice
     {
         startTime = System.currentTimeMillis();
 
-        localAgent = createAgent(9090);
+        Agent localAgent = createAgent(9090);
         Agent remotePeer = createAgent(6060);
 
         localAgent.addStateChangeListener(new IceProcessingListener());
@@ -103,9 +98,30 @@ public class Ice
             if(evt.getNewValue() == IceProcessingState.COMPLETED
                || evt.getNewValue() == IceProcessingState.FAILED)
             {
-                System.out.println("Total execution time: "
+                System.out.println("Total ICE processing time: "
                                 + (processingEndTime - startTime) + "ms");
-                //IceMediaStream mediaStream = localAgent.
+                Agent agent = (Agent)evt.getSource();
+                List<IceMediaStream> streams = agent.getStreams();
+
+                for(IceMediaStream stream : streams)
+                {
+                    String streamName = stream.getName();
+                    System.out.println("Pairs selected for stream: "
+                                        + streamName);
+                    List<Component> components = stream.getComponents();
+
+                    for(Component cmp : components)
+                    {
+                        String cmpName = cmp.getName();
+                        System.out.println(cmpName + ": "
+                                        + cmp.getSelectedPair());
+                    }
+
+                }
+            }
+            else if(evt.getNewValue() == IceProcessingState.TERMINATED)
+            {
+                System.out.println("ICE Agent was terminated.");
                 System.exit(0);
             }
         }
