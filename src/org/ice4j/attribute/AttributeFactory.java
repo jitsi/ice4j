@@ -499,26 +499,12 @@ public class AttributeFactory
      *
      * @param tieBreaker the tie-breaker value to be used
      * @return the created IceControlledAttribute
-     * @throws IllegalArgumentException if the value in tie-breaker is not valid
      */
     public static IceControlledAttribute createIceControlledAttribute(
                                                             long tieBreaker)
-        throws IllegalArgumentException
     {
-        // generating the network ordered byte stream of the tieBreaker long
-        // variable
-        byte[] tieBreakerBytes = new byte[8];
-        tieBreakerBytes[0] = (byte) (tieBreaker >> 56);
-        tieBreakerBytes[1] = (byte) ((tieBreaker & 0x00FF000000000000L) >> 48);
-        tieBreakerBytes[2] = (byte) ((tieBreaker & 0x0000FF0000000000L) >> 40);
-        tieBreakerBytes[3] = (byte) ((tieBreaker & 0x000000FF00000000L) >> 32);
-        tieBreakerBytes[4] = (byte) ((tieBreaker & 0x00000000FF000000L) >> 24);
-        tieBreakerBytes[5] = (byte) ((tieBreaker & 0x0000000000FF0000L) >> 16);
-        tieBreakerBytes[6] = (byte) ((tieBreaker & 0x000000000000FF00L) >> 8);
-        tieBreakerBytes[7] = (byte) ((tieBreaker & 0x00000000000000FFL));
-
         IceControlledAttribute attribute = new IceControlledAttribute();
-        attribute.setTieBreaker(tieBreakerBytes);
+        attribute.setTieBreaker(tieBreaker);
 
         return attribute;
     }
@@ -558,26 +544,12 @@ public class AttributeFactory
      * @param tieBreaker the tie-breaker value to be used
      *
      * @return the created IceControllingAttribute
-     * @throws IllegalArgumentException of tie-breaker value is not valid
      */
     public static IceControllingAttribute createIceControllingAttribute(
                     long tieBreaker)
-        throws IllegalArgumentException
     {
-        // generating the network ordered byte stream of the tieBreaker long
-        // variable
-        byte[] tieBreakerBytes = new byte[8];
-        tieBreakerBytes[0] = (byte) (tieBreaker >> 56);
-        tieBreakerBytes[1] = (byte) ((tieBreaker & 0x00FF000000000000L) >> 48);
-        tieBreakerBytes[2] = (byte) ((tieBreaker & 0x0000FF0000000000L) >> 40);
-        tieBreakerBytes[3] = (byte) ((tieBreaker & 0x000000FF00000000L) >> 32);
-        tieBreakerBytes[4] = (byte) ((tieBreaker & 0x00000000FF000000L) >> 24);
-        tieBreakerBytes[5] = (byte) ((tieBreaker & 0x0000000000FF0000L) >> 16);
-        tieBreakerBytes[6] = (byte) ((tieBreaker & 0x000000000000FF00L) >> 8);
-        tieBreakerBytes[7] = (byte) ((tieBreaker & 0x00000000000000FFL));
-
         IceControllingAttribute attribute = new IceControllingAttribute();
-        attribute.setTieBreaker(tieBreakerBytes);
+        attribute.setTieBreaker(tieBreaker);
 
         return attribute;
     }

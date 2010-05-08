@@ -109,6 +109,10 @@ public class AttributeDecoder
                 decodedAttribute = new ReservationTokenAttribute(); break;
             case Attribute.PRIORITY:
                 decodedAttribute = new PriorityAttribute(); break;
+            case Attribute.ICE_CONTROLLING:
+                decodedAttribute = new IceControllingAttribute(); break;
+            case Attribute.ICE_CONTROLLED:
+                decodedAttribute = new IceControlledAttribute(); break;
 
             //According to rfc3489 we should silently ignore unknown attributes.
             default: decodedAttribute

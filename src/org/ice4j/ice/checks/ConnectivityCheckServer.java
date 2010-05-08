@@ -46,15 +46,6 @@ public class ConnectivityCheckServer
     private StunStack stunStack = StunStack.getInstance();
 
     /**
-     * The <tt>triggeredCheckQueue</tt> is a FIFO queue containing candidate
-     * pairs for which checks are to be sent at the next available opportunity.
-     * A pair would get into a triggered check queue as soon as we receive
-     * a check on its local candidate.
-     */
-    private final List<CandidatePair> triggeredCheckQueue
-                                          = new Vector<CandidatePair>();
-
-    /**
      * Creates a new <tt>ConnectivityCheckServer</tt> setting
      * <tt>parentAgent</tt> as the agent that will be used for retrieving
      * information such as user fragments for example.
@@ -106,23 +97,19 @@ public class ConnectivityCheckServer
         //caller gave us the entire username.
         String remoteUfrag = username.substring(0, colon);
 
-        //make sure we have a priority attribute and ignore otherwise.
-        PriorityAttribute priorityAttr
-            = (PriorityAttribute)request.getAttribute(Attribute.PRIORITY);
-
-        //extract priority
-        if(priorityAttr == null)
+        //detect role conflicts
+/*        if( ( parentAgent.isControlling()
+                        && request.contains(Attribute.ICE_CONTROLLING))
+            || ( ! parentAgent.isControlling()
+                            && request.contains(Attribute.ICE_CONTROLLED)))*/
         {
-            if(logger.isLoggable(Level.FINE))
-            {
-                logger.log(Level.FINE, "Received a connectivity ckeck with"
-                            +"no PRIORITY attribute. Discarting.");
-            }
-
-            throw new IllegalArgumentException("Missing PRIORITY attribtue!");
+            System.out.println("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!tb="+
+            ((IceControllingAttribute)request.getAttribute(Attribute.ICE_CONTROLLING)).getTieBreaker());
+            repairRoleConflict(evt);
+            //return;
         }
 
-        long priority = priorityAttr.getPriority();
+        long priority = extractPriority(request);
 
         //tell our address handler we saw a new remote address;
         addressHandler.incomingCheckReceived(evt.getRemoteAddress(),
@@ -142,6 +129,97 @@ public class ConnectivityCheckServer
             // TODO Auto-generated catch block
             e.printStackTrace();
         }
+    }
+
+    /**
+     * Returns the value of the {@link PriorityAttribute} in <tt>request</tt> if
+     * there is one or throws an <tt>IllegalArgumentException</tt> with the
+     * corresponding message.
+     *
+     * @param request the {@link Request} whose priority we'd like to obtain.
+     *
+     * @return the value of the {@link PriorityAttribute} in <tt>request</tt> if
+     * there is one
+     *
+     * @throws IllegalArgumentException if the request does not contain a
+     * PRIORITY attribute and the stack needs to respond with a 400 Bad Request
+     * {@link Response}.
+     */
+    private long extractPriority(Request request)
+        throws IllegalArgumentException
+    {
+        //make sure we have a priority attribute and ignore otherwise.
+        PriorityAttribute priorityAttr
+            = (PriorityAttribute)request.getAttribute(Attribute.PRIORITY);
+
+        //apply tie-breaking
+
+        //extract priority
+        if(priorityAttr == null)
+        {
+            if(logger.isLoggable(Level.FINE))
+            {
+                logger.log(Level.FINE, "Received a connectivity ckeck with"
+                            +"no PRIORITY attribute. Discarting.");
+            }
+
+            throw new IllegalArgumentException("Missing PRIORITY attribtue!");
+        }
+
+        return priorityAttr.getPriority();
+    }
+
+    private void repairRoleConflict(StunMessageEvent evt)
+    {
+        Message req = evt.getMessage();
+        long ourTieBreaker = parentAgent.getTieBreaker();
+
+        // If the agent is in the controlling role, and the
+        // ICE-CONTROLLING attribute is present in the request:
+        if(parentAgent.isControlling()
+                        && req.contains(Attribute.ICE_CONTROLLING))
+        {
+            IceControllingAttribute controlling = (IceControllingAttribute)
+                req.getAttribute(Attribute.ICE_CONTROLLING);
+
+            long theirTieBreaker = controlling.getTieBreaker();
+System.out.println("############################################ TB=" + theirTieBreaker);
+            // If the agent's tie-breaker is larger than or equal to the
+            // contents of the ICE-CONTROLLING attribute, the agent generates
+            // a Binding error response and includes an ERROR-CODE attribute
+            // with a value of 487 (Role Conflict) but retains its role.
+            //if()
+
+            //If the agent's tie-breaker is less than the contents of the
+            //ICE-CONTROLLING attribute, the agent switches to the controlled role.
+        }
+
+        else if(!parentAgent.isControlling()
+                        && req.contains(Attribute.ICE_CONTROLLED))
+        {
+            IceControllingAttribute controlled = (IceControllingAttribute)
+                req.getAttribute(Attribute.ICE_CONTROLLED);
+
+            long theirTieBreaker = controlled.getTieBreaker();
+System.out.println("############################################ TB=" + theirTieBreaker);
+        }
+/*
+
+
+   o  If the agent is in the controlled role, and the ICE-CONTROLLED
+      attribute is present in the request:
+
+      *  If the agent's tie-breaker is larger than or equal to the
+         contents of the ICE-CONTROLLED attribute, the agent switches to
+         the controlling role.
+
+      *  If the agent's tie-breaker is less than the contents of the
+         ICE-CONTROLLED attribute, the agent generates a Binding error
+         response and includes an ERROR-CODE attribute with a value of
+         487 (Role Conflict) but retains its role.
+
+
+         * */
     }
 
     /**
