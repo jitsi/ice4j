@@ -555,6 +555,7 @@ public class IceMediaStream
     {
         synchronized (validList)
         {
+            pair.validate();
             validList.add(pair);
         }
     }

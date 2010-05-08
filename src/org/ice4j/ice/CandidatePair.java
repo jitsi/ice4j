@@ -46,6 +46,18 @@ public class CandidatePair
     private boolean useCandidate = false;
 
     /**
+     * Indicates whether this <tt>CandidatePair</tt> is on any of this agent's
+     *  valid pair lists.
+     */
+    private boolean isValid = false;
+
+    /**
+     * If a valid candidate pair has its nominated flag set, it means that it
+     * may be selected by ICE for sending and receiving media.
+     */
+    private boolean isNominated = false;
+
+    /**
      * A <tt>Comparator</tt> using the <tt>compareTo</tt> method of the
      * <tt>CandidatePair</tt>.
      */
@@ -501,5 +513,48 @@ public class CandidatePair
     public boolean useCandidateReceived()
     {
         return useCandidate;
+    }
+
+    /**
+     * Sets this pair's nominated flag to <tt>true</tt>. If a valid candidate
+     * pair has its nominated flag set, it means that it may be selected by ICE
+     * for sending and receiving media.
+     */
+    public void nominate()
+    {
+        this.isNominated = true;
+    }
+
+    /**
+     * Returns the value of this pair's nominated flag to <tt>true</tt>. If a
+     * valid candidate pair has its nominated flag set, it means that it may be
+     * selected by ICE for sending and receiving media.
+     *
+     * @return <tt>true</tt> if this pair has already been nominated for
+     * selection and <tt>false</tt> otherwise.
+     */
+    public boolean isNominated()
+    {
+        return this.isNominated;
+    }
+
+    /**
+     * Returns <tt>true</tt> if this pair has been confirmed by a connectivity
+     * check response and <tt>false</tt> otherwise.
+     *
+     * @return <tt>true</tt> if this pair has been confirmed by a connectivity
+     * check response and <tt>false</tt> otherwise.
+     */
+    public boolean isValid()
+    {
+        return isValid;
+    }
+
+    /**
+     * Marks this pair as valid. Should only be used internally.
+     */
+    protected void validate()
+    {
+        this.isValid = true;
     }
 }
