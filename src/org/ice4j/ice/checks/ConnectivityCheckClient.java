@@ -167,7 +167,10 @@ public class ConnectivityCheckClient
                         == Response.BINDING_ERROR_RESPONSE)
         {
             if(! response.getResponse().contains(Attribute.ERROR_CODE))
+            {
+                logger.fine("Received a malformed error response.");
                 return; //malformed error response
+            }
 
             processErrorResponse(response);
         }
@@ -178,16 +181,25 @@ public class ConnectivityCheckClient
         Response response = evt.getResponse();
         Request originalRequest = evt.getRequest();
 
-        Attribute errorCode = response.getAttribute(Attribute.ERROR_CODE);
+        ErrorCodeAttribute errorCode = (ErrorCodeAttribute)response
+                                    .getAttribute(Attribute.ERROR_CODE);
+
+        logger.finest("Received error code " + errorCode.getErrorCode());
 
         //RESOLVE ROLE_CONFLICTS
-        if(response.contains(ErrorCodeAttribute.ROLE_CONFLICT))
+        if(errorCode.getErrorCode() == ErrorCodeAttribute.ROLE_CONFLICT)
         {
             boolean wasControlling = originalRequest
                                 .contains(Attribute.ICE_CONTROLLING);
 
-            logger.finest("Swithing to isControlling=" + !wasControlling);
+System.out.println("Swithing to isControlling=" + !wasControlling);
             parentAgent.setControlling(!wasControlling);
+
+            CandidatePair pair = ((CandidatePair)evt.getTransactionID()
+                            .getApplicationData());
+
+            pair.getParentComponent().getParentStream().getCheckList()
+                .scheduleTriggeredCheck(pair);
         }
     }
 
