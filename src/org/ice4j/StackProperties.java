@@ -106,6 +106,14 @@ public class StackProperties
                                     = "org.ice4j.REQUIRE_MESSAGE_INTEGRITY";
 
     /**
+     * The name of the property that can be used to specify the number of
+     * milliseconds that we must wait after ICE processing enters a COMPLTED
+     * state and before we free candidates and move into the TERMINATED state.
+     */
+    public static final String TERMINATION_DELAY
+                                    = "org.ice4j.TERMINATION_DELAY";
+
+    /**
      * Returns the String value of the specified property (minus all
      * encompassing whitespaces)and null in case no property value was mapped
      * against the specified propertyName, or in case the returned property

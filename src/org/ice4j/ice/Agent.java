@@ -13,13 +13,15 @@ import java.math.*;
 import java.net.*;
 import java.security.*;
 import java.util.*;
+import java.util.logging.*;
 
 import org.ice4j.*;
-import org.ice4j.attribute.*;
 import org.ice4j.ice.checks.*;
 import org.ice4j.ice.harvest.*;
 import org.ice4j.message.*;
 import org.ice4j.stack.*;
+
+import sun.management.resources.*;
 
 /**
  * An <tt>Agent</tt> could be described as the main class (i.e. the chef d'orchestre)
@@ -38,6 +40,20 @@ public class Agent
      * The default maximum size for check lists.
      */
     public static final int DEFAULT_MAX_CHECK_LIST_SIZE = 100;
+
+    /**
+     * The default number of milliseconds we should wait before moving from
+     * {@link IceProcessingState#COMPLETED} into {@link
+     * IceProcessingState#TERMINATED}.
+     */
+    public static final int DEFAULT_TERMINATION_DELAY = 3000;
+
+    /**
+     * The <tt>Logger</tt> used by the <tt>Agent</tt>
+     * class and its instances for logging output.
+     */
+    private static final Logger logger = Logger
+                    .getLogger(Agent.class.getName());
 
     /**
      * The LinkedHashMap used to store the media streams
@@ -154,6 +170,11 @@ public class Agent
      */
     private List<PropertyChangeListener> stateListeners
                                 = new LinkedList<PropertyChangeListener>();
+
+    /**
+     * The thread that we use for moving from COMPLETED into a TERMINATED state.
+     */
+    private TerminationThread terminationThread;
 
     /**
      * Creates an empty <tt>Agent</tt> with no streams, and no address
@@ -299,8 +320,8 @@ public class Agent
         synchronized(startLock)
         {
             initCheckLists();
+            setState(IceProcessingState.RUNNING);
             connCheckClient.startChecks();
-            iceStarted = true;
         }
     }
 
@@ -404,8 +425,8 @@ public class Agent
     {
         IceProcessingState oldState = state;
 
-        this.state = state;
-        fireStateChange(oldState, newState)
+        this.state = newState;
+        fireStateChange(oldState, newState);
     }
 
     /**
@@ -995,8 +1016,15 @@ public class Agent
      */
     public void validatePair(CandidatePair validPair)
     {
+        IceMediaStream parentStream
+            = validPair.getParentComponent().getParentStream();
+
+        parentStream.addValidPair(validPair);
+
+System.out.println("valid pair was nominated " + validPair);
+        validPair.nominate();
         validPair.getParentComponent().getParentStream()
-            .addValidPair(validPair);
+                .getCheckList().scheduleTriggeredCheck(validPair);
     }
 
     /**
@@ -1010,7 +1038,7 @@ public class Agent
     public void nominationConfirmed(CandidatePair pairToNominate)
     {
         pairToNominate.nominate();
-
+System.out.println("pair nomination confirmed");
         Component parentComponent = pairToNominate.getParentComponent();
         IceMediaStream parentStream = parentComponent.getParentStream();
         CheckList checkList = parentStream.getCheckList();
@@ -1027,45 +1055,51 @@ public class Agent
             //The agent MUST change the state of processing for its check
             //list for that media stream to Completed.
             checkList.setState(CheckListState.COMPLETED);
+System.out.println("checklist " + checkList.getName() + " became " + checkList.getState());
         }
-/*
-   o  Once the state of each check list is Completed:
+    }
 
-      *  The agent sets the state of ICE processing overall to
-         Completed.
+    /**
+     * After updating check list states as a result of an incoming response
+     * or a timeout event the method goes through all checklists and tries
+     * to assess the state of ICE processing.
+     */
+    public void checkListStateUpdated()
+    {
+        boolean allListsEnded = true;
+        boolean atLeastOneListSucceeded = false;
 
-      *  If an agent is controlling, it examines the highest-priority
-         nominated candidate pair for each component of each media
-         stream.  If any of those candidate pairs differ from the
-         default candidate pairs in the most recent offer/answer
-         exchange, the controlling agent MUST generate an updated offer
-         as described in Section 9.  If the controlling agent is using
-         an aggressive nomination algorithm, this may result in several
-         updated offers as the pairs selected for media change.  An
-         agent MAY delay sending the offer for a brief interval (one
-         second is RECOMMENDED) in order to allow the selected pairs to
-         stabilize.
+        List<IceMediaStream> streams = getStreams();
 
-   o  If the state of the check list is Failed, ICE has not been able to
-      complete for this media stream.  The correct behavior depends on
-      the state of the check lists for other media streams:
+        for(IceMediaStream stream : streams)
+        {
+            CheckList checkList = stream.getCheckList();
+            if(checkList.getState() == CheckListState.RUNNING)
+            {
+                allListsEnded = false;
+                break;
+            }
+            else if(stream.getCheckList().getState() == CheckListState.COMPLETED)
+            {
+                atLeastOneListSucceeded = true;
+            }
+        }
 
-      *  If all check lists are Failed, ICE processing overall is
-         considered to be in the Failed state, and the agent SHOULD
-         consider the session a failure, SHOULD NOT restart ICE, and the
-         controlling agent SHOULD terminate the entire session.
+        //Once the state of each check list is Completed:
+        //The agent sets the state of ICE processing overall to Completed.
+        if(allListsEnded)
+        {
+            if(atLeastOneListSucceeded)
+            {
+                setState(IceProcessingState.COMPLETED);
+                scheduleTermination();
+            }
+            else
+            {
+                setState(IceProcessingState.FAILED);
 
-      *  If at least one of the check lists for other media streams is
-         Completed, the controlling agent SHOULD remove the failed media
-         stream from the session in its updated offer.
-
-      *  If none of the check lists for other media streams are
-         Completed, but at least one is Running, the agent SHOULD let
-         ICE continue.
- */
-
-
-
+            }
+        }
     }
 
     /**
@@ -1202,5 +1236,82 @@ public class Agent
          * 100 for the time being.
          */
         return 100;
+    }
+
+    /**
+     * Initializes and starts the {@link TerminationThread}
+     */
+    private void scheduleTermination()
+    {
+        if (terminationThread == null)
+            terminationThread = new TerminationThread(this);
+
+        terminationThread.start();
+    }
+
+    /**
+     * RFC 5245 says: Once ICE processing has reached the Completed state for
+     * all peers for media streams using those candidates, the agent SHOULD
+     * wait an additional three seconds, and then it MAY cease responding to
+     * checks or generating triggered checks on that candidate.  It MAY free
+     * the candidate at that time.
+     * <p>
+     * This <tt>TerminationThread</tt> is scheduling such a termination and
+     * garbage collection in three seconds.
+     */
+    private static class TerminationThread
+        extends Thread
+    {
+        /**
+         * The parent agent that created us.
+         */
+        private final Agent parentAgent;
+
+        /**
+         * Creates a new termination timer.
+         *
+         * @param parentAgent the <tt>Agent</tt> that created us.
+         */
+        private TerminationThread(Agent parentAgent)
+        {
+            super("TerminationThread");
+            this.parentAgent = parentAgent;
+        }
+
+        /**
+         * Waits for a period of three seconds (or whatever termination
+         * interval the user has specified) and then moves this <tt>Agent</tt>
+         * into the terminated state and frees all non-nominated candidates.
+         */
+        public void run()
+        {
+            long waitFor = Integer.getInteger(
+                            StackProperties.TERMINATION_DELAY,
+                            DEFAULT_TERMINATION_DELAY);
+
+            try
+            {
+                wait(waitFor);
+            }
+            catch (Exception e)
+            {
+                logger.log(Level.FINEST,
+                    "Interrupted while waiting. Will speed up termination", e);
+            }
+
+            parentAgent.terminate();
+        }
+    }
+
+    /**
+     * Prepares everything associated with this {@link Agent} for garbage
+     * collection and moves it into the terminated state.
+     */
+    private void terminate()
+    {
+        // free candidates
+        // stop listening for checks
+
+        setState(IceProcessingState.TERMINATED);
     }
 }

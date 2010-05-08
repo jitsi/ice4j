@@ -24,6 +24,16 @@ import org.ice4j.ice.harvest.*;
 public class Ice
 {
     /**
+     * Start time for debugging purposes.
+     */
+    static long startTime;
+
+    /**
+     * Our local agent.
+     */
+    static Agent localAgent;
+
+    /**
      * Runs the test
      * @param args command line arguments
      *
@@ -31,16 +41,16 @@ public class Ice
      */
     public static void main(String[] args) throws Throwable
     {
-        long startTime = System.currentTimeMillis();
+        startTime = System.currentTimeMillis();
 
-        Agent localAgent = createAgent(9090);
+        localAgent = createAgent(9090);
         Agent remotePeer = createAgent(6060);
 
         localAgent.addStateChangeListener(new IceProcessingListener());
 
         //let them fight ... fights forge character.
-        //localAgent.setControlling(true);
-        //remotePeer.setControlling(false);
+        localAgent.setControlling(true);
+        remotePeer.setControlling(false);
 
         long endTime = System.currentTimeMillis();
 
@@ -59,11 +69,12 @@ public class Ice
 
         System.out.println("Local audio clist:\n"
                         + localAgent.getStream("audio").getCheckList());
-        System.out.println("Local video clist:\n"
-                        + localAgent.getStream("video").getCheckList());
 
-        System.out.println("Total execution time: "
-                        + (endTime - startTime) + "ms");
+        IceMediaStream videoStream = localAgent.getStream("video");
+
+        if(videoStream != null)
+            System.out.println("Local video clist:\n"
+                            + videoStream.getCheckList());
 
         //Give processing enough time to finish. We'll System.exit() anyway
         //as soon as localAgent enters a final state.
@@ -85,9 +96,16 @@ public class Ice
          */
         public void propertyChange(PropertyChangeEvent evt)
         {
+            long processingEndTime = System.currentTimeMillis();
+
+            System.out.println("Agent entered the " + evt.getNewValue()
+                            + " state.");
             if(evt.getNewValue() == IceProcessingState.COMPLETED
                || evt.getNewValue() == IceProcessingState.FAILED)
             {
+                System.out.println("Total execution time: "
+                                + (processingEndTime - startTime) + "ms");
+                IceMediaStream mediaStream = localAgent.
                 System.exit(0);
             }
         }
@@ -199,11 +217,11 @@ public class Ice
             new TransportAddress("ipv6.sip-communicator.net",
                                  3478, Transport.UDP));
 
-        agent.addCandidateHarvester(stunHarv);
-        agent.addCandidateHarvester(stun6Harv);
+        //agent.addCandidateHarvester(stunHarv);
+        //agent.addCandidateHarvester(stun6Harv);
 
         createStream(rtpPort, "audio", agent);
-        createStream(rtpPort + 2, "video", agent);
+        //createStream(rtpPort + 2, "video", agent);
 
         return agent;
     }
@@ -243,8 +261,8 @@ public class Ice
                         + (endTime - startTime) +" ms");
         startTime = endTime;
         //rtcpComp
-        agent.createComponent(
-                stream, Transport.UDP, rtpPort + 1, rtpPort + 1, rtpPort + 101);
+        //agent.createComponent(
+        //        stream, Transport.UDP, rtpPort + 1, rtpPort + 1, rtpPort + 101);
 
         endTime = System.currentTimeMillis();
         System.out.println("RTCP Component created in "
