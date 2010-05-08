@@ -309,7 +309,7 @@ public class StunCandidateHarvester
      *
      * @param response the response that we've just received from a StunServer.
      */
-    public void processResponse(StunMessageEvent response)
+    public void processResponse(StunResponseEvent response)
     {
         synchronized (resolveMap)
         {

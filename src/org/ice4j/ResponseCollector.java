@@ -19,7 +19,7 @@ public interface ResponseCollector
      *
      * @param response the response to dispatch.
      */
-    public void processResponse(StunMessageEvent response);
+    public void processResponse(StunResponseEvent response);
 
     /**
      * Notifies this collector that no response had been received after repeated

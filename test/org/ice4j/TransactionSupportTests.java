@@ -556,7 +556,7 @@ public class TransactionSupportTests extends TestCase
          *
          * @param response the event to log.
          */
-        public void processResponse(StunMessageEvent response)
+        public void processResponse(StunResponseEvent response)
         {
             receivedResponses.add(response);
         }

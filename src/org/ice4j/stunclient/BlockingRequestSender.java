@@ -106,7 +106,7 @@ class BlockingRequestSender
      * it may resume.
      * @param evt the newly arrived message event.
      */
-    public synchronized void processResponse(StunMessageEvent evt)
+    public synchronized void processResponse(StunResponseEvent evt)
     {
         synchronized(sendLock)
         {
