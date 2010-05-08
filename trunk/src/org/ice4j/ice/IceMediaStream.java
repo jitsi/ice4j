@@ -43,6 +43,15 @@ public class IceMediaStream
                                     = new LinkedHashMap<Integer, Component>();
 
     /**
+     * An ordered set of candidate pairs for a media stream that have been
+     * validated by a successful STUN transaction. This list is empty at the
+     * start of ICE processing, and fills as checks are performed, resulting in
+     * valid candidate pairs.
+     */
+    private final TreeSet<CandidatePair> validList
+                                    = new TreeSet<CandidatePair>();
+
+    /**
      * The id that was last assigned to a component. The next id that we give
      * to a component would be lastComponendID + 1;
      */
@@ -533,6 +542,20 @@ public class IceMediaStream
         synchronized(checkList)
         {
             this.checkList.add(candidatePair);
+        }
+    }
+
+    /**
+     * Adds <tt>pair</tt> to the <tt>valid list</tt> that this stream is
+     * maintaining.
+     *
+     * @param pair the {@link CandidatePair} to add to our valid list.
+     */
+    public void addValidPair(CandidatePair pair)
+    {
+        synchronized (validList)
+        {
+            validList.add(pair);
         }
     }
 }

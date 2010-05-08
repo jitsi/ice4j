@@ -133,7 +133,7 @@ public class ConnectivityCheckServer
         if (!parentAgent.isControlling()
                         && request.contains(Attribute.USE_CANDIDATE))
         {
-
+/////////////!!!!!!!!!!!!!!! TODO continue here.
         }
     }
 

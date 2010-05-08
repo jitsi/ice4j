@@ -74,7 +74,7 @@ public class CheckList
             if(!triggeredCheckQueue.contains(pair))
             {
                 triggeredCheckQueue.add(pair);
-                pair.setState(CandidatePairState.WAITING, null);
+                pair.setStateWaiting();
             }
         }
     }
@@ -257,7 +257,7 @@ public class CheckList
 
         while(pairsIter.hasNext())
         {
-            pairsIter.next().setState(CandidatePairState.WAITING, null);
+            pairsIter.next().setStateWaiting();
         }
     }
 

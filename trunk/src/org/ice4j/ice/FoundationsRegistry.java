@@ -50,8 +50,7 @@ public class FoundationsRegistry
                   = candidate.getBase().getTransportAddress().getHostAddress();
         String server = null;
 
-        if(candidate.getType()
-                                  == CandidateType.SERVER_REFLEXIVE_CANDIDATE
+        if(candidate.getType() == CandidateType.SERVER_REFLEXIVE_CANDIDATE
            || candidate.getType() == CandidateType.RELAYED_CANDIDATE)
         {
             server = candidate.getStunServerAddress().getHostAddress();
