@@ -921,50 +921,24 @@ public class Agent
     {
         pairToNominate.nominate();
 
-        //For both controlling and controlled agents, the state of ICE
-        //processing depends on the presence of nominated candidate pairs in
-        //the valid list and on the state of the check list.  Note that, at any
-        //time, more than one of the following cases can apply:
-
-        // If there is at least one nominated pair in the valid list for a
-        // media stream and the state of the check list is Running:
         Component parentComponent = pairToNominate.getParentComponent();
         IceMediaStream parentStream = parentComponent.getParentStream();
         CheckList checkList = parentStream.getCheckList();
 
         if( checkList.getState() == CheckListState.RUNNING )
+            checkList.handleNomination(pairToNominate);
+
+        //Once there is at least one nominated pair in the valid list for
+        //every component of the media stream and the state of the
+        //check list is Running
+        if(parentStream.allComponentsAreNominated()
+           && checkList.getState() == CheckListState.RUNNING)
         {
-            //The agent MUST remove all Waiting and Frozen pairs in the check
-            //list and triggered check queue for the same component as the
-            //nominated pairs for that media stream.
-            checkList.removeNonCompledPairsForComponent(parentComponent);
-            /*
-            //If an In-Progress pair in the check list is for the same
-            //component as a nominated pair, the agent SHOULD cease
-            //retransmissions for its check if its pair priority is lower
-            //than the lowest-priority nominated pair for that component.*/
+            //The agent MUST change the state of processing for its check
+            //list for that media stream to Completed.
+            checkList.setState(CheckListState.COMPLETED);
         }
-
 /*
-
-
-   o  Once there is at least one nominated pair in the valid list for
-      every component of at least one media stream and the state of the
-      check list is Running:
-
-      *  The agent MUST change the state of processing for its check
-         list for that media stream to Completed.
-
-      *  The agent MUST continue to respond to any checks it may still
-         receive for that media stream, and MUST perform triggered
-         checks if required by the processing of Section 7.2.
-
-      *  The agent MUST continue retransmitting any In-Progress checks
-         for that check list.
-
-      *  The agent MAY begin transmitting media for this media stream as
-         described in Section 11.1.
-
    o  Once the state of each check list is Completed:
 
       *  The agent sets the state of ICE processing overall to
@@ -973,7 +947,31 @@ public class Agent
       *  If an agent is controlling, it examines the highest-priority
          nominated candidate pair for each component of each media
          stream.  If any of those candidate pairs differ from the
+         default candidate pairs in the most recent offer/answer
+         exchange, the controlling agent MUST generate an updated offer
+         as described in Section 9.  If the controlling agent is using
+         an aggressive nomination algorithm, this may result in several
+         updated offers as the pairs selected for media change.  An
+         agent MAY delay sending the offer for a brief interval (one
+         second is RECOMMENDED) in order to allow the selected pairs to
+         stabilize.
 
+   o  If the state of the check list is Failed, ICE has not been able to
+      complete for this media stream.  The correct behavior depends on
+      the state of the check lists for other media streams:
+
+      *  If all check lists are Failed, ICE processing overall is
+         considered to be in the Failed state, and the agent SHOULD
+         consider the session a failure, SHOULD NOT restart ICE, and the
+         controlling agent SHOULD terminate the entire session.
+
+      *  If at least one of the check lists for other media streams is
+         Completed, the controlling agent SHOULD remove the failed media
+         stream from the session in its updated offer.
+
+      *  If none of the check lists for other media streams are
+         Completed, but at least one is Running, the agent SHOULD let
+         ICE continue.
  */
 
 

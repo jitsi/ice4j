@@ -296,8 +296,7 @@ public class CheckList
      * @param nominatedPair the {@link CandidatePair} whose nomination we need
      * to handle.
      */
-    public synchronized void removeNonCompledPairsForComponent(
-                                                CandidatePair nominatedPair)
+    public synchronized void handleNomination(CandidatePair nominatedPair)
     {
         Component cmp = nominatedPair.getParentComponent();
         Iterator<CandidatePair> pairsIter = iterator();
@@ -333,5 +332,4 @@ public class CheckList
             }
         }
     }
-
 }
