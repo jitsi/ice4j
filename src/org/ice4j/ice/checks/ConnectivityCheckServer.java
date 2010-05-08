@@ -109,11 +109,11 @@ public class ConnectivityCheckServer
         }
 
         long priority = extractPriority(request);
+        boolean useCandidate = request.contains(Attribute.USE_CANDIDATE);
 
         //tell our address handler we saw a new remote address;
-        addressHandler.incomingCheckReceived(evt.getRemoteAddress(),
-                                         evt.getLocalAddress(),
-                                         priority, remoteUfrag);
+        parentAgent.incomingCheckReceived(evt.getRemoteAddress(),
+            evt.getLocalAddress(), priority, remoteUfrag, useCandidate);
 
         Response response = MessageFactory.createBindingResponse(
                         request, evt.getRemoteAddress());
@@ -128,12 +128,6 @@ public class ConnectivityCheckServer
             //try to trigger a 500 response although if this one failed,
             //then chances are the 500 will fail too.
             throw new RuntimeException("Failed to send a response", e);
-        }
-
-        if (!parentAgent.isControlling()
-                        && request.contains(Attribute.USE_CANDIDATE))
-        {
-/////////////!!!!!!!!!!!!!!! TODO continue here.
         }
     }
 
