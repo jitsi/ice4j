@@ -67,7 +67,7 @@ public class CheckList
      *
      * @param pair the pair to schedule a triggered check for.
      */
-    protected void scheduleTriggeredCheck(CandidatePair pair)
+    public void scheduleTriggeredCheck(CandidatePair pair)
     {
         synchronized(triggeredCheckQueue)
         {

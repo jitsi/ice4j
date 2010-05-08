@@ -125,8 +125,9 @@ public class ConnectivityCheckServer
         }
         catch (Exception e)
         {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
+            //try to trigger a 500 response although if this one failed,
+            //then chances are the 500 will fail too.
+            throw new RuntimeException("Failed to send a response", e);
         }
     }
 
