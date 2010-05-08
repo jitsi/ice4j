@@ -37,7 +37,7 @@ public class CandidatePair
     /**
      * Priority of the candidate-pair
      */
-    private final long priority;
+    private long priority;
 
     /**
      * A <tt>Comparator</tt> using the <tt>compareTo</tt> method of the
@@ -77,7 +77,7 @@ public class CandidatePair
         this.localCandidate = localCandidate;
         this.remoteCandidate = remoteCandidate;
 
-        priority = computePriority();
+        computePriority();
     }
 
     /**
@@ -254,19 +254,17 @@ public class CandidatePair
      * is assigned, the agent sorts the candidate pairs in decreasing order of
      * priority. If two pairs have identical priority, the ordering amongst
      * them is arbitrary.
-     *
-     * @return a long indicating the priority of this candidate pair.
      */
-    private long computePriority()
+    protected void computePriority()
     {
         //use G and D as local and remote candidate priority names to fit the
         //definition in the RFC.
         long G = getControllingAgentCandidate().getPriority();
         long D = getControlledAgentCandidate().getPriority();
 
-        return (long)Math.pow(2, 32)*Math.min(G,D)
-                + 2*Math.max(G,D)
-                + (G>D?1l:0l);
+        this.priority = (long)Math.pow(2, 32)*Math.min(G,D)
+                          + 2*Math.max(G,D)
+                          + (G>D?1l:0l);
     }
 
     /**
