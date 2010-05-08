@@ -145,7 +145,7 @@ public class MessageFactoryTest extends TestCase {
         throws Exception
     {
         Response bindingResponse = new Response();
-        bindingResponse.setMessageType(Message.BINDING_RESPONSE);
+        bindingResponse.setMessageType(Message.BINDING_SUCCESS_RESPONSE);
 
         Attribute mappedAddress = AttributeFactory.createMappedAddressAttribute(
             new TransportAddress( msgFixture.ADDRESS_ATTRIBUTE_ADDRESS,

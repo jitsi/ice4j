@@ -24,7 +24,8 @@ import org.ice4j.*;
  *
  * @author Emil Ivov
  */
-public class ServerReflexiveCandidate extends LocalCandidate
+public class ServerReflexiveCandidate
+    extends LocalCandidate
 {
 
     /**
