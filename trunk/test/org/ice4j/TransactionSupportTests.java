@@ -468,7 +468,7 @@ public class TransactionSupportTests extends TestCase
          *
          * @param evt the {@link StunMessageEvent} to log.
          */
-        public void requestReceived(StunMessageEvent evt)
+        public void processRequest(StunMessageEvent evt)
         {
 
             synchronized(this)

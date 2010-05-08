@@ -95,7 +95,7 @@ public class ResponseSequenceServer
      * different from a Response on the current position.
      * @param evt the event being dispatched
      */
-    public void requestReceived(StunMessageEvent evt)
+    public void processRequest(StunMessageEvent evt)
     {
         if(messageSequence.isEmpty())
             return;

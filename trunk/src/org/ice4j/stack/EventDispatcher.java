@@ -142,7 +142,7 @@ public class EventDispatcher
 
         for (RequestListener target : listenersCopy)
         {
-            target.requestReceived(evt);
+            target.processRequest(evt);
         }
 
         synchronized(requestListenersChildren)

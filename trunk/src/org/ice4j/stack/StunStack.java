@@ -528,7 +528,7 @@ public class StunStack
             //validate attributes that need validation.
             try
             {
-                validateRequestAttributes((Request)msg, event.getRawMessage());
+                validateRequestAttributes(event);
             }
             catch(Exception exc)
             {
@@ -536,8 +536,28 @@ public class StunStack
                 return;
             }
 
-            eventDispatcher.fireMessageEvent(event);
+            try
+            {
+                eventDispatcher.fireMessageEvent(event);
+            }
+            catch (Throwable t)
+            {
+                Response error = MessageFactory.createBindingErrorResponse(
+                                ErrorCodeAttribute.SERVER_ERROR,
+                                "Oops! Something went wrong on our side :(");
 
+                try
+                {
+                    sendResponse(event.getTransactionID().getTransactionID(),
+                        error, event.getLocalAddress(),
+                        event.getRemoteAddress());
+                }
+                catch(Exception exc)
+                {
+                    logger.log(Level.FINE, "Couldn't send a server error "
+                                    + "response", exc);
+                }
+            }
         }
         //response
         else if(msg instanceof Response)
@@ -602,9 +622,8 @@ public class StunStack
      * Executes actions related specific attributes like asserting proper
      * checksums or verifying the validity of user names.
      *
-     * @param request the {@link Request} to validate.
-     * @param rawMessage the {@link RawMessage} containing the bytes of the
-     * {@link Request} so that we could check MESSAGE-INTEGRITY if necessary..
+     * @param evt the {@link StunMessageEvent} that contains the {@link
+     * Request} that we need to validate.
      *
      * @throws IllegalArgumentException if there's something in the
      * <tt>attribute</tt> that caused us to discard the whole message (e.g. an
@@ -613,10 +632,10 @@ public class StunStack
      * @throws StunException if we fail while sending an error response.
      * @throws IOException if we fail while sending an error response.
      */
-    private void validateRequestAttributes(Request request,
-                                           RawMessage rawMessage)
+    private void validateRequestAttributes(StunMessageEvent evt)
         throws IllegalArgumentException, StunException, IOException
     {
+        Message request = evt.getMessage();
 
         //assert valid username
         UsernameAttribute unameAttr = (UsernameAttribute)request
@@ -633,8 +652,8 @@ public class StunStack
                                 "unknown user " + username);
 
                 sendResponse(request.getTransactionID(), error,
-                                rawMessage.getLocalAddress(),
-                                rawMessage.getRemoteAddress());
+                                evt.getLocalAddress(),
+                                evt.getRemoteAddress());
 
                 throw new IllegalArgumentException(
                     "Non-recognized username: "
@@ -656,8 +675,8 @@ public class StunStack
                                 "missing username");
 
                 sendResponse(request.getTransactionID(), error,
-                                rawMessage.getLocalAddress(),
-                                rawMessage.getRemoteAddress());
+                                evt.getLocalAddress(),
+                                evt.getRemoteAddress());
 
                 throw new IllegalArgumentException(
                     "Missing USERNAME in the presence of MESSAGE-INTEGRITY: ");
@@ -665,15 +684,15 @@ public class StunStack
 
             if (!validateMessageIntegrity(msgIntAttr,
                             new String(unameAttr.getUsername()),
-                            rawMessage.getBytes(), 0))
+                            evt.getRawMessage().getBytes(), 0))
             {
                 Response error = MessageFactory.createBindingErrorResponse(
                                 ErrorCodeAttribute.UNAUTHORIZED,
                                 "Wrong MESSAGE-INTEGRITY value");
 
                 sendResponse(request.getTransactionID(), error,
-                                rawMessage.getLocalAddress(),
-                                rawMessage.getRemoteAddress());
+                                evt.getLocalAddress(),
+                                evt.getRemoteAddress());
 
                 throw new IllegalArgumentException(
                     "Wrong MESSAGE-INTEGRITY value.");
@@ -687,8 +706,8 @@ public class StunStack
                             "Missing MESSAGE-INTEGRITY.");
 
             sendResponse(request.getTransactionID(), error,
-                            rawMessage.getLocalAddress(),
-                            rawMessage.getRemoteAddress());
+                            evt.getLocalAddress(),
+                            evt.getRemoteAddress());
             throw new IllegalArgumentException(
                 "Missing MESSAGE-INTEGRITY.");
         }
@@ -711,8 +730,8 @@ public class StunStack
                     "missing username", sBuff.toString().toCharArray());
 
             sendResponse(request.getTransactionID(), error,
-                            rawMessage.getLocalAddress(),
-                            rawMessage.getRemoteAddress());
+                            evt.getLocalAddress(),
+                            evt.getRemoteAddress());
 
             throw new IllegalArgumentException(
                 "Missing MESSAGE-INTEGRITY.");
