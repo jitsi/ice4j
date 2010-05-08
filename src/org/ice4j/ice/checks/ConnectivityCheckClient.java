@@ -180,7 +180,7 @@ public class ConnectivityCheckClient
 
             logger.fine("Received a non-symmetric response for pair: "+ pair
                             +". Failing");
-            pair.setState(CandidatePairState.FAILED, null);
+            pair.setStateFailed();
         }
         //handle error responses.
         else if(evt.getResponse().getMessageType()
@@ -220,7 +220,7 @@ public class ConnectivityCheckClient
         {
             logger.fine("Received a success response with no "
                             +"XOR_MAPPED_ADDRESS attribute.");
-            checkedPair.setState(CandidatePairState.FAILED, null);
+            checkedPair.setStateFailed();
             return; //malformed error response
         }
 
@@ -270,20 +270,25 @@ public class ConnectivityCheckClient
             validLocalCandidate = peerReflexiveCandidate;
         }
 
+        //check if the resulting valid pair was already in our check lists.
+        CandidatePair existingPair = parentAgent.findCandidatePair(
+                        validLocalCandidate.getTransportAddress(),
+                        validRemoteCandidate.getTransportAddress());
+
         // RFC 5245: 7.1.3.2.2. The agent constructs a candidate pair whose
         // local candidate equals the mapped address of the response, and whose
         // remote candidate equals the destination address to which the request
         // was sent.  This is called a valid pair, since it has been validated
         // by a STUN connectivity check.
-        CandidatePair validPair = new CandidatePair(validLocalCandidate,
+        CandidatePair validPair;
+        if(existingPair != null)
+            validPair = existingPair;
+        else
+            validPair = new CandidatePair(validLocalCandidate,
                         validRemoteCandidate);
 
-        //If the pair equals the pair that generated the check or is on a check
-        //list currently, it is also added to the VALID LIST, which is
-        // maintained by the agent for each media stream.
-
-        //if
-
+        validPair.getParentComponent().getParentStream()
+                .addValidPair(validPair);
     }
 
     /**
@@ -353,7 +358,7 @@ public class ConnectivityCheckClient
         {
             logger.fine("Received an unrecoverable error response for pair "
                             + pair + " will mark the pair as FAILED.");
-            pair.setState(CandidatePairState.FAILED, null);
+            pair.setStateFailed();
         }
     }
 
@@ -478,10 +483,9 @@ public class ConnectivityCheckClient
                 }
 
                 if(transactionID == null)
-                    pairToCheck.setState(CandidatePairState.FAILED, null);
+                    pairToCheck.setStateFailed();
                 else
-                    pairToCheck.setState(
-                            CandidatePairState.IN_PROGRESS, transactionID);
+                    pairToCheck.setStateInProgress(transactionID);
 
             }
         }

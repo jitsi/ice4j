@@ -157,14 +157,65 @@ public class CandidatePair
     }
 
     /**
+     * Sets the <tt>CandidatePairState</tt> of this pair to
+     * {@link CandidatePairState#FAILED}. This method should only be called by
+     * the ice agent, during the execution of the ICE procedures.
+     */
+    public void setStateFailed()
+    {
+        setState(CandidatePairState.FAILED, null);
+    }
+
+    /**
+     * Sets the <tt>CandidatePairState</tt> of this pair to
+     * {@link CandidatePairState#FROZEN}. This method should only be called by
+     * the ice agent, during the execution of the ICE procedures.
+     */
+    public void setStateFrozen()
+    {
+        setState(CandidatePairState.FROZEN, null);
+    }
+
+    /**
+     * Sets the <tt>CandidatePairState</tt> of this pair to
+     * {@link CandidatePairState#FROZEN}. This method should only be called by
+     * the ice agent, during the execution of the ICE procedures.
+     *
+     * @param tranID the {@link TransactionID} that we are using for the
+     * connectivity check in case we are entering the <tt>In-Progress</tt>
+     * state and <tt>null</tt> otherwise.
+     */
+    public void setStateInProgress(TransactionID tranID)
+    {
+        setState(CandidatePairState.IN_PROGRESS, tranID);
+    }
+
+    /**
+     * Sets the <tt>CandidatePairState</tt> of this pair to
+     * {@link CandidatePairState#SUCCEEDED}. This method should only be called
+     * by the ice agent, during the execution of the ICE procedures.
+     */
+    public void setStateSucceeded()
+    {
+        setState(CandidatePairState.SUCCEEDED, null);
+    }
+
+    /**
+     * Sets the <tt>CandidatePairState</tt> of this pair to
+     * {@link CandidatePairState#WAITING}. This method should only be called by
+     * the ice agent, during the execution of the ICE procedures.
+     */
+    public void setStateWaiting()
+    {
+        setState(CandidatePairState.WAITING, null);
+    }
+
+    /**
      * Sets the <tt>CandidatePairState</tt> of this pair to <tt>state</tt>. This
      * method should only be called by the ice agent, during the execution of
      * the ICE procedures. Note that passing a <tt>null</tt> transaction for the
      * {@link CandidatePairState#IN_PROGRESS} or a non-<tt>null</tt> for any
      * other state would cause an {@link IllegalArgumentException} to be thrown.
-     * I know this is not the most elegant way to handle it but this method is
-     * supposed to only be used internally and I prefer the exception rather
-     * than implementing one method for every state transition.
      *
      * @param state the state that this candidate pair is to enter.
      * @param tranID the {@link TransactionID} that we are using for the
@@ -174,8 +225,8 @@ public class CandidatePair
      * @throws IllegalArgumentException if state is {@link CandidatePairState
      * #IN_PROGRESS} and <tt>tranID</tt> is <tt>null</tt>.
      */
-    public synchronized void setState(CandidatePairState state,
-                                      TransactionID      tranID)
+    private synchronized void setState(CandidatePairState state,
+                                       TransactionID      tranID)
         throws IllegalArgumentException
     {
         this.state = state;
@@ -324,6 +375,10 @@ public class CandidatePair
             || !remoteCandidate.equals(((CandidatePair)targetPair)
                             .remoteCandidate))
             return false;
+
+        //DO NOT change this method to also depend on other pair properties
+        //because the Conn Check Client counts on it only using the candidates
+        //for comparisons.
 
         return true;
     }
