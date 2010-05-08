@@ -16,12 +16,9 @@ import java.util.*;
 import java.util.logging.*;
 
 import org.ice4j.*;
-import org.ice4j.ice.checks.*;
 import org.ice4j.ice.harvest.*;
 import org.ice4j.message.*;
 import org.ice4j.stack.*;
-
-import sun.management.resources.*;
 
 /**
  * An <tt>Agent</tt> could be described as the main class (i.e. the chef d'orchestre)
@@ -1061,10 +1058,10 @@ System.out.println("checklist " + checkList.getName() + " became " + checkList.g
 
     /**
      * After updating check list states as a result of an incoming response
-     * or a timeout event the method goes through all checklists and tries
+     * or a timeout event the method goes through all check lists and tries
      * to assess the state of ICE processing.
      */
-    public void checkListStateUpdated()
+    public void checkListStatesUpdated()
     {
         boolean allListsEnded = true;
         boolean atLeastOneListSucceeded = false;
