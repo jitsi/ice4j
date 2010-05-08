@@ -85,6 +85,7 @@ public class ErrorCodeAttribute extends Attribute
     public static final char INTEGRITY_CHECK_FAILURE = 431;
     public static final char MISSING_USERNAME = 432;
     public static final char USE_TLS = 433;
+    public static final char ROLE_CONFLICT   = 487;
     public static final char SERVER_ERROR = 500;
     public static final char GLOBAL_FAILURE = 600;
 

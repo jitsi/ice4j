@@ -185,7 +185,7 @@ class StunClientTransaction
 
         try
         {
-            request.setTransactionID(transactionID.getTransactionID());
+            request.setTransactionID(transactionID.getBytes());
         }
         catch (StunException ex)
         {

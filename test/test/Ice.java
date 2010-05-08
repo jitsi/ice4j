@@ -35,8 +35,9 @@ public class Ice
         Agent localAgent = createAgent(9090);
         Agent remotePeer = createAgent(6060);
 
-        localAgent.setControlling(true);
-        remotePeer.setControlling(false);
+        //let them fight ... fights forge character.
+        //localAgent.setControlling(true);
+        //remotePeer.setControlling(false);
 
         long endTime = System.currentTimeMillis();
 

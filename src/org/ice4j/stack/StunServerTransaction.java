@@ -176,7 +176,7 @@ class StunServerTransaction
             this.response = response;
             //the transaction id might already have been set, but its our job
             //to make sure of that
-            response.setTransactionID(this.transactionID.getTransactionID());
+            response.setTransactionID(this.transactionID.getBytes());
             this.localSendingAddress   = sendThrough;
             this.responseDestination   = sendTo;
         }
