@@ -608,6 +608,29 @@ public class IceMediaStream
     }
 
     /**
+     * Returns <tt>true</tt> if there is at least one nominated {@link
+     * CandidatePair} in the valid list for every {@link Component} of this
+     * stream and <tt>false</tt> otherwise.
+     *
+     * @return <tt>true</tt> if there is at least one nominated {@link
+     * CandidatePair} in the valid list for every {@link Component} of this
+     * stream and <tt>false</tt> otherwise.
+     */
+    public boolean allComponentsAreNominated()
+    {
+        List<Component> components = getComponents();
+
+        synchronized (validList)
+        {
+            for(CandidatePair pair : validList)
+                if(pair.isNominated())
+                    components.remove(pair.getParentComponent());
+        }
+
+        return components.size() == 0;
+    }
+
+    /**
      * Returns the first {@link CandidatePair} stored in this stream's valid
      * list, that belongs to the specified <tt>component</tt>.
      *
