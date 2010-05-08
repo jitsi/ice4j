@@ -317,7 +317,7 @@ public class MessageEventDispatchingTest extends TestCase
          * @param response a <tt>StunMessageEvent</tt> which describes the
          * received STUN <tt>Response</tt>
          */
-        public synchronized void processResponse(StunMessageEvent response)
+        public synchronized void processResponse(StunResponseEvent response)
         {
             receivedResponses.add(response);
             notifyAll();

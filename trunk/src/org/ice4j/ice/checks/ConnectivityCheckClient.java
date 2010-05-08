@@ -161,8 +161,34 @@ public class ConnectivityCheckClient
         }
     }
 
-    public void processResponse(StunMessageEvent response)
+    public void processResponse(StunResponseEvent response)
     {
+        if(response.getResponse().getMessageType()
+                        == Response.BINDING_ERROR_RESPONSE)
+        {
+            if(! response.getResponse().contains(Attribute.ERROR_CODE))
+                return; //malformed error response
+
+            processErrorResponse(response);
+        }
+    }
+
+    private void processErrorResponse(StunResponseEvent evt)
+    {
+        Response response = evt.getResponse();
+        Request originalRequest = evt.getRequest();
+
+        Attribute errorCode = response.getAttribute(Attribute.ERROR_CODE);
+
+        //RESOLVE ROLE_CONFLICTS
+        if(response.contains(ErrorCodeAttribute.ROLE_CONFLICT))
+        {
+            boolean wasControlling = originalRequest
+                                .contains(Attribute.ICE_CONTROLLING);
+
+            logger.finest("Swithing to isControlling=" + !wasControlling);
+            parentAgent.setControlling(!wasControlling);
+        }
     }
 
     public void processTimeout(StunTimeoutEvent event)

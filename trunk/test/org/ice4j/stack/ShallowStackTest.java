@@ -339,7 +339,7 @@ public class ShallowStackTest extends TestCase {
          * @param response a <tt>StunMessageEvent</tt> which describes the
          * received STUN <tt>Response</tt>
          */
-        public synchronized void processResponse(StunMessageEvent response)
+        public synchronized void processResponse(StunResponseEvent response)
         {
             collectedResponse = (Response) response.getMessage();
             logger.finest("Received response.");

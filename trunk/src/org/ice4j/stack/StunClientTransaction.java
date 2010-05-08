@@ -357,7 +357,8 @@ class StunClientTransaction
         if( keepTran == null || !keepTran.trim().equalsIgnoreCase("true"))
             this.cancel();
 
-        this.responseCollector.processResponse(evt);
+        this.responseCollector.processResponse(new StunResponseEvent(
+            evt.getRawMessage(), (Response)evt.getMessage(), this.request));
     }
 
     /**
