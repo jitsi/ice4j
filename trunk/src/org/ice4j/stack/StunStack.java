@@ -542,9 +542,20 @@ public class StunStack
             }
             catch (Throwable t)
             {
-                Response error = MessageFactory.createBindingErrorResponse(
+                Response error;
+
+                if(t instanceof IllegalArgumentException)
+                {
+                    error = MessageFactory.createBindingErrorResponse(
+                                ErrorCodeAttribute.BAD_REQUEST,
+                                t.getMessage());
+                }
+                else
+                {
+                    error = MessageFactory.createBindingErrorResponse(
                                 ErrorCodeAttribute.SERVER_ERROR,
                                 "Oops! Something went wrong on our side :(");
+                }
 
                 try
                 {

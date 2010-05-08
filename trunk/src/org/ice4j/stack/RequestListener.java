@@ -7,6 +7,9 @@
 package org.ice4j.stack;
 
 import org.ice4j.*;
+import org.ice4j.message.*;
+
+import com.sun.corba.se.impl.protocol.*;
 
 /**
  * Handles incoming requests.
@@ -17,9 +20,19 @@ import org.ice4j.*;
 public interface RequestListener
 {
     /**
-     * Called when delivering incoming STUN requests.
+     * Called when delivering incoming STUN requests. Throwing an
+     * {@link IllegalArgumentException} from within this method would cause the
+     * stack to reply with a <tt>400 Bad Request</tt> {@link Response} using
+     * the exception's message as a reason phrase for the error response. Any
+     * other exception would result in a <tt>500 Server Error</tt> {@link
+     * Response}.
      *
      * @param evt the event containing the incoming STUN request.
+     *
+     * @throws IllegalArgumentException if <tt>evt</tt> contains a malformed
+     * {@link Request} and the stack would need to response with a
+     * <tt>400 Bad Request</tt> {@link Response}.
      */
-    public void processRequest(StunMessageEvent evt);
+    public void processRequest(StunMessageEvent evt)
+        throws IllegalArgumentException;
 }

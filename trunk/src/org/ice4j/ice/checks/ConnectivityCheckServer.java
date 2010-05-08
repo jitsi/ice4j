@@ -71,11 +71,20 @@ public class ConnectivityCheckServer
         stunStack.getCredentialsManager().registerAuthority(this);
     }
 
+    /**
+     * Handles the {@link Request} delivered in <tt>evt</tt> by possibly
+     * queueing a triggered check and sending a success or or error response
+     * depending on how processing goes.
+     *
+     * @param evt the {@link StunMessageEvent} containing the {@link Request}
+     * that we need to process.
+     *
+     * @throws IllegalArgumentException if the request is malformed and the
+     * stack needs to reply with a 400 Bad Request response.
+     */
     public void processRequest(StunMessageEvent evt)
+        throws IllegalArgumentException
     {
-        if(true)
-            throw new NullPointerException("i am the king fo the w");
-
         Request request = (Request)evt.getMessage();
 
         //ignore incoming requests that are not meant for the local user.
@@ -109,7 +118,8 @@ public class ConnectivityCheckServer
                 logger.log(Level.FINE, "Received a connectivity ckeck with"
                             +"no PRIORITY attribute. Discarting.");
             }
-            return;
+
+            throw new IllegalArgumentException("Missing PRIORITY attribtue!");
         }
 
         long priority = priorityAttr.getPriority();
