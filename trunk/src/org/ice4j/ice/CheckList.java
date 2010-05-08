@@ -260,4 +260,18 @@ public class CheckList
             pairsIter.next().setState(CandidatePairState.WAITING, null);
         }
     }
+
+    /**
+     * Recomputes priorities of all pairs in this <tt>CheckList</tt>. Methord is
+     * useful when an agent changes its <tt>isControlling</tt> property as a
+     * result of a role conflict.
+     */
+    protected synchronized void recomputePairPriorities()
+    {
+        //first, determine the pairs that we'd need to put in the waiting state.
+        for(CandidatePair pair : this)
+        {
+            pair.computePriority();
+        }
+    }
 }

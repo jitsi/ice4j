@@ -637,6 +637,18 @@ public class Agent
     public void setControlling(boolean isControlling)
     {
         this.isControlling = isControlling;
+
+        //in case we have already initialized our check lists we'd need to
+        //recompute pair priorities.
+        List<IceMediaStream> streams = getStreams();
+        for(IceMediaStream stream : streams)
+        {
+            CheckList list = stream.getCheckList();
+
+            if (list != null)
+                list.recomputePairPriorities();
+        }
+
     }
 
     /**

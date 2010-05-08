@@ -161,21 +161,80 @@ public class ConnectivityCheckClient
         }
     }
 
-    public void processResponse(StunResponseEvent response)
+    /**
+     * Handles the <tt>response</tt> as per the procedures described in RFC 5245
+     * or in other words, by either changing the state of the corresponding pair
+     * to FAILED, or SUCCEDED, or rescheduling a check in case of a role
+     * conflict.
+     *
+     * @param evt the {@link StunResponseEvent} that contains the newly
+     * received response.
+     */
+    public void processResponse(StunResponseEvent evt)
     {
-        if(response.getResponse().getMessageType()
+        //make sure that the response came from the right place.
+        if (!checkSymmetricAddresses(evt))
+        {
+            CandidatePair pair = ((CandidatePair)evt.getTransactionID()
+                            .getApplicationData());
+
+            logger.fine("Received a non-symmetric response for pair: "+ pair
+                            +". Failing");
+            pair.setState(CandidatePairState.FAILED, null);
+        }
+
+        //handle error responses.
+        if(evt.getResponse().getMessageType()
                         == Response.BINDING_ERROR_RESPONSE)
         {
-            if(! response.getResponse().contains(Attribute.ERROR_CODE))
+            if(! evt.getResponse().contains(Attribute.ERROR_CODE))
             {
                 logger.fine("Received a malformed error response.");
                 return; //malformed error response
             }
 
-            processErrorResponse(response);
+            processErrorResponse(evt);
         }
+
+
     }
 
+    /**
+     * Returns <tt>true</tt> if the {@link Response} in <tt>evt</tt> had a
+     * source or a destination address that did not match those of the
+     * {@link Request}, or <tt>false</tt> otherwise.
+     * RFC 5245: The agent MUST check that the source IP address and port of
+     * the response equal the destination IP address and port to which the
+     * Binding request was sent, and that the destination IP address and
+     * port of the response match the source IP address and port from which
+     * the Binding request was sent.  In other words, the source and
+     * destination transport addresses in the request and responses are
+     * symmetric.  If they are not symmetric, the agent sets the state of
+     * the pair to Failed.
+     *
+     * @param evt the {@link StunResponseEvent} that contains the {@link
+     * Response} we need to examine
+     *
+     * @return <tt>true</tt> if the {@link Response} in <tt>evt</tt> had a
+     * source or a destination address that did not match those of the
+     * {@link Request}, or <tt>false</tt> otherwise.
+     */
+    private boolean checkSymmetricAddresses(StunResponseEvent evt)
+    {
+        CandidatePair pair = ((CandidatePair)evt.getTransactionID()
+                        .getApplicationData());
+
+        return pair.getLocalCandidate().equals(evt.getLocalAddress())
+           && pair.getRemoteCandidate().equals(evt.getRemoteAddress());
+    }
+
+    /**
+     * In case of a role conflict, changes the state of the agent and
+     * reschedules the check, in all other cases sets the corresponding peer
+     * state to FAILED.
+     *
+     * @param evt the event that delivered the error response.
+     */
     private void processErrorResponse(StunResponseEvent evt)
     {
         Response response = evt.getResponse();
@@ -183,6 +242,9 @@ public class ConnectivityCheckClient
 
         ErrorCodeAttribute errorCode = (ErrorCodeAttribute)response
                                     .getAttribute(Attribute.ERROR_CODE);
+
+        CandidatePair pair = ((CandidatePair)evt.getTransactionID()
+                        .getApplicationData());
 
         logger.finest("Received error code " + errorCode.getErrorCode());
 
@@ -192,14 +254,19 @@ public class ConnectivityCheckClient
             boolean wasControlling = originalRequest
                                 .contains(Attribute.ICE_CONTROLLING);
 
-System.out.println("Swithing to isControlling=" + !wasControlling);
+            logger.finer("Swithing to isControlling=" + !wasControlling);
             parentAgent.setControlling(!wasControlling);
-
-            CandidatePair pair = ((CandidatePair)evt.getTransactionID()
-                            .getApplicationData());
 
             pair.getParentComponent().getParentStream().getCheckList()
                 .scheduleTriggeredCheck(pair);
+
+            return;
+        }
+        else
+        {
+            logger.fine("Received an unrecoverable error response for pair "
+                            + pair + " will mark the pair as FAILED.");
+            pair.setState(CandidatePairState.FAILED, null);
         }
     }
 
