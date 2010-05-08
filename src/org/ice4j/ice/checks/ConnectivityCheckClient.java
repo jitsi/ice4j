@@ -332,17 +332,16 @@ public class ConnectivityCheckClient
             boolean wasFrozen = checkList.isFrozen();
 
             for(CandidatePair pair : checkList)
-                if (parentStream.containsFoundation(pair.getFoundation()))
+                if (parentStream.containsFoundation(pair.getFoundation())
+                    && pair.getState() == CandidatePairState.FROZEN)
                     pair.setStateWaiting();
 
-            //if the checklList is still frozen after the above operations, and
-            //there are no pairs in the check list whose foundation matches a
-            //pair in the valid list under consideration, the agent groups
-            //together all of the pairs with the same foundation, and for each
-            //group, sets the state of the pair with the lowest component ID to
-            //Waiting.  If there is more than one such pair, the one with the
-            //highest priority is used.
-            if(!checkList.isFrozen())
+            //if the checklList is still frozen after the above operations,
+            //the agent groups together all of the pairs with the same
+            //foundation, and for each group, sets the state of the pair with
+            //the lowest component ID to Waiting.  If there is more than one
+            //such pair, the one with the highest priority is used.
+            if(checkList.isFrozen())
                 checkList.computeInitialCheckListPairStates();
 
             if (wasFrozen)
@@ -375,8 +374,12 @@ public class ConnectivityCheckClient
         CandidatePair pair = ((CandidatePair)evt.getTransactionID()
                         .getApplicationData());
 
-        return pair.getLocalCandidate().equals(evt.getLocalAddress())
-           && pair.getRemoteCandidate().equals(evt.getRemoteAddress());
+        boolean sym = pair.getLocalCandidate().getTransportAddress()
+                                        .equals(evt.getLocalAddress())
+           && pair.getRemoteCandidate().getTransportAddress()
+                                        .equals(evt.getRemoteAddress());
+
+        return sym;
     }
 
     /**

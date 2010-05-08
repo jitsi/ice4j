@@ -643,7 +643,6 @@ public class Agent
             if (list != null)
                 list.recomputePairPriorities();
         }
-
     }
 
     /**
