@@ -354,4 +354,12 @@ class ConnectivityCheckServer
 
         return null;
     }
+
+    /**
+     * Stops this server.
+     */
+    public void stop()
+    {
+        StunStack.getInstance().removeRequestListener(this);
+    }
 }
