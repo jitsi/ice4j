@@ -50,7 +50,7 @@ public class CheckList
      *
      * @param name the name of the check list.
      */
-    public CheckList(String name)
+    protected CheckList(String name)
     {
         this.name = name;
     }
@@ -70,7 +70,7 @@ public class CheckList
      *
      * @param state the <tt>CheckListState</tt> for this list.
      */
-    public void setState(CheckListState state)
+    protected void setState(CheckListState state)
     {
         this.state = state;
     }
@@ -82,7 +82,7 @@ public class CheckList
      *
      * @param pair the pair to schedule a triggered check for.
      */
-    public void scheduleTriggeredCheck(CandidatePair pair)
+    protected void scheduleTriggeredCheck(CandidatePair pair)
     {
         synchronized(triggeredCheckQueue)
         {
@@ -101,7 +101,7 @@ public class CheckList
      * @return the first {@link CandidatePair} in the triggered check queue or
      * <tt>null</tt> if that queue is empty.
      */
-    public CandidatePair popTriggeredCheck()
+    protected CandidatePair popTriggeredCheck()
     {
         synchronized(triggeredCheckQueue)
         {
@@ -122,9 +122,8 @@ public class CheckList
      * connectivity check, which would either be the highest priority
      * <tt>Waiting</tt> pair or, when there's no such pair, the highest priority
      * <tt>Frozen</tt> pair or <tt>null</tt> otherwise
-     *
      */
-    public synchronized CandidatePair getNextOrdinaryPairToCheck()
+    protected synchronized CandidatePair getNextOrdinaryPairToCheck()
     {
         if (size() < 1)
             return null;
@@ -169,7 +168,7 @@ public class CheckList
      * @return <tt>true</tt> if this list is active and <tt>false</tt>
      * otherwise.
      */
-    public synchronized boolean isActive()
+    protected synchronized boolean isActive()
     {
         for (CandidatePair pair : this)
         {
@@ -187,7 +186,7 @@ public class CheckList
      * @return <tt>true</tt> if all pairs in this list are frozen and
      * <tt>false</tt> otherwise.
      */
-    public synchronized boolean isFrozen()
+    protected synchronized boolean isFrozen()
     {
         for (CandidatePair pair : this)
         {
@@ -228,7 +227,7 @@ public class CheckList
      * component ID to Waiting. If there is more than one such pair, the one
      * with the highest priority is used.
      */
-    public synchronized void computeInitialCheckListPairStates()
+    protected synchronized void computeInitialCheckListPairStates()
     {
         Map<String, CandidatePair> pairsToWait
                                     = new Hashtable<String, CandidatePair>();
@@ -314,7 +313,7 @@ public class CheckList
      * @param nominatedPair the {@link CandidatePair} whose nomination we need
      * to handle.
      */
-    public synchronized void handleNomination(CandidatePair nominatedPair)
+    protected synchronized void handleNomination(CandidatePair nominatedPair)
     {
         Component cmp = nominatedPair.getParentComponent();
         Iterator<CandidatePair> pairsIter = iterator();

@@ -552,7 +552,7 @@ public class IceMediaStream
      *
      * @param pair the {@link CandidatePair} to add to our valid list.
      */
-    public void addValidPair(CandidatePair pair)
+    protected void addValidPair(CandidatePair pair)
     {
         synchronized (validList)
         {
@@ -571,7 +571,7 @@ public class IceMediaStream
      * @return <tt>true</tt> if this stream's <tt>validList</tt> contains a
      * pair with the specified <tt>foundation</tt> and <tt>false</tt> otherwise.
      */
-    public boolean validListContainsFoundation(String foundation)
+    protected boolean validListContainsFoundation(String foundation)
     {
         synchronized(validList)
         {
@@ -592,7 +592,7 @@ public class IceMediaStream
      * one {@link CandidatePair} for each {@link Component} of the stream and
      * <tt>false</tt> otherwise.
      */
-    public boolean validListContainsAllComponents()
+    protected boolean validListContainsAllComponents()
     {
         List<Component> cmpList = getComponents();
         for(Component cmp : cmpList)
@@ -617,7 +617,7 @@ public class IceMediaStream
      * CandidatePair} in the valid list for every {@link Component} of this
      * stream and <tt>false</tt> otherwise.
      */
-    public boolean allComponentsAreNominated()
+    protected boolean allComponentsAreNominated()
     {
         List<Component> components = getComponents();
 
@@ -641,7 +641,7 @@ public class IceMediaStream
      * @return a valid {@link CandidatePair} for the specified
      * <tt>component</tt> if at least one exists, and <tt>null</tt> otherwise.
      */
-    public CandidatePair getValidPair(Component component)
+    protected CandidatePair getValidPair(Component component)
     {
         synchronized(validList)
         {
