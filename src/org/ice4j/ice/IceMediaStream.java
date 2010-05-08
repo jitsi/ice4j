@@ -569,7 +569,7 @@ public class IceMediaStream
      * @return <tt>true</tt> if this stream's <tt>validList</tt> contains a
      * pair with the specified <tt>foundation</tt> and <tt>false</tt> otherwise.
      */
-    public boolean containsFoundation(String foundation)
+    public boolean validListContainsFoundation(String foundation)
     {
         synchronized(validList)
         {
@@ -579,5 +579,52 @@ public class IceMediaStream
         }
 
         return false;
+    }
+
+    /**
+     * Returns <tt>true</tt> if this stream's valid list contains at least
+     * one {@link CandidatePair} for each {@link Component} of the stream and
+     * <tt>false</tt> otherwise.
+     *
+     * @return <tt>true</tt> if this stream's valid list contains at least
+     * one {@link CandidatePair} for each {@link Component} of the stream and
+     * <tt>false</tt> otherwise.
+     */
+    public boolean validListContainsAllComponents()
+    {
+        List<Component> cmpList = getComponents();
+        for(Component cmp : cmpList)
+        {
+            if (getValidPair(cmp) != null)
+                continue;
+
+            //it looks like there's at least one component we don't have a
+            //valid candidate for.
+            return false;
+        }
+
+        return true;
+    }
+
+    /**
+     * Returns the first {@link CandidatePair} stored in this stream's valid
+     * list, that belongs to the specified <tt>component</tt>.
+     *
+     * @param component the {@link Component} we'd like to obtain a valid
+     * pair for.
+     *
+     * @return a valid {@link CandidatePair} for the specified
+     * <tt>component</tt> if at least one exists, and <tt>null</tt> otherwise.
+     */
+    public CandidatePair getValidPair(Component component)
+    {
+        synchronized(validList)
+        {
+            for(CandidatePair pair : validList)
+                if(pair.getParentComponent() == component)
+                    return pair;
+        }
+
+        return null;
     }
 }
