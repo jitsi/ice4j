@@ -129,6 +129,12 @@ public class ConnectivityCheckServer
             //then chances are the 500 will fail too.
             throw new RuntimeException("Failed to send a response", e);
         }
+
+        if (!parentAgent.isControlling()
+                        && request.contains(Attribute.USE_CANDIDATE))
+        {
+
+        }
     }
 
     /**

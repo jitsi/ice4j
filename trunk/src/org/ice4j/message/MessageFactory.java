@@ -133,7 +133,7 @@ public class MessageFactory
                     throws IllegalArgumentException
     {
         Response bindingResponse = new Response();
-        bindingResponse.setMessageType(Message.BINDING_RESPONSE);
+        bindingResponse.setMessageType(Message.BINDING_SUCCESS_RESPONSE);
 
         // mapped address
         MappedAddressAttribute mappedAddressAttribute = AttributeFactory
@@ -187,7 +187,7 @@ public class MessageFactory
                     throws IllegalArgumentException
     {
         Response bindingResponse = new Response();
-        bindingResponse.setMessageType(Message.BINDING_RESPONSE);
+        bindingResponse.setMessageType(Message.BINDING_SUCCESS_RESPONSE);
 
         // xor mapped address
         XorMappedAddressAttribute xorMappedAddressAttribute = AttributeFactory

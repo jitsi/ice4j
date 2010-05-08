@@ -182,9 +182,8 @@ public class ConnectivityCheckClient
                             +". Failing");
             pair.setState(CandidatePairState.FAILED, null);
         }
-
         //handle error responses.
-        if(evt.getResponse().getMessageType()
+        else if(evt.getResponse().getMessageType()
                         == Response.BINDING_ERROR_RESPONSE)
         {
             if(! evt.getResponse().contains(Attribute.ERROR_CODE))
@@ -195,7 +194,95 @@ public class ConnectivityCheckClient
 
             processErrorResponse(evt);
         }
+        //handle error responses.
+        else if(evt.getResponse().getMessageType()
+                        == Response.BINDING_SUCCESS_RESPONSE)
+        {
+            processSuccessResponse(evt);
+        }
+    }
 
+    /**
+     * Handles STUN success responses as per the rules in RFC 5245.
+     *
+     * @param evt the event that delivered the error response.
+     */
+    private void processSuccessResponse(StunResponseEvent evt)
+    {
+        Response response = evt.getResponse();
+        Request  request  = evt.getRequest();
+
+        CandidatePair checkedPair = ((CandidatePair)evt.getTransactionID()
+                        .getApplicationData());
+
+
+        if(! response.contains(Attribute.XOR_MAPPED_ADDRESS))
+        {
+            logger.fine("Received a success response with no "
+                            +"XOR_MAPPED_ADDRESS attribute.");
+            checkedPair.setState(CandidatePairState.FAILED, null);
+            return; //malformed error response
+        }
+
+        XorMappedAddressAttribute mappedAddressAttr
+            = (XorMappedAddressAttribute)response
+                .getAttribute(Attribute.XOR_MAPPED_ADDRESS);
+
+        TransportAddress mappedAddress = mappedAddressAttr
+            .getAddress(response.getTransactionID());
+
+        LocalCandidate validLocalCandidate = parentAgent
+                                       .findLocalCandidate(mappedAddress);
+        Candidate validRemoteCandidate = checkedPair.getRemoteCandidate();
+
+        // RFC 5245: The agent checks the mapped address from the STUN
+        // response. If the transport address does not match any of the
+        // local candidates that the agent knows about, the mapped address
+        // represents a new candidate -- a peer reflexive candidate.
+        if ( validLocalCandidate == null)
+        {
+            //Like other candidates, PEER-REFLEXIVE candidates have a type,
+            //base, priority, and foundation.  They are computed as follows:
+            //o The type is equal to peer reflexive.
+            //o The base is the local candidate of the candidate
+            //  pair from which the STUN check was sent.
+            //o Its priority is set equal to the value of the PRIORITY attribute
+            //  in the Binding request.
+            PriorityAttribute prioAttr = (PriorityAttribute)request
+                .getAttribute(Attribute.PRIORITY);
+
+            LocalCandidate peerReflexiveCandidate = new PeerReflexiveCandidate(
+                            mappedAddress, checkedPair.getParentComponent(),
+                            checkedPair.getLocalCandidate(),
+                            prioAttr.getPriority());
+
+            peerReflexiveCandidate.setBase(checkedPair.getLocalCandidate());
+
+            //This peer reflexive candidate is then added to the list of local
+            //candidates for the media stream, so that it would be available for
+            //updated offers.
+            checkedPair.getParentComponent().addLocalCandidate(
+                            peerReflexiveCandidate);
+
+            //However, the peer reflexive candidate is not paired with other
+            //remote candidates. This is not necessary; a valid pair will be
+            //generated from it momentarily
+            validLocalCandidate = peerReflexiveCandidate;
+        }
+
+        // RFC 5245: 7.1.3.2.2. The agent constructs a candidate pair whose
+        // local candidate equals the mapped address of the response, and whose
+        // remote candidate equals the destination address to which the request
+        // was sent.  This is called a valid pair, since it has been validated
+        // by a STUN connectivity check.
+        CandidatePair validPair = new CandidatePair(validLocalCandidate,
+                        validRemoteCandidate);
+
+        //If the pair equals the pair that generated the check or is on a check
+        //list currently, it is also added to the VALID LIST, which is
+        // maintained by the agent for each media stream.
+
+        //if
 
     }
 

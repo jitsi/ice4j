@@ -46,7 +46,7 @@ public class MessageTest extends TestCase {
 
         //binding response
         bindingResponse = new Response();
-        bindingResponse.setMessageType(Message.BINDING_RESPONSE);
+        bindingResponse.setMessageType(Message.BINDING_SUCCESS_RESPONSE);
 
         mappedAddress = AttributeFactory.createMappedAddressAttribute(
             new TransportAddress(
@@ -102,7 +102,7 @@ public class MessageTest extends TestCase {
     public void testAddAndGetAttribute() throws StunException {
 
         Response   message = new Response();
-        message.setMessageType(Message.BINDING_RESPONSE);
+        message.setMessageType(Message.BINDING_SUCCESS_RESPONSE);
         message.addAttribute(mappedAddress);
 
         Attribute getResult = null;
@@ -223,7 +223,7 @@ public class MessageTest extends TestCase {
         //Create a binding response with the same attributes as
         //this.bindingRequest
         Response binResTarget = new Response();
-        binResTarget.setMessageType(Message.BINDING_RESPONSE);
+        binResTarget.setMessageType(Message.BINDING_SUCCESS_RESPONSE);
         binResTarget.addAttribute(mappedAddress);
         binResTarget.addAttribute(sourceAddress);
         binResTarget.addAttribute(changedAddress);

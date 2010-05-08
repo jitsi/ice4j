@@ -44,7 +44,7 @@ public abstract class Message
     public static final char STUN_METHOD_BINDING = 0x0001;
 
     public static final char BINDING_REQUEST               = (STUN_METHOD_BINDING | STUN_REQUEST);
-    public static final char BINDING_RESPONSE              = (STUN_METHOD_BINDING | STUN_SUCCESS_RESP);
+    public static final char BINDING_SUCCESS_RESPONSE      = (STUN_METHOD_BINDING | STUN_SUCCESS_RESP);
     public static final char BINDING_ERROR_RESPONSE        = (STUN_METHOD_BINDING | STUN_ERROR_RESP);
     public static final char SHARED_SECRET_REQUEST         = 0x0002;
     public static final char SHARED_SECRET_RESPONSE        = 0x0102;
@@ -433,7 +433,7 @@ public abstract class Message
         switch (messageType)
         {
             case BINDING_REQUEST:              msgIndex = BINDING_REQUEST_PRESENTITY_INDEX; break;
-            case BINDING_RESPONSE:             msgIndex = BINDING_RESPONSE_PRESENTITY_INDEX; break;
+            case BINDING_SUCCESS_RESPONSE:             msgIndex = BINDING_RESPONSE_PRESENTITY_INDEX; break;
             case BINDING_ERROR_RESPONSE:       msgIndex = BINDING_ERROR_RESPONSE_PRESENTITY_INDEX; break;
             case SHARED_SECRET_REQUEST:        msgIndex = SHARED_SECRET_REQUEST_PRESENTITY_INDEX; break;
             case SHARED_SECRET_RESPONSE:       msgIndex = SHARED_SECRET_RESPONSE_PRESENTITY_INDEX; break;
@@ -492,7 +492,7 @@ public abstract class Message
         switch (messageType)
         {
             case BINDING_REQUEST:              return "BINDING-REQUEST";
-            case BINDING_RESPONSE:             return "BINDING-RESPONSE";
+            case BINDING_SUCCESS_RESPONSE:             return "BINDING-RESPONSE";
             case BINDING_ERROR_RESPONSE:       return "BINDING-ERROR-RESPONSE";
             case SHARED_SECRET_REQUEST:        return "SHARED-SECRET-REQUEST";
             case SHARED_SECRET_RESPONSE:       return "SHARED-SECRET-RESPONSE";
