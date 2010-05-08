@@ -7,6 +7,7 @@
  */
 package test;
 
+import java.beans.*;
 import java.lang.reflect.*;
 import java.net.*;
 import java.util.*;
@@ -35,6 +36,8 @@ public class Ice
         Agent localAgent = createAgent(9090);
         Agent remotePeer = createAgent(6060);
 
+        localAgent.addStateChangeListener(new IceProcessingListener());
+
         //let them fight ... fights forge character.
         //localAgent.setControlling(true);
         //remotePeer.setControlling(false);
@@ -62,7 +65,32 @@ public class Ice
         System.out.println("Total execution time: "
                         + (endTime - startTime) + "ms");
 
-        Thread.sleep(25000);
+        //Give processing enough time to finish. We'll System.exit() anyway
+        //as soon as localAgent enters a final state.
+        Thread.sleep(60000);
+    }
+
+    /**
+     * The listener that would end example execution once we enter the
+     * completed state.
+     */
+    public static final class IceProcessingListener
+        implements PropertyChangeListener
+    {
+        /**
+         * System.exit()s as soon as ICE processing enters a final state.
+         *
+         * @param evt the {@link PropertyChangeEvent} containing the old and new
+         * states of ICE processing.
+         */
+        public void propertyChange(PropertyChangeEvent evt)
+        {
+            if(evt.getNewValue() == IceProcessingState.COMPLETED
+               || evt.getNewValue() == IceProcessingState.FAILED)
+            {
+                System.exit(0);
+            }
+        }
     }
 
     /**
