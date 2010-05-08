@@ -364,4 +364,28 @@ public class CheckList
     {
         return name;
     }
+
+    /**
+     * Returns <tt>true</tt> if this <tt>CheckList</tt> already contains a
+     * nominated {@link CandidatePair} for the specified <tt>component</tt>
+     * and <tt>false</tt> otherwise.
+     *
+     * @param componennt the {@link Component} that we'd whose nominees we are
+     * interested in.
+     *
+     * @return <tt>true</tt> if this <tt>CheckList</tt> already contains a
+     * nominated {@link CandidatePair} for the specified <tt>component</tt>
+     * and <tt>false</tt> otherwise.
+     */
+    public synchronized boolean containsNomineeForComponent(
+                                                        Component componennt)
+    {
+        for (CandidatePair pair : this)
+        {
+            if (pair.isNominated() && pair.getParentComponent() == componennt)
+                return true;
+        }
+
+        return false;
+    }
 }

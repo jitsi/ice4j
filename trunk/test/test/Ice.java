@@ -116,12 +116,20 @@ public class Ice
                         System.out.println(cmpName + ": "
                                         + cmp.getSelectedPair());
                     }
+                }
 
+                System.out.println("Printing the check lists:");
+                for(IceMediaStream stream : streams)
+                {
+                    String streamName = stream.getName();
+                    System.out.println("Check list for  stream: "
+                                        + streamName);
+                    //uncomment for a more verbose output
+                    System.out.println(stream.getCheckList());
                 }
             }
             else if(evt.getNewValue() == IceProcessingState.TERMINATED)
             {
-                System.out.println("ICE Agent was terminated.");
                 System.exit(0);
             }
         }
@@ -233,8 +241,8 @@ public class Ice
             new TransportAddress("ipv6.sip-communicator.net",
                                  3478, Transport.UDP));
 
-        //agent.addCandidateHarvester(stunHarv);
-        //agent.addCandidateHarvester(stun6Harv);
+        agent.addCandidateHarvester(stunHarv);
+        agent.addCandidateHarvester(stun6Harv);
 
         createStream(rtpPort, "audio", agent);
         //createStream(rtpPort + 2, "video", agent);
