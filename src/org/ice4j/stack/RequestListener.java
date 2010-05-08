@@ -21,5 +21,5 @@ public interface RequestListener
      *
      * @param evt the event containing the incoming STUN request.
      */
-    public void requestReceived(StunMessageEvent evt);
+    public void processRequest(StunMessageEvent evt);
 }

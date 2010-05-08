@@ -381,7 +381,7 @@ public class ShallowStackTest extends TestCase {
          * @param evt the <tt>StunMessageEvent</tt> containing the details of
          * the newly received request.
          */
-        public void requestReceived(StunMessageEvent evt)
+        public void processRequest(StunMessageEvent evt)
         {
             synchronized(this)
             {

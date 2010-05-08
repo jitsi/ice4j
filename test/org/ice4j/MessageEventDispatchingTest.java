@@ -255,7 +255,7 @@ public class MessageEventDispatchingTest extends TestCase
          *
          * @param evt the event containing the incoming request.
          */
-        public void requestReceived(StunMessageEvent evt)
+        public void processRequest(StunMessageEvent evt)
         {
             synchronized (this)
             {

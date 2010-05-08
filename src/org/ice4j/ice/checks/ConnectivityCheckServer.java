@@ -71,8 +71,11 @@ public class ConnectivityCheckServer
         stunStack.getCredentialsManager().registerAuthority(this);
     }
 
-    public void requestReceived(StunMessageEvent evt)
+    public void processRequest(StunMessageEvent evt)
     {
+        if(true)
+            throw new NullPointerException("i am the king fo the w");
+
         Request request = (Request)evt.getMessage();
 
         //ignore incoming requests that are not meant for the local user.
