@@ -304,14 +304,11 @@ public class MessageFactory
      *
      * @param errorCode the error code to encapsulate in this message attributes
      * that had not been recognized.
-     * @throws StunException INVALID_ARGUMENTS if one or more of the given
-     * parameters had an invalid value.
      *
      * @return a binding error response message containing an error code and a
      * UNKNOWN-ATTRIBUTES header
      */
     public static Response createBindingErrorResponse(char errorCode)
-                    throws StunException
     {
         return createBindingErrorResponse(errorCode, null, null);
     }

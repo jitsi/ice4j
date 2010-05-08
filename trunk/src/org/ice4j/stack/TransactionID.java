@@ -124,7 +124,7 @@ public class TransactionID
      * Returns the transaction id byte array (length 12).
      * @return the transaction ID byte array.
      */
-    public byte[] getTransactionID()
+    public byte[] getBytes()
     {
         return transactionID;
     }

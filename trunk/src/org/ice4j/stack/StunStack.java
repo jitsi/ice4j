@@ -561,7 +561,7 @@ t.printStackTrace();
 
                 try
                 {
-                    sendResponse(event.getTransactionID().getTransactionID(),
+                    sendResponse(event.getTransactionID().getBytes(),
                         error, event.getLocalAddress(),
                         event.getRemoteAddress());
                 }

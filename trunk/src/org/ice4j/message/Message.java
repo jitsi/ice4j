@@ -287,8 +287,7 @@ public abstract class Message
     public void addAttribute(Attribute attribute)
         throws IllegalArgumentException
     {
-        Character attributeType = new Character(attribute.getAttributeType());
-        if (getAttributePresentity(attributeType.charValue()) == N_A)
+        if (getAttributePresentity(attribute.getAttributeType()) == N_A)
         {
             throw new IllegalArgumentException(
                                     "The attribute "
@@ -297,7 +296,7 @@ public abstract class Message
                                     + getName());
         }
 
-        attributes.put(attributeType, attribute);
+        attributes.put(attribute.getAttributeType(), attribute);
     }
 
     /**
@@ -311,7 +310,7 @@ public abstract class Message
      */
     public boolean contains(char attributeType)
     {
-        return attributes.containsKey(new Character(attributeType));
+        return attributes.containsKey(attributeType);
     }
 
     /**
@@ -324,7 +323,7 @@ public abstract class Message
      */
     public Attribute getAttribute(char attributeType)
     {
-        return attributes.get(new Character(attributeType));
+        return attributes.get(attributeType);
     }
 
     /**
@@ -346,7 +345,7 @@ public abstract class Message
      */
     public Attribute removeAttribute(char attributeType)
     {
-        return attributes.remove(new Character(attributeType));
+        return attributes.remove(attributeType);
     }
 
     /**

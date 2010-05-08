@@ -6,6 +6,7 @@
  */
 package org.ice4j.ice.checks;
 
+import java.io.*;
 import java.util.*;
 import java.util.logging.*;
 
@@ -98,15 +99,13 @@ public class ConnectivityCheckServer
         String remoteUfrag = username.substring(0, colon);
 
         //detect role conflicts
-/*        if( ( parentAgent.isControlling()
+        if( ( parentAgent.isControlling()
                         && request.contains(Attribute.ICE_CONTROLLING))
             || ( ! parentAgent.isControlling()
-                            && request.contains(Attribute.ICE_CONTROLLED)))*/
+                            && request.contains(Attribute.ICE_CONTROLLED)))
         {
-            System.out.println("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!tb="+
-            ((IceControllingAttribute)request.getAttribute(Attribute.ICE_CONTROLLING)).getTieBreaker());
             repairRoleConflict(evt);
-            //return;
+            return;
         }
 
         long priority = extractPriority(request);
@@ -121,7 +120,7 @@ public class ConnectivityCheckServer
 
         try
         {
-            stunStack.sendResponse(evt.getTransactionID().getTransactionID(),
+            stunStack.sendResponse(evt.getTransactionID().getBytes(),
                 response, evt.getLocalAddress(), evt.getRemoteAddress());
         }
         catch (Exception e)
@@ -169,6 +168,14 @@ public class ConnectivityCheckServer
         return priorityAttr.getPriority();
     }
 
+    /**
+     * Resolves a role conflicts by either sendinf a <tt>487 Role Conflict</tt>
+     * response or by changing this server's parent agent role.
+     *
+     * @param evt the {@link StunMessageEvent} containing the
+     * <tt>ICE-CONTROLLING</tt> or <tt>ICE-CONTROLLED</tt> attribute that
+     * allowed us to detect the role conflict.
+     */
     private void repairRoleConflict(StunMessageEvent evt)
     {
         Message req = evt.getMessage();
@@ -183,17 +190,43 @@ public class ConnectivityCheckServer
                 req.getAttribute(Attribute.ICE_CONTROLLING);
 
             long theirTieBreaker = controlling.getTieBreaker();
-System.out.println("############################################ TB=" + theirTieBreaker);
+
             // If the agent's tie-breaker is larger than or equal to the
             // contents of the ICE-CONTROLLING attribute, the agent generates
             // a Binding error response and includes an ERROR-CODE attribute
             // with a value of 487 (Role Conflict) but retains its role.
-            //if()
+            if( ourTieBreaker >= theirTieBreaker)
+            {
+                Response response = MessageFactory.createBindingErrorResponse(
+                                ErrorCodeAttribute.ROLE_CONFLICT);
 
+                try
+                {
+                    StunStack.getInstance().sendResponse(
+                                evt.getTransactionID().getBytes(),
+                                response, evt.getLocalAddress(),
+                                evt.getRemoteAddress());
+                }
+                catch(Exception exc)
+                {
+                    //rethrow so that we would send a 500 response instead.
+                    throw new RuntimeException("Failed to send a 487", exc);
+                }
+            }
             //If the agent's tie-breaker is less than the contents of the
-            //ICE-CONTROLLING attribute, the agent switches to the controlled role.
+            //ICE-CONTROLLING attribute, the agent switches to the controlled
+            //role.
+            else
+            {
+                logger.finest(
+                        "Swithing to controlled because theirTieBreaker="
+                        + theirTieBreaker + " and ourTieBreaker="
+                        + ourTieBreaker);
+                parentAgent.setControlling(false);
+            }
         }
-
+        // If the agent is in the controlled role, and the ICE-CONTROLLED
+        // attribute is present in the request:
         else if(!parentAgent.isControlling()
                         && req.contains(Attribute.ICE_CONTROLLED))
         {
@@ -201,25 +234,41 @@ System.out.println("############################################ TB=" + theirTie
                 req.getAttribute(Attribute.ICE_CONTROLLED);
 
             long theirTieBreaker = controlled.getTieBreaker();
-System.out.println("############################################ TB=" + theirTieBreaker);
+
+            //If the agent's tie-breaker is larger than or equal to the
+            //contents of the ICE-CONTROLLED attribute, the agent switches to
+            //the controlling role.
+            if(ourTieBreaker >= theirTieBreaker)
+            {
+                logger.finest(
+                        "Swithing to controlling because theirTieBreaker="
+                        + theirTieBreaker + " and ourTieBreaker="
+                        + ourTieBreaker);
+                parentAgent.setControlling(true);
+            }
+            // If the agent's tie-breaker is less than the contents of the
+            // ICE-CONTROLLED attribute, the agent generates a Binding error
+            // response and includes an ERROR-CODE attribute with a value of
+            // 487 (Role Conflict) but retains its role.
+            else
+            {
+                Response response = MessageFactory.createBindingErrorResponse(
+                            ErrorCodeAttribute.ROLE_CONFLICT);
+
+                try
+                {
+                    StunStack.getInstance().sendResponse(
+                                    evt.getTransactionID().getBytes(),
+                                    response, evt.getLocalAddress(),
+                                    evt.getRemoteAddress());
+                }
+                catch(Exception exc)
+                {
+                    //rethrow so that we would send a 500 response instead.
+                    throw new RuntimeException("Failed to send a 487", exc);
+                }
+            }
         }
-/*
-
-
-   o  If the agent is in the controlled role, and the ICE-CONTROLLED
-      attribute is present in the request:
-
-      *  If the agent's tie-breaker is larger than or equal to the
-         contents of the ICE-CONTROLLED attribute, the agent switches to
-         the controlling role.
-
-      *  If the agent's tie-breaker is less than the contents of the
-         ICE-CONTROLLED attribute, the agent generates a Binding error
-         response and includes an ERROR-CODE attribute with a value of
-         487 (Role Conflict) but retains its role.
-
-
-         * */
     }
 
     /**
