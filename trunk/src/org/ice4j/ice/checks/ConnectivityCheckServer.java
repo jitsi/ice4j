@@ -6,8 +6,6 @@
  */
 package org.ice4j.ice.checks;
 
-import java.io.*;
-import java.util.*;
 import java.util.logging.*;
 
 import org.ice4j.*;

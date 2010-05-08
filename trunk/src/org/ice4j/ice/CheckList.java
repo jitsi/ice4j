@@ -262,7 +262,7 @@ public class CheckList
     }
 
     /**
-     * Recomputes priorities of all pairs in this <tt>CheckList</tt>. Methord is
+     * Recomputes priorities of all pairs in this <tt>CheckList</tt>. Method is
      * useful when an agent changes its <tt>isControlling</tt> property as a
      * result of a role conflict.
      */
@@ -274,4 +274,45 @@ public class CheckList
             pair.computePriority();
         }
     }
+
+    /**
+     * Removes from this <tt>CheckList</tt> and its associated triggered check
+     * queue all {@link CandidatePair}s that are in the <tt>Waiting</tt> and
+     * <tt>Frozen</tt> states and that belong to the specified
+     * <tt>component</tt>. Typically this will happen upon confirmation of the
+     * nomination of one pair in that component.
+     *
+     * @param cmp the {@link Component} whose pairs we want removed.
+     */
+    public synchronized void removeNonStartedPairsForComponent(Component cmp)
+    {
+        Iterator<CandidatePair> pairsIter = iterator();
+        while(pairsIter.hasNext())
+        {
+            CandidatePair pair = pairsIter.next();
+            if (pair.getParentComponent() == cmp
+                && pair.getState() == CandidatePairState.WAITING
+                && pair.getState() == CandidatePairState.FROZEN)
+            {
+                pairsIter.remove();
+            }
+        }
+
+        synchronized(triggeredCheckQueue)
+        {
+            Iterator<CandidatePair> triggeredPairsIter
+                = triggeredCheckQueue.iterator();
+            while(triggeredPairsIter.hasNext())
+            {
+                CandidatePair pair = triggeredPairsIter.next();
+                if (pair.getParentComponent() == cmp
+                        && pair.getState() == CandidatePairState.WAITING
+                        && pair.getState() == CandidatePairState.FROZEN)
+            {
+                triggeredPairsIter.remove();
+            }
+        }
+        }
+    }
+
 }

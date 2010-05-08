@@ -127,6 +127,12 @@ public class ConnectivityCheckClient
             request.addAttribute(AttributeFactory
                             .createIceControllingAttribute(parentAgent
                                             .getTieBreaker()));
+
+            //if we are the controlling agent then we need to indicate our
+            //nominated pairs.
+            if(candidatePair.isNominated())
+                request.addAttribute(AttributeFactory
+                                .createUseCandidateAttribute());
         }
         else
         {
@@ -346,8 +352,7 @@ public class ConnectivityCheckClient
             validPair = new CandidatePair(validLocalCandidate,
                         validRemoteCandidate);
 
-        validPair.getParentComponent().getParentStream()
-                .addValidPair(validPair);
+        parentAgent.validatePair(validPair);
 
         //The agent sets the state of the pair that *generated* the check to
         //Succeeded.  Note that, the pair which *generated* the check may be
@@ -399,15 +404,16 @@ public class ConnectivityCheckClient
         if(parentAgent.isControlling()
                       && request.contains(Attribute.USE_CANDIDATE))
         {
-            parentAgent.nominatePair( validPair );
+            parentAgent.nominationConfirmed( validPair );
         }
         //If the agent is the controlled agent, the response may be the result
         //of a triggered check that was sent in response to a request that
         //itself had the USE-CANDIDATE attribute.  This case is described in
         //Section 7.2.1.5, and may now result in setting the nominated flag for
         //the pair learned from the original request.
-        else if(checkedPair.useCandidateReceived())
-            parentAgent.nominatePair( checkedPair );
+        else if(checkedPair.useCandidateReceived()
+                 && ! checkedPair.isNominated())
+            parentAgent.nominationConfirmed( checkedPair );
 
     }
 
@@ -612,6 +618,32 @@ public class ConnectivityCheckClient
                     pairToCheck.setStateInProgress(transactionID);
 
             }
+
+            parentClient.paceMakers.remove(this);
         }
+    }
+
+    /**
+     * Returns the {@link PaceMaker} responsible for running checks for the
+     * specified {@link CheckList}
+     *
+     * @param list the {@link CheckList} whose {@link PaceMaker} we are trying
+     * to find.
+     *
+     * @return the {@link PaceMaker} responsible for running checks for the
+     * specified {@link CheckList} or <tt>null</tt> if we couldn't find one.
+     */
+    private PaceMaker findPaceMaker(CheckList list)
+    {
+        synchronized(paceMakers)
+        {
+            for(PaceMaker paceMaker : paceMakers)
+            {
+                if (paceMaker.checkList == list)
+                    return paceMaker;
+            }
+        }
+
+        return null;
     }
 }
