@@ -214,6 +214,51 @@ public class ConnectivityCheckClient
         {
             processSuccessResponse(evt);
         }
+
+        //7.1.3.3. Check List and Timer State Updates
+        //Regardless of whether the check was successful or failed, the
+        //completion of the transaction may require updating of check list and
+        //timer states.
+        CandidatePair checkedPair = ((CandidatePair)evt.getTransactionID()
+                        .getApplicationData());
+        IceMediaStream stream = checkedPair.getParentComponent()
+            .getParentStream();
+        CheckList checkList = stream.getCheckList();
+
+        //If all of the pairs in the check list are now either in the Failed or
+        //Succeeded state:
+        boolean allPairsDone = true;
+        for(CandidatePair pair : checkList)
+            if(pair.getState() != CandidatePairState.FAILED
+               && pair.getState() != CandidatePairState.SUCCEEDED)
+               allPairsDone = false;
+
+        if (allPairsDone)
+        {
+            //If there is not a pair in the valid list for each component of the
+            //media stream, the state of the check list is set to Failed.
+            if ( !stream.validListContainsAllComponents())
+            {
+                checkList.setState(CheckListState.FAILED);
+            }
+
+            //For each frozen check list, the agent groups together all of the
+            //pairs with the same foundation, and for each group, sets the
+            //state of the pair with the lowest component ID to Waiting.  If
+            //there is more than one such pair, the one with the highest
+            //priority is used.
+            List<IceMediaStream> allOtherStreams = parentAgent.getStreams();
+            allOtherStreams.remove(checkList);
+            for (IceMediaStream anotherStream : allOtherStreams)
+            {
+                CheckList anotherCheckList = anotherStream.getCheckList();
+                if(anotherCheckList.isFrozen())
+                {
+                    anotherCheckList.computeInitialCheckListPairStates();
+                    startChecks(anotherCheckList);
+                }
+            }
+        }
     }
 
     /**
@@ -332,7 +377,7 @@ public class ConnectivityCheckClient
             boolean wasFrozen = checkList.isFrozen();
 
             for(CandidatePair pair : checkList)
-                if (parentStream.containsFoundation(pair.getFoundation())
+                if (parentStream.validListContainsFoundation(pair.getFoundation())
                     && pair.getState() == CandidatePairState.FROZEN)
                     pair.setStateWaiting();
 

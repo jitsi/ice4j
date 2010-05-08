@@ -132,7 +132,7 @@ public class Agent
      * The entity that will be taking care of incoming connectivity checks.
      */
     private final ConnectivityCheckServer connCheckServer
-                                = new ConnectivityCheckServer(this, this);
+                                = new ConnectivityCheckServer(this);
 
     /**
      * Indicates whether this agent has both sent and received candidate lists

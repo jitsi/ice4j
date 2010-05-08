@@ -36,12 +36,6 @@ public class ConnectivityCheckServer
     private final Agent parentAgent;
 
     /**
-     * The {@link IncomingCheckProcessor} that we should notify when we notice
-     * new remote transport addresses.
-     */
-    private final IncomingCheckProcessor addressHandler;
-
-    /**
      * The stun stack that we will use for connectivity checks.
      */
     private StunStack stunStack = StunStack.getInstance();
@@ -52,13 +46,10 @@ public class ConnectivityCheckServer
      * information such as user fragments for example.
      *
      * @param parentAgent the <tt>Agent</tt> that is creating this instance.
-     * @param addressHandler the handler that
      */
-    public ConnectivityCheckServer(Agent                parentAgent,
-                                   IncomingCheckProcessor addressHandler)
+    public ConnectivityCheckServer(Agent                parentAgent)
     {
         this.parentAgent = parentAgent;
-        this.addressHandler = addressHandler;
         stunStack.addRequestListener(this);
         stunStack.getCredentialsManager().registerAuthority(this);
     }
