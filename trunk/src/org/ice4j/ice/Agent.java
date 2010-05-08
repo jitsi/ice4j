@@ -7,6 +7,7 @@
  */
 package org.ice4j.ice;
 
+import java.beans.*;
 import java.io.*;
 import java.math.*;
 import java.net.*;
@@ -135,15 +136,24 @@ public class Agent
                                 = new ConnectivityCheckServer(this);
 
     /**
-     * Indicates whether this agent has both sent and received candidate lists
-     * and started connectivity establishment. This is important in cases like
-     * determining whether a remote address we've just discovered is peer
-     * reflexive or not. If iceStarted is true and we don't know about the
+     * Indicates the state of ICE processing in this <tt>Agent</tt>. An
+     * <tt>Agent</tt> is in the Waiting state until it has both sent and
+     * received candidate lists and started connectivity establishment. The
+     * difference between the Waiting and the Running states is important in
+     * cases like determining whether a remote address we've just discovered is
+     * peer reflexive or not. If iceStarted is true and we don't know about the
      * address then we should add it to the list of candidates. Otherwise
      * we should wait for the remote party to send their media description
      * before being able to determine.
      */
-    private boolean iceStarted = false;
+    private IceProcessingState state = IceProcessingState.WAITING;
+
+    /**
+     * Contains {@link PropertyChangeListener}s registered with this {@link
+     * Agent} and following its changes of state.
+     */
+    private List<PropertyChangeListener> stateListeners
+                                = new LinkedList<PropertyChangeListener>();
 
     /**
      * Creates an empty <tt>Agent</tt> with no streams, and no address
@@ -315,7 +325,87 @@ public class Agent
      */
     public boolean isStarted()
     {
-        return iceStarted;
+        return state != IceProcessingState.WAITING;
+    }
+
+    /**
+     * Returns the state of ICE processing for this <tt>Agent</tt>.
+     *
+     * @return the state of ICE processing for this <tt>Agent</tt>.
+     */
+    public IceProcessingState getState()
+    {
+        return state;
+    }
+
+    /**
+     * Adds <tt>l</tt> to the list of listeners tracking changes of the
+     * {@link IceProcessingState} of this <tt>Agent</tt>
+     *
+     * @param l the listener to register.
+     */
+    public void addStateChangeListener(PropertyChangeListener l)
+    {
+        synchronized(stateListeners)
+        {
+            if(!stateListeners.contains(l))
+                this.stateListeners.add(l);
+        }
+    }
+
+    /**
+     * Removes <tt>l</tt> from the list of listeners tracking changes of the
+     * {@link IceProcessingState} of this <tt>Agent</tt>
+     *
+     * @param l the listener to remove.
+     */
+    public void removeStateChangeListener(PropertyChangeListener l)
+    {
+        synchronized(stateListeners)
+        {
+            this.stateListeners.remove(l);
+        }
+    }
+
+    /**
+     * Creates a new {@link PropertyChangeEvent} and delivers it to all
+     * currently registered state listeners.
+     *
+     * @param oldState the {@link IceProcessingState} we had before the change
+     * @param newState the {@link IceProcessingState} we had after the change
+     */
+    private void fireStateChange(IceProcessingState oldState,
+                                 IceProcessingState newState)
+    {
+        List<PropertyChangeListener> listenersCopy;
+
+        synchronized(stateListeners)
+        {
+            listenersCopy
+                = new LinkedList<PropertyChangeListener>(stateListeners);
+        }
+
+        PropertyChangeEvent evt = new PropertyChangeEvent(
+                        this, "IceProcessingState", oldState, newState);
+
+        for(PropertyChangeListener l : listenersCopy)
+        {
+            l.propertyChange(evt);
+        }
+    }
+
+    /**
+     * Sets the {@link IceProcessingState} of this <tt>Agent</tt> to
+     * <tt>newState</tt> and triggers the corresponding change event.
+     *
+     * @param newState the new state of ICE processing for this <tt>Agent</tt>.
+     */
+    private void setState(IceProcessingState newState)
+    {
+        IceProcessingState oldState = state;
+
+        this.state = state;
+        fireStateChange(oldState, newState)
     }
 
     /**
