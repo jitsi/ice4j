@@ -1013,12 +1013,16 @@ public class Agent
      */
     protected void validatePair(CandidatePair validPair)
     {
-        IceMediaStream parentStream
-            = validPair.getParentComponent().getParentStream();
+        Component parentComponent = validPair.getParentComponent();
+        IceMediaStream parentStream = parentComponent.getParentStream();
+        CheckList checkList = parentStream.getCheckList();
 
         parentStream.addValidPair(validPair);
 
-        if(!validPair.isNominated())
+        //If the pair is not already nominated and if its parent component
+        //does not already contain a nominated pair - nominate it.
+        if(!validPair.isNominated()
+            && !checkList.containsNomineeForComponent(parentComponent))
         {
             validPair.nominate();
             validPair.getParentComponent().getParentStream()
@@ -1077,7 +1081,8 @@ public class Agent
                 allListsEnded = false;
                 break;
             }
-            else if(stream.getCheckList().getState() == CheckListState.COMPLETED)
+            else if(stream.getCheckList().getState()
+                                == CheckListState.COMPLETED)
             {
                 atLeastOneListSucceeded = true;
             }
