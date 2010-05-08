@@ -172,6 +172,29 @@ public class ConnectivityCheckClient
     }
 
     /**
+     * Removes the corresponding local candidate from the list of candidates
+     * that we are waiting on in order to complete the harvest.
+     *
+     * @param transactionID the ID of the transaction that has just ended.
+     */
+/*
+    private void processFailure(TransactionID transactionID)
+    {
+        synchronized (resolveMap)
+        {
+            Candidate localCand = resolveMap.remove(transactionID);
+
+            //if this was the last candidate, we are done with the STUN
+            //resolution and need to notify the waiters.
+            if(resolveMap.isEmpty())
+                resolveMap.notify();
+
+            logger.finest("a tran expired tranid=" + transactionID);
+            logger.finest("localAddr=" + localCand);
+        }
+    }
+*/
+    /**
      * The thread that actually sends the checks for a particular check list
      * in the pace defined in RFC 5245.
      */
