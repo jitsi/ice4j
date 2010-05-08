@@ -543,6 +543,8 @@ public class StunStack
             catch (Throwable t)
             {
                 Response error;
+t.printStackTrace();
+                logger.log(Level.FINER, "Received an invalid request.", t);
 
                 if(t instanceof IllegalArgumentException)
                 {

@@ -301,6 +301,20 @@ public abstract class Message
     }
 
     /**
+     * Returns <tt>true</tt> if the this <tt>Message</tt> contains an attribute
+     * with the specified type or <tt>false</tt> otherwise.
+     *
+     * @param attributeType the type whose presence we need to determine.
+     *
+     * @return <tt>true</tt> if the this <tt>Message</tt> contains an attribute
+     * with the specified type or <tt>false</tt> otherwise.
+     */
+    public boolean contains(char attributeType)
+    {
+        return attributes.containsKey(new Character(attributeType));
+    }
+
+    /**
      * Returns the attribute with the specified type or null if no such
      * attribute exists.
      *
