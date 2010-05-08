@@ -105,7 +105,7 @@ public class Ice
             {
                 System.out.println("Total execution time: "
                                 + (processingEndTime - startTime) + "ms");
-                IceMediaStream mediaStream = localAgent.
+                //IceMediaStream mediaStream = localAgent.
                 System.exit(0);
             }
         }

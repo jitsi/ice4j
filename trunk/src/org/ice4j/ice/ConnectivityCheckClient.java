@@ -4,7 +4,7 @@
  *
  * Distributable under LGPL license. See terms of license at gnu.org.
  */
-package org.ice4j.ice.checks;
+package org.ice4j.ice;
 
 import java.net.*;
 import java.util.*;
