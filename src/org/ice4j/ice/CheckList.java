@@ -278,21 +278,37 @@ public class CheckList
     /**
      * Removes from this <tt>CheckList</tt> and its associated triggered check
      * queue all {@link CandidatePair}s that are in the <tt>Waiting</tt> and
-     * <tt>Frozen</tt> states and that belong to the specified
-     * <tt>component</tt>. Typically this will happen upon confirmation of the
-     * nomination of one pair in that component.
+     * <tt>Frozen</tt> states and that belong to the same {@link Component} as
+     * <tt>nominatedPair</tt>. Typically this will happen upon confirmation of
+     * the nomination of one pair in that component. The procedure implemented
+     * here represents one of the cases specified in RFC 5245, Section 8.1.2:
+     * <p>
+     * The agent MUST remove all Waiting and Frozen pairs in the check
+     * list and triggered check queue for the same component as the
+     * nominated pairs for that media stream.
+     * </p><p>
+     * If an In-Progress pair in the check list is for the same component as a
+     * nominated pair, the agent SHOULD cease retransmissions for its check
+     * if its pair priority is lower than the lowest-priority nominated pair
+     * for that component.
+     * </p>
      *
-     * @param cmp the {@link Component} whose pairs we want removed.
+     * @param nominatedPair the {@link CandidatePair} whose nomination we need
+     * to handle.
      */
-    public synchronized void removeNonStartedPairsForComponent(Component cmp)
+    public synchronized void removeNonCompledPairsForComponent(
+                                                CandidatePair nominatedPair)
     {
+        Component cmp = nominatedPair.getParentComponent();
         Iterator<CandidatePair> pairsIter = iterator();
         while(pairsIter.hasNext())
         {
             CandidatePair pair = pairsIter.next();
             if (pair.getParentComponent() == cmp
-                && pair.getState() == CandidatePairState.WAITING
-                && pair.getState() == CandidatePairState.FROZEN)
+                 &&( pair.getState() == CandidatePairState.WAITING
+                     || pair.getState() == CandidatePairState.FROZEN
+                     || (pair.getState() == CandidatePairState.IN_PROGRESS
+                         && pair.getPriority() < nominatedPair.getPriority())))
             {
                 pairsIter.remove();
             }
@@ -306,12 +322,15 @@ public class CheckList
             {
                 CandidatePair pair = triggeredPairsIter.next();
                 if (pair.getParentComponent() == cmp
-                        && pair.getState() == CandidatePairState.WAITING
-                        && pair.getState() == CandidatePairState.FROZEN)
-            {
-                triggeredPairsIter.remove();
+                    &&( pair.getState() == CandidatePairState.WAITING
+                        || pair.getState() == CandidatePairState.FROZEN
+                        || (pair.getState() == CandidatePairState.IN_PROGRESS
+                            && pair.getPriority() < nominatedPair
+                                                        .getPriority())))
+                {
+                    triggeredPairsIter.remove();
+                }
             }
-        }
         }
     }
 

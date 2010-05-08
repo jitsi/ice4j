@@ -937,14 +937,12 @@ public class Agent
             //The agent MUST remove all Waiting and Frozen pairs in the check
             //list and triggered check queue for the same component as the
             //nominated pairs for that media stream.
-            checkList.removeNonStartedPairsForComponent(parentComponent);
+            checkList.removeNonCompledPairsForComponent(parentComponent);
             /*
-            *
-
-         *  If an In-Progress pair in the check list is for the same
-            component as a nominated pair, the agent SHOULD cease
-            retransmissions for its check if its pair priority is lower
-            than the lowest-priority nominated pair for that component.*/
+            //If an In-Progress pair in the check list is for the same
+            //component as a nominated pair, the agent SHOULD cease
+            //retransmissions for its check if its pair priority is lower
+            //than the lowest-priority nominated pair for that component.*/
         }
 
 /*
