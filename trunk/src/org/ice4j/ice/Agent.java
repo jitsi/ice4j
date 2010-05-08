@@ -674,7 +674,7 @@ public class Agent
      * @return the number of {@link CheckList}s that are currently active.
      *
      */
-    public int getActiveCheckListCount()
+    protected int getActiveCheckListCount()
     {
         synchronized(mediaStreams)
         {
@@ -885,11 +885,11 @@ public class Agent
      * @param useCandidate indicates whether the incoming check {@link Request}
      * contained the USE-CANDIDATE ICE attribute.
      */
-    public void incomingCheckReceived(TransportAddress remoteAddress,
-                                      TransportAddress localAddress,
-                                      long             priority,
-                                      String           remoteUFrag,
-                                      boolean          useCandidate)
+    protected void incomingCheckReceived(TransportAddress remoteAddress,
+                                         TransportAddress localAddress,
+                                         long             priority,
+                                         String           remoteUFrag,
+                                         boolean          useCandidate)
     {
         LocalCandidate localCandidate = findLocalCandidate(localAddress);
         Component parentComponent = localCandidate.getParentComponent();
@@ -1011,7 +1011,7 @@ public class Agent
      *
      * @param validPair the {@link CandidatePair} we'd like to validate.
      */
-    public void validatePair(CandidatePair validPair)
+    protected void validatePair(CandidatePair validPair)
     {
         IceMediaStream parentStream
             = validPair.getParentComponent().getParentStream();
@@ -1032,7 +1032,7 @@ System.out.println("valid pair was nominated " + validPair);
      * @param pairToNominate the {@link CandidatePair} whose nomination has
      * just been confirmed.
      */
-    public void nominationConfirmed(CandidatePair pairToNominate)
+    protected void nominationConfirmed(CandidatePair pairToNominate)
     {
         pairToNominate.nominate();
 System.out.println("pair nomination confirmed");
@@ -1061,7 +1061,7 @@ System.out.println("checklist " + checkList.getName() + " became " + checkList.g
      * or a timeout event the method goes through all check lists and tries
      * to assess the state of ICE processing.
      */
-    public void checkListStatesUpdated()
+    protected void checkListStatesUpdated()
     {
         boolean allListsEnded = true;
         boolean atLeastOneListSucceeded = false;
@@ -1151,7 +1151,7 @@ System.out.println("checklist " + checkList.getName() + " became " + checkList.g
      * a pre-configured value if the application has set one.
      * <p>
      */
-    public long calculateTa()
+    protected long calculateTa()
     {
         //if application specified a value - use it. other wise return ....
         // eeeer ... a "dynamically" calculated one ;)
@@ -1194,7 +1194,7 @@ System.out.println("checklist " + checkList.getName() + " became " + checkList.g
      * @return the value of the retransmission timer to use in STUN
      * transactions, while harvesting addresses.
      */
-    public long calculateStunHarvestRTO()
+    protected long calculateStunHarvestRTO()
     {
         /* RFC 5245 says:
          * RTO = MAX (100ms, Ta * (number of pairs))
@@ -1217,7 +1217,7 @@ System.out.println("checklist " + checkList.getName() + " became " + checkList.g
      * @return the value of the retransmission timer to use in STUN connectivity
      * check transactions..
      */
-    public long calculateStunConnCheckRTO()
+    protected long calculateStunConnCheckRTO()
     {
         /* RFC 5245 says:
          * For connectivity checks, RTO SHOULD be configurable and SHOULD have

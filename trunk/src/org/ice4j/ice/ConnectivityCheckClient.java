@@ -12,14 +12,16 @@ import java.util.logging.*;
 
 import org.ice4j.*;
 import org.ice4j.attribute.*;
-import org.ice4j.ice.*;
 import org.ice4j.message.*;
 import org.ice4j.stack.*;
 
 /**
+ * The class that will be generating our outgoing connectivity checks and that
+ * will be handling their responses or lack thereof.
+ *
  * @author Emil Ivov
  */
-public class ConnectivityCheckClient
+class ConnectivityCheckClient
     implements ResponseCollector
 {
     /**
@@ -43,12 +45,6 @@ public class ConnectivityCheckClient
      * The {@link PaceMaker}s that are currently running checks in this client.
      */
     private final List<PaceMaker> paceMakers = new LinkedList<PaceMaker>();
-
-    /**
-     * Contains the system time at the moment we last started a {@link
-     * PaceMaker}.
-     */
-    private long lastPaceMakerStarted = 0;
 
     /**
      * Creates a new <tt>ConnectivityCheckHandler</tt> setting
@@ -678,29 +674,5 @@ logger.fine("checklist " + checkList.getName() + " ran out of checks");
 
             parentClient.paceMakers.remove(this);
         }
-    }
-
-    /**
-     * Returns the {@link PaceMaker} responsible for running checks for the
-     * specified {@link CheckList}
-     *
-     * @param list the {@link CheckList} whose {@link PaceMaker} we are trying
-     * to find.
-     *
-     * @return the {@link PaceMaker} responsible for running checks for the
-     * specified {@link CheckList} or <tt>null</tt> if we couldn't find one.
-     */
-    private PaceMaker findPaceMaker(CheckList list)
-    {
-        synchronized(paceMakers)
-        {
-            for(PaceMaker paceMaker : paceMakers)
-            {
-                if (paceMaker.checkList == list)
-                    return paceMaker;
-            }
-        }
-
-        return null;
     }
 }

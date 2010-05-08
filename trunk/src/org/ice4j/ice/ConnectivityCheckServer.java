@@ -10,14 +10,16 @@ import java.util.logging.*;
 
 import org.ice4j.*;
 import org.ice4j.attribute.*;
-import org.ice4j.ice.*;
 import org.ice4j.message.*;
 import org.ice4j.security.*;
 import org.ice4j.stack.*;
 /**
+ * The class that would be handling and responding to incoming connectivity
+ * checks.
+ *
  * @author Emil Ivov
  */
-public class ConnectivityCheckServer
+class ConnectivityCheckServer
     implements RequestListener,
                CredentialsAuthority
 {
