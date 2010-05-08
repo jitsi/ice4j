@@ -347,6 +347,23 @@ public class ConnectivityCheckClient
             if (wasFrozen)
                 startChecks(checkList);
         }
+
+        //If the agent was a controlling agent, and it had included a USE-
+        //CANDIDATE attribute in the Binding request, the valid pair generated
+        //from that check has its nominated flag set to true.
+        if(parentAgent.isControlling()
+                      && request.contains(Attribute.USE_CANDIDATE))
+        {
+            parentAgent.nominatePair( validPair );
+        }
+        //If the agent is the controlled agent, the response may be the result
+        //of a triggered check that was sent in response to a request that
+        //itself had the USE-CANDIDATE attribute.  This case is described in
+        //Section 7.2.1.5, and may now result in setting the nominated flag for
+        //the pair learned from the original request.
+        else if(checkedPair.useCandidateReceived())
+            parentAgent.nominatePair( checkedPair );
+
     }
 
     /**

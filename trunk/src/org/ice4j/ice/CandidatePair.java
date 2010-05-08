@@ -40,6 +40,12 @@ public class CandidatePair
     private long priority;
 
     /**
+     * A flag indicating whether we have seen an incoming check request that
+     * contained the USE-CANDIDATE attribute for this pair.
+     */
+    private boolean useCandidate = false;
+
+    /**
      * A <tt>Comparator</tt> using the <tt>compareTo</tt> method of the
      * <tt>CandidatePair</tt>.
      */
@@ -475,5 +481,25 @@ public class CandidatePair
     public TransactionID getConnectivityCheckTransaction()
     {
         return connCheckTranID;
+    }
+
+    /**
+     * Raises the <tt>useCandidate</tt> flag for this pair.
+     */
+    public void setUseCandidateReceived()
+    {
+        this.useCandidate = true;
+    }
+
+    /**
+     * Returns <tt>true</tt> if someone has previously raised this pair's
+     * <tt>useCandidate</tt> flag and <tt>false</tt> otherwise.
+     *
+     * @return <tt>true</tt> if someone has previously raised this pair's
+     * <tt>useCandidate</tt> flag and <tt>false</tt> otherwise.
+     */
+    public boolean useCandidateReceived()
+    {
+        return useCandidate;
     }
 }
