@@ -84,7 +84,14 @@ public class Agent
     /**
      * Our internal nominator implementing several nomination strategies.
      */
-    private final DefaultNominator nominator = new DefaultNominator(this);
+    private final DefaultNominator nominator;
+
+    /**
+     * The name of the {@link PropertyChangeEvent} that we use to deliver
+     * events on changes in the state of ICE processing in this agent.
+     */
+    public static final String PROPERTY_ICE_PROCESSING_STATE
+                                            = "IceProcessingState";
 
     /**
      * the value of <tt>Ta</tt> as specified by the application or <tt>-1</tt>
@@ -197,6 +204,9 @@ public class Agent
 
         //add the FINGERPRINT attribute to all messages.
         System.setProperty(StackProperties.ALWAYS_SIGN, "true");
+
+
+        nominator = new DefaultNominator(this);
     }
 
     /**
@@ -322,6 +332,9 @@ public class Agent
         synchronized(startLock)
         {
             initCheckLists();
+
+            //change state before we actually send checks so that we don't
+            //miss responses and hence the possibility to nominate a pair.
             setState(IceProcessingState.RUNNING);
             connCheckClient.startChecks();
         }
@@ -409,7 +422,7 @@ public class Agent
         }
 
         PropertyChangeEvent evt = new PropertyChangeEvent(
-                        this, "IceProcessingState", oldState, newState);
+                    this, PROPERTY_ICE_PROCESSING_STATE, oldState, newState);
 
         for(PropertyChangeListener l : listenersCopy)
         {
@@ -1027,8 +1040,8 @@ public class Agent
     /**
      * Raises <tt>pair</tt>'s nomination flag and schedules a triggered check.
      * Applications only need to use this method if they disable this
-     * <tt>Agent</tt>'s internal nomination and implement their own nomination
-     * strategy.
+     * <tt>Agent</tt>'s internal nomination and implement their own nominator
+     * and turn off nominations in this agent.
      *
      * @param pair the {@link CandidatePair} that we'd like to nominate and that
      * we'd like to schedule a triggered check for.
@@ -1036,7 +1049,7 @@ public class Agent
      * @throws IllegalStateException if this <tt>Agent</tt> is not a controlling
      * agent and can therefore not nominate pairs.
      *
-     * @see Agent#setAutoNominationEnabled(boolean)
+     * @see Agent#setNominationStrategy(NominationStrategy)
      */
     public void nominate(CandidatePair pair)
         throws IllegalStateException
@@ -1060,9 +1073,16 @@ public class Agent
         }
     }
 
-    public void setNominationStrategy()
+    /**
+     * Specifies the {@link NominationStrategy} that we should use in order to
+     * decide if and when we should nominate valid pairs.
+     *
+     * @param strategy the strategy that we'd like to use for nominating
+     * valid {@link CandidatePair}s.
+     */
+    public void setNominationStrategy(NominationStrategy strategy)
     {
-
+        this.nominator.setStrategy(strategy);
     }
 
     /**
