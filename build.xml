@@ -153,9 +153,22 @@
         </java>
     </target>
 
-    <target name="run-sample">
+    <!-- runs our sample distributed application -->
+    <target name="run-dist">
         <java fork="true"
-            classname="test.Ice"
+            classname="test.IceDistributed"
+            classpathref="project.class.path">
+
+            <!-- Tell java.util.logging about our logging preferences -->
+            <sysproperty key="java.util.logging.config.file"
+                value="lib/logging.properties"/>
+        </java>
+    </target>
+
+    <!-- runs our sample lite application -->
+    <target name="run-lite">
+        <java fork="true"
+            classname="test.IceLite"
             classpathref="project.class.path">
 
             <!-- Tell java.util.logging about our logging preferences -->
