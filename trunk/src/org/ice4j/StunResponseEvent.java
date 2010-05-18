@@ -37,13 +37,17 @@ public class StunResponseEvent
      * @param rawMessage the crude message we got off the wire.
      * @param response the STUN {@link Response} that we've just received.
      * @param request  the message itself
+     * @param transactionID a reference to the exact {@link TransactionID}
+     * instance that represents the corresponding client transaction.
      */
-    public StunResponseEvent(RawMessage rawMessage,
-                             Response   response,
-                             Request    request)
+    public StunResponseEvent(RawMessage    rawMessage,
+                             Response      response,
+                             Request       request,
+                             TransactionID transactionID)
     {
         super(rawMessage, response);
         this.request = request;
+        super.setTransactionID(transactionID);
     }
 
     /**

@@ -263,6 +263,7 @@ class ConnectivityCheckClient
                 checkList.setState(CheckListState.FAILED);
             }
 
+
             //For each frozen check list, the agent groups together all of the
             //pairs with the same foundation, and for each group, sets the
             //state of the pair with the lowest component ID to Waiting.  If
@@ -497,7 +498,7 @@ class ConnectivityCheckClient
         CandidatePair pair = ((CandidatePair)evt.getTransactionID()
                         .getApplicationData());
 
-        logger.finest("Received error code " + errorCode.getErrorCode());
+        logger.finer("Received error code " + (int)errorCode.getErrorCode());
 
         //RESOLVE ROLE_CONFLICTS
         if(errorCode.getErrorCode() == ErrorCodeAttribute.ROLE_CONFLICT)

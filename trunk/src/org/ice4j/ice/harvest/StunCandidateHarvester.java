@@ -79,7 +79,7 @@ public class StunCandidateHarvester
 
         //these should be configurable.
         System.setProperty(StackProperties.MAX_CTRAN_RETRANS_TIMER, "400");
-        System.setProperty(StackProperties.MAX_CTRAN_RETRANSMISSIONS, "2");
+        System.setProperty(StackProperties.MAX_CTRAN_RETRANSMISSIONS, "3");
     }
 
     /**

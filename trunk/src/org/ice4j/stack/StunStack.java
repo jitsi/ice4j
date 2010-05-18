@@ -8,8 +8,11 @@ package org.ice4j.stack;
 
 import java.io.*;
 import java.net.*;
+import java.security.*;
 import java.util.*;
 import java.util.logging.*;
+
+import javax.crypto.*;
 
 import org.ice4j.*;
 import org.ice4j.attribute.*;
@@ -84,7 +87,21 @@ public class StunStack
     public static synchronized StunStack getInstance()
     {
         if (stackInstance == null)
+        {
+            //the Mac instantiation used in MessageIntegrityAttribute could
+            //take several hundred milliseconds so we don't want it instantiated
+            //only after we get a response because the delay may cause the
+            //transaction to fail.
+            try
+            {
+                Mac.getInstance(MessageIntegrityAttribute.HMAC_SHA1_ALGORITHM);
+            }
+            catch (NoSuchAlgorithmException e)
+            {
+                e.printStackTrace();
+            }
             stackInstance = new StunStack();
+        }
 
         return stackInstance;
     }
@@ -478,7 +495,7 @@ public class StunStack
         Message msg = event.getMessage();
 
         if(logger.isLoggable(Level.FINEST))
-            logger.finest("Received a message on NetAP"
+            logger.finest("Received a message on "
                         + event.getLocalAddress()
                         + " of type:"
                         + (int)msg.getMessageType());
@@ -517,7 +534,7 @@ public class StunStack
             }
             else
             {
-                logger.finest("exising transaction not found");
+                logger.finest("existing transaction not found");
                 sTran = new StunServerTransaction(this, serverTid,
                              event.getLocalAddress(), event.getRemoteAddress());
 
@@ -532,7 +549,8 @@ public class StunStack
             }
             catch(Exception exc)
             {
-                //validation failed. get lost.
+                //validation failed. log get lost.
+                logger.log(Level.FINE, "Failed to validate msg: " + event, exc);
                 return;
             }
 
@@ -543,7 +561,7 @@ public class StunStack
             catch (Throwable t)
             {
                 Response error;
-t.printStackTrace();
+
                 logger.log(Level.FINER, "Received an invalid request.", t);
 
                 if(t instanceof IllegalArgumentException)
@@ -808,6 +826,7 @@ t.printStackTrace();
 
         if (logger.isLoggable(Level.FINEST))
             logger.finest("Successfully verified msg integrity");
+
 
         return true;
     }

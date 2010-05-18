@@ -146,7 +146,7 @@ class Connector
                 if (isRunning)
                 {
                     logger.log(Level.WARNING,
-                               "A net access point has gone useless:", ex);
+                               "A connector died:", ex);
 
                     stop();
                     //Something wrong has happened

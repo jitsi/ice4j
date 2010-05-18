@@ -213,42 +213,48 @@ class StunClientTransaction
         retransmissionsThread.setName("ice4j.ClientTransaction");
         nextWaitInterval = originalWaitInterval;
 
-        for (retransmissionCounter = 0;
-             retransmissionCounter < maxRetransmissions;
-             retransmissionCounter ++)
+        synchronized(this)
         {
+            for (retransmissionCounter = 0;
+                 retransmissionCounter < maxRetransmissions;
+                 retransmissionCounter ++)
+            {
+                waitFor(nextWaitInterval);
+
+                //did someone tell us to get lost?
+                if(cancelled)
+                    return;
+
+                if(nextWaitInterval < maxWaitInterval)
+                    nextWaitInterval *= 2;
+
+                try
+                {
+                    sendRequest0();
+                }
+                catch (Exception ex)
+                {
+                    //I wonder whether we should notify anyone that a
+                    //retransmission has failed
+                    logger.log(Level.INFO,
+                               "A client tran retransmission failed", ex);
+                }
+            }
+
+            //before stating that a transaction has timeout-ed we should first
+            //wait for a reception of the response
+            if(nextWaitInterval < maxWaitInterval)
+                    nextWaitInterval *= 2;
+
             waitFor(nextWaitInterval);
 
-            //did someone tell us to get lost?
             if(cancelled)
                 return;
 
-            if(nextWaitInterval < maxWaitInterval)
-                nextWaitInterval *= 2;
-
-            try
-            {
-                sendRequest0();
-            }
-            catch (Exception ex)
-            {
-                //I wonder whether we should notify anyone that a retransmission
-                //has failed
-                logger.log(Level.WARNING,
-                           "A client tran retransmission failed", ex);
-            }
+            stackCallback.removeClientTransaction(this);
+            responseCollector.processTimeout( new StunTimeoutEvent(
+                            this.request, getLocalAddress(), transactionID));
         }
-
-        //before stating that a transaction has timeout-ed we should first wait
-        //for a reception of the response
-        if(nextWaitInterval < maxWaitInterval)
-                nextWaitInterval *= 2;
-
-        waitFor(nextWaitInterval);
-
-        responseCollector.processTimeout( new StunTimeoutEvent(
-                        this.request, getLocalAddress(), transactionID));
-        stackCallback.removeClientTransaction(this);
     }
 
     /**
@@ -306,7 +312,7 @@ class StunClientTransaction
      *
      * @param millis the number of milliseconds to wait for.
      */
-    synchronized void waitFor(long millis)
+    void waitFor(long millis)
     {
         try
         {
@@ -349,16 +355,14 @@ class StunClientTransaction
      *
      * @param evt the event that contains the newly received message
      */
-    void handleResponse(StunMessageEvent evt)
+    synchronized void handleResponse(StunMessageEvent evt)
     {
-        String keepTran = System.getProperty(
-                        StackProperties.KEEP_CRANS_AFTER_A_RESPONSE);
-
-        if( keepTran == null || !keepTran.trim().equalsIgnoreCase("true"))
+        if( !Boolean.getBoolean(StackProperties.KEEP_CRANS_AFTER_A_RESPONSE) )
             this.cancel();
 
         this.responseCollector.processResponse(new StunResponseEvent(
-            evt.getRawMessage(), (Response)evt.getMessage(), this.request));
+            evt.getRawMessage(), (Response)evt.getMessage(),
+            this.request, getTransactionID()));
     }
 
     /**
