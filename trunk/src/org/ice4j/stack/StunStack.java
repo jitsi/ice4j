@@ -562,7 +562,7 @@ public class StunStack
             {
                 Response error;
 
-                logger.log(Level.FINER, "Received an invalid request.", t);
+                logger.log(Level.INFO, "Received an invalid request.", t);
 
                 if(t instanceof IllegalArgumentException)
                 {
