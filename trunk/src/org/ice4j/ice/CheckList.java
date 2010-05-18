@@ -54,6 +54,12 @@ public class CheckList
                                 = new LinkedList<PropertyChangeListener>();
 
     /**
+     * The name of the {@link PropertyChangeEvent} that we use to deliver
+     * changes on the state of this check list.
+     */
+    public static final String PROPERTY_CHECK_LIST_STATE = "CheckListState";
+
+    /**
      * Creates a check list with the specified name.
      *
      * @param parentStream a reference to the parent {@link IceMediaStream}
@@ -449,7 +455,7 @@ public class CheckList
         }
 
         PropertyChangeEvent evt = new PropertyChangeEvent(
-                        this, "CheckListState", oldState, newState);
+                        this, PROPERTY_CHECK_LIST_STATE, oldState, newState);
 
         for(PropertyChangeListener l : listenersCopy)
         {

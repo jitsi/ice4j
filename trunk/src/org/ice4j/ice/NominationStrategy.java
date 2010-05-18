@@ -22,6 +22,12 @@ import org.ice4j.*;
 public enum NominationStrategy
 {
     /**
+     * Indicates that ice4j's nominator should nominate valid pairs and that
+     * the application will be handling this.
+     */
+    NONE("None"),
+
+    /**
      * The strategy consists in nominating the first candidate pair that's
      * confirmed as valid.
      */

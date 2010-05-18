@@ -719,7 +719,7 @@ public class IceMediaStream
         }
 
         PropertyChangeEvent evt = new PropertyChangeEvent(
-                        this, "CheckListState", oldValue, newValue);
+                        this, PROPERTY_PAIR_VALIDATED, oldValue, newValue);
 
         for(PropertyChangeListener l : listenersCopy)
         {
