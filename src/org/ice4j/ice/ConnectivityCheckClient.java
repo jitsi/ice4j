@@ -372,13 +372,13 @@ class ConnectivityCheckClient
                         validRemoteCandidate);
         }
 
-        if(! validPair.isValid())
-            parentAgent.validatePair(validPair);
-
         //The agent sets the state of the pair that *generated* the check to
         //Succeeded.  Note that, the pair which *generated* the check may be
         //different than the valid pair constructed above
         checkedPair.setStateSucceeded();
+
+        if(! validPair.isValid())
+            parentAgent.validatePair(validPair);
 
         //The agent changes the states for all other Frozen pairs for the
         //same media stream and same foundation to Waiting.
@@ -406,7 +406,8 @@ class ConnectivityCheckClient
             {
                 for(CandidatePair pair : checkList)
                 {
-                    if (parentStream.validListContainsFoundation(pair.getFoundation())
+                    if (parentStream.validListContainsFoundation(
+                                                    pair.getFoundation())
                         && pair.getState() == CandidatePairState.FROZEN)
                     {
                         pair.setStateWaiting();

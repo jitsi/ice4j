@@ -77,6 +77,18 @@ public class IceMediaStream
     public static final String PROPERTY_PAIR_VALIDATED = "PairValidated";
 
     /**
+     * The property name that we use when delivering events notifying listeners
+     * that a pair has changed states..
+     */
+    public static final String PROPERTY_PAIR_STATE_CHANGED = "PairStateChanged";
+
+    /**
+     * The property name that we use when delivering events notifying listeners
+     * of newly nominated pairs.
+     */
+    public static final String PROPERTY_PAIR_NOMINATED = "PairNominated";
+
+    /**
      * Contains {@link PropertyChangeListener}s registered with this {@link
      * Agent} and following the various events it may be generating.
      */
@@ -173,7 +185,7 @@ public class IceMediaStream
      * @return  the <tt>Component</tt> with the specified <tt>id</tt> or
      * <tt>null</tt> if no such component exists in this stream.
      */
-    public Component getComponnet(int id)
+    public Component getComponent(int id)
     {
         synchronized(components)
         {
@@ -570,12 +582,11 @@ public class IceMediaStream
     {
         synchronized (validList)
         {
-            pair.validate();
             if(!validList.contains(pair))
                 validList.add(pair);
         }
 
-        fireStateChange(PROPERTY_PAIR_VALIDATED, pair, pair);
+        pair.validate();
     }
 
     /**
@@ -671,11 +682,14 @@ public class IceMediaStream
     }
 
     /**
-     * Adds <tt>l</tt> to the list of listeners registered for property changes.
+     * Adds <tt>l</tt> to the list of listeners registered for property changes
+     * if {@link CandidatePair}s. We add such listeners in the stream, rather
+     * than having them in the candidate pair itself, because we don't want all
+     * pairs to keep lists of references to the same listeners.
      *
      * @param l the listener to register.
      */
-    public void addStreamChangeListener(PropertyChangeListener l)
+    public void addPairChangeListener(PropertyChangeListener l)
     {
         synchronized(streamListeners)
         {
@@ -690,7 +704,7 @@ public class IceMediaStream
      *
      * @param l the listener to remove.
      */
-    public void removeStateChangeListener(PropertyChangeListener l)
+    public void removePairStateChangeListener(PropertyChangeListener l)
     {
         synchronized(streamListeners)
         {
@@ -702,13 +716,15 @@ public class IceMediaStream
      * Creates a new {@link PropertyChangeEvent} and delivers it to all
      * currently registered state listeners.
      *
-     * @param propertyName the name of the event we'd like to fire.
+     * @param source the {@link CandidatePair} whose property has just changed.
+     * @param propertyName the name of the property that changed.
      * @param oldValue the old value of the property that changed.
      * @param newValue the new value of the property that changed.
      */
-    private void fireStateChange(String propertyName,
-                                 Object oldValue,
-                                 Object newValue)
+    protected void firePairPropertyChange(CandidatePair source,
+                                       String        propertyName,
+                                       Object        oldValue,
+                                       Object        newValue)
     {
         List<PropertyChangeListener> listenersCopy;
 
@@ -719,7 +735,7 @@ public class IceMediaStream
         }
 
         PropertyChangeEvent evt = new PropertyChangeEvent(
-                        this, PROPERTY_PAIR_VALIDATED, oldValue, newValue);
+                        source, PROPERTY_PAIR_VALIDATED, oldValue, newValue);
 
         for(PropertyChangeListener l : listenersCopy)
         {

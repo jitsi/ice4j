@@ -186,7 +186,7 @@ public class CheckList
      * @return <tt>true</tt> if this list is active and <tt>false</tt>
      * otherwise.
      */
-    protected synchronized boolean isActive()
+    public synchronized boolean isActive()
     {
         for (CandidatePair pair : this)
         {
@@ -197,6 +197,25 @@ public class CheckList
     }
 
     /**
+     * Determines whether all checks in this <tt>CheckList</tt> have ended one
+     * way or another.
+     *
+     * @return <tt>true</tt> if all checks for pairs in this list have either
+     * succeeded or failed (but non are are currently waiting or in progress)
+     * or <tt>false</tt> otherwise..
+     */
+    public synchronized boolean allChecksCompleted()
+    {
+        for (CandidatePair pair : this)
+        {
+            if (pair.getState() != CandidatePairState.SUCCEEDED
+                && pair.getState() != CandidatePairState.FAILED)
+                return false;
+        }
+        return true;
+    }
+
+    /**
      * Determines whether this <tt>CheckList</tt> can be considered frozen.
      * RFC 5245 says: a check list with all pairs Frozen is called a frozen
      * check list.
@@ -204,7 +223,7 @@ public class CheckList
      * @return <tt>true</tt> if all pairs in this list are frozen and
      * <tt>false</tt> otherwise.
      */
-    protected synchronized boolean isFrozen()
+    public synchronized boolean isFrozen()
     {
         for (CandidatePair pair : this)
         {
@@ -461,5 +480,17 @@ public class CheckList
         {
             l.propertyChange(evt);
         }
+    }
+
+    /**
+     * Returns a reference to the {@link IceMediaStream} that created and that
+     * maintains this check list.
+     *
+     * @return a reference to the {@link IceMediaStream} that this list belongs
+     * to.
+     */
+    public IceMediaStream getParentStream()
+    {
+        return parentStream;
     }
 }

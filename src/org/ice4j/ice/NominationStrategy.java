@@ -6,7 +6,6 @@
  */
 package org.ice4j.ice;
 
-import org.ice4j.*;
 
 /**
  * Contains the nomination strategies currently supported by this
@@ -35,10 +34,7 @@ public enum NominationStrategy
 
     /**
      * The strategy consists in nominating the highest priority valid pair once
-     * all checks in a list have completed, or after the nomination timer has
-     * fired for that check list, whichever happens first. The value of the
-     * nomination timer (in ms) is defined by the {@link StackProperties#
-     * NOMINATION_TIMER} property.
+     * all checks in a list have completed.
      */
     NOMINATE_HIGHEST_PRIO("NominateHighestPriority"),
 
