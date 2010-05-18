@@ -114,6 +114,16 @@ public class StackProperties
                                     = "org.ice4j.TERMINATION_DELAY";
 
     /**
+     * The maximum number of milliseconds that we should wait for a check list
+     * to complete before nominating one of its valid pairs (unless there are
+     * none in which case we may have to wait until one appears or the whole
+     * list fails). Default value is <tt>-1</tt> which causes the nominator
+     * to wait until the check list completes or fails.
+     */
+    public static final String NOMINATION_TIMER
+                                    = "org.ice4j.NOMINATION_TIMER";
+
+    /**
      * Returns the String value of the specified property (minus all
      * encompassing whitespaces)and null in case no property value was mapped
      * against the specified propertyName, or in case the returned property
