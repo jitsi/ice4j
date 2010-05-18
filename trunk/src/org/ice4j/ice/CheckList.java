@@ -6,6 +6,7 @@
  */
 package org.ice4j.ice;
 
+import java.beans.*;
 import java.util.*;
 
 /**
@@ -41,18 +42,26 @@ public class CheckList
                                           = new LinkedList<CandidatePair>();
 
     /**
-     * A name for this check list which we use for debugging purposes
+     * A reference to the {@link IceMediaStream} that we belong to.
      */
-    private final String name;
+    private final IceMediaStream parentStream;
+
+    /**
+     * Contains {@link PropertyChangeListener}s registered with this {@link
+     * Agent} and following its changes of state.
+     */
+    private List<PropertyChangeListener> stateListeners
+                                = new LinkedList<PropertyChangeListener>();
 
     /**
      * Creates a check list with the specified name.
      *
-     * @param name the name of the check list.
+     * @param parentStream a reference to the parent {@link IceMediaStream}
+     * that created us and that we belong to.
      */
-    protected CheckList(String name)
+    protected CheckList(IceMediaStream parentStream)
     {
-        this.name = name;
+        this.parentStream = parentStream;
     }
 
     /**
@@ -68,11 +77,14 @@ public class CheckList
     /**
      * Sets the state of this list.
      *
-     * @param state the <tt>CheckListState</tt> for this list.
+     * @param newState the <tt>CheckListState</tt> for this list.
      */
-    protected void setState(CheckListState state)
+    protected void setState(CheckListState newState)
     {
-        this.state = state;
+        CheckListState oldState = this.state;
+        this.state = newState;
+
+        fireStateChange(oldState, newState);
     }
 
     /**
@@ -362,7 +374,7 @@ public class CheckList
      */
     public String getName()
     {
-        return name;
+        return parentStream.getName();
     }
 
     /**
@@ -387,5 +399,61 @@ public class CheckList
         }
 
         return false;
+    }
+
+    /**
+     * Adds <tt>l</tt> to the list of listeners tracking changes of the
+     * {@link CheckListState} of this <tt>CheckList</tt>
+     *
+     * @param l the listener to register.
+     */
+    public void addStateChangeListener(PropertyChangeListener l)
+    {
+        synchronized(stateListeners)
+        {
+            if(!stateListeners.contains(l))
+                this.stateListeners.add(l);
+        }
+    }
+
+    /**
+     * Removes <tt>l</tt> from the list of listeners tracking changes of the
+     * {@link CheckListState} of this <tt>CheckList</tt>
+     *
+     * @param l the listener to remove.
+     */
+    public void removeStateChangeListener(PropertyChangeListener l)
+    {
+        synchronized(stateListeners)
+        {
+            this.stateListeners.remove(l);
+        }
+    }
+
+    /**
+     * Creates a new {@link PropertyChangeEvent} and delivers it to all
+     * currently registered state listeners.
+     *
+     * @param oldState the {@link CheckListState} we had before the change
+     * @param newState the {@link CheckListState} we had after the change
+     */
+    private void fireStateChange(CheckListState oldState,
+                                 CheckListState newState)
+    {
+        List<PropertyChangeListener> listenersCopy;
+
+        synchronized(stateListeners)
+        {
+            listenersCopy
+                = new LinkedList<PropertyChangeListener>(stateListeners);
+        }
+
+        PropertyChangeEvent evt = new PropertyChangeEvent(
+                        this, "CheckListState", oldState, newState);
+
+        for(PropertyChangeListener l : listenersCopy)
+        {
+            l.propertyChange(evt);
+        }
     }
 }

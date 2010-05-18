@@ -82,6 +82,11 @@ public class Agent
                                           = new FoundationsRegistry();
 
     /**
+     * Our internal nominator implementing several nomination strategies.
+     */
+    private final DefaultNominator nominator = new DefaultNominator(this);
+
+    /**
      * the value of <tt>Ta</tt> as specified by the application or <tt>-1</tt>
      * if non was specified and we should calculate one ourselves.
      */
@@ -1015,19 +1020,49 @@ public class Agent
     {
         Component parentComponent = validPair.getParentComponent();
         IceMediaStream parentStream = parentComponent.getParentStream();
-        CheckList checkList = parentStream.getCheckList();
 
-        parentStream.addValidPair(validPair);
+        parentStream.addToValidList(validPair);
+    }
+
+    /**
+     * Raises <tt>pair</tt>'s nomination flag and schedules a triggered check.
+     * Applications only need to use this method if they disable this
+     * <tt>Agent</tt>'s internal nomination and implement their own nomination
+     * strategy.
+     *
+     * @param pair the {@link CandidatePair} that we'd like to nominate and that
+     * we'd like to schedule a triggered check for.
+     *
+     * @throws IllegalStateException if this <tt>Agent</tt> is not a controlling
+     * agent and can therefore not nominate pairs.
+     *
+     * @see Agent#setAutoNominationEnabled(boolean)
+     */
+    public void nominate(CandidatePair pair)
+        throws IllegalStateException
+    {
+        if(! isControlling() )
+            throw new IllegalStateException("Only controlling agents can "
+                            +"nominate pairs");
+
+        Component parentComponent = pair.getParentComponent();
+        IceMediaStream parentStream = parentComponent.getParentStream();
+        CheckList checkList = parentStream.getCheckList();
 
         //If the pair is not already nominated and if its parent component
         //does not already contain a nominated pair - nominate it.
-        if(!validPair.isNominated()
+        if(!pair.isNominated()
             && !checkList.containsNomineeForComponent(parentComponent))
         {
-            validPair.nominate();
-            validPair.getParentComponent().getParentStream()
-                .getCheckList().scheduleTriggeredCheck(validPair);
+            pair.nominate();
+            pair.getParentComponent().getParentStream()
+                .getCheckList().scheduleTriggeredCheck(pair);
         }
+    }
+
+    public void setNominationStrategy()
+    {
+
     }
 
     /**
