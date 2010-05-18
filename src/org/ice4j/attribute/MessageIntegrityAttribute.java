@@ -88,7 +88,7 @@ public class MessageIntegrityAttribute
     /**
      * The HMAC-SHA1 algorithm.
      */
-    private static final String HMAC_SHA1_ALGORITHM = "HmacSHA1";
+    public static final String HMAC_SHA1_ALGORITHM = "HmacSHA1";
 
     /**
      * The HMAC-SHA1 algorithm.

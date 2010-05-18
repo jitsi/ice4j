@@ -1178,8 +1178,7 @@ public class Agent
             }
             else
             {
-                setState(IceProcessingState.FAILED);
-
+                terminate(IceProcessingState.FAILED);
             }
         }
     }
@@ -1383,21 +1382,30 @@ public class Agent
                                 +"speed up termination", e);
             }
 
-            parentAgent.terminate();
+            parentAgent.terminate(IceProcessingState.TERMINATED);
         }
     }
 
     /**
      * Prepares everything associated with this {@link Agent} for garbage
      * collection and moves it into the terminated state.
+     *
+     * @param terminationState the state that we'd like processing to terminate
+     * with or in other words {@link IceProcessingState#TERMINATED} or
+     * {@link IceProcessingState#FAILED}
      */
-    private void terminate()
+    private void terminate(IceProcessingState terminationState)
     {
         // free candidates
+        for(IceMediaStream stream : getStreams())
+        {
+            removeStream(stream);
+        }
+
         // stop listening for checks
         connCheckClient.stop();
         connCheckServer.stop();
 
-        setState(IceProcessingState.TERMINATED);
+        setState(terminationState);
     }
 }

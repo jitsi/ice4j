@@ -68,6 +68,9 @@ class ConnectivityCheckServer
     public void processRequest(StunMessageEvent evt)
         throws IllegalArgumentException
     {
+        if(logger.isLoggable(Level.FINER))
+            logger.finer("Received request " + evt);
+
         Request request = (Request)evt.getMessage();
 
         //ignore incoming requests that are not meant for the local user.
@@ -210,7 +213,7 @@ class ConnectivityCheckServer
             //role.
             else
             {
-                logger.finest(
+                logger.finer(
                         "Swithing to controlled because theirTieBreaker="
                         + theirTieBreaker + " and ourTieBreaker="
                         + ourTieBreaker);
@@ -232,7 +235,7 @@ class ConnectivityCheckServer
             //the controlling role.
             if(ourTieBreaker >= theirTieBreaker)
             {
-                logger.finest(
+                logger.finer(
                         "Swithing to controlling because theirTieBreaker="
                         + theirTieBreaker + " and ourTieBreaker="
                         + ourTieBreaker);

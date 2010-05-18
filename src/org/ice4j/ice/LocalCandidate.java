@@ -10,6 +10,7 @@ package org.ice4j.ice;
 import java.net.*;
 
 import org.ice4j.*;
+import org.ice4j.stack.*;
 
 /**
  * <tt>LocalCandidate</tt>s are obtained by an agent for every stream component
@@ -52,6 +53,8 @@ public abstract class LocalCandidate
      */
     protected void free()
     {
+        //remove our socket from the stack.
+        StunStack.getInstance().removeSocket(getTransportAddress());
         getSocket().close();
     }
 
