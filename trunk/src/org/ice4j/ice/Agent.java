@@ -1012,6 +1012,11 @@ public class Agent
                     // received. The agent now sets the nominated flag in the
                     // valid pair to true.
                     nominationConfirmed( triggerPair );
+
+                    //the above maye have caused us to exit, and so we need to
+                    //make the call below in order to make sure that we update
+                    //ICE processing state.
+                    checkListStatesUpdated();
                 }
 
                 return;
@@ -1168,7 +1173,6 @@ public class Agent
                 atLeastOneListSucceeded = true;
             }
         }
-
         //Once the state of each check list is Completed:
         //The agent sets the state of ICE processing overall to Completed.
         if(allListsEnded)

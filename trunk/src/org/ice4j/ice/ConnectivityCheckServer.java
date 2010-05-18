@@ -98,7 +98,7 @@ class ConnectivityCheckServer
             || ( ! parentAgent.isControlling()
                             && request.contains(Attribute.ICE_CONTROLLED)))
         {
-            repairRoleConflict(evt);
+            if (!repairRoleConflict(evt))
             return;
         }
 
@@ -165,16 +165,24 @@ class ConnectivityCheckServer
 
     /**
      * Resolves a role conflicts by either sendinf a <tt>487 Role Conflict</tt>
-     * response or by changing this server's parent agent role.
+     * response or by changing this server's parent agent role. The method
+     * returns <tt>true</tt> if the role conflict is silently resolved and
+     * processing can continue. It returns <tt>false</tt> if we had to reply
+     * with a 487 and processing needs to stop until a repaired request is
+     * received.
      *
      * @param evt the {@link StunMessageEvent} containing the
      * <tt>ICE-CONTROLLING</tt> or <tt>ICE-CONTROLLED</tt> attribute that
      * allowed us to detect the role conflict.
+     *
+     * @return <tt>true</tt> if the role conflict is silently resolved and
+     * processing can continue and <tt>false</tt> otherwise.
      */
-    private void repairRoleConflict(StunMessageEvent evt)
+    private boolean repairRoleConflict(StunMessageEvent evt)
     {
         Message req = evt.getMessage();
         long ourTieBreaker = parentAgent.getTieBreaker();
+
 
         // If the agent is in the controlling role, and the
         // ICE-CONTROLLING attribute is present in the request:
@@ -201,6 +209,8 @@ class ConnectivityCheckServer
                                 evt.getTransactionID().getBytes(),
                                 response, evt.getLocalAddress(),
                                 evt.getRemoteAddress());
+
+                    return false;
                 }
                 catch(Exception exc)
                 {
@@ -218,6 +228,7 @@ class ConnectivityCheckServer
                         + theirTieBreaker + " and ourTieBreaker="
                         + ourTieBreaker);
                 parentAgent.setControlling(false);
+                return true;
             }
         }
         // If the agent is in the controlled role, and the ICE-CONTROLLED
@@ -240,6 +251,7 @@ class ConnectivityCheckServer
                         + theirTieBreaker + " and ourTieBreaker="
                         + ourTieBreaker);
                 parentAgent.setControlling(true);
+                return true;
             }
             // If the agent's tie-breaker is less than the contents of the
             // ICE-CONTROLLED attribute, the agent generates a Binding error
@@ -256,6 +268,8 @@ class ConnectivityCheckServer
                                     evt.getTransactionID().getBytes(),
                                     response, evt.getLocalAddress(),
                                     evt.getRemoteAddress());
+
+                    return false;
                 }
                 catch(Exception exc)
                 {
@@ -264,6 +278,7 @@ class ConnectivityCheckServer
                 }
             }
         }
+        return true; // we don't have a role conflict
     }
 
     /**
