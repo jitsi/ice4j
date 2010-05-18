@@ -54,41 +54,11 @@ public class Ice
 
         SdpUtils.parseSDP(localAgent, sdp);
 
-        System.out.println("Agent:");
-        System.out.println(localAgent);
-    }
+        localAgent.startConnectivityEstablishment();
 
-    /**
-     * Reads an SDP description from the standard input. We expect descriptions
-     * provided to this method to be originating from instances of this
-     * application running on remote computers.
-     *
-     * @return whatever we got on stdin (hopefully an SDP description.
-     *
-     * @throws Throwable if something goes wrong with console reading.
-     */
-    private static String readSDP() throws Throwable
-    {
-        System.out.println("Paste SDP here. Enter an empty line to proceed:");
-        System.out.println("(we don't mind the [java] prefix in SDP intput)");
-        BufferedReader reader
-            = new BufferedReader(new InputStreamReader(System.in));
-
-        StringBuffer buff = new StringBuffer();
-        String line = new String();
-
-        while ( (line = reader.readLine()) != null)
-        {
-            line = line.replace("[java]", "");
-            line = line.trim();
-            if(line.length() == 0)
-                break;
-
-            buff.append(line);
-            buff.append("\r\n");
-        }
-
-        return buff.toString();
+        //Give processing enough time to finish. We'll System.exit() anyway
+        //as soon as localAgent enters a final state.
+        Thread.sleep(60000);
     }
 
     /**
@@ -358,5 +328,38 @@ public class Ice
                         + (endTime - startTime) +" ms");
 
         return stream;
+    }
+
+    /**
+     * Reads an SDP description from the standard input. We expect descriptions
+     * provided to this method to be originating from instances of this
+     * application running on remote computers.
+     *
+     * @return whatever we got on stdin (hopefully an SDP description.
+     *
+     * @throws Throwable if something goes wrong with console reading.
+     */
+    private static String readSDP() throws Throwable
+    {
+        System.out.println("Paste SDP here. Enter an empty line to proceed:");
+        System.out.println("(we don't mind the [java] prefix in SDP intput)");
+        BufferedReader reader
+            = new BufferedReader(new InputStreamReader(System.in));
+
+        StringBuffer buff = new StringBuffer();
+        String line = new String();
+
+        while ( (line = reader.readLine()) != null)
+        {
+            line = line.replace("[java]", "");
+            line = line.trim();
+            if(line.length() == 0)
+                break;
+
+            buff.append(line);
+            buff.append("\r\n");
+        }
+
+        return buff.toString();
     }
 }
