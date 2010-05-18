@@ -225,7 +225,7 @@ class ConnectivityCheckServer
         else if(!parentAgent.isControlling()
                         && req.contains(Attribute.ICE_CONTROLLED))
         {
-            IceControllingAttribute controlled = (IceControllingAttribute)
+            IceControllingAttribute controlled = (IceControlledAttribute)
                 req.getAttribute(Attribute.ICE_CONTROLLED);
 
             long theirTieBreaker = controlled.getTieBreaker();
