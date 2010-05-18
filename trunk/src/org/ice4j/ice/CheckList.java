@@ -350,7 +350,8 @@ public class CheckList
      * @param nominatedPair the {@link CandidatePair} whose nomination we need
      * to handle.
      */
-    protected synchronized void handleNomination(CandidatePair nominatedPair)
+    protected synchronized void handleNominationConfirmed(
+                                                    CandidatePair nominatedPair)
     {
         Component cmp = nominatedPair.getParentComponent();
 

@@ -47,7 +47,7 @@ class ConnectivityCheckServer
      *
      * @param parentAgent the <tt>Agent</tt> that is creating this instance.
      */
-    public ConnectivityCheckServer(Agent                parentAgent)
+    public ConnectivityCheckServer(Agent parentAgent)
     {
         this.parentAgent = parentAgent;
         stunStack.addRequestListener(this);

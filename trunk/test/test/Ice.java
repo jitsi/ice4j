@@ -287,8 +287,8 @@ public class Ice
                         + (endTime - startTime) +" ms");
         startTime = endTime;
         //rtcpComp
-        //agent.createComponent(
-        //        stream, Transport.UDP, rtpPort + 1, rtpPort + 1, rtpPort + 101);
+        agent.createComponent(
+                stream, Transport.UDP, rtpPort + 1, rtpPort + 1, rtpPort + 101);
 
         endTime = System.currentTimeMillis();
         System.out.println("RTCP Component created in "

@@ -1126,12 +1126,18 @@ public class Agent
         CheckList checkList = parentStream.getCheckList();
 
         if( checkList.getState() == CheckListState.RUNNING )
-            checkList.handleNomination(nominatedPair);
+        {
+System.out.println("nomination confirmed for " + checkList.getName());
+            checkList.handleNominationConfirmed(nominatedPair);
+        }
+        else
+System.out.println("ignoring nomination confirmed for " + checkList.getName()
+               + "because checklsitstate=" + checkList.getState() + " && pstreamcompleted=" + parentStream.allComponentsAreNominated());
 
         //Once there is at least one nominated pair in the valid list for
         //every component of the media stream and the state of the
         //check list is Running
-        if(parentStream.allComponentsAreNominated()
+        if(parentStream.allComponentsHaveSelected()
            && checkList.getState() == CheckListState.RUNNING)
         {
             //The agent MUST change the state of processing for its check

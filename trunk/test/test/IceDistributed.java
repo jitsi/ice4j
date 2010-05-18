@@ -34,8 +34,6 @@ public class IceDistributed
      */
     public static void main(String[] args) throws Throwable
     {
-        startTime = System.currentTimeMillis();
-
         Agent localAgent = createAgent(2020);
         localAgent.setNominationStrategy(
                         NominationStrategy.NOMINATE_HIGHEST_PRIO);
@@ -56,6 +54,7 @@ public class IceDistributed
 
         String sdp = readSDP();
 
+        startTime = System.currentTimeMillis();
         SdpUtils.parseSDP(localAgent, sdp);
 
         localAgent.startConnectivityEstablishment();
