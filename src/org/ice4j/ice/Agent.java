@@ -1127,12 +1127,8 @@ public class Agent
 
         if( checkList.getState() == CheckListState.RUNNING )
         {
-System.out.println("nomination confirmed for " + checkList.getName());
             checkList.handleNominationConfirmed(nominatedPair);
         }
-        else
-System.out.println("ignoring nomination confirmed for " + checkList.getName()
-               + "because checklsitstate=" + checkList.getState() + " && pstreamcompleted=" + parentStream.allComponentsAreNominated());
 
         //Once there is at least one nominated pair in the valid list for
         //every component of the media stream and the state of the
@@ -1179,8 +1175,11 @@ System.out.println("ignoring nomination confirmed for " + checkList.getName()
         {
             if(atLeastOneListSucceeded)
             {
-                setState(IceProcessingState.COMPLETED);
-                scheduleTermination();
+                if(getState() == IceProcessingState.RUNNING)
+                {
+                    setState(IceProcessingState.COMPLETED);
+                    scheduleTermination();
+                }
             }
             else
             {
