@@ -18,8 +18,6 @@ import org.ice4j.*;
 import org.ice4j.ice.*;
 import org.ice4j.ice.Agent;
 
-import sun.management.*;
-
 /**
  * Utilities for manipulating SDP. The utilities This method <b>do not</b> try
  * to act smart and make a lot of assumptions (e.g. at least one media stream
@@ -176,11 +174,14 @@ public class SdpUtils
 
             Candidate defaultRtpCandidate
                 = rtpComponent.findRemoteCandidate(defaultRtpAddress);
-            Candidate defaultRtcpCandidate
-                = rtcpComponent.findRemoteCandidate(defaultRtcpAddress);
-
             rtpComponent.setDefaultRemoteCandidate(defaultRtpCandidate);
-            rtcpComponent.setDefaultRemoteCandidate(defaultRtcpCandidate);
+
+            if(rtcpComponent != null)
+            {
+                Candidate defaultRtcpCandidate
+                    = rtcpComponent.findRemoteCandidate(defaultRtcpAddress);
+                rtcpComponent.setDefaultRemoteCandidate(defaultRtcpCandidate);
+            }
         }
     }
 

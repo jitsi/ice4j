@@ -8,7 +8,6 @@
 package test;
 
 import java.beans.*;
-import java.io.*;
 import java.util.*;
 
 import org.ice4j.*;
@@ -16,7 +15,9 @@ import org.ice4j.ice.*;
 import org.ice4j.ice.harvest.*;
 
 /**
- * Simple ice4j testing scenarios.
+ * Simple ice4j testing scenario. The sample application would create and start
+ * both agents and make one of them and make one of them run checks against the
+ * other.
  *
  * @author Emil Ivov
  */
@@ -28,46 +29,12 @@ public class Ice
     static long startTime;
 
     /**
-     * Runs a test application that allocates streams, generates an SDP, dumps
-     * it on stdout, waits for a remote peer SDP on stdin, then feeds that
-     * to our local agent and starts ICE processing.
-     *
-     * @param args none currently handled
-     * @throws Throwable every now and then.
-     */
-    public static void main(String[] args) throws Throwable
-    {
-        startTime = System.currentTimeMillis();
-
-        Agent localAgent = createAgent(9090);
-        localAgent.setNominationStrategy(
-                        NominationStrategy.NOMINATE_HIGHEST_PRIO);
-
-        localAgent.addStateChangeListener(new IceProcessingListener());
-
-        //let them fight ... fights forge character.
-        localAgent.setControlling(true);
-        String localSDP = SdpUtils.createSDPDescription(localAgent);
-        System.out.println(localSDP);
-
-        String sdp = readSDP();
-
-        SdpUtils.parseSDP(localAgent, sdp);
-
-        localAgent.startConnectivityEstablishment();
-
-        //Give processing enough time to finish. We'll System.exit() anyway
-        //as soon as localAgent enters a final state.
-        Thread.sleep(60000);
-    }
-
-    /**
      * Runs the test
      * @param args command line arguments
      *
      * @throws Throwable if bad stuff happens.
      */
-    public static void main2(String[] args) throws Throwable
+    public static void main(String[] args) throws Throwable
     {
         startTime = System.currentTimeMillis();
 
@@ -130,8 +97,7 @@ public class Ice
 
             System.out.println("Agent entered the " + evt.getNewValue()
                             + " state.");
-            if(evt.getNewValue() == IceProcessingState.COMPLETED
-               || evt.getNewValue() == IceProcessingState.FAILED)
+            if(evt.getNewValue() == IceProcessingState.COMPLETED)
             {
                 System.out.println("Total ICE processing time: "
                                 + (processingEndTime - startTime) + "ms");
@@ -163,7 +129,8 @@ public class Ice
                     System.out.println(stream.getCheckList());
                 }
             }
-            else if(evt.getNewValue() == IceProcessingState.TERMINATED)
+            else if(evt.getNewValue() == IceProcessingState.TERMINATED
+                    || evt.getNewValue() == IceProcessingState.FAILED)
             {
                 System.exit(0);
             }
@@ -265,7 +232,7 @@ public class Ice
      *
      * @throws Throwable if anything goes wrong.
      */
-    private static Agent createAgent(int rtpPort)
+    protected static Agent createAgent(int rtpPort)
         throws Throwable
     {
         Agent agent = new Agent();
@@ -276,11 +243,11 @@ public class Ice
             new TransportAddress("ipv6.sip-communicator.net",
                                  3478, Transport.UDP));
 
-        agent.addCandidateHarvester(stunHarv);
-        agent.addCandidateHarvester(stun6Harv);
+        //agent.addCandidateHarvester(stunHarv);
+        //agent.addCandidateHarvester(stun6Harv);
 
         createStream(rtpPort, "audio", agent);
-        createStream(rtpPort + 2, "video", agent);
+        //createStream(rtpPort + 2, "video", agent);
 
         return agent;
     }
@@ -320,8 +287,8 @@ public class Ice
                         + (endTime - startTime) +" ms");
         startTime = endTime;
         //rtcpComp
-        agent.createComponent(
-                stream, Transport.UDP, rtpPort + 1, rtpPort + 1, rtpPort + 101);
+        //agent.createComponent(
+        //        stream, Transport.UDP, rtpPort + 1, rtpPort + 1, rtpPort + 101);
 
         endTime = System.currentTimeMillis();
         System.out.println("RTCP Component created in "
@@ -330,36 +297,5 @@ public class Ice
         return stream;
     }
 
-    /**
-     * Reads an SDP description from the standard input. We expect descriptions
-     * provided to this method to be originating from instances of this
-     * application running on remote computers.
-     *
-     * @return whatever we got on stdin (hopefully an SDP description.
-     *
-     * @throws Throwable if something goes wrong with console reading.
-     */
-    private static String readSDP() throws Throwable
-    {
-        System.out.println("Paste SDP here. Enter an empty line to proceed:");
-        System.out.println("(we don't mind the [java] prefix in SDP intput)");
-        BufferedReader reader
-            = new BufferedReader(new InputStreamReader(System.in));
 
-        StringBuffer buff = new StringBuffer();
-        String line = new String();
-
-        while ( (line = reader.readLine()) != null)
-        {
-            line = line.replace("[java]", "");
-            line = line.trim();
-            if(line.length() == 0)
-                break;
-
-            buff.append(line);
-            buff.append("\r\n");
-        }
-
-        return buff.toString();
-    }
 }
