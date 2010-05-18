@@ -10,11 +10,15 @@ import gov.nist.core.*;
 import gov.nist.javax.sdp.fields.*;
 
 import java.util.*;
+import java.util.StringTokenizer;
 
 import javax.sdp.*;
 
 import org.ice4j.*;
 import org.ice4j.ice.*;
+import org.ice4j.ice.Agent;
+
+import sun.management.*;
 
 /**
  * Utilities for manipulating SDP. The utilities This method <b>do not</b> try
@@ -101,10 +105,161 @@ public class SdpUtils
     }
 
     /**
+     * Configures <tt>localAgent</tt> the the remote peer streams, components,
+     * and candidates specified in <tt>sdp</tt>
+     *
+     * @param localAgent the {@link Agent} that we'd like to configure.
+     *
+     * @param sdp the SDP string that the remote peer sent.
+     *
+     * @throws Exception for all sorts of reasons.
+     */
+    @SuppressWarnings("unchecked") // jain-sdp legacy code.
+    public static void parseSDP(Agent localAgent, String sdp)
+        throws Exception
+    {
+        SdpFactory factory = SdpFactory.getInstance();
+        SessionDescription sdess = factory.createSessionDescription(sdp);
+
+        localAgent.setRemotePassword(sdess.getAttribute("ice-pwd"));
+        localAgent.setRemoteUfrag(sdess.getAttribute("ice-ufrag"));
+
+        Connection globalConn = sdess.getConnection();
+        String globalConnAddr = null;
+        if(globalConn != null)
+            globalConnAddr = globalConn.getAddress();
+
+        Vector<MediaDescription> mdescs = sdess.getMediaDescriptions(true);
+
+        for (MediaDescription desc : mdescs)
+        {
+            String streamName = desc.getMedia().getMediaType();
+
+            IceMediaStream stream = localAgent.getStream(streamName);
+
+            if(stream == null)
+                continue;
+
+            Vector<Attribute> attributes = desc.getAttributes(true);
+            for( Attribute attribute : attributes)
+            {
+                if(!attribute.getName().equals(CandidateAttribute.NAME))
+                    continue;
+
+                parseCandidate(attribute, stream);
+            }
+
+            //set default candidates
+            Connection streamConn = desc.getConnection();
+            String streamConnAddr = null;
+            if(streamConn != null)
+                streamConnAddr = streamConn.getAddress();
+            else
+                streamConnAddr = globalConnAddr;
+
+            int port = desc.getMedia().getMediaPort();
+
+            TransportAddress defaultRtpAddress =
+                new TransportAddress(streamConnAddr, port, Transport.UDP);
+
+            int rtcpPort = port + 1;
+            String rtcpAttributeValue = desc.getAttribute("rtcp");
+
+            if (rtcpAttributeValue != null)
+                rtcpPort = Integer.parseInt(rtcpAttributeValue);
+
+            TransportAddress defaultRtcpAddress =
+                new TransportAddress(streamConnAddr, rtcpPort, Transport.UDP);
+
+            Component rtpComponent = stream.getComponent(Component.RTP);
+            Component rtcpComponent = stream.getComponent(Component.RTCP);
+
+            Candidate defaultRtpCandidate
+                = rtpComponent.findRemoteCandidate(defaultRtpAddress);
+            Candidate defaultRtcpCandidate
+                = rtcpComponent.findRemoteCandidate(defaultRtcpAddress);
+
+            rtpComponent.setDefaultRemoteCandidate(defaultRtpCandidate);
+            rtcpComponent.setDefaultRemoteCandidate(defaultRtcpCandidate);
+        }
+    }
+
+    /**
+     * Parses the <tt>attribute</tt>.
+     *
+     * @param attribute the attribute that we need to parse.
+     * @param stream the {@link IceMediaStream} that the candidate is supposed
+     * to belong to.
+     *
+     * @return a newly created {@link RemoteCandidate} matching the
+     * content of the specified <tt>attribute</tt> or <tt>null</tt> if the
+     * candidate belonged to a component we don't have.
+     */
+    private static RemoteCandidate parseCandidate(Attribute      attribute,
+                                                  IceMediaStream stream)
+    {
+        String value = null;
+
+        try{
+            value = attribute.getValue();
+        }catch (Throwable t){}//can't happen
+
+        StringTokenizer tokenizer = new StringTokenizer(value);
+
+        //XXX add exception handling.
+        String foundation = tokenizer.nextToken();
+        int componentID = Integer.parseInt( tokenizer.nextToken() );
+        Transport transport = Transport.parse(tokenizer.nextToken());
+        long priority = Long.parseLong(tokenizer.nextToken());
+        String address = tokenizer.nextToken();
+        int port = Integer.parseInt(tokenizer.nextToken());
+
+        TransportAddress transAddr
+            = new TransportAddress(address, port, transport);
+
+        tokenizer.nextToken(); //skip the "typ" String
+        CandidateType type = CandidateType.parse(tokenizer.nextToken());
+
+        Component component = stream.getComponent(componentID);
+
+        if(component == null)
+            return null;
+
+        RemoteCandidate cand = new RemoteCandidate(transAddr, component, type,
+                        foundation, priority);
+
+        component.addRemoteCandidate(cand);
+
+        // check if there's a related address property
+
+        if (tokenizer.countTokens() >= 4)
+        {
+            tokenizer.nextToken(); // skip the raddr element
+            String relatedAddr = tokenizer.nextToken();
+            tokenizer.nextToken(); // skip the rport element
+            int relatedPort = Integer.parseInt(tokenizer.nextToken());
+
+            TransportAddress raddr = new TransportAddress(
+                            relatedAddr, relatedPort, Transport.UDP);
+
+            cand.setRelatedAddress(raddr);
+        }
+
+        return cand;
+    }
+
+
+
+    /**
      * An implementation of the <tt>candidate</tt> SDP attribute.
      */
     private static class CandidateAttribute extends AttributeField
     {
+        /**
+         * The SDP name of candidate attributes.
+         */
+        public static final String NAME = "candidate";
+
         /**
          * This class's serial version uid.
          */
@@ -131,7 +286,7 @@ public class SdpUtils
          */
         public String getName()
         {
-            return "candidate";
+            return NAME;
         }
 
         /**

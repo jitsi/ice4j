@@ -331,6 +331,7 @@ public class Agent
     {
         synchronized(startLock)
         {
+            pruneNonMatchedStreams();
             initCheckLists();
 
             //change state before we actually send checks so that we don't
@@ -338,6 +339,29 @@ public class Agent
             setState(IceProcessingState.RUNNING);
             connCheckClient.startChecks();
         }
+    }
+
+    /**
+     * <tt>Free()</tt>s and removes from this agent components or entire streams
+     * if they do not contain remote candidates. A possible reason for this
+     * could be the fact that the remote party canceled some of the streams.
+     */
+    private void pruneNonMatchedStreams()
+    {
+        for (IceMediaStream stream : getStreams())
+        {
+            for(Component cmp : stream.getComponents())
+            {
+                if(cmp.getRemoteCandidateCount() == 0)
+                {
+                    stream.removeComponent(cmp);
+                }
+            }
+
+            if(stream.getComponentCount() == 0)
+                removeStream(stream);
+        }
+
     }
 
     /**

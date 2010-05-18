@@ -19,6 +19,10 @@ import org.ice4j.*;
 public class RemoteCandidate
     extends Candidate
 {
+    /**
+     * The related address that the remote party sent in SDP, if it did.
+     */
+    private TransportAddress raddr;
 
     /**
      * Creates a <tt>RemoteCandidate</tt> instance for the specified transport
@@ -77,5 +81,37 @@ public class RemoteCandidate
             return false;
 
         return equals(parentCmp.getDefaultRemoteCandidate());
+    }
+
+    /**
+     * Returns the <tt>TransportAddress</tt> that the remote party indicated
+     * as "related" for this <tt>Candidate</tt>.
+     * <p>
+     * Related addresses are present for server reflexive, peer reflexive and
+     * relayed candidates. If a candidate is server or peer reflexive,
+     * the related address is equal to the base of this <tt>Candidate</tt>.
+     * If the candidate is relayed, the returned address is equal to the mapped
+     * address. If the candidate is a host candidate then the method returns
+     * <tt>null</tt>.
+     *
+     * @return the <tt>TransportAddress</tt> that the remote party indicated
+     * as "related" for this <tt>Candidate</tt> or <tt>null</tt> if they didn't
+     * include it in SDP.
+     */
+    public TransportAddress getRelatedAddress()
+    {
+        return raddr;
+    }
+
+    /**
+     * Specifies the <tt>TransportAddress</tt> that the remote party indicated
+     * as "related" for this <tt>Candidate</tt>.
+     *
+     * @param relatedAddr the <tt>TransportAddress</tt> that the remote party
+     * indicated as "related" for this <tt>Candidate</tt>.
+     */
+    public void setRelatedAddress(TransportAddress relatedAddr)
+    {
+        this.raddr = relatedAddr;
     }
 }

@@ -8,8 +8,7 @@
 package test;
 
 import java.beans.*;
-import java.lang.reflect.*;
-import java.net.*;
+import java.io.*;
 import java.util.*;
 
 import org.ice4j.*;
@@ -28,6 +27,14 @@ public class Ice
      */
     static long startTime;
 
+    /**
+     * Runs a test application that allocates streams, generates an SDP, dumps
+     * it on stdout, waits for a remote peer SDP on stdin, then feeds that
+     * to our local agent and starts ICE processing.
+     *
+     * @param args none currently handled
+     * @throws Throwable every now and then.
+     */
     public static void main(String[] args) throws Throwable
     {
         startTime = System.currentTimeMillis();
@@ -40,10 +47,48 @@ public class Ice
 
         //let them fight ... fights forge character.
         localAgent.setControlling(true);
+        String localSDP = SdpUtils.createSDPDescription(localAgent);
+        System.out.println(localSDP);
 
-        System.out.println(SdpUtils.createSDPDescription(localAgent));
+        String sdp = readSDP();
 
+        SdpUtils.parseSDP(localAgent, sdp);
 
+        System.out.println("Agent:");
+        System.out.println(localAgent);
+    }
+
+    /**
+     * Reads an SDP description from the standard input. We expect descriptions
+     * provided to this method to be originating from instances of this
+     * application running on remote computers.
+     *
+     * @return whatever we got on stdin (hopefully an SDP description.
+     *
+     * @throws Throwable if something goes wrong with console reading.
+     */
+    private static String readSDP() throws Throwable
+    {
+        System.out.println("Paste SDP here. Enter an empty line to proceed:");
+        System.out.println("(we don't mind the [java] prefix in SDP intput)");
+        BufferedReader reader
+            = new BufferedReader(new InputStreamReader(System.in));
+
+        StringBuffer buff = new StringBuffer();
+        String line = new String();
+
+        while ( (line = reader.readLine()) != null)
+        {
+            line = line.replace("[java]", "");
+            line = line.trim();
+            if(line.length() == 0)
+                break;
+
+            buff.append(line);
+            buff.append("\r\n");
+        }
+
+        return buff.toString();
     }
 
     /**
