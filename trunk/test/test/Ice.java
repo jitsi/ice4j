@@ -243,8 +243,8 @@ public class Ice
             new TransportAddress("ipv6.sip-communicator.net",
                                  3478, Transport.UDP));
 
-        //agent.addCandidateHarvester(stunHarv);
-        //agent.addCandidateHarvester(stun6Harv);
+        agent.addCandidateHarvester(stunHarv);
+        agent.addCandidateHarvester(stun6Harv);
 
         createStream(rtpPort, "audio", agent);
         //createStream(rtpPort + 2, "video", agent);
@@ -287,8 +287,8 @@ public class Ice
                         + (endTime - startTime) +" ms");
         startTime = endTime;
         //rtcpComp
-        agent.createComponent(
-                stream, Transport.UDP, rtpPort + 1, rtpPort + 1, rtpPort + 101);
+        //agent.createComponent(
+        //        stream, Transport.UDP, rtpPort + 1, rtpPort + 1, rtpPort + 101);
 
         endTime = System.currentTimeMillis();
         System.out.println("RTCP Component created in "

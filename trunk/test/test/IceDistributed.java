@@ -41,7 +41,7 @@ public class IceDistributed
         localAgent.addStateChangeListener(new IceProcessingListener());
 
         //let them fight ... fights forge character.
-        localAgent.setControlling(true);
+        localAgent.setControlling(false);
         String localSDP = SdpUtils.createSDPDescription(localAgent);
 
         System.out.println("=================== feed the following"

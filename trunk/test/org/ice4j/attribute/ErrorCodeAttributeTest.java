@@ -167,7 +167,7 @@ public class ErrorCodeAttributeTest extends TestCase {
         errorCodeAttribute.setReasonPhrase(msgFixture.REASON_PHRASE);
 
         char actualReturn = errorCodeAttribute.getDataLength();
-        assertEquals("data length1", (int)expectedReturn, (int)actualReturn);
+        assertEquals("data length1", expectedReturn, actualReturn);
     }
 
     /**
