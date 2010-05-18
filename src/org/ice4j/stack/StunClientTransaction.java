@@ -49,26 +49,26 @@ class StunClientTransaction
 
     /**
      * Maximum number of retransmissions. Once this number is reached and if no
-     * response is received after MAX_WAIT_INTERVAL miliseconds the request is
+     * response is received after MAX_WAIT_INTERVAL milliseconds the request is
      * considered unanswered.
      */
     public int maxRetransmissions = DEFAULT_MAX_RETRANSMISSIONS;
 
     /**
-     * The number of miliseconds a client should wait before retransmitting,
+     * The number of milliseconds a client should wait before retransmitting,
      * after it has sent a request for the first time.
      */
     public static final int DEFAULT_ORIGINAL_WAIT_INTERVAL = 100;
 
     /**
-     * The number of miliseconds to wait before the first retansmission of the
+     * The number of milliseconds to wait before the first retransmission of the
      * request.
      */
     public int originalWaitInterval = DEFAULT_ORIGINAL_WAIT_INTERVAL;
 
     /**
-     * The maximum number of miliseconds a client should wait between
-     * consecutive retransmissionse, after it has sent a request for the first
+     * The maximum number of milliseconds a client should wait between
+     * consecutive retransmissions, after it has sent a request for the first
      * time.
      */
     public static final int DEFAULT_MAX_WAIT_INTERVAL = 1600;
@@ -291,10 +291,9 @@ class StunClientTransaction
             logger.finer("Trying to resend a cancelled transaction.");
             return;
         }
+
         stackCallback.getNetAccessManager().sendMessage(
-            this.request,
-            localAddress,
-            requestDestination);
+            this.request, localAddress, requestDestination);
     }
 
     /**

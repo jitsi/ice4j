@@ -637,9 +637,9 @@ public class IceMediaStream
     }
 
     /**
-     * Returns <tt>true</tt> if there is at least one nominated {@link
+     * Returns <tt>false</tt> if there is at least one nominated {@link
      * CandidatePair} in the valid list for every {@link Component} of this
-     * stream and <tt>false</tt> otherwise.
+     * stream and <tt>true</tt> otherwise.
      *
      * @return <tt>true</tt> if there is at least one nominated {@link
      * CandidatePair} in the valid list for every {@link Component} of this
@@ -657,6 +657,26 @@ public class IceMediaStream
         }
 
         return components.size() == 0;
+    }
+
+    /**
+     * Returns <tt>false</tt> if there is at least one nominated {@link
+     * CandidatePair} who doesn't have a selected address yet, and <tt>true</tt>
+     * otherwise.
+     *
+     * @return <tt>false</tt> if there is at least one nominated {@link
+     * CandidatePair} who doesn't have a selected address yet, and <tt>true</tt>
+     * otherwise.
+     */
+    protected boolean allComponentsHaveSelected()
+    {
+        List<Component> components = getComponents();
+
+        for(Component component : components)
+            if(component.getSelectedPair() == null)
+                return false;
+
+        return true;
     }
 
     /**
