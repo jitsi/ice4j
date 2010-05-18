@@ -61,24 +61,74 @@ public class DefaultNominator
 
             for(IceMediaStream stream : streams)
             {
-                stream.addStreamChangeListener(this);
+                stream.addPairChangeListener(this);
                 stream.getCheckList().addStateChangeListener(this);
             }
         }
 
-        if (!parentAgent.isControlling())
+        if (!parentAgent.isControlling() //CONTROLLED agents cannot nominate
+            || strategy == NominationStrategy.NONE)
         {
-            //CONTROLLED agents cannot nominate pairs
             return;
         }
 
+        if(strategy == NominationStrategy.NOMINATE_FIRST_VALID)
+            strategyNominateFirstValid(evt);
+        else if (strategy == NominationStrategy.NOMINATE_HIGHEST_PRIO)
+            strategyNominateHighestPrio(evt);
+
+    }
+
+    /**
+     * Implements a basic nomination strategy that consists in nominating the
+     * first pair that has become valid for a check list.
+     *
+     * @param evt the {@link PropertyChangeEvent} containing the pair which
+     * has been validated.
+     */
+    private void strategyNominateFirstValid(PropertyChangeEvent evt)
+    {
         if(IceMediaStream.PROPERTY_PAIR_VALIDATED.equals(evt.getPropertyName()))
         {
-            CandidatePair validPair = (CandidatePair)evt.getNewValue();
+            CandidatePair validPair = (CandidatePair)evt.getSource();
             parentAgent.nominate(validPair);
         }
     }
 
+    /**
+     * Implements a nomination strategy that allows checks for several (or all)
+     * pairs in a check list to conclude before nominating the one with the
+     * highest priority.
+     *
+     * @param evt the {@link PropertyChangeEvent} containing the new state and
+     * the source {@link CheckList}.
+     */
+    private void strategyNominateHighestPrio(PropertyChangeEvent evt)
+    {
+        String propName = evt.getPropertyName();
+        if(IceMediaStream.PROPERTY_PAIR_VALIDATED.equals(propName)
+           || (IceMediaStream.PROPERTY_PAIR_STATE_CHANGED.equals(propName)
+                && ((CandidatePairState)evt.getNewValue())
+                                == CandidatePairState.FAILED))
+        {
+            CandidatePair validPair = (CandidatePair)evt.getSource();
+            Component parentComponent = validPair.getParentComponent();
+            IceMediaStream parentStream = parentComponent.getParentStream();
+            CheckList parentCheckList = parentStream.getCheckList();
+
+            if(!parentCheckList.allChecksCompleted())
+                return;
+
+            List<Component> components = parentStream.getComponents();
+
+            for(Component component : components)
+            {
+                CandidatePair pair = parentStream.getValidPair(component);
+                if(pair != null)
+                    parentAgent.nominate(pair);
+            }
+        }
+    }
 
     /**
      * The {@link NominationStrategy} that this nominator should use when

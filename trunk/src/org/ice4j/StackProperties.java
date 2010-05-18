@@ -114,6 +114,8 @@ public class StackProperties
                                     = "org.ice4j.TERMINATION_DELAY";
 
     /**
+     * THIS PROPERTY IS CURRENTLY UNUSED. IF YOU WANT TO SPEED UP NOMINATIONS
+     * THEN CONSIDER SPEEDING UP TRANSACTION FAILURE FOR THE TIME BEING.
      * The maximum number of milliseconds that we should wait for a check list
      * to complete before nominating one of its valid pairs (unless there are
      * none in which case we may have to wait until one appears or the whole

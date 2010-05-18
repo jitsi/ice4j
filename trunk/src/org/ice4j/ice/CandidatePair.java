@@ -235,7 +235,7 @@ public class CandidatePair
      * {@link CandidatePairState#IN_PROGRESS} or a non-<tt>null</tt> for any
      * other state would cause an {@link IllegalArgumentException} to be thrown.
      *
-     * @param state the state that this candidate pair is to enter.
+     * @param newState the state that this candidate pair is to enter.
      * @param tranID the {@link TransactionID} that we are using for the
      * connectivity check in case we are entering the <tt>In-Progress</tt>
      * state and <tt>null</tt> otherwise.
@@ -243,13 +243,14 @@ public class CandidatePair
      * @throws IllegalArgumentException if state is {@link CandidatePairState
      * #IN_PROGRESS} and <tt>tranID</tt> is <tt>null</tt>.
      */
-    private synchronized void setState(CandidatePairState state,
+    private synchronized void setState(CandidatePairState newState,
                                        TransactionID      tranID)
         throws IllegalArgumentException
     {
-        this.state = state;
+        CandidatePairState oldState = this.state;
+        this.state = newState;
 
-        if(state != CandidatePairState.IN_PROGRESS)
+        if(newState != CandidatePairState.IN_PROGRESS)
         {
             if (tranID != null)
                 throw new IllegalArgumentException(
@@ -266,6 +267,9 @@ public class CandidatePair
 
         this.connCheckTranID = tranID;
 
+        getParentComponent().getParentStream().firePairPropertyChange(
+                this, IceMediaStream.PROPERTY_PAIR_STATE_CHANGED,
+                    oldState, newState);
     }
 
     /**
@@ -523,6 +527,8 @@ public class CandidatePair
     public void nominate()
     {
         this.isNominated = true;
+        getParentComponent().getParentStream().firePairPropertyChange(this,
+                        IceMediaStream.PROPERTY_PAIR_NOMINATED, false, true);
     }
 
     /**
@@ -556,5 +562,7 @@ public class CandidatePair
     protected void validate()
     {
         this.isValid = true;
+        getParentComponent().getParentStream().firePairPropertyChange(this,
+                        IceMediaStream.PROPERTY_PAIR_VALIDATED, false, true);
     }
 }
