@@ -77,4 +77,35 @@ public enum CandidateType
     {
         return typeName;
     }
+
+    /**
+     * Returns a <tt>CandidateType</tt> instance corresponding to the specified
+     * <tt>candidateTypeName</tt>. For example, for name "host", this method
+     * would return {@link #HOST_CANDIDATE}.
+     *
+     * @param candidateTypeName the name that we'd like to parse.
+     * @return a <tt>CandidateType</tt> instance corresponding to the specified
+     * <tt>candidateTypeName</tt>.
+     *
+     * @throws IllegalArgumentException in case <tt>candidateTypeName</tt> is
+     * not a valid or currently supported candidate type.
+     */
+    public static CandidateType parse(String candidateTypeName)
+        throws IllegalArgumentException
+    {
+        if(PEER_REFLEXIVE_CANDIDATE.toString().equals(candidateTypeName))
+            return PEER_REFLEXIVE_CANDIDATE;
+
+        if(SERVER_REFLEXIVE_CANDIDATE.toString().equals(candidateTypeName))
+            return SERVER_REFLEXIVE_CANDIDATE;
+
+        if(RELAYED_CANDIDATE.toString().equals(candidateTypeName))
+            return RELAYED_CANDIDATE;
+
+        if(HOST_CANDIDATE.toString().equals(candidateTypeName))
+            return HOST_CANDIDATE;
+
+        throw new IllegalArgumentException(
+            candidateTypeName + " is not a currently supported CandidateType");
+    }
 }

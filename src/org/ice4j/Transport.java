@@ -68,4 +68,38 @@ public enum Transport
     {
         return transportName;
     }
+
+    /**
+     * Returns a <tt>Transport</tt> instance corresponding to the specified
+     * <tt>transportName</tt>. For example, for name "udp", this method
+     * would return {@link #UDP}.
+     *
+     * @param transportName the name that we'd like to parse.
+     * @return a <tt>Transport</tt> instance corresponding to the specified
+     * <tt>transportName</tt>.
+     *
+     * @throws IllegalArgumentException in case <tt>transportName</tt> is
+     * not a valid or currently supported transport.
+     */
+    public static Transport parse(String transportName)
+        throws IllegalArgumentException
+    {
+        if(UDP.toString().equals(transportName))
+            return UDP;
+
+        if(TCP.toString().equals(transportName))
+            return TCP;
+
+        if(TLS.toString().equals(transportName))
+            return TLS;
+
+        if(SCTP.toString().equals(transportName))
+            return SCTP;
+
+        if(DTLS.toString().equals(transportName))
+            return DTLS;
+
+        throw new IllegalArgumentException(
+            transportName + " is not a currently supported Transport");
+    }
 }
