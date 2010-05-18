@@ -7,6 +7,7 @@
  */
 package org.ice4j.ice;
 
+import java.beans.*;
 import java.util.*;
 import java.util.logging.*;
 
@@ -70,6 +71,19 @@ public class IceMediaStream
     private final Agent parentAgent;
 
     /**
+     * The property name that we use when delivering events notifying listeners
+     * of newly validated pairs.
+     */
+    public static final String PROPERTY_PAIR_VALIDATED = "PairValidated";
+
+    /**
+     * Contains {@link PropertyChangeListener}s registered with this {@link
+     * Agent} and following the various events it may be generating.
+     */
+    private List<PropertyChangeListener> streamListeners
+                                = new LinkedList<PropertyChangeListener>();
+
+    /**
      * The maximum number of candidate pairs that we should have in our check
      * list. This value depends on the total number of media streams which is
      * why it should be set by the agent:
@@ -91,7 +105,7 @@ public class IceMediaStream
     {
         this.name = name;
         this.parentAgent = parentAgent;
-        checkList = new CheckList(name);
+        checkList = new CheckList(this);
     }
 
     /**
@@ -552,7 +566,7 @@ public class IceMediaStream
      *
      * @param pair the {@link CandidatePair} to add to our valid list.
      */
-    protected void addValidPair(CandidatePair pair)
+    protected void addToValidList(CandidatePair pair)
     {
         synchronized (validList)
         {
@@ -560,6 +574,8 @@ public class IceMediaStream
             if(!validList.contains(pair))
                 validList.add(pair);
         }
+
+        fireStateChange(PROPERTY_PAIR_VALIDATED, pair, pair);
     }
 
     /**
@@ -649,6 +665,88 @@ public class IceMediaStream
             for(CandidatePair pair : validList)
                 if(pair.getParentComponent() == component)
                     return pair;
+        }
+
+        return null;
+    }
+
+    /**
+     * Adds <tt>l</tt> to the list of listeners registered for property changes.
+     *
+     * @param l the listener to register.
+     */
+    public void addStreamChangeListener(PropertyChangeListener l)
+    {
+        synchronized(streamListeners)
+        {
+            if(!streamListeners.contains(l))
+                this.streamListeners.add(l);
+        }
+    }
+
+    /**
+     * Removes <tt>l</tt> from the list of listeners registered for property
+     * changes.
+     *
+     * @param l the listener to remove.
+     */
+    public void removeStateChangeListener(PropertyChangeListener l)
+    {
+        synchronized(streamListeners)
+        {
+            this.streamListeners.remove(l);
+        }
+    }
+
+    /**
+     * Creates a new {@link PropertyChangeEvent} and delivers it to all
+     * currently registered state listeners.
+     *
+     * @param propertyName the name of the event we'd like to fire.
+     * @param oldValue the old value of the property that changed.
+     * @param newValue the new value of the property that changed.
+     */
+    private void fireStateChange(String propertyName,
+                                 Object oldValue,
+                                 Object newValue)
+    {
+        List<PropertyChangeListener> listenersCopy;
+
+        synchronized(streamListeners)
+        {
+            listenersCopy
+                = new LinkedList<PropertyChangeListener>(streamListeners);
+        }
+
+        PropertyChangeEvent evt = new PropertyChangeEvent(
+                        this, "CheckListState", oldValue, newValue);
+
+        for(PropertyChangeListener l : listenersCopy)
+        {
+            l.propertyChange(evt);
+        }
+    }
+
+    /**
+     * Returns the {@link CandidatePair} from <tt>component</tt> that's
+     * currently first in our valid list and that is therefore with the highest
+     * priority.
+     *
+     * @param component the {@link Component} whose highest priority valid
+     * {@link CandidatePair} we are looking for.
+     *
+     * @return the {@link CandidatePair} with the highest priority in our
+     * valid list or <tt>null</tt> if our valid list is still empty.
+     */
+    public CandidatePair getFirstValidPair(Component component)
+    {
+        synchronized(validList)
+        {
+            for(CandidatePair pair : validList)
+            {
+                if (pair.getParentComponent() == component)
+                    return pair;
+            }
         }
 
         return null;
