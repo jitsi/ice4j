@@ -28,17 +28,37 @@ public class Ice
      */
     static long startTime;
 
+    public static void main(String[] args) throws Throwable
+    {
+        startTime = System.currentTimeMillis();
+
+        Agent localAgent = createAgent(9090);
+        localAgent.setNominationStrategy(
+                        NominationStrategy.NOMINATE_HIGHEST_PRIO);
+
+        localAgent.addStateChangeListener(new IceProcessingListener());
+
+        //let them fight ... fights forge character.
+        localAgent.setControlling(true);
+
+        System.out.println(SdpUtils.createSDPDescription(localAgent));
+
+
+    }
+
     /**
      * Runs the test
      * @param args command line arguments
      *
      * @throws Throwable if bad stuff happens.
      */
-    public static void main(String[] args) throws Throwable
+    public static void main2(String[] args) throws Throwable
     {
         startTime = System.currentTimeMillis();
 
         Agent localAgent = createAgent(9090);
+        localAgent.setNominationStrategy(
+                        NominationStrategy.NOMINATE_HIGHEST_PRIO);
         Agent remotePeer = createAgent(6060);
 
         localAgent.addStateChangeListener(new IceProcessingListener());
@@ -118,7 +138,7 @@ public class Ice
                     }
                 }
 
-                System.out.println("Printing the check lists:");
+                System.out.println("Printing the completed check lists:");
                 for(IceMediaStream stream : streams)
                 {
                     String streamName = stream.getName();
@@ -180,7 +200,7 @@ public class Ice
         {
             int id = localComponent.getComponentID();
 
-            Component remoteComponent = remoteStream.getComponnet(id);
+            Component remoteComponent = remoteStream.getComponent(id);
 
             if(remoteComponent != null)
                 transferRemoteCandidates(localComponent, remoteComponent);
@@ -245,7 +265,7 @@ public class Ice
         agent.addCandidateHarvester(stun6Harv);
 
         createStream(rtpPort, "audio", agent);
-        //createStream(rtpPort + 2, "video", agent);
+        createStream(rtpPort + 2, "video", agent);
 
         return agent;
     }
@@ -285,111 +305,13 @@ public class Ice
                         + (endTime - startTime) +" ms");
         startTime = endTime;
         //rtcpComp
-        //agent.createComponent(
-        //        stream, Transport.UDP, rtpPort + 1, rtpPort + 1, rtpPort + 101);
+        agent.createComponent(
+                stream, Transport.UDP, rtpPort + 1, rtpPort + 1, rtpPort + 101);
 
         endTime = System.currentTimeMillis();
         System.out.println("RTCP Component created in "
                         + (endTime - startTime) +" ms");
 
         return stream;
-    }
-
-    /**
-     * Runs the test
-     * @param args cmd line args
-     *
-     * @throws Throwable if bad stuff happens.
-     */
-    public static void main2(String[] args) throws Throwable
-    {
-        //Agent agent = new Agent();
-        //IceMediaStream stream = agent.createMediaStream("audio");
-
-        //rtp
-        //Component rtpComp = stream.createComponent(Transport.UDP, 9090);
-        //rtcpComp
-        //Component rtcpComp = stream.createComponent(Transport.UDP, 9091);
-
-        // find a loopback interface
-
-
-        Enumeration<NetworkInterface> interfaces
-                                    = NetworkInterface.getNetworkInterfaces();
-
-        while (interfaces.hasMoreElements())
-        {
-            NetworkInterface iface = interfaces.nextElement();
-
-            System.out.println(iface.getName()
-                            + " isLoopback=" + isLoop(iface));
-            System.out.println(iface.getName()
-                            + " isUp=" + isUp(iface));
-            System.out.println(iface.getName()
-                            + " isVirtual=" + isVirtual(iface));
-        }
-    }
-
-    public static boolean isLoop(NetworkInterface iface)
-    {
-        try
-        {
-            Method method = iface.getClass().getMethod("isLoopback");
-
-            System.out.println("It works!");
-
-            return ((Boolean)method.invoke(iface)).booleanValue();
-        }
-        catch(Throwable t)
-        {
-            //apparently we are not running in a JVM that supports the
-            //is Loopback method. we'll try another approach.
-            System.out.println("Doesn't work");
-        }
-
-        Enumeration<InetAddress> addresses = iface.getInetAddresses();
-
-        return addresses.hasMoreElements()
-            && addresses.nextElement().isLoopbackAddress();
-    }
-
-    public static boolean isUp(NetworkInterface iface)
-    {
-        try
-        {
-            Method method = iface.getClass().getMethod("isUp");
-
-            System.out.println("It works!");
-
-            return ((Boolean)method.invoke(iface)).booleanValue();
-        }
-        catch(Throwable t)
-        {
-            //apparently we are not running in a JVM that supports the
-            //is Loopback method. we'll try another approach.
-            System.out.println("Doesn't work");
-        }
-
-        return true;
-    }
-
-    public static boolean isVirtual(NetworkInterface iface)
-    {
-        try
-        {
-            Method method = iface.getClass().getMethod("isVirtual");
-
-            System.out.println("It works!");
-
-            return ((Boolean)method.invoke(iface)).booleanValue();
-        }
-        catch(Throwable t)
-        {
-            //apparently we are not running in a JVM that supports the
-            //is Loopback method. we'll try another approach.
-            System.out.println("Doesn't work");
-        }
-
-        return false;
     }
 }
