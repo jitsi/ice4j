@@ -13,7 +13,6 @@ package org.ice4j.message;
  *
  * @author Emil Ivov
  */
-
 public class Request extends Message
 {
 
@@ -22,7 +21,6 @@ public class Request extends Message
      */
     Request()
     {
-
     }
 
     /**
@@ -43,5 +41,4 @@ public class Request extends Message
 
         super.setMessageType(requestType);
     }
-
 }

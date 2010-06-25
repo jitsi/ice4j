@@ -11,7 +11,7 @@ import java.util.*;
 import org.ice4j.*;
 
 /**
- * The NONCE attribute is used for authentification.
+ * The NONCE attribute is used for authentication.
  *
  * @author Sebastien Vincent
  */
@@ -45,7 +45,8 @@ public class NonceAttribute extends Attribute
      * @param length the length of the binary array.
      * @throws StunException if attributeValue contains invalid data.
      */
-    void decodeAttributeBody(byte[] attributeValue, char offset, char length) throws StunException
+    void decodeAttributeBody(byte[] attributeValue, char offset, char length)
+        throws StunException
     {
         nonce = new byte[length];
         System.arraycopy(attributeValue, offset, nonce, 0, length);
@@ -58,7 +59,8 @@ public class NonceAttribute extends Attribute
     public byte[] encode()
     {
         char type = getAttributeType();
-        byte binValue[] = new byte[HEADER_LENGTH + getDataLength() + (getDataLength() % 4)];
+        byte binValue[]
+            = new byte[HEADER_LENGTH + getDataLength() + (getDataLength() % 4)];
 
         //Type
         binValue[0] = (byte)(type>>8);
@@ -93,18 +95,13 @@ public class NonceAttribute extends Attribute
     }
 
     /**
-     * Returns a (cloned) byte array containg the data value of the nonce
+     * Returns a (cloned) byte array containing the data value of the nonce
      * attribute.
      * @return the binary array containing the nonce.
      */
     public byte[] getNonce()
     {
-        if (nonce == null)
-            return null;
-
-        byte[] copy = new byte[nonce.length];
-        System.arraycopy(nonce, 0, copy, 0, nonce.length);
-        return copy;
+        return (nonce == null) ? null : nonce.clone();
     }
 
     /**
@@ -114,14 +111,7 @@ public class NonceAttribute extends Attribute
      */
     public void setNonce(byte[] nonce)
     {
-        if (nonce == null)
-        {
-            this.nonce = null;
-            return;
-        }
-
-        this.nonce = new byte[nonce.length];
-        System.arraycopy(nonce, 0, this.nonce, 0, nonce.length);
+        this.nonce = (nonce == null) ? null : nonce.clone();
     }
 
     /**
@@ -132,19 +122,16 @@ public class NonceAttribute extends Attribute
      */
     public boolean equals(Object obj)
     {
-        if (! (obj instanceof NonceAttribute) || obj == null)
-            return false;
-
         if (obj == this)
             return true;
-
-        NonceAttribute att = (NonceAttribute) obj;
-        if (att.getAttributeType() != getAttributeType()
-                || att.getDataLength() != getDataLength()
-                || !Arrays.equals( att.nonce, nonce))
+        if (! (obj instanceof NonceAttribute))
             return false;
 
-        return true;
+        NonceAttribute att = (NonceAttribute) obj;
+
+        return
+            (att.getAttributeType() == getAttributeType()
+                && att.getDataLength() == getDataLength()
+                && Arrays.equals(att.nonce, nonce));
     }
 }
-

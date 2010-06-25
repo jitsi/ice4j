@@ -6,16 +6,16 @@
  */
 package org.ice4j.message;
 
-import org.ice4j.*;
-
 /**
  * A response descendant of the message class. The primary purpose of the
  * Response class is to allow better functional definition of the classes in the
  * stack package.
  *
  * @author Emil Ivov
+ * @author Lubomir Marinov
  */
-public class Response extends Message
+public class Response
+    extends Message
 {
 
     /**
@@ -23,6 +23,28 @@ public class Response extends Message
      */
     Response()
     {
+    }
+
+    /**
+     * Determines whether this instance represents a STUN error response.
+     *
+     * @return <tt>true</tt> if this instance represents a STUN error response;
+     * otherwise, <tt>false</tt>
+     */
+    public boolean isErrorResponse()
+    {
+        return isErrorResponseType(getMessageType());
+    }
+
+    /**
+     * Determines whether this instance represents a STUN success response.
+     *
+     * @return <tt>true</tt> if this instance represents a STUN success
+     * response; otherwise, <tt>false</tt>
+     */
+    public boolean isSuccessResponse()
+    {
+        return isSuccessResponseType(getMessageType());
     }
 
     /**
@@ -37,8 +59,8 @@ public class Response extends Message
     {
         if(!isResponseType(responseType))
             throw new IllegalArgumentException(
-                                    (int)(responseType)
-                                    + " - is not a valid response type.");
+                                    Integer.toString(responseType)
+                                        + " is not a valid response type.");
 
 
         super.setMessageType(responseType);

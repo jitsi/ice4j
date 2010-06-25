@@ -6,10 +6,6 @@
  */
 package org.ice4j.attribute;
 
-import java.util.*;
-
-import org.ice4j.*;
-
 /**
  * The ERROR-CODE attribute is present in the Binding Error Response and
  * Shared Secret Error Response.  It is a numeric value in the range of
@@ -142,7 +138,6 @@ public class ErrorCodeAttribute extends Attribute
         return (char)(getErrorClass()*100 + getErrorNumber());
     }
 
-
     /**
      * Sets this attribute's error number.
      * @param errorNumber the error number to assign this attribute.
@@ -189,7 +184,6 @@ public class ErrorCodeAttribute extends Attribute
     {
         return errorClass;
     }
-
 
     /**
      * Returns a default reason phrase corresponding to the specified error
@@ -371,6 +365,4 @@ public class ErrorCodeAttribute extends Attribute
         setReasonPhrase(new String(reasonBytes));
 
     }
-
-
 }

@@ -13,6 +13,7 @@ import org.ice4j.attribute.*;
 import org.ice4j.message.*;
 import org.ice4j.security.*;
 import org.ice4j.stack.*;
+
 /**
  * The class that would be handling and responding to incoming connectivity
  * checks.
@@ -56,7 +57,7 @@ class ConnectivityCheckServer
 
     /**
      * Handles the {@link Request} delivered in <tt>evt</tt> by possibly
-     * queueing a triggered check and sending a success or or error response
+     * queuing a triggered check and sending a success or an error response
      * depending on how processing goes.
      *
      * @param evt the {@link StunMessageEvent} containing the {@link Request}
@@ -94,16 +95,17 @@ class ConnectivityCheckServer
 
         //detect role conflicts
         if( ( parentAgent.isControlling()
-                        && request.contains(Attribute.ICE_CONTROLLING))
+                    && request.containsAttribute(Attribute.ICE_CONTROLLING))
             || ( ! parentAgent.isControlling()
-                            && request.contains(Attribute.ICE_CONTROLLED)))
+                        && request.containsAttribute(Attribute.ICE_CONTROLLED)))
         {
             if (!repairRoleConflict(evt))
             return;
         }
 
         long priority = extractPriority(request);
-        boolean useCandidate = request.contains(Attribute.USE_CANDIDATE);
+        boolean useCandidate
+            = request.containsAttribute(Attribute.USE_CANDIDATE);
 
         //tell our address handler we saw a new remote address;
         parentAgent.incomingCheckReceived(evt.getRemoteAddress(),
@@ -187,7 +189,7 @@ class ConnectivityCheckServer
         // If the agent is in the controlling role, and the
         // ICE-CONTROLLING attribute is present in the request:
         if(parentAgent.isControlling()
-                        && req.contains(Attribute.ICE_CONTROLLING))
+                        && req.containsAttribute(Attribute.ICE_CONTROLLING))
         {
             IceControllingAttribute controlling = (IceControllingAttribute)
                 req.getAttribute(Attribute.ICE_CONTROLLING);
@@ -234,7 +236,7 @@ class ConnectivityCheckServer
         // If the agent is in the controlled role, and the ICE-CONTROLLED
         // attribute is present in the request:
         else if(!parentAgent.isControlling()
-                        && req.contains(Attribute.ICE_CONTROLLED))
+                        && req.containsAttribute(Attribute.ICE_CONTROLLED))
         {
             IceControlledAttribute controlled = (IceControlledAttribute)
                 req.getAttribute(Attribute.ICE_CONTROLLED);

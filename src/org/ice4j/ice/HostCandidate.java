@@ -43,11 +43,6 @@ public class HostCandidate extends LocalCandidate
     private final DatagramSocket socket;
 
     /**
-     * The <tt>DatagramPacketFilter</tt> that only accepts STUN messages.
-     */
-    private DatagramPacketFilter stunDatagramPacketFilter;
-
-    /**
      * Creates a HostCandidate for the specified transport address.
      *
      * @param socket the {@link DatagramSocket} that communication associated
@@ -99,6 +94,7 @@ public class HostCandidate extends LocalCandidate
         Throwable exception = null;
 
         if (hostSocket instanceof MultiplexingDatagramSocket)
+        {
             try
             {
                 stunSocket
@@ -108,12 +104,13 @@ public class HostCandidate extends LocalCandidate
             }
             catch (SocketException sex)//don't u just luv da name? ;)
             {
-                logger.log( Level.SEVERE,
-                             "Failed to acquire DatagramSocket"
-                            + " specific to STUN communication.",
-                            sex);
+                logger.log(Level.SEVERE,
+                           "Failed to acquire DatagramSocket"
+                               + " specific to STUN communication.",
+                           sex);
                 exception = sex;
             }
+        }
         if (stunSocket == null)
             throw new IllegalArgumentException("hostCand", exception);
         else

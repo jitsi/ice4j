@@ -6,14 +6,11 @@
  */
 package org.ice4j.attribute;
 
-import java.nio.channels.*;
-import java.security.*;
 import java.util.*;
 
 import javax.crypto.*;
 import javax.crypto.spec.*;
 
-import org.ice4j.*;
 import org.ice4j.stack.*;
 
 /**

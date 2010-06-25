@@ -6,6 +6,7 @@
  */
 package org.ice4j.message;
 
+import java.io.*;
 import java.util.logging.*;
 
 import org.ice4j.*;
@@ -20,9 +21,8 @@ import org.ice4j.attribute.*;
  */
 public class MessageFactory
 {
-    private static final Logger logger = Logger
-                                                       .getLogger(MessageFactory.class
-                                                                       .getName());
+    private static final Logger logger
+        = Logger.getLogger(MessageFactory.class.getName());
 
     /**
      * Creates a default binding request. The request DOES NOT contains a
@@ -374,34 +374,64 @@ public class MessageFactory
     }
 
     /**
-     * Add the required attributes for long-term authentication.<br/>
-     * This will also add a MESSAGE-INTEGRITY and FINGERPRINT attribute.<br/>
-     * Do not add another attributes after called this method.
+     * Adds the <tt>Attribute</tt>s to a specific <tt>Request</tt> which support
+     * the STUN long-term credential mechanism.
+     * <p>
+     * <b>Warning</b>: The MESSAGE-INTEGRITY <tt>Attribute</tt> will also be
+     * added so <tt>Attribute</tt>s added afterwards will not be taken into
+     * account for the calculation of the MESSAGE-INTEGRITY value. For example,
+     * the FINGERPRINT <tt>Attribute</tt> may still safely be added afterwards,
+     * because it is known to appear after the MESSAGE-INTEGRITY.
+     * </p>
      *
-     * @param request the original request
-     * @param username username value
-     * @param realm realm value
-     * @param nonce nonce value
+     * @param request the <tt>Request</tt> in which the <tt>Attribute</tt>s of
+     * the STUN long-term credential mechanism are to be added
+     * @param username the value for the USERNAME <tt>Attribute</tt> to be added
+     * to <tt>request</tt>
+     * @param realm the value for the REALM <tt>Attribute</tt> to be added to
+     * <tt>request</tt>
+     * @param nonce the value for the NONCE <tt>Attribute</tt> to be added to
+     * <tt>request</tt> 
      *
-     * @throws StunException in case we have a problem creating the username
-     * realm or nonce attributes.
+     * @throws StunException if anything goes wrong while adding the
+     * <tt>Attribute</tt>s to <tt>request</tt> which support the STUN long-term
+     * credential mechanism
      */
-    public static void addLongTermAuthentifcationAttribute(
-                    Request request, byte username[], byte realm[],
-                    byte nonce[]) throws StunException
+    public static void addLongTermCredentialAttributes(
+            Request request,
+            byte username[], byte realm[], byte nonce[])
+        throws StunException
     {
-        UsernameAttribute usernameAttr = AttributeFactory
-                        .createUsernameAttribute(username);
-        RealmAttribute realmAttr = AttributeFactory
-                        .createRealmAttribute(realm);
-        NonceAttribute nonceAttr = AttributeFactory
-                        .createNonceAttribute(nonce);
+        UsernameAttribute usernameAttribute
+            = AttributeFactory.createUsernameAttribute(username);
+        RealmAttribute realmAttribute
+            = AttributeFactory.createRealmAttribute(realm);
+        NonceAttribute nonceAttribute
+            = AttributeFactory.createNonceAttribute(nonce);
 
-        request.addAttribute(usernameAttr);
-        request.addAttribute(realmAttr);
-        request.addAttribute(nonceAttr);
+        request.addAttribute(usernameAttribute);
+        request.addAttribute(realmAttribute);
+        request.addAttribute(nonceAttribute);
 
-        /* TODO calculate MESSAGE-INTEGRITY and FINGERPRINT */
+        // MESSAGE-INTEGRITY
+        MessageIntegrityAttribute messageIntegrityAttribute;
+
+        try
+        {
+            /*
+             * The value of USERNAME is a variable-length value. It MUST contain
+             * a UTF-8 [RFC3629] encoded sequence of less than 513 bytes, and
+             * MUST have been processed using SASLprep [RFC4013].
+             */
+            messageIntegrityAttribute
+                = AttributeFactory.createMessageIntegrityAttribute(
+                        new String(username, "UTF-8"));
+        }
+        catch (UnsupportedEncodingException ueex)
+        {
+            throw new StunException("username", ueex);
+        }
+        request.addAttribute(messageIntegrityAttribute);
     }
 
     /**

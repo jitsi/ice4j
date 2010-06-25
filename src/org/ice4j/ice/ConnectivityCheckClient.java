@@ -202,7 +202,7 @@ class ConnectivityCheckClient
         else if(evt.getResponse().getMessageType()
                         == Response.BINDING_ERROR_RESPONSE)
         {
-            if(! evt.getResponse().contains(Attribute.ERROR_CODE))
+            if(! evt.getResponse().containsAttribute(Attribute.ERROR_CODE))
             {
                 logger.fine("Received a malformed error response.");
                 return; //malformed error response
@@ -298,7 +298,7 @@ class ConnectivityCheckClient
         CandidatePair checkedPair = ((CandidatePair)evt.getTransactionID()
                         .getApplicationData());
 
-        if(! response.contains(Attribute.XOR_MAPPED_ADDRESS))
+        if(! response.containsAttribute(Attribute.XOR_MAPPED_ADDRESS))
         {
             logger.fine("Received a success response with no "
                             +"XOR_MAPPED_ADDRESS attribute.");
@@ -432,7 +432,7 @@ class ConnectivityCheckClient
         //CANDIDATE attribute in the Binding request, the valid pair generated
         //from that check has its nominated flag set to true.
         if(parentAgent.isControlling()
-                      && request.contains(Attribute.USE_CANDIDATE))
+                      && request.containsAttribute(Attribute.USE_CANDIDATE))
         {
             parentAgent.nominationConfirmed( validPair );
         }
@@ -504,7 +504,7 @@ class ConnectivityCheckClient
         if(errorCode.getErrorCode() == ErrorCodeAttribute.ROLE_CONFLICT)
         {
             boolean wasControlling = originalRequest
-                                .contains(Attribute.ICE_CONTROLLING);
+                                .containsAttribute(Attribute.ICE_CONTROLLING);
 
             logger.finer("Swithing to isControlling=" + !wasControlling);
             parentAgent.setControlling(!wasControlling);

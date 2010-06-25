@@ -13,8 +13,6 @@ import org.ice4j.*;
 import org.ice4j.attribute.*;
 import org.ice4j.stack.*;
 
-import sun.tools.tree.*;
-
 /**
  * This class represents a STUN message. STUN messages are TLV (type-length-value)
  * encoded using big endian (network ordered) binary.  All STUN messages start
@@ -308,7 +306,7 @@ public abstract class Message
      * @return <tt>true</tt> if the this <tt>Message</tt> contains an attribute
      * with the specified type or <tt>false</tt> otherwise.
      */
-    public boolean contains(char attributeType)
+    public boolean containsAttribute(char attributeType)
     {
         return attributes.containsKey(attributeType);
     }
@@ -491,12 +489,13 @@ public abstract class Message
     {
         switch (messageType)
         {
-            case BINDING_REQUEST:              return "BINDING-REQUEST";
-            case BINDING_SUCCESS_RESPONSE:             return "BINDING-RESPONSE";
-            case BINDING_ERROR_RESPONSE:       return "BINDING-ERROR-RESPONSE";
-            case SHARED_SECRET_REQUEST:        return "SHARED-SECRET-REQUEST";
-            case SHARED_SECRET_RESPONSE:       return "SHARED-SECRET-RESPONSE";
-            case SHARED_SECRET_ERROR_RESPONSE: return "SHARED-SECRET-ERROR-RESPONSE";
+        case ALLOCATE_REQUEST:             return "ALLOCATE-REQUEST";
+        case BINDING_REQUEST:              return "BINDING-REQUEST";
+        case BINDING_SUCCESS_RESPONSE:     return "BINDING-RESPONSE";
+        case BINDING_ERROR_RESPONSE:       return "BINDING-ERROR-RESPONSE";
+        case SHARED_SECRET_REQUEST:        return "SHARED-SECRET-REQUEST";
+        case SHARED_SECRET_RESPONSE:       return "SHARED-SECRET-RESPONSE";
+        case SHARED_SECRET_ERROR_RESPONSE: return "SHARED-SECRET-ERROR-RESPONSE";
         }
 
         return "UNKNOWN-MESSAGE";
@@ -705,7 +704,7 @@ public abstract class Message
 
         offset+=TRANSACTION_ID_LENGTH;
 
-        while(offset - Message.HEADER_LENGTH< length)
+        while(offset - Message.HEADER_LENGTH < length)
         {
             Attribute att = AttributeDecoder.decode(
                 binMessage, offset, (char)(length - offset));
@@ -824,7 +823,6 @@ public abstract class Message
             if(getAttributePresentity(i) == M && getAttribute(i) == null)
                 throw new IllegalStateException(
                     "A mandatory attribute (type=" +(int)i + ") is missing!");
-
     }
 
     /**
@@ -886,12 +884,27 @@ public abstract class Message
      *
      * @return  a <tt>String</tt> representation of this message.
      */
+    @Override
     public String toString()
     {
-        return getName()+"(0x"+Integer.toHexString(getMessageType())
-            +")[attrib.count=" + getAttributeCount()
-            +" len=" + (int) this.getDataLength()
-            +" tranID=" + TransactionID.toString(getTransactionID()) + "]";
-    }
+        StringBuilder stringBuilder = new StringBuilder();
 
+        stringBuilder.append(getName());
+        stringBuilder.append("(0x");
+        stringBuilder.append(Integer.toHexString(getMessageType()));
+        stringBuilder.append(")[attrib.count=");
+        stringBuilder.append(getAttributeCount());
+        stringBuilder.append(" len=");
+        stringBuilder.append((int) this.getDataLength());
+
+        byte[] transactionID = getTransactionID();
+
+        if (transactionID != null)
+        {
+            stringBuilder.append(" tranID=");
+            stringBuilder.append(TransactionID.toString(transactionID));
+        }
+        stringBuilder.append("]");
+        return stringBuilder.toString();
+    }
 }
