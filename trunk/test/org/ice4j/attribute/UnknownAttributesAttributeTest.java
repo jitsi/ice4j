@@ -11,7 +11,6 @@ import junit.framework.*;
 import java.util.*;
 
 import org.ice4j.*;
-import org.ice4j.attribute.*;
 
 public class UnknownAttributesAttributeTest extends TestCase {
     private UnknownAttributesAttribute unknownAttributesAttribute = null;

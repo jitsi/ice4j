@@ -16,16 +16,12 @@ import org.ice4j.attribute.*;
 public class MessageTest extends TestCase {
     private Message bindingRequest       = null;
     private Message bindingResponse      = null;
-    private Message bindingErrorResponse = null;
 
     private MappedAddressAttribute  mappedAddress = null;
     private SourceAddressAttribute  sourceAddress = null;
     private ChangedAddressAttribute changedAddress = null;
 
     private ChangeRequestAttribute  changeRequest = null;
-
-    private ErrorCodeAttribute         errorCodeAttribute         = null;
-    private UnknownAttributesAttribute unknownAttributesAttribute = null;
 
     private MsgFixture msgFixture;
 
@@ -76,13 +72,10 @@ public class MessageTest extends TestCase {
     {
         bindingRequest = null;
         bindingResponse = null;
-        bindingErrorResponse = null;
         mappedAddress = null;
         sourceAddress = null;
         changedAddress = null;
         changeRequest = null;
-        errorCodeAttribute = null;
-        unknownAttributesAttribute = null;
         changeRequest = null;
 
         msgFixture.tearDown();

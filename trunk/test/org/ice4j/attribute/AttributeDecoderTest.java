@@ -7,17 +7,14 @@
 package org.ice4j.attribute;
 
 import org.ice4j.*;
-import org.ice4j.attribute.*;
 
 import junit.framework.*;
-
 
 /**
  * We have already tested individual decode methods, so our job here
  * is to verify that that AttributeDecoder.decode distributes the right way.
  */
 public class AttributeDecoderTest extends TestCase {
-    private AttributeDecoder attributeDecoder = null;
     private MsgFixture msgFixture;
     private byte[] expectedAttributeValue = null;
 
@@ -28,7 +25,6 @@ public class AttributeDecoderTest extends TestCase {
     protected void setUp() throws Exception {
         super.setUp();
 
-        attributeDecoder = new AttributeDecoder();
         msgFixture = new MsgFixture();
 
         //init a sample body
@@ -43,7 +39,6 @@ public class AttributeDecoderTest extends TestCase {
     }
 
     protected void tearDown() throws Exception {
-        attributeDecoder = null;
         msgFixture.tearDown();
 
         msgFixture = null;
@@ -118,7 +113,6 @@ public class AttributeDecoderTest extends TestCase {
 
     }
 
-
    public void testDecodeErrorCode()
        throws Exception
    {
@@ -186,8 +180,4 @@ public class AttributeDecoderTest extends TestCase {
            expectedReturn, actualReturn);
 
    }
-
-
-
-
 }
