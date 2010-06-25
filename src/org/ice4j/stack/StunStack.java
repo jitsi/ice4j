@@ -714,7 +714,7 @@ public class StunStack
 
             if (!validateMessageIntegrity(msgIntAttr,
                             new String(unameAttr.getUsername()),
-                            evt.getRawMessage().getBytes(), 0))
+                            evt.getRawMessage()))
             {
                 Response error = MessageFactory.createBindingErrorResponse(
                                 ErrorCodeAttribute.UNAUTHORIZED,
@@ -777,20 +777,18 @@ public class StunStack
      * @param username the user name that the message integrity checksum is
      * supposed to have been built for.
      * @param message the message whose SHA1 checksum we'd need to recalculate.
-     * @param offset the index in <tt>message</tt> where data starts.
      *
      * @return <tt>true</tt> if <tt>msgInt</tt> contains a valid SHA1 value and
      * <tt>false</tt> otherwise.
      */
-    private boolean validateMessageIntegrity(MessageIntegrityAttribute msgInt,
-                                             String                    username,
-                                             byte[]                    message,
-                                             int                       offset)
+    private boolean validateMessageIntegrity(
+            MessageIntegrityAttribute msgInt,
+            String                    username,
+            RawMessage                message)
     {
         int colon = username.indexOf(":");
 
-        if( username.length() < 1
-            || colon < 1)
+        if( (username.length() < 1) || colon < 1)
         {
             if(logger.isLoggable(Level.FINE))
             {
@@ -808,12 +806,52 @@ public class StunStack
         if(key == null)
             return false;
 
-        //now check whether the SHA1 matches.
-        byte[] expectedSha1 = MessageIntegrityAttribute
-            .calculateHmacSha1(
-                message, offset, msgInt.getLocationInMessage(), key);
+        /*
+         * Now check whether the SHA1 matches. Using
+         * MessageIntegrityAttribute.calculateHmacSha1 on the bytes of the
+         * RawMessage will be incorrect if there are other Attributes after the
+         * MessageIntegrityAttribute because the value of the
+         * MessageIntegrityAttribute is calculated on a STUN "Message Length"
+         * upto and including the MESSAGE-INTEGRITY and excluding any Attributes
+         * after it. So for the sake of preventing code duplication, clone the
+         * message and calculate the expected MESSAGE-INTEGRITY in the clone.
+         */
+        MessageIntegrityAttribute expectedMsgInt;
 
-        if (!Arrays.equals(expectedSha1, msgInt.getHmacSha1Content()))
+        try
+        {
+            Message decodedMessage
+                = Message.decode(
+                        message.getBytes(),
+                        (char) 0,
+                        (char) message.getMessageLength());
+
+
+            expectedMsgInt
+                = (MessageIntegrityAttribute)
+                    decodedMessage.getAttribute(Attribute.MESSAGE_INTEGRITY);
+
+            if (expectedMsgInt != null)
+            {
+                /*
+                 * Encode the decodedMessage so that its
+                 * MessageIntegrityAttribute populates with the expectedSha1.
+                 * But don't forget to set the username of the
+                 * MessageIntegrityAttribute first or its encoding will crash.
+                 */
+                expectedMsgInt.setUsername(lfrag);
+                decodedMessage.encode();
+            }
+        }
+        catch (StunException sex)
+        {
+            expectedMsgInt = null;
+        }
+
+        if ((expectedMsgInt == null)
+                || !Arrays.equals(
+                        expectedMsgInt.getHmacSha1Content(),
+                        msgInt.getHmacSha1Content()))
         {
             if(logger.isLoggable(Level.FINE))
             {
@@ -825,7 +863,6 @@ public class StunStack
 
         if (logger.isLoggable(Level.FINEST))
             logger.finest("Successfully verified msg integrity");
-
 
         return true;
     }

@@ -294,21 +294,20 @@ class ConnectivityCheckServer
      */
     public boolean checkLocalUserName(String username)
     {
-        boolean accept = false;
         int colon = username.indexOf(":");
-        if( colon < 0)
+        String ufrag;
+
+        if (colon < 0)
         {
             //caller gave us a ufrag
-            if(username.equals(parentAgent.getLocalUfrag()))
-                accept = true;
+            ufrag = username;
         }
         else
         {
             //caller gave us the entire username.
-            if(username.substring(0, colon).equals(parentAgent.getLocalUfrag()))
-                accept = true;
+            ufrag = username.substring(0, colon);
         }
-        return accept;
+        return ufrag.equals(parentAgent.getLocalUfrag());
     }
 
     /**
@@ -324,23 +323,10 @@ class ConnectivityCheckServer
      */
     public byte[] getLocalKey(String username)
     {
-        //support both the case where username is the local fragment or the
-        //entire user name.
-        int colon = username.indexOf(":");
-        if( colon < 0)
-        {
-            //caller gave us a ufrag
-            if (username.equals(parentAgent.getLocalUfrag()))
-                return parentAgent.getLocalPassword().getBytes();
-        }
-        else
-        {
-            //caller gave us the entire username.
-            if(username.substring(0, colon).equals(parentAgent.getLocalUfrag()))
-                return parentAgent.getLocalPassword().getBytes();
-        }
-
-        return null;
+        return
+            checkLocalUserName(username)
+                ? parentAgent.getLocalPassword().getBytes()
+                : null;
     }
 
     /**
@@ -359,7 +345,8 @@ class ConnectivityCheckServer
         //support both the case where username is the local fragment or the
         //entire user name.
         int colon = username.indexOf(":");
-        if( colon < 0)
+
+        if (colon < 0)
         {
             //caller gave us a ufrag
             if (username.equals(parentAgent.getRemoteUfrag()))
@@ -371,7 +358,6 @@ class ConnectivityCheckServer
             if (username.equals(parentAgent.generateLocalUserName()))
                 return parentAgent.getRemotePassword().getBytes();
         }
-
         return null;
     }
 

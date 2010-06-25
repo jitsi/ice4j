@@ -262,14 +262,13 @@ public abstract class Message
 
         for (Attribute att : attributes.values())
         {
-             int attLen = att.getDataLength() + Attribute.HEADER_LENGTH;
+            int attLen = att.getDataLength() + Attribute.HEADER_LENGTH;
 
             //take attribute padding into account:
             attLen += (4 - attLen%4)%4;
 
             length += attLen;
         }
-
         return length;
     }
 
@@ -490,6 +489,8 @@ public abstract class Message
         switch (messageType)
         {
         case ALLOCATE_REQUEST:             return "ALLOCATE-REQUEST";
+        case ALLOCATE_RESPONSE:            return "ALLOCATE-RESPONSE";
+        case ALLOCATE_ERROR_RESPONSE:      return "ALLOCATE-ERROR-RESPONSE";
         case BINDING_REQUEST:              return "BINDING-REQUEST";
         case BINDING_SUCCESS_RESPONSE:     return "BINDING-RESPONSE";
         case BINDING_ERROR_RESPONSE:       return "BINDING-ERROR-RESPONSE";
@@ -547,18 +548,21 @@ public abstract class Message
     {
         prepareForEncoding();
 
-        //make sure that
         //make sure we have everything necessary to encode a proper message
         validateAttributePresentity();
-        char dataLength = getDataLength();
+
+        final char dataLength = getDataLength();
         byte binMsg[] = new byte[HEADER_LENGTH + dataLength];
         int offset    = 0;
 
+        // STUN Message Type
         binMsg[offset++] = (byte)(getMessageType()>>8);
         binMsg[offset++] = (byte)(getMessageType()&0xFF);
 
-        binMsg[offset++] = (byte)(dataLength >> 8);
-        binMsg[offset++] = (byte)(dataLength & 0xFF);
+        // Message Length
+        final int messageLengthOffset = offset;
+
+        offset += 2;
 
         System.arraycopy(MAGIC_COOKIE, 0, binMsg, offset, 4);
         offset+=4;
@@ -568,26 +572,53 @@ public abstract class Message
 
         Iterator<Map.Entry<Character, Attribute>> iter
             = attributes.entrySet().iterator();
+        char dataLengthForContentDependentAttribute = 0;
+
         while (iter.hasNext())
         {
             Attribute attribute = iter.next().getValue();
+            int attributeLength
+                = attribute.getDataLength() + Attribute.HEADER_LENGTH;
+
+            //take attribute padding into account:
+            attributeLength += (4 - attributeLength % 4) % 4;
+            dataLengthForContentDependentAttribute += attributeLength;
 
             //special handling for message integrity and fingerprint values
-            byte[] attBinValue;
+            byte[] binAtt;
+
             if (attribute instanceof ContentDependentAttribute)
             {
-                 attBinValue = ((ContentDependentAttribute)attribute)
-                     .encode(binMsg, 0, offset);
+                /*
+                 * The "Message Length" seen by a ContentDependentAttribute is
+                 * upto and including the very Attribute but without any other
+                 * Attribute instances after it.
+                 */
+                binMsg[messageLengthOffset]
+                    = (byte)(dataLengthForContentDependentAttribute >> 8);
+                binMsg[messageLengthOffset + 1]
+                    = (byte)(dataLengthForContentDependentAttribute & 0xFF);
+                binAtt
+                    = ((ContentDependentAttribute)attribute).encode(
+                            binMsg, 0, offset);
             }
             else
             {
-                attBinValue = attribute.encode();
+                binAtt = attribute.encode();
             }
 
-            System.arraycopy(
-                        attBinValue, 0, binMsg, offset, attBinValue.length);
-            offset += attBinValue.length;
+            System.arraycopy(binAtt, 0, binMsg, offset, binAtt.length);
+            /*
+             * Offset by attributeLength and not by binAtt.length because
+             * attributeLength takes the attribute padding into account and
+             * binAtt.length does not.
+             */
+            offset += attributeLength;
         }
+
+        // Message Length
+        binMsg[messageLengthOffset]     = (byte)(dataLength >> 8);
+        binMsg[messageLengthOffset + 1] = (byte)(dataLength & 0xFF);
 
         return binMsg;
     }

@@ -352,24 +352,24 @@ public class MessageFactory
 
             /* XXX add enum somewhere for transport number */
             if (protocol != 6 && protocol != 17)
-            {
                 throw new StunException("Protocol not valid!");
+
+            // REQUESTED-TRANSPORT
+            allocateRequest.addAttribute(
+                    AttributeFactory.createRequestedTransportAttribute(
+                            protocol));
+
+            // EVEN-PORT
+            if (rFlag)
+            {
+                allocateRequest.addAttribute(
+                        AttributeFactory.createEvenPortAttribute(rFlag));
             }
-
-            /* add a REQUESTED-TRANSPORT attribute */
-            RequestedTransportAttribute reqTransport = AttributeFactory
-                            .createRequestedTransportAttribute(protocol);
-            allocateRequest.addAttribute(reqTransport);
-
-            /* add EVEN-PORT attribute */
-            EvenPortAttribute reqProps = AttributeFactory
-                            .createEvenPortAttribute(rFlag);
-            allocateRequest.addAttribute(reqProps);
-        } catch (StunException ex)
+        }
+        catch (StunException ex)
         {
             logger.log(Level.FINE, "Failed to set message type.", ex);
         }
-
         return allocateRequest;
     }
 

@@ -105,9 +105,6 @@ public class EvenPortAttribute extends Attribute
         binValue[3] = (byte)(getDataLength() & 0x00FF);
         //Data
         binValue[4] = (byte)(rFlag ? 1 << 8 : 0);
-        binValue[5] = 0x00; /* not used for the moment */
-        binValue[6] = 0x00; /* not used for the moment */
-        binValue[7] = 0x00; /* not used for the moment */
 
         return binValue;
     }
