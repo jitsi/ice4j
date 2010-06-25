@@ -30,5 +30,4 @@ public interface ResponseCollector
      * transaction that has just failed.
      */
     public void processTimeout(StunTimeoutEvent event);
-
 }

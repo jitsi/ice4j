@@ -28,8 +28,8 @@ class ConnectivityCheckClient
      * The <tt>Logger</tt> used by the <tt>ConnectivityCheckClient</tt>
      * class and its instances for logging output.
      */
-    private static final Logger logger = Logger
-                    .getLogger(ConnectivityCheckClient.class.getName());
+    private static final Logger logger
+        = Logger.getLogger(ConnectivityCheckClient.class.getName());
 
     /**
      * The agent that created us.
@@ -82,8 +82,11 @@ class ConnectivityCheckClient
     private void startChecks(CheckList checkList)
     {
         PaceMaker paceMaker = new PaceMaker(this, checkList);
-        paceMakers.add(paceMaker);
 
+        synchronized (paceMakers)
+        {
+            paceMakers.add(paceMaker);
+        }
         paceMaker.start();
     }
 
@@ -661,7 +664,12 @@ class ConnectivityCheckClient
 
             }
 
-            parentClient.paceMakers.remove(this);
+            List<PaceMaker> parentClientPaceMakers = parentClient.paceMakers;
+
+            synchronized (parentClientPaceMakers)
+            {
+                parentClientPaceMakers.remove(this);
+            }
         }
     }
 
@@ -673,6 +681,7 @@ class ConnectivityCheckClient
         synchronized (paceMakers)
         {
             Iterator<PaceMaker> paceMakersIter = paceMakers.iterator();
+
             while(paceMakersIter.hasNext())
             {
                 PaceMaker paceMaker = paceMakersIter.next();
@@ -680,7 +689,6 @@ class ConnectivityCheckClient
                 paceMaker.isRunning = false;
                 synchronized(paceMaker)
                 {
-
                     paceMaker.notify();
                 }
 

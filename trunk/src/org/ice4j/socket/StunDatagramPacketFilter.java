@@ -33,6 +33,16 @@ public class StunDatagramPacketFilter
 
     /**
      * Initializes a new <tt>StunDatagramPacketFilter</tt> which will accept
+     * <tt>DatagramPacket</tt>s which represent STUN messages received from
+     * any destination.
+     */
+    public StunDatagramPacketFilter()
+    {
+        this(null);
+    }
+
+    /**
+     * Initializes a new <tt>StunDatagramPacketFilter</tt> which will accept
      * <tt>DatagramPacket</tt>s which represent STUN messages and which are part
      * of the communication with a specific STUN server (or any server if
      * <tt>stunServer</tt> is <tt>null</tt>).
@@ -45,16 +55,6 @@ public class StunDatagramPacketFilter
     public StunDatagramPacketFilter(TransportAddress stunServer)
     {
         this.stunServer = stunServer;
-    }
-
-    /**
-     * Initializes a new <tt>StunDatagramPacketFilter</tt> which will accept
-     * <tt>DatagramPacket</tt>s which represent STUN messages received from
-     * any destination.
-     */
-    public StunDatagramPacketFilter()
-    {
-        this(null);
     }
 
     /**
@@ -71,13 +71,12 @@ public class StunDatagramPacketFilter
      */
     public boolean accept(DatagramPacket p)
     {
-        //if we were instantiated for a specific stun server, and the packet
-        //did not originate there, we reject it.
-        if (stunServer != null
-            && !stunServer.equals(p.getSocketAddress()))
-        {
+        /*
+         * If we were instantiated for a specific STUN server, and the packet
+         * did not originate there, we reject it.
+         */
+        if ((stunServer != null) && !stunServer.equals(p.getSocketAddress()))
             return false;
-        }
 
         /*
          * All STUN messages MUST start with a 20-byte header followed by

@@ -252,7 +252,8 @@ class StunClientTransaction
                 return;
 
             stackCallback.removeClientTransaction(this);
-            responseCollector.processTimeout( new StunTimeoutEvent(
+            responseCollector.processTimeout(
+                    new StunTimeoutEvent(
                             this.request, getLocalAddress(), transactionID));
         }
     }
