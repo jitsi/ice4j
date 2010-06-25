@@ -95,18 +95,13 @@ public class RealmAttribute extends Attribute
     }
 
     /**
-     * Returns a (cloned) byte array containg the data value of the realm
+     * Returns a (cloned) byte array containing the data value of the realm
      * attribute.
      * @return the binary array containing the realm.
      */
     public byte[] getRealm()
     {
-        if (realm == null)
-            return null;
-
-        byte[] copy = new byte[realm.length];
-        System.arraycopy(realm, 0, copy, 0, realm.length);
-        return copy;
+        return (realm == null) ? null : realm.clone();
     }
 
     /**

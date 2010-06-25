@@ -9,7 +9,7 @@ package org.ice4j.security;
 /**
  * The {@link CredentialsAuthority} interface is implemented by applications
  * in order to allow the stack to verify the integrity of incoming messages
- * containing the <tt>MessageIntegrity</tt> attribute.
+ * containing the <tt>MessageIntegrityAttribute</tt>.
  *
  * @author Emil Ivov
  */

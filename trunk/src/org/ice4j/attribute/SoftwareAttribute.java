@@ -8,8 +8,6 @@ package org.ice4j.attribute;
 
 import java.util.*;
 
-import org.ice4j.*;
-
 /**
  * The SOFTWARE attribute contains a textual description of the software
  * being used by the software or the client, including manufacturer and version number.

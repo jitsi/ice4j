@@ -9,14 +9,11 @@ package org.ice4j.stack;
 import org.ice4j.*;
 import org.ice4j.message.*;
 
-import com.sun.corba.se.impl.protocol.*;
-
 /**
  * Handles incoming requests.
  *
  * @author Emil Ivov
  */
-
 public interface RequestListener
 {
     /**

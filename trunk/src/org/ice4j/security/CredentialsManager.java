@@ -7,7 +7,6 @@
 package org.ice4j.security;
 
 import java.util.*;
-import java.util.logging.*;
 
 /**
  * The <tt>CredentialsManager</tt> allows an application to handle verification

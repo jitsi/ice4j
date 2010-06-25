@@ -105,12 +105,7 @@ public class UsernameAttribute extends Attribute
      */
     public byte[] getUsername()
     {
-        if (username == null)
-            return null;
-
-        byte[] copy = new byte[username.length];
-        System.arraycopy(username, 0, copy, 0, username.length);
-        return copy;
+        return (username == null) ? null : username.clone();
     }
 
     /**

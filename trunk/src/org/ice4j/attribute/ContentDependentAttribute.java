@@ -6,8 +6,6 @@
  */
 package org.ice4j.attribute;
 
-import org.ice4j.*;
-
 /**
  * <tt>ContentDependentAttribute</tt>s have a value that depend on the content
  * of the message. The {@link MessageIntegrityAttribute} and {@link

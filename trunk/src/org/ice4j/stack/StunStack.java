@@ -19,8 +19,6 @@ import org.ice4j.attribute.*;
 import org.ice4j.message.*;
 import org.ice4j.security.*;
 
-import com.sun.corba.se.impl.protocol.*;
-
 /**
  * The entry point to the Stun4J stack. The class is used to start, stop and
  * configure the stack.
@@ -693,8 +691,9 @@ public class StunStack
         }
 
         //assert Message Integrity
-        MessageIntegrityAttribute msgIntAttr = (MessageIntegrityAttribute)
-            request.getAttribute(Attribute.MESSAGE_INTEGRITY);
+        MessageIntegrityAttribute msgIntAttr
+            = (MessageIntegrityAttribute)
+                request.getAttribute(Attribute.MESSAGE_INTEGRITY);
 
         if (msgIntAttr != null)
         {

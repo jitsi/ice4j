@@ -96,9 +96,11 @@ public class StunException extends Exception
     }
 
     /**
-     * Creates a StunException, setting an error message an error id and a cause.
-     * @param message an error message.
+     * Creates a StunException, setting an error message an error id and a
+     * cause.
+     *
      * @param id an error id.
+     * @param message an error message.
      * @param cause the error that caused this exception.
      */
     public StunException(int id, String message, Throwable cause)
