@@ -11,7 +11,6 @@ import junit.framework.*;
 import java.util.Arrays;
 
 import org.ice4j.*;
-import org.ice4j.attribute.*;
 
 /**
  * @author Emil Ivov
