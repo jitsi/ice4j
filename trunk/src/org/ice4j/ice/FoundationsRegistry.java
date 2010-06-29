@@ -45,15 +45,23 @@ public class FoundationsRegistry
     public void assignFoundation(Candidate candidate)
     {
         //create the foundation key String
-        String type = candidate.getType().toString();
+        CandidateType candidateType = candidate.getType();
+        String type = candidateType.toString();
         String base
                   = candidate.getBase().getTransportAddress().getHostAddress();
-        String server = null;
+        String server;
 
-        if(candidate.getType() == CandidateType.SERVER_REFLEXIVE_CANDIDATE
-           || candidate.getType() == CandidateType.RELAYED_CANDIDATE)
+        switch (candidateType)
         {
+        case SERVER_REFLEXIVE_CANDIDATE:
             server = candidate.getStunServerAddress().getHostAddress();
+            break;
+        case RELAYED_CANDIDATE:
+            server = candidate.getTurnServerAddress().getHostAddress();
+            break;
+        default:
+            server = null;
+            break;
         }
 
         String transport = candidate.getTransport().toString();
