@@ -6,6 +6,9 @@
  */
 package org.ice4j.attribute;
 
+import java.io.*;
+import java.lang.reflect.*;
+
 import org.ice4j.*;
 
 /**
@@ -315,17 +318,23 @@ public class AttributeFactory
     }
 
     /**
-     * Create a UsernameAttribute.
+     * Creates a new <tt>UsernameAttribute</tt> instance.
      *
      * @param username the String value of the username
-     *
-     * @return newly created UsernameAttribute
+     * @return a new <tt>UsernameAttribute</tt> instance
      */
     public static UsernameAttribute createUsernameAttribute(String username)
     {
         UsernameAttribute attribute = new UsernameAttribute();
 
-        attribute.setUsername(username.getBytes());
+        try
+        {
+            attribute.setUsername(username.getBytes("UTF-8"));
+        }
+        catch (UnsupportedEncodingException ueex)
+        {
+            throw new UndeclaredThrowableException(ueex);
+        }
         return attribute;
     }
 
@@ -345,8 +354,8 @@ public class AttributeFactory
                                                     String username)
     {
         MessageIntegrityAttribute attribute = new MessageIntegrityAttribute();
-        attribute.setUsername(username);
 
+        attribute.setUsername(username);
         return attribute;
     };
 

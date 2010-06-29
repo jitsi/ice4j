@@ -135,7 +135,7 @@ public class CandidatePair
      */
     protected void setLocalCandidate( LocalCandidate localCnd)
     {
-        this.localCandidate = localCnd;;
+        this.localCandidate = localCnd;
     }
 
     /**
@@ -156,7 +156,7 @@ public class CandidatePair
      */
     protected void setRemoteCandidate( Candidate remoteCnd)
     {
-        this.remoteCandidate = remoteCnd;;
+        this.remoteCandidate = remoteCnd;
     }
 
     /**
