@@ -669,12 +669,12 @@ public class StunStack
         //assert valid username
         UsernameAttribute unameAttr = (UsernameAttribute)request
             .getAttribute(Attribute.USERNAME);
-        String username;
+        String username = null;
 
         if (unameAttr != null)
         {
-            username = new String(unameAttr.getUsername());
-            if (!validateUsername( unameAttr))
+            username = LongTermCredential.toString(unameAttr.getUsername());
+            if (!validateUsername(username))
             {
                 Response error = MessageFactory.createBindingErrorResponse(
                                 ErrorCodeAttribute.UNAUTHORIZED,
@@ -685,8 +685,7 @@ public class StunStack
                                 evt.getRemoteAddress());
 
                 throw new IllegalArgumentException(
-                    "Non-recognized username: "
-                    + new String(unameAttr.getUsername()));
+                    "Non-recognized username: " + username);
             }
         }
 
@@ -712,9 +711,11 @@ public class StunStack
                     "Missing USERNAME in the presence of MESSAGE-INTEGRITY: ");
             }
 
-            if (!validateMessageIntegrity(msgIntAttr,
-                            new String(unameAttr.getUsername()),
-                            evt.getRawMessage()))
+            if (!validateMessageIntegrity(
+                    msgIntAttr,
+                    username,
+                    true,
+                    evt.getRawMessage()))
             {
                 Response error = MessageFactory.createBindingErrorResponse(
                                 ErrorCodeAttribute.UNAUTHORIZED,
@@ -776,19 +777,26 @@ public class StunStack
      * @param msgInt the attribute that we need to validate.
      * @param username the user name that the message integrity checksum is
      * supposed to have been built for.
+     * @param shortTermCredentialMechanism <tt>true</tt> if <tt>msgInt</tt> is
+     * to be validated as part of the STUN short-term credential mechanism or
+     * <tt>false</tt> for the STUN long-term credential mechanism 
      * @param message the message whose SHA1 checksum we'd need to recalculate.
      *
      * @return <tt>true</tt> if <tt>msgInt</tt> contains a valid SHA1 value and
      * <tt>false</tt> otherwise.
      */
-    private boolean validateMessageIntegrity(
+    public boolean validateMessageIntegrity(
             MessageIntegrityAttribute msgInt,
             String                    username,
+            boolean                   shortTermCredentialMechanism,
             RawMessage                message)
     {
-        int colon = username.indexOf(":");
+        int colon = -1;
 
-        if( (username.length() < 1) || colon < 1)
+        if ((username == null)
+                || (username.length() < 1)
+                || (shortTermCredentialMechanism
+                        && ((colon = username.indexOf(":")) < 1)))
         {
             if(logger.isLoggable(Level.FINE))
             {
@@ -798,10 +806,10 @@ public class StunStack
             return false;
         }
 
-        String lfrag = username.substring(0, colon);
+        if (shortTermCredentialMechanism)
+            username = username.substring(0, colon); // lfrag
 
-        byte[] key = StunStack.getInstance()
-                .getCredentialsManager().getLocalKey(lfrag);
+        byte[] key = getCredentialsManager().getLocalKey(username);
 
         if(key == null)
             return false;
@@ -813,84 +821,115 @@ public class StunStack
          * MessageIntegrityAttribute because the value of the
          * MessageIntegrityAttribute is calculated on a STUN "Message Length"
          * upto and including the MESSAGE-INTEGRITY and excluding any Attributes
-         * after it. So for the sake of preventing code duplication, clone the
-         * message and calculate the expected MESSAGE-INTEGRITY in the clone.
+         * after it.
          */
-        MessageIntegrityAttribute expectedMsgInt;
+        byte[] binMsg = new byte[msgInt.getLocationInMessage()];
+
+        System.arraycopy(message.getBytes(), 0, binMsg, 0, binMsg.length);
+
+        char messageLength
+            = (char)
+                (binMsg.length
+                    + Attribute.HEADER_LENGTH
+                    + msgInt.getDataLength()
+                    - Message.HEADER_LENGTH);
+
+        binMsg[2] = (byte) (messageLength >> 8);
+        binMsg[3] = (byte) (messageLength & 0xFF);
+
+        byte[] expectedMsgIntHmacSha1Content;
 
         try
         {
-            Message decodedMessage
-                = Message.decode(
-                        message.getBytes(),
-                        (char) 0,
-                        (char) message.getMessageLength());
-
-
-            expectedMsgInt
-                = (MessageIntegrityAttribute)
-                    decodedMessage.getAttribute(Attribute.MESSAGE_INTEGRITY);
-
-            if (expectedMsgInt != null)
-            {
-                /*
-                 * Encode the decodedMessage so that its
-                 * MessageIntegrityAttribute populates with the expectedSha1.
-                 * But don't forget to set the username of the
-                 * MessageIntegrityAttribute first or its encoding will crash.
-                 */
-                expectedMsgInt.setUsername(lfrag);
-                decodedMessage.encode();
-            }
+            expectedMsgIntHmacSha1Content
+                = MessageIntegrityAttribute.calculateHmacSha1(
+                        binMsg, 0, binMsg.length,
+                        key);
         }
-        catch (StunException sex)
+        catch (IllegalArgumentException iaex)
         {
-            expectedMsgInt = null;
+            expectedMsgIntHmacSha1Content = null;
         }
 
-        if ((expectedMsgInt == null)
-                || !Arrays.equals(
-                        expectedMsgInt.getHmacSha1Content(),
-                        msgInt.getHmacSha1Content()))
+        byte[] msgIntHmacSha1Content = msgInt.getHmacSha1Content();
+
+        if (!Arrays.equals(
+                expectedMsgIntHmacSha1Content,
+                msgIntHmacSha1Content))
         {
             if(logger.isLoggable(Level.FINE))
             {
-                logger.log(Level.FINE, "Received a message with a wrong "
-                            +"MESSAGE-INTEGRITY HMAC-SHA1 signature");
+                logger.log(
+                        Level.FINE,
+                        "Received a message with a wrong "
+                            +"MESSAGE-INTEGRITY HMAC-SHA1 signature: "
+                            + "expected: "
+                            + toHexString(expectedMsgIntHmacSha1Content)
+                            + ", received: "
+                            + toHexString(msgIntHmacSha1Content));
             }
             return false;
         }
 
         if (logger.isLoggable(Level.FINEST))
             logger.finest("Successfully verified msg integrity");
-
         return true;
     }
 
     /**
-     * Asserts the validity of the user name we've received in
-     * <tt>unameAttr</tt>.
-     *
-     * @param unameAttr the attribute that we need to validate.
-     *
-     * @return <tt>true</tt> if <tt>unameAttr</tt> contains a valid user name
-     * and <tt>false</tt> otherwise.
+     * Returns a <tt>String</tt> representation of a specific <tt>byte</tt>
+     * array as an unsigned integer in base 16.
+     *  
+     * @param bytes the <tt>byte</tt> to get the <tt>String</tt> representation
+     * of as an unsigned integer in base 16
+     * @return a <tt>String</tt> representation of the specified <tt>byte</tt>
+     * array as an unsigned integer in base 16
      */
-    private static boolean validateUsername(UsernameAttribute unameAttr)
+    private static String toHexString(byte[] bytes)
     {
-        String username = new String(unameAttr.getUsername());
+        if (bytes == null)
+            return null;
+        else
+        {
+            StringBuilder hexStringBuilder
+                = new StringBuilder(2 * bytes.length);
+            char[] hexes
+                = new char[]
+                            {
+                                '0', '1', '2', '3', '4', '5', '6', '7', '8',
+                                '9', 'A', 'B', 'C', 'D', 'E', 'F'
+                            };
 
+            for (int i = 0; i < bytes.length; i++)
+            {
+                byte b = bytes[i];
+
+                hexStringBuilder.append(hexes[(b & 0xF0) >> 4]);
+                hexStringBuilder.append(hexes[b & 0x0F]);
+            }
+            return hexStringBuilder.toString();
+        }
+    }
+
+    /**
+     * Asserts the validity of a specific username (e.g. which we've received in
+     * a USERNAME attribute).
+     *
+     * @param username the username to be validated
+     * @return <tt>true</tt> if <tt>username</tt> contains a valid username;
+     * <tt>false</tt>, otherwise
+     */
+    private static boolean validateUsername(String username)
+    {
         int colon = username.indexOf(":");
 
-        if( username.length() < 1
-            || colon < 1)
+        if ((username.length() < 1) || (colon < 1))
         {
             if(logger.isLoggable(Level.FINE))
             {
                 logger.log(Level.FINE, "Received a message with an improperly "
                         +"formatted username");
             }
-
             return false;
         }
 
