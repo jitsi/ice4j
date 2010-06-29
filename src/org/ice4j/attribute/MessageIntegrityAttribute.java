@@ -162,14 +162,15 @@ public class MessageIntegrityAttribute
         throws IllegalArgumentException
     {
         byte[] hmac;
+
         try
         {
             // get an HMAC-SHA1 key from the raw key bytes
             SecretKeySpec signingKey
                 = new SecretKeySpec(key, HMAC_SHA1_ALGORITHM);
-
             // get an HMAC-SHA1 Mac instance and initialize it with the key
             Mac mac = Mac.getInstance(HMAC_SHA1_ALGORITHM);
+
             mac.init(signingKey);
 
             // compute the hmac on input data bytes
@@ -179,7 +180,6 @@ public class MessageIntegrityAttribute
             //so we'd need to create an array that only contains what we
             //actually need to work with.
             System.arraycopy(message, offset, macInput, 0, length);
-
             hmac = mac.doFinal(macInput);
         }
         catch (Exception exc)
@@ -187,7 +187,6 @@ public class MessageIntegrityAttribute
             throw new IllegalArgumentException(
                         "Could not create HMAC-SHA1 request encoding: ", exc);
         }
-
         return hmac;
     }
 

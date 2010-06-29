@@ -74,7 +74,7 @@ public abstract class Candidate
      * however (that is when running a more recent JVM) we will reflect it in
      * this property.
      */
-    private boolean isVirtual = false;
+    private boolean virtual = false;
 
     /**
      * The component that this candidate was created for. Every candidate is
@@ -461,7 +461,7 @@ public abstract class Candidate
      */
     public boolean isVirtual()
     {
-        return isVirtual;
+        return virtual;
     }
 
     /**
@@ -478,9 +478,9 @@ public abstract class Candidate
      * address associated with this <tt>Candidate</tt> comes from a virtual
      * interface and <tt>false</tt> if otherwise.
      */
-    public void setVirtual(boolean isVirtual)
+    public void setVirtual(boolean virtual)
     {
-        this.isVirtual = isVirtual;
+        this.virtual = virtual;
     }
 
     /**
