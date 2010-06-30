@@ -107,8 +107,8 @@ class ConnectivityCheckClient
     {
         //we don't need to do a canReach() verification here as it has been
         //already verified during the gathering process.
-        DatagramSocket stunSocket = ((HostCandidate)candidatePair
-                        .getLocalCandidate()) .getStunSocket(null);
+        DatagramSocket stunSocket
+            = candidatePair.getLocalCandidate() .getStunSocket(null);
 
         Request request = MessageFactory.createBindingRequest();
 
