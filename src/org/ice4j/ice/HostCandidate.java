@@ -8,7 +8,6 @@
 package org.ice4j.ice;
 
 import java.net.*;
-import java.util.logging.*;
 
 import org.ice4j.*;
 import org.ice4j.socket.*;
@@ -29,12 +28,6 @@ import org.ice4j.socket.*;
  */
 public class HostCandidate extends LocalCandidate
 {
-    /**
-     * The <tt>Logger</tt> used by the <tt>HostCandidate</tt>
-     * class and its instances for logging output.
-     */
-    private static final Logger logger = Logger
-                    .getLogger(HostCandidate.class.getName());
 
     /**
      * If this is a local candidate the field contains the socket that is
@@ -63,6 +56,29 @@ public class HostCandidate extends LocalCandidate
     }
 
     /**
+     * Creates a new <tt>StunDatagramPacketFilter</tt> which is to capture STUN
+     * messages and make them available to the <tt>DatagramSocket</tt> returned
+     * by {@link #getStunSocket(TransportAddress)}.
+     *
+     * @param serverAddress the address of the source we'd like to receive
+     * packets from or <tt>null</tt> if we'd like to intercept all STUN packets
+     * @return the <tt>StunDatagramPacketFilter</tt> which is to capture STUN
+     * messages and make them available to the <tt>DatagramSocket</tt> returned
+     * by {@link #getStunSocket(TransportAddress)}
+     * @see LocalCandidate#createStunDatagramPacketFilter(TransportAddress)
+     */
+    @Override
+    protected StunDatagramPacketFilter createStunDatagramPacketFilter(
+            TransportAddress serverAddress)
+    {
+        /*
+         * Since we support TURN as well, we have to be able to receive TURN
+         * messages as well.
+         */
+        return new TurnDatagramPacketFilter(serverAddress);
+    }
+
+    /**
      * Gets the <tt>DatagramSocket</tt> associated with this <tt>Candidate</tt>.
      *
      * @return the <tt>DatagramSocket</tt> associated with this
@@ -72,48 +88,5 @@ public class HostCandidate extends LocalCandidate
     public DatagramSocket getSocket()
     {
         return socket;
-    }
-
-    /**
-     * Creates if necessary and returns a <tt>DatagramSocket</tt> that would
-     * capture all STUN packets arriving on this candidate's socket. If the
-     * <tt>serverAddress</tt> parameter is not <tt>null</tt> this socket would
-     * only intercept packets originating at this address.
-     *
-     * @param serverAddress the address of the source we'd like to receive
-     * packets from or <tt>null</tt> if we'd like to intercept all stun packets.
-     *
-     * @return the <tt>DatagramSocket</tt> that this candidate uses when sending
-     * and receiving STUN packets, while harvesting STUN candidates or
-     * performing connectivity checks.
-     */
-    public DatagramSocket getStunSocket(TransportAddress serverAddress)
-    {
-        DatagramSocket hostSocket = getSocket();
-        DatagramSocket stunSocket = null;
-        Throwable exception = null;
-
-        if (hostSocket instanceof MultiplexingDatagramSocket)
-        {
-            try
-            {
-                stunSocket
-                    = ((MultiplexingDatagramSocket) hostSocket)
-                        .getSocket( new StunDatagramPacketFilter(
-                                        serverAddress));
-            }
-            catch (SocketException sex)//don't u just luv da name? ;)
-            {
-                logger.log(Level.SEVERE,
-                           "Failed to acquire DatagramSocket"
-                               + " specific to STUN communication.",
-                           sex);
-                exception = sex;
-            }
-        }
-        if (stunSocket == null)
-            throw new IllegalArgumentException("hostCand", exception);
-        else
-            return stunSocket;
     }
 }

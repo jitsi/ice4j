@@ -560,7 +560,7 @@ public abstract class Candidate
      */
     protected void setMappedAddress(TransportAddress address)
     {
-        this.turnServerAddress = address;
+        this.mappedAddress = address;
     }
 
     /**
@@ -594,17 +594,14 @@ public abstract class Candidate
         if(this instanceof RemoteCandidate)
             return null;
 
-        if ( getType () == CandidateType.SERVER_REFLEXIVE_CANDIDATE
-             || getType () == CandidateType.PEER_REFLEXIVE_CANDIDATE)
+        switch (getType())
         {
+        case SERVER_REFLEXIVE_CANDIDATE:
+        case PEER_REFLEXIVE_CANDIDATE:
             return getBase().getTransportAddress();
-        }
-        else if ( getType () == CandidateType.RELAYED_CANDIDATE)
-        {
+        case RELAYED_CANDIDATE:
             return getMappedAddress();
-        }
-        else
-        {
+        default:
             //host candidate
             return null;
         }

@@ -59,6 +59,6 @@ public class PeerReflexiveCandidate
      */
     public DatagramSocket getSocket()
     {
-        return ((HostCandidate)getBase()).getSocket();
+        return getBase().getSocket();
     }
 }
