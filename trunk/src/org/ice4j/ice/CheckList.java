@@ -126,7 +126,6 @@ public class CheckList
             if(triggeredCheckQueue.size() > 0)
                 return triggeredCheckQueue.remove(0);
         }
-
         return null;
     }
 

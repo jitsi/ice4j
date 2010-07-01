@@ -177,7 +177,7 @@ public class CandidatePair
     /**
      * Sets the <tt>CandidatePairState</tt> of this pair to
      * {@link CandidatePairState#FAILED}. This method should only be called by
-     * the ice agent, during the execution of the ICE procedures.
+     * the ICE agent, during the execution of the ICE procedures.
      */
     public void setStateFailed()
     {
@@ -187,7 +187,7 @@ public class CandidatePair
     /**
      * Sets the <tt>CandidatePairState</tt> of this pair to
      * {@link CandidatePairState#FROZEN}. This method should only be called by
-     * the ice agent, during the execution of the ICE procedures.
+     * the ICE agent, during the execution of the ICE procedures.
      */
     public void setStateFrozen()
     {
@@ -197,7 +197,7 @@ public class CandidatePair
     /**
      * Sets the <tt>CandidatePairState</tt> of this pair to
      * {@link CandidatePairState#FROZEN}. This method should only be called by
-     * the ice agent, during the execution of the ICE procedures.
+     * the ICE agent, during the execution of the ICE procedures.
      *
      * @param tranID the {@link TransactionID} that we are using for the
      * connectivity check in case we are entering the <tt>In-Progress</tt>
@@ -211,7 +211,7 @@ public class CandidatePair
     /**
      * Sets the <tt>CandidatePairState</tt> of this pair to
      * {@link CandidatePairState#SUCCEEDED}. This method should only be called
-     * by the ice agent, during the execution of the ICE procedures.
+     * by the ICE agent, during the execution of the ICE procedures.
      */
     public void setStateSucceeded()
     {
@@ -221,7 +221,7 @@ public class CandidatePair
     /**
      * Sets the <tt>CandidatePairState</tt> of this pair to
      * {@link CandidatePairState#WAITING}. This method should only be called by
-     * the ice agent, during the execution of the ICE procedures.
+     * the ICE agent, during the execution of the ICE procedures.
      */
     public void setStateWaiting()
     {
@@ -248,6 +248,7 @@ public class CandidatePair
         throws IllegalArgumentException
     {
         CandidatePairState oldState = this.state;
+
         this.state = newState;
 
         if(newState != CandidatePairState.IN_PROGRESS)
@@ -264,7 +265,6 @@ public class CandidatePair
                                 +"In-Progress state MUST be accomapnied with "
                                 +"the TransactionID of the conn check.");
         }
-
         this.connCheckTranID = tranID;
 
         getParentComponent().getParentStream().firePairPropertyChange(

@@ -6,7 +6,6 @@
  */
 package org.ice4j.stack;
 
-
 import java.io.*;
 import java.net.*;
 import java.util.*;
@@ -270,9 +269,13 @@ class NetAccessManager
         byte[] bytes = stunMessage.encode();
         Connector ap = netAccessPoints.get(srcAddr);
 
-        if(ap == null)
-            throw new IllegalArgumentException(
-                          "The specified access point had not been installed.");
+        if (ap == null)
+        {
+            throw
+                new IllegalArgumentException(
+                        "No socket has been added for source address: "
+                            + srcAddr);
+        }
 
         ap.sendMessage(bytes, remoteAddr);
     }

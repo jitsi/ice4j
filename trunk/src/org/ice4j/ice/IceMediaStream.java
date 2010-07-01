@@ -517,7 +517,6 @@ public class IceMediaStream
     public CandidatePair findCandidatePair(TransportAddress localAddress,
                                            TransportAddress remoteAddress)
     {
-
         synchronized(checkList)
         {
             for( CandidatePair pair : checkList)
@@ -531,7 +530,6 @@ public class IceMediaStream
                 }
             }
         }
-
         return null;
     }
 
