@@ -440,8 +440,7 @@ public class StunCandidateHarvest
 
         if (retryRequest != null)
         {
-            longTermCredentialSession.addAttributes(retryRequest);
-            retryRequestTransactionID = sendRequest(retryRequest);
+            retryRequestTransactionID = sendRequest(retryRequest, false);
         }
         return (retryRequestTransactionID != null);
     }
@@ -764,13 +763,24 @@ public class StunCandidateHarvest
      * Sends a specific <tt>Request</tt> to the STUN server associated with this
      * <tt>StunCandidateHarvest</tt>.
      *
-     * @param request
-     * @return
-     * @throws StunException
+     * @param request the <tt>Request</tt> to send to the STUN server associated
+     * with this <tt>StunCandidateHarvest</tt>
+     * @param firstRequest <tt>true</tt> if the specified <tt>request</tt>
+     * should be sent as the first request in the terms of STUN; otherwise,
+     * <tt>false</tt>
+     * @return the <tt>TransactionID</tt> of the STUN client transaction through
+     * which the specified <tt>Request</tt> has been sent to the STUN server
+     * associated with this <tt>StunCandidateHarvest</tt>
+     * @throws StunException if anything goes wrong while sending the specified
+     * <tt>Request</tt> to the STUN server associated with this
+     * <tt>StunCandidateHarvest</tt>
      */
-    protected TransactionID sendRequest(Request request)
+    protected TransactionID sendRequest(Request request, boolean firstRequest)
         throws StunException
     {
+        if (!firstRequest && (longTermCredentialSession != null))
+            longTermCredentialSession.addAttributes(request);
+
         StunStack stunStack = harvester.stunStack;
         TransportAddress stunServer = harvester.stunServer;
         TransportAddress hostCandidateTransportAddress
@@ -853,7 +863,7 @@ public class StunCandidateHarvest
             // Short-Term Credential Mechanism
             addShortTermCredentialAttributes(requestToStartResolvingCandidate);
 
-            sendRequest(requestToStartResolvingCandidate);
+            sendRequest(requestToStartResolvingCandidate, true);
             return true;
         }
         else

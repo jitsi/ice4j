@@ -20,6 +20,7 @@ import org.ice4j.stack.*;
  * will be handling their responses or lack thereof.
  *
  * @author Emil Ivov
+ * @author Lubomir Marinov
  */
 class ConnectivityCheckClient
     implements ResponseCollector
@@ -81,7 +82,7 @@ class ConnectivityCheckClient
      */
     private void startChecks(CheckList checkList)
     {
-        PaceMaker paceMaker = new PaceMaker(this, checkList);
+        PaceMaker paceMaker = new PaceMaker(checkList);
 
         synchronized (paceMakers)
         {
@@ -108,7 +109,7 @@ class ConnectivityCheckClient
         //we don't need to do a canReach() verification here as it has been
         //already verified during the gathering process.
         DatagramSocket stunSocket
-            = candidatePair.getLocalCandidate() .getStunSocket(null);
+            = candidatePair.getLocalCandidate().getStunSocket(null);
 
         Request request = MessageFactory.createBindingRequest();
 
@@ -165,7 +166,7 @@ class ConnectivityCheckClient
 
             if(logger.isLoggable(Level.FINEST))
                 logger.finest("checking pair " + candidatePair + " with tran="
-                                + tran.toString());
+                                + tran);
 
             return tran;
         }
@@ -191,15 +192,15 @@ class ConnectivityCheckClient
      */
     public void processResponse(StunResponseEvent evt)
     {
+        CandidatePair checkedPair
+            = ((CandidatePair)evt.getTransactionID().getApplicationData());
+
         //make sure that the response came from the right place.
         if (!checkSymmetricAddresses(evt))
         {
-            CandidatePair pair = ((CandidatePair)evt.getTransactionID()
-                            .getApplicationData());
-
-            logger.fine("Received a non-symmetric response for pair: "+ pair
-                            +". Failing");
-            pair.setStateFailed();
+            logger.fine("Received a non-symmetric response for pair: "
+                        + checkedPair +". Failing");
+            checkedPair.setStateFailed();
         }
         //handle error responses.
         else if(evt.getResponse().getMessageType()
@@ -213,15 +214,12 @@ class ConnectivityCheckClient
 
             processErrorResponse(evt);
         }
-        //handle error responses.
+        //handle success responses.
         else if(evt.getResponse().getMessageType()
                         == Response.BINDING_SUCCESS_RESPONSE)
         {
             processSuccessResponse(evt);
         }
-
-        CandidatePair checkedPair = ((CandidatePair)evt.getTransactionID()
-                        .getApplicationData());
 
         //Regardless of whether the check was successful or failed, the
         //completion of the transaction may require updating of check list and
@@ -435,7 +433,7 @@ class ConnectivityCheckClient
         //CANDIDATE attribute in the Binding request, the valid pair generated
         //from that check has its nominated flag set to true.
         if(parentAgent.isControlling()
-                      && request.containsAttribute(Attribute.USE_CANDIDATE))
+                && request.containsAttribute(Attribute.USE_CANDIDATE))
         {
             parentAgent.nominationConfirmed( validPair );
         }
@@ -447,7 +445,6 @@ class ConnectivityCheckClient
         else if(checkedPair.useCandidateReceived()
                  && ! checkedPair.isNominated())
             parentAgent.nominationConfirmed( checkedPair );
-
     }
 
     /**
@@ -495,16 +492,17 @@ class ConnectivityCheckClient
         Response response = evt.getResponse();
         Request originalRequest = evt.getRequest();
 
-        ErrorCodeAttribute errorCode = (ErrorCodeAttribute)response
-                                    .getAttribute(Attribute.ERROR_CODE);
+        char errorCode
+            = ((ErrorCodeAttribute) response.getAttribute(Attribute.ERROR_CODE))
+                .getErrorCode();
 
         CandidatePair pair = ((CandidatePair)evt.getTransactionID()
                         .getApplicationData());
 
-        logger.finer("Received error code " + (int)errorCode.getErrorCode());
+        logger.finer("Received error code " + ((int) errorCode));
 
         //RESOLVE ROLE_CONFLICTS
-        if(errorCode.getErrorCode() == ErrorCodeAttribute.ROLE_CONFLICT)
+        if(errorCode == ErrorCodeAttribute.ROLE_CONFLICT)
         {
             boolean wasControlling = originalRequest
                                 .containsAttribute(Attribute.ICE_CONTROLLING);
@@ -514,8 +512,6 @@ class ConnectivityCheckClient
 
             pair.getParentComponent().getParentStream().getCheckList()
                 .scheduleTriggeredCheck(pair);
-
-            return;
         }
         else
         {
@@ -543,23 +539,17 @@ class ConnectivityCheckClient
         updateCheckListAndTimerStates(pair);
     }
 
-
     /**
      * The thread that actually sends the checks for a particular check list
      * in the pace defined in RFC 5245.
      */
-    private static class PaceMaker extends Thread
+    private class PaceMaker
+        extends Thread
     {
         /**
-         * Indicates whether this thread is still running. Not really used at
-         * this point.
+         * Indicates whether this <tt>Thread</tt> should still be running.
          */
-        public boolean isRunning = true;
-
-        /**
-         * The {@link ConnectivityCheckClient} that created us.
-         */
-        private final ConnectivityCheckClient parentClient;
+        boolean running = true;
 
         /**
          * The {@link CheckList} that this <tt>PaceMaker</tt> will be running
@@ -568,20 +558,26 @@ class ConnectivityCheckClient
         private final CheckList checkList;
 
         /**
-         * Creates a new {@link PaceMaker} for the specified
-         * <tt>parentClient</tt>
+         * Creates a new {@link PaceMaker} for this
+         * <tt>ConnectivityCheckClient</tt>.
          *
-         * @param parentClient the {@link ConnectivityCheckClient} that who's
-         * checks we are going to run.
          * @param checkList the {@link CheckList} that we'll be sending checks
          * for
          */
-        public PaceMaker(ConnectivityCheckClient parentClient,
-                         CheckList               checkList)
+        public PaceMaker(CheckList checkList)
         {
-            super("ICE PaceMaker:" + parentClient.parentAgent.getLocalUfrag());
-            this.parentClient = parentClient;
+            super("ICE PaceMaker: " + parentAgent.getLocalUfrag());
+
             this.checkList = checkList;
+
+            /*
+             * Because PaceMaker does not seem to be a daemon at least on Ubuntu
+             * in the run-sample target and it looks like it should be from the
+             * standpoint of the application, explicitly tell it to be a daemon.
+             * Otherwise, it could prevent the application from exiting because
+             * of a problem in the ICE implementation.
+             */
+            setDaemon(true);
         }
 
         /**
@@ -593,8 +589,7 @@ class ConnectivityCheckClient
          */
         private long getNextWaitInterval()
         {
-            int activeCheckLists = parentClient
-                    .parentAgent.getActiveCheckListCount();
+            int activeCheckLists = parentAgent.getActiveCheckListCount();
 
             if (activeCheckLists < 1)
             {
@@ -603,7 +598,7 @@ class ConnectivityCheckClient
                 activeCheckLists = 1;
             }
 
-            return parentClient.parentAgent.calculateTa() * activeCheckLists;
+            return parentAgent.calculateTa() * activeCheckLists;
         }
 
         /**
@@ -611,64 +606,77 @@ class ConnectivityCheckClient
          * Agent#calculateTa()} method and using either the trigger check queue
          * or the regular check lists.
          */
+        @Override
         public synchronized void run()
         {
-            while(isRunning)
+            try
             {
-                long waitFor = getNextWaitInterval();
-
-                if(waitFor > 0)
+                while(running)
                 {
-                    //waitFor will be 0 for the first check since we won't have
-                    //any active check lists at that point yet.
-                    try
+                    long waitFor = getNextWaitInterval();
+
+                    if(waitFor > 0)
                     {
-                        wait(waitFor);
+                        /*
+                         * waitFor will be 0 for the first check since we won't
+                         * have any active check lists at that point yet.
+                         */
+                        try
+                        {
+                            wait(waitFor);
+                        }
+                        catch (InterruptedException e)
+                        {
+                            logger.log(Level.FINER, "PaceMake got interrupted", e);
+                        }
+
+                        if (!running)
+                            break;
                     }
-                    catch (InterruptedException e)
+
+                    CandidatePair pairToCheck = checkList.popTriggeredCheck();
+
+                    //if there are no triggered checks, go for an ordinary one.
+                    if(pairToCheck == null)
+                        pairToCheck = checkList.getNextOrdinaryPairToCheck();
+
+                    if(pairToCheck != null)
                     {
-                        logger.log(Level.FINER, "PaceMake got interrupted", e);
+                        /*
+                         * Since we suspect that it is possible to
+                         * startCheckForPair, processSuccessResponse and only
+                         * then setStateInProgress, we'll synchronize. The
+                         * synchronization root is the one of the
+                         * CandidatePair#setState method.
+                         */
+                        synchronized (pairToCheck)
+                        {
+                            TransactionID transactionID
+                                = startCheckForPair(pairToCheck);
+
+                            if(transactionID == null)
+                                pairToCheck.setStateFailed();
+                            else
+                                pairToCheck.setStateInProgress(transactionID);
+                        }
                     }
-
-                    if (!isRunning)
-                        break;
+                    else
+                    {
+                        /*
+                         * We are done sending checks for this list. We'll set
+                         * its final state in either the processResponse(),
+                         * processTimeout() or processFailure() method.
+                         */
+                        logger.finest("will skip a check beat.");
+                    }
                 }
-
-                CandidatePair pairToCheck = checkList.popTriggeredCheck();
-                TransactionID transactionID = null;
-
-                //if there are no triggered checks, go for an ordinary one.
-                if(pairToCheck == null)
-                {
-                    pairToCheck = checkList.getNextOrdinaryPairToCheck();
-                }
-
-                if(pairToCheck != null)
-                {
-                    transactionID = parentClient.startCheckForPair(pairToCheck);
-                }
-                else
-                {
-                    //we are done sending checks for this list. we'll set its
-                    //final state in either the processResponse()
-                    //processTimeout() or processFailure() method.
-
-                    logger.finest("will skip a check beat.");
-                    continue;
-                }
-
-                if(transactionID == null)
-                    pairToCheck.setStateFailed();
-                else
-                    pairToCheck.setStateInProgress(transactionID);
-
             }
-
-            List<PaceMaker> parentClientPaceMakers = parentClient.paceMakers;
-
-            synchronized (parentClientPaceMakers)
+            finally
             {
-                parentClientPaceMakers.remove(this);
+                synchronized (paceMakers)
+                {
+                    paceMakers.remove(this);
+                }
             }
         }
     }
@@ -686,7 +694,7 @@ class ConnectivityCheckClient
             {
                 PaceMaker paceMaker = paceMakersIter.next();
 
-                paceMaker.isRunning = false;
+                paceMaker.running = false;
                 synchronized(paceMaker)
                 {
                     paceMaker.notify();

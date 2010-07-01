@@ -46,6 +46,15 @@ public class Agent
     public static final int DEFAULT_TERMINATION_DELAY = 3000;
 
     /**
+     * The constant which defines an empty array with element type
+     * <tt>PropertyChangeListener</tt> and represents the fact that there are no
+     * <tt>IceProcessingState</tt> change listeners added to an <tt>Agent</tt>
+     * (using {@link #addStateChangeListener(PropertyChangeListener)}.
+     */
+    private static final PropertyChangeListener[] NO_STATE_CHANGE_LISTENERS
+        = new PropertyChangeListener[0];
+
+    /**
      * The <tt>Logger</tt> used by the <tt>Agent</tt>
      * class and its instances for logging output.
      */
@@ -177,8 +186,8 @@ public class Agent
      * Contains {@link PropertyChangeListener}s registered with this {@link
      * Agent} and following its changes of state.
      */
-    private List<PropertyChangeListener> stateListeners
-                                = new LinkedList<PropertyChangeListener>();
+    private final List<PropertyChangeListener> stateListeners
+        = new LinkedList<PropertyChangeListener>();
 
     /**
      * The thread that we use for moving from COMPLETED into a TERMINATED state.
@@ -371,7 +380,7 @@ public class Agent
      * have exchanged their media descriptions. Determining whether the actual
      * process has started is important, for example, when determining whether
      * a remote address we've just discovered is peer reflexive or not.
-     * If CE has started and we don't know about the address then we should
+     * If ICE has started and we don't know about the address then we should
      * add it to the list of candidates. Otherwise we should hold to it until
      * it does and check later.
      * <p>
@@ -437,21 +446,19 @@ public class Agent
     private void fireStateChange(IceProcessingState oldState,
                                  IceProcessingState newState)
     {
-        List<PropertyChangeListener> listenersCopy;
+        PropertyChangeListener[] stateListenersCopy;
 
         synchronized(stateListeners)
         {
-            listenersCopy
-                = new LinkedList<PropertyChangeListener>(stateListeners);
+            stateListenersCopy
+                = stateListeners.toArray(NO_STATE_CHANGE_LISTENERS);
         }
 
         PropertyChangeEvent evt = new PropertyChangeEvent(
                     this, PROPERTY_ICE_PROCESSING_STATE, oldState, newState);
 
-        for(PropertyChangeListener l : listenersCopy)
-        {
+        for(PropertyChangeListener l : stateListenersCopy)
             l.propertyChange(evt);
-        }
     }
 
     /**
@@ -1013,7 +1020,7 @@ public class Agent
                     // valid pair to true.
                     nominationConfirmed( triggerPair );
 
-                    //the above maye have caused us to exit, and so we need to
+                    //the above may have caused us to exit, and so we need to
                     //make the call below in order to make sure that we update
                     //ICE processing state.
                     checkListStatesUpdated();
@@ -1030,7 +1037,6 @@ public class Agent
                     = knownPair.getConnectivityCheckTransaction();
 
                 StunStack.getInstance().cancelTransaction(checkTransaction);
-
             }
         }
         else
@@ -1161,14 +1167,14 @@ public class Agent
 
         for(IceMediaStream stream : streams)
         {
-            CheckList checkList = stream.getCheckList();
-            if(checkList.getState() == CheckListState.RUNNING)
+            CheckListState checkListState = stream.getCheckList().getState();
+
+            if(checkListState == CheckListState.RUNNING)
             {
                 allListsEnded = false;
                 break;
             }
-            else if(stream.getCheckList().getState()
-                                == CheckListState.COMPLETED)
+            else if(checkListState == CheckListState.COMPLETED)
             {
                 atLeastOneListSucceeded = true;
             }
@@ -1376,19 +1382,23 @@ public class Agent
          */
         public synchronized void run()
         {
-            long waitFor = Integer.getInteger(
+            long terminationDelay = Integer.getInteger(
                             StackProperties.TERMINATION_DELAY,
                             DEFAULT_TERMINATION_DELAY);
 
-            try
+            if (terminationDelay >= 0)
             {
-                wait(waitFor);
-
-            }
-            catch (Exception e)
-            {
-                logger.log(Level.FINEST, "Interrupted while waiting. Will "
-                                +"speed up termination", e);
+                try
+                {
+                    wait(terminationDelay);
+                }
+                catch (InterruptedException iex)
+                {
+                    logger.log(
+                            Level.FINEST, "Interrupted while waiting. Will "
+                                    +"speed up termination",
+                            iex);
+                }
             }
 
             parentAgent.terminate(IceProcessingState.TERMINATED);
