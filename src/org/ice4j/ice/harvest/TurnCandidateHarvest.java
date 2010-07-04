@@ -52,7 +52,7 @@ public class TurnCandidateHarvest
      * {@link #hostCandidate}. Notifies {@link #harvester} about the completion
      * of the harvesting of <tt>Candidate</tt> for <tt>hostCandidate</tt>
      * performed by this <tt>StunCandidateHarvest</tt>.
-     * 
+     *
      * @param request the <tt>Request</tt> sent by this
      * <tt>StunCandidateHarvest</tt> with which the harvesting of
      * <tt>Candidate</tt>s for <tt>hostCandidate</tt> has completed
@@ -100,7 +100,7 @@ public class TurnCandidateHarvest
      * <tt>Response</tt>.
      *
      * @param response the received STUN <tt>Response</tt>
-     * @see StunCandidateHarvester#createCandidates(Response)
+     * @see StunCandidateHarvest#createCandidates(Response)
      */
     @Override
     protected void createCandidates(Response response)
@@ -214,11 +214,11 @@ public class TurnCandidateHarvest
     }
 
     /**
-     * Creates a new <tt>Request</tt> which is to be sent to {@link #stunServer}
-     * in order to start resolving {@link #hostCandidate}.
+     * Creates a new <tt>Request</tt> which is to be sent to
+     * {@link TurnCandidateHarvester#stunServer} in order to start resolving {@link #hostCandidate}.
      *
-     * @return a new <tt>Request</tt> which is to be sent to {@link #stunServer}
-     * in order to start resolving {@link #hostCandidate}
+     * @return a new <tt>Request</tt> which is to be sent to
+     * {@link TurnCandidateHarvester#stunServer} in order to start resolving {@link #hostCandidate}
      * @see StunCandidateHarvest#createRequestToStartResolvingCandidate()
      */
     @Override
