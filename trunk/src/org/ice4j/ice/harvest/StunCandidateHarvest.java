@@ -159,7 +159,7 @@ public class StunCandidateHarvest
      * {@link #hostCandidate}. Notifies {@link #harvester} about the completion
      * of the harvesting of <tt>Candidate</tt> for <tt>hostCandidate</tt>
      * performed by this <tt>StunCandidateHarvest</tt>.
-     * 
+     *
      * @param request the <tt>Request</tt> sent by this
      * <tt>StunCandidateHarvest</tt> with which the harvesting of
      * <tt>Candidate</tt>s for <tt>hostCandidate</tt> has completed
@@ -233,11 +233,13 @@ public class StunCandidateHarvest
     }
 
     /**
-     * Creates a new <tt>Request</tt> which is to be sent to {@link #stunServer}
-     * in order to start resolving {@link #hostCandidate}.
+     * Creates a new <tt>Request</tt> which is to be sent to
+     * {@link StunCandidateHarvester#stunServer} in order to start resolving
+     * {@link #hostCandidate}.
      *
-     * @return a new <tt>Request</tt> which is to be sent to {@link #stunServer}
-     * in order to start resolving {@link #hostCandidate}
+     * @return a new <tt>Request</tt> which is to be sent to
+     * {@link StunCandidateHarvester#stunServer} in order to start resolving
+     * {@link #hostCandidate}
      */
     protected Request createRequestToStartResolvingCandidate()
     {
@@ -408,7 +410,7 @@ public class StunCandidateHarvest
              * If we sent a USERNAME in our request, then we had the long-term
              * credential at the time we sent the request in question.
              */
-            if (longTermCredentialSession == null) 
+            if (longTermCredentialSession == null)
                 return false;
             else
             {
@@ -630,7 +632,7 @@ public class StunCandidateHarvest
                 ErrorCodeAttribute errorCodeAttr
                     = (ErrorCodeAttribute)
                         response.getAttribute(Attribute.ERROR_CODE);
-    
+
                 if ((errorCodeAttr != null)
                         && (errorCodeAttr.getErrorClass() == 4))
                 {
@@ -843,7 +845,7 @@ public class StunCandidateHarvest
     /**
      * Starts the harvesting of <tt>Candidate</tt>s to be performed for
      * {@link #hostCandidate}.
-     * 
+     *
      * @return <tt>true</tt> if this <tt>StunCandidateHarvest</tt> has started
      * the harvesting of <tt>Candidate</tt>s for {@link #hostCandidate};
      * otherwise, <tt>false</tt>

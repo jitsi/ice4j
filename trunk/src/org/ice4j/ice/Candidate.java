@@ -474,7 +474,7 @@ public abstract class Candidate
      * as to how it should be handled so other implementations maybe dealing
      * with it differently.
      *
-     * @param isVirtual <tt>true</tt> if we were able to determine that the
+     * @param virtual <tt>true</tt> if we were able to determine that the
      * address associated with this <tt>Candidate</tt> comes from a virtual
      * interface and <tt>false</tt> if otherwise.
      */
