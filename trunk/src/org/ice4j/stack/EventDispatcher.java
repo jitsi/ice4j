@@ -9,7 +9,7 @@ package org.ice4j.stack;
 import java.util.*;
 
 import org.ice4j.*;
-
+import org.ice4j.message.*;
 
 /**
  * This is a utility class used for dispatching incoming request events. We use
@@ -18,29 +18,98 @@ import org.ice4j.*;
  * NetAccessPoint only).
  *
  * @author Emil Ivov
+ * @author Lubomir Marinov
  */
 public class EventDispatcher
 {
 
     /**
-     * All property change listeners registered so far.
+     * The STUN request and indication listeners registered with this
+     * <tt>EventDispatcher</tt>.
      */
-    private final Vector<RequestListener> requestListeners
-                                                = new Vector<RequestListener>();
+    private final List<MessageTypeEventHandler<?>> messageListeners
+        = new Vector<MessageTypeEventHandler<?>>();
 
     /**
-     * Hashtable for managing property change listeners registered for specific
-     * properties. Maps property names to PropertyChangeSupport objects.
+     * The <tt>Map</tt> of <tt>EventDispatcher</tt>s which keep the
+     * registrations of STUN request and indication listeners registered for
+     * STUN requests and indications from specific local
+     * <tt>TransportAddress<tt>es.
      */
-    private final Hashtable<TransportAddress, EventDispatcher>
-        requestListenersChildren
-            = new Hashtable<TransportAddress, EventDispatcher>();
+    private final Map<TransportAddress, EventDispatcher> children
+        = new Hashtable<TransportAddress, EventDispatcher>();
 
     /**
-     * Constructs an <tt>EventDispatcher</tt> object.
+     * Initializes a new <tt>EventDispatcher</tt> instance.
      */
     public EventDispatcher()
     {
+    }
+
+    /**
+     * Registers a specific <tt>MessageEventHandler</tt> for notifications about
+     * STUN indications received at a specific local <tt>TransportAddress</tt>.
+     * 
+     * @param localAddr the local <tt>TransportAddress</tt> STUN indications
+     * received at which are to be reported to the specified
+     * <tt>indicationListener</tt>
+     * @param indicationListener the <tt>MessageEventHandler</tt> which is to be
+     * registered for notifications about STUN indications received at the
+     * specified local <tt>TransportAddress</tt>
+     */
+    public void addIndicationListener(
+            TransportAddress localAddr,
+            MessageEventHandler indicationListener)
+    {
+        addMessageListener(
+                localAddr,
+                new IndicationEventHandler(indicationListener));
+    }
+
+    /**
+     * Registers a specific <tt>MessageTypeEventHandler</tt> for notifications
+     * about received STUN messages.
+     *
+     * @param messageListener the <tt>MessageTypeEventHandler</tt> which is to
+     * be registered for notifications about received STUN messages
+     */
+    private synchronized void addMessageListener(
+            MessageTypeEventHandler<?> messageListener)
+    {
+        synchronized(messageListeners)
+        {
+            if(!messageListeners.contains(messageListener))
+                messageListeners.add(messageListener);
+        }
+    }
+
+    /**
+     * Registers a specific <tt>MessageTypeEventHandler</tt> for notifications
+     * about STUN messages received at a specific local
+     * <tt>TransportAddress</tt>.
+     *
+     * @param localAddr the local <tt>TransportAddress</tt> STUN messages
+     * received at which are to be reported to the specified
+     * <tt>messageListener</tt>
+     * @param messageListener the <tt>MessageTypeEventHandler</tt> which is to
+     * be registered for notifications about STUN messages received at the
+     * specified local <tt>TransportAddress</tt>
+     */
+    private synchronized void addMessageListener(
+            TransportAddress localAddr,
+            MessageTypeEventHandler<?> messageListener)
+    {
+        synchronized(children)
+        {
+            EventDispatcher child = children.get(localAddr);
+
+            if (child == null)
+            {
+                child = new EventDispatcher();
+                children.put(localAddr, child);
+            }
+            child.addMessageListener(messageListener);
+        }
     }
 
     /**
@@ -49,13 +118,9 @@ public class EventDispatcher
      *
      * @param listener  The ReuqestListener to be added
      */
-    public synchronized void addRequestListener(RequestListener listener)
+    public void addRequestListener(RequestListener listener)
     {
-        synchronized(requestListeners)
-        {
-            if(!requestListeners.contains(listener))
-                requestListeners.addElement(listener);
-        }
+        addMessageListener(new RequestListenerMessageEventHandler(listener));
     }
 
     /**
@@ -66,19 +131,53 @@ public class EventDispatcher
      * @param localAddr  The NETAP descriptor that we're interested in.
      * @param listener  The ConfigurationChangeListener to be added
      */
-
-    public synchronized void addRequestListener( TransportAddress localAddr,
-                                                 RequestListener  listener)
+    public void addRequestListener( TransportAddress localAddr,
+                                    RequestListener  listener)
     {
-        synchronized(requestListenersChildren)
+        addMessageListener(
+                localAddr,
+                new RequestListenerMessageEventHandler(listener));
+    }
+
+    /**
+     * Unregisters a specific <tt>MessageTypeEventHandler</tt> from
+     * notifications about received STUN messages.
+     *
+     * @param messageListener the <tt>MessageTypeEventHandler</tt> to be
+     * unregistered for notifications about received STUN messages
+     */
+    private synchronized void removeMessageListener(
+            MessageTypeEventHandler<?> messageListener)
+    {
+        synchronized(messageListeners)
         {
-            EventDispatcher child = requestListenersChildren.get(localAddr);
+            messageListeners.remove(messageListener);
+        }
+    }
+
+    /**
+     * Unregisters a specific <tt>MessageTypeEventHandler</tt> from
+     * notifications about STUN messages received at a specific local
+     * <tt>TransportAddress</tt>.
+     *
+     * @param localAddr the local <tt>TransportAddress</tt> STUN messages
+     * received at which to no longer be reported to the specified
+     * <tt>messageListener</tt>
+     * @param messageListener the <tt>MessageTypeEventHandler</tt> to be
+     * unregistered for notifications about STUN messages received at the
+     * specified local <tt>TransportAddress</tt>
+     */
+    private synchronized void removeMessageListener(
+            TransportAddress localAddr,
+            MessageTypeEventHandler<?> messageListener)
+    {
+        synchronized(children)
+        {
+            EventDispatcher child = children.get( localAddr );
+
             if (child == null)
-            {
-                child = new EventDispatcher();
-                requestListenersChildren.put(localAddr, child);
-            }
-            child.addRequestListener(listener);
+                return;
+            child.removeMessageListener(messageListener);
         }
     }
 
@@ -90,13 +189,9 @@ public class EventDispatcher
      *
      * @param listener The RequestListener to be removed
      */
-    public synchronized void removeRequestListener(
-        RequestListener listener)
+    public void removeRequestListener(RequestListener listener)
     {
-        synchronized(requestListeners)
-        {
-            requestListeners.removeElement(listener);
-        }
+        removeMessageListener(new RequestListenerMessageEventHandler(listener));
     }
 
     /**
@@ -107,19 +202,12 @@ public class EventDispatcher
      * @param localAddr  The NetAPDescriptor that was listened on.
      * @param listener  The RequestListener to be removed
      */
-    public synchronized void removeRequestListener(TransportAddress localAddr,
-                                                   RequestListener  listener)
+    public void removeRequestListener(TransportAddress localAddr,
+                                      RequestListener  listener)
     {
-        synchronized(requestListenersChildren)
-        {
-            EventDispatcher child = requestListenersChildren.get( localAddr );
-
-            if (child == null)
-            {
-                return;
-            }
-            child.removeRequestListener(listener);
-        }
+        removeMessageListener(
+                localAddr,
+                new RequestListenerMessageEventHandler(listener));
     }
 
 
@@ -130,29 +218,31 @@ public class EventDispatcher
      */
     public void fireMessageEvent(StunMessageEvent evt)
     {
-
         TransportAddress localAddr = evt.getLocalAddress();
-            List<RequestListener> listenersCopy = null;
+        MessageTypeEventHandler<?>[] messageListenersCopy;
 
-        synchronized(requestListeners)
+        synchronized(messageListeners)
         {
-            listenersCopy
-                = new ArrayList<RequestListener>(requestListeners);
+            messageListenersCopy
+                = messageListeners.toArray(
+                        new MessageTypeEventHandler<?>[
+                                messageListeners.size()]);
         }
 
-        for (RequestListener target : listenersCopy)
+        char messageType = (char) (evt.getMessage().getMessageType() & 0x0110);
+
+        for (MessageTypeEventHandler<?> messageListener : messageListenersCopy)
         {
-            target.processRequest(evt);
+            if (messageType == messageListener.messageType)
+                messageListener.handleMessageEvent(evt);
         }
 
-        synchronized(requestListenersChildren)
+        synchronized(children)
         {
-            EventDispatcher child = requestListenersChildren.get(localAddr);
+            EventDispatcher child = children.get(localAddr);
 
             if (child != null)
-            {
                 child.fireMessageEvent(evt);
-            }
         }
     }
 
@@ -166,24 +256,23 @@ public class EventDispatcher
      */
     public boolean hasRequestListeners(TransportAddress localAddr)
     {
-        synchronized(requestListeners)
+        synchronized(messageListeners)
         {
-            if(!requestListeners.isEmpty())
+            if(!messageListeners.isEmpty())
             {
                 // there is a generic listener
                 return true;
             }
         }
 
-        synchronized(requestListenersChildren)
+        synchronized(children)
         {
-            if (!requestListenersChildren.isEmpty())
+            if (!children.isEmpty())
             {
-                EventDispatcher child = requestListenersChildren.get(localAddr);
-                if (child != null && child.requestListeners != null)
-                {
-                    return !child.requestListeners.isEmpty();
-                }
+                EventDispatcher child = children.get(localAddr);
+
+                if (child != null)
+                    return !child.messageListeners.isEmpty();
             }
         }
 
@@ -195,8 +284,143 @@ public class EventDispatcher
      */
     public void removeAllListeners()
     {
-        if(requestListeners != null)
-            requestListeners.removeAllElements();
-        requestListenersChildren.clear();
+        messageListeners.clear();
+        children.clear();
+    }
+
+    /**
+     * Implements <tt>MessageEventHandler</tt> for a
+     * <tt>MessageEventHandler</tt> which handles STUN indications.
+     *
+     * @author Lubomir Marinov
+     */
+    private static class IndicationEventHandler
+        extends MessageTypeEventHandler<MessageEventHandler>
+    {
+
+        /**
+         * Initializes a new <tt>IndicationEventHandler</tt> which is to
+         * implement <tt>MessageEventHandler</tt> for a specific
+         * <tt>MessageEventHandler</tt> which handles STUN indications.
+         *
+         * @param requestListener the <tt>RequestListener</tt> for which the new
+         * instance is to implement <tt>MessageEventHandler</tt>
+         */
+        public IndicationEventHandler(MessageEventHandler indicationListener)
+        {
+            super(Message.STUN_INDICATION, indicationListener);
+        }
+
+        /**
+         * Notifies this <tt>MessageEventHandler</tt> that a STUN message has
+         * been received, parsed and is ready for delivery.
+         *
+         * @param e a <tt>StunMessageEvent</tt> which encapsulates the STUN
+         * message to be handled
+         * @see MessageEventHandler#handleMessageEvent(StunMessageEvent)
+         */
+        public void handleMessageEvent(StunMessageEvent e)
+        {
+            delegate.handleMessageEvent(e);
+        }
+    }
+
+    /**
+     * Represents the base for providers of <tt>MessageEventHandler</tt>
+     * implementations to specific <tt>Object</tt>s.
+     *
+     * @author Lubomir Marinov
+     */
+    private static abstract class MessageTypeEventHandler<T>
+        implements MessageEventHandler
+    {
+
+        /**
+         * The <tt>Object</tt> for which this instance implements
+         * <tt>MessageEventHandler</tt>.
+         */
+        public final T delegate;
+
+        /**
+         * The type of the STUN messages that this <tt>MessageEventHandler</tt>
+         * is interested in. 
+         */
+        public final char messageType;
+
+        /**
+         * Initializes a new <tt>MessageTypeEventHandler</tt> which is to
+         * forward STUN messages with a specific type to a specific handler.
+         *
+         * @param messageType the type of the STUN messages that the new
+         * instance is to forward to the specified handler <tt>delegate</tt>
+         * @param delegate the handler to which the new instance is to forward
+         * STUN messages with the specified <tt>messageType</tt>
+         */
+        public MessageTypeEventHandler(char messageType, T delegate)
+        {
+            if (delegate == null)
+                throw new NullPointerException("delegate");
+
+            this.messageType = messageType;
+            this.delegate = delegate;
+        }
+
+        @Override
+        public boolean equals(Object obj)
+        {
+            if (this == obj)
+                return true;
+            if (!getClass().isInstance(obj))
+                return false;
+
+            MessageTypeEventHandler<?> mteh = (MessageTypeEventHandler<?>) obj;
+
+            return
+                (messageType == mteh.messageType)
+                    && delegate.equals(mteh.delegate);
+        }
+
+        @Override
+        public int hashCode()
+        {
+            return (messageType | delegate.hashCode());
+        }
+    }
+
+    /**
+     * Implements <tt>MessageEventHandler</tt> for <tt>RequestListener</tt>.
+     *
+     * @author Lubomir Marinov
+     */
+    private static class RequestListenerMessageEventHandler
+        extends MessageTypeEventHandler<RequestListener>
+    {
+
+        /**
+         * Initializes a new <tt>RequestListenerMessageEventHandler</tt> which
+         * is to implement <tt>MessageEventHandler</tt> for a specific
+         * <tt>RequestListener</tt>.
+         *
+         * @param requestListener the <tt>RequestListener</tt> for which the new
+         * instance is to implement <tt>MessageEventHandler</tt>
+         */
+        public RequestListenerMessageEventHandler(
+                RequestListener requestListener)
+        {
+            super(Message.STUN_REQUEST, requestListener);
+        }
+
+        /**
+         * Notifies this <tt>MessageEventHandler</tt> that a STUN message has
+         * been received, parsed and is ready for delivery.
+         *
+         * @param e a <tt>StunMessageEvent</tt> which encapsulates the STUN
+         * message to be handled
+         * @see MessageEventHandler#handleMessageEvent(StunMessageEvent)
+         */
+        public void handleMessageEvent(StunMessageEvent e)
+        {
+            delegate.processRequest(e);
+        }
     }
 }

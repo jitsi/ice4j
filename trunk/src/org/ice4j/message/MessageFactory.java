@@ -18,9 +18,15 @@ import org.ice4j.attribute.*;
  *
  * @author Emil Ivov
  * @author Sebastien Vincent
+ * @author Lubomir Marinov
  */
 public class MessageFactory
 {
+
+    /**
+     * The <tt>Logger</tt> used by the <tt>MessageFactory</tt> class and its
+     * instances.
+     */
     private static final Logger logger
         = Logger.getLogger(MessageFactory.class.getName());
 
@@ -435,6 +441,32 @@ public class MessageFactory
     }
 
     /**
+     * Creates a new TURN Refresh <tt>Request</tt> without any optional
+     * attributes such as LIFETIME.
+     *
+     * @return a new TURN Refresh <tt>Request</tt> without any optional
+     * attributes such as LIFETIME
+     */
+    public static Request createRefreshRequest()
+    {
+        Request refreshRequest = new Request();
+
+        try
+        {
+            refreshRequest.setMessageType(Message.REFRESH_REQUEST);
+        }
+        catch (IllegalArgumentException iaex)
+        {
+            /*
+             * We don't actually expect the exception to happen so we're
+             * ignoring it.
+             */
+            logger.log(Level.FINE, "Failed to set message type.", iaex);
+        }
+        return refreshRequest;
+    }
+
+    /**
      * Create a refresh request.
      *
      * @param lifetime lifetime value
@@ -496,6 +528,40 @@ public class MessageFactory
         }
 
         return channelBindRequest;
+    }
+
+    /**
+     * Creates a new TURN CreatePermission <tt>Request</tt> with a specific
+     * value for its XOR-PEER-ADDRESS attribute.
+     *
+     * @param peerAddress the value to assigned to the XOR-PEER-ADDRESS
+     * attribute
+     * @param transactionID the ID of the transaction which is to be used for
+     * the assignment of <tt>peerAddress</tt> to the XOR-PEER-ADDRESS attribute
+     * @return a new TURN CreatePermission <tt>Request</tt> with the specified
+     * value for its XOR-PEER-ADDRESS attribute
+     */
+    public static Request createCreatePermissionRequest(
+            TransportAddress peerAddress,
+            byte[] transactionID)
+    {
+        Request createPermissionRequest = new Request();
+
+        try
+        {
+            createPermissionRequest.setMessageType(
+                    Message.CREATEPERMISSION_REQUEST);
+        }
+        catch (IllegalArgumentException iaex)
+        {
+            // Expected to not happen because we are the creators.
+            logger.log(Level.FINE, "Failed to set message type.", iaex);
+        }
+        createPermissionRequest.addAttribute(
+                AttributeFactory.createXorPeerAddressAttribute(
+                        peerAddress,
+                        transactionID));
+        return createPermissionRequest;
     }
 
     /**

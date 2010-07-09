@@ -21,7 +21,7 @@ import java.net.*;
  * @author Lubomir Marinov
  */
 public class SafeCloseDatagramSocket
-    extends DatagramSocket
+    extends DelegatingDatagramSocket
 {
 
     /**
@@ -52,20 +52,19 @@ public class SafeCloseDatagramSocket
     }
 
     /**
-     * Creates a datagram socket, bound to the specified local socket address.
-     * <p>
-     * If, if the address is <tt>null</tt>, creates an unbound socket.
-     * </p>
+     * Initializes a new <tt>SafeCloseDatagramSocket</tt> instance which to
+     * implement the <tt>DatagramSocket</tt> functionality by delegating to a
+     * specific <tt>DatagramSocket</tt>.
      *
-     * @param bindaddr local socket address to bind, or <tt>null</tt> for an
-     * unbound socket
-     * @throws SocketException if the socket could not be opened, or the socket
-     * could not bind to the specified local port
+     * @param delegate the <tt>DatagramSocket</tt> to which the new instance is
+     * to delegate
+     * @throws SocketException if anything goes wrong while initializing the new
+     * <tt>SafeCloseDatagramSocket</tt> instance
      */
-    public SafeCloseDatagramSocket(SocketAddress bindaddr)
+    public SafeCloseDatagramSocket(DatagramSocket delegate)
         throws SocketException
     {
-        super(bindaddr);
+        super(delegate);
     }
 
     /**
@@ -100,6 +99,23 @@ public class SafeCloseDatagramSocket
         throws SocketException
     {
         super(port, laddr);
+    }
+
+    /**
+     * Creates a datagram socket, bound to the specified local socket address.
+     * <p>
+     * If, if the address is <tt>null</tt>, creates an unbound socket.
+     * </p>
+     *
+     * @param bindaddr local socket address to bind, or <tt>null</tt> for an
+     * unbound socket
+     * @throws SocketException if the socket could not be opened, or the socket
+     * could not bind to the specified local port
+     */
+    public SafeCloseDatagramSocket(SocketAddress bindaddr)
+        throws SocketException
+    {
+        super(bindaddr);
     }
 
     /**

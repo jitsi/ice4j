@@ -13,16 +13,27 @@ import java.util.*;
 import org.ice4j.*;
 import org.ice4j.ice.*;
 import org.ice4j.ice.harvest.*;
+import org.ice4j.security.*;
 
 /**
  * Simple ice4j testing scenario. The sample application would create and start
- * both agents and make one of them and make one of them run checks against the
- * other.
+ * both agents and make one of them run checks against the other.
  *
  * @author Emil Ivov
+ * @author Lubomir Marinov
  */
 public class Ice
 {
+
+    /**
+     * The indicator which determines whether the <tt>Ice</tt> application (i.e.
+     * the run-sample Ant target) is to start connectivity establishment of the
+     * remote peer (in addition to the connectivity establishment of the local
+     * agent which is always started, of course).
+     */
+    private static final boolean START_CONNECTIVITY_ESTABLISHMENT_OF_REMOTE_PEER
+        = true;
+
     /**
      * Start time for debugging purposes.
      */
@@ -55,6 +66,9 @@ public class Ice
         localAgent.setRemoteUfrag(remotePeer.getLocalUfrag());
         localAgent.setRemotePassword(remotePeer.getLocalPassword());
 
+        if (START_CONNECTIVITY_ESTABLISHMENT_OF_REMOTE_PEER)
+            transferRemoteCandidates(remotePeer, localAgent);
+
         remotePeer.setRemoteUfrag(localAgent.getLocalUfrag());
         remotePeer.setRemotePassword(localAgent.getLocalPassword());
 
@@ -63,6 +77,9 @@ public class Ice
         System.out.println("LocalAgent:\n" + localAgent);
 
         localAgent.startConnectivityEstablishment();
+
+        if (START_CONNECTIVITY_ESTABLISHMENT_OF_REMOTE_PEER)
+            remotePeer.startConnectivityEstablishment();
 
         System.out.println("Local audio clist:\n"
                         + localAgent.getStream("audio").getCheckList());
@@ -95,9 +112,11 @@ public class Ice
         {
             long processingEndTime = System.currentTimeMillis();
 
-            System.out.println("Agent entered the " + evt.getNewValue()
-                            + " state.");
-            if(evt.getNewValue() == IceProcessingState.COMPLETED)
+            Object iceProcessingState = evt.getNewValue();
+
+            System.out.println(
+                    "Agent entered the " + iceProcessingState + " state.");
+            if(iceProcessingState == IceProcessingState.COMPLETED)
             {
                 System.out.println("Total ICE processing time: "
                                 + (processingEndTime - startTime) + "ms");
@@ -129,8 +148,8 @@ public class Ice
                     System.out.println(stream.getCheckList());
                 }
             }
-            else if(evt.getNewValue() == IceProcessingState.TERMINATED
-                    || evt.getNewValue() == IceProcessingState.FAILED)
+            else if(iceProcessingState == IceProcessingState.TERMINATED
+                    || iceProcessingState == IceProcessingState.FAILED)
             {
                 System.exit(0);
             }
@@ -159,9 +178,7 @@ public class Ice
             if(remoteStream != null)
                 transferRemoteCandidates(localStream, remoteStream);
             else
-            {
                 localAgent.removeStream(localStream);
-            }
         }
     }
 
@@ -187,9 +204,7 @@ public class Ice
             if(remoteComponent != null)
                 transferRemoteCandidates(localComponent, remoteComponent);
             else
-            {
                 localStream.removeComponent(localComponent);
-            }
         }
     }
 
@@ -237,6 +252,7 @@ public class Ice
     {
         Agent agent = new Agent();
 
+        // STUN
         StunCandidateHarvester stunHarv = new StunCandidateHarvester(
             new TransportAddress("sip-communicator.net", 3478, Transport.UDP));
         StunCandidateHarvester stun6Harv = new StunCandidateHarvester(
@@ -246,8 +262,25 @@ public class Ice
         agent.addCandidateHarvester(stunHarv);
         agent.addCandidateHarvester(stun6Harv);
 
+        // TURN
+        String[] hostnames
+            = new String[]
+                    {
+                        "130.79.90.150",
+                        "2001:660:4701:1001:230:5ff:fe1a:805f"
+                    };
+        int port = 3478;
+        LongTermCredential longTermCredential
+            = new LongTermCredential("guest", "anonymouspower!!");
+
+        for (String hostname : hostnames)
+            agent.addCandidateHarvester(
+                    new TurnCandidateHarvester(
+                            new TransportAddress(hostname, port, Transport.UDP),
+                            longTermCredential));
+
         createStream(rtpPort, "audio", agent);
-        //createStream(rtpPort + 2, "video", agent);
+//        createStream(rtpPort + 2, "video", agent);
 
         return agent;
     }
@@ -287,15 +320,13 @@ public class Ice
                         + (endTime - startTime) +" ms");
         startTime = endTime;
         //rtcpComp
-        //agent.createComponent(
-        //        stream, Transport.UDP, rtpPort + 1, rtpPort + 1, rtpPort + 101);
+//        agent.createComponent(
+//                stream, Transport.UDP, rtpPort + 1, rtpPort + 1, rtpPort + 101);
 
-        endTime = System.currentTimeMillis();
-        System.out.println("RTCP Component created in "
-                        + (endTime - startTime) +" ms");
+//        endTime = System.currentTimeMillis();
+//        System.out.println("RTCP Component created in "
+//                        + (endTime - startTime) +" ms");
 
         return stream;
     }
-
-
 }

@@ -37,16 +37,28 @@ public class StunCandidateHarvest
         = Logger.getLogger(StunCandidateHarvest.class.getName());
 
     /**
-     * The constant which defines an empty array with <tt>Candidate</tt> element
-     * type. Explicitly defined in order to reduce unnecessary allocations.
+     * The constant which defines an empty array with <tt>LocalCandidate</tt>
+     * element type. Explicitly defined in order to reduce unnecessary
+     * allocations.
      */
-    private static final Candidate[] NO_CANDIDATES = new Candidate[0];
+    private static final LocalCandidate[] NO_CANDIDATES = new LocalCandidate[0];
+
+    /**
+     * The value of the <tt>sendKeepAliveMessage</tt> property of
+     * <tt>StunCandidateHarvest</tt> which specifies that no sending of STUN
+     * keep-alive messages is to performed for the purposes of keeping the
+     * <tt>Candidate</tt>s harvested by the <tt>StunCandidateHarvester</tt> in
+     * question alive.
+     */
+    protected static final long SEND_KEEP_ALIVE_MESSAGE_INTERVAL_NOT_SPECIFIED
+        = 0;
 
     /**
      * The list of <tt>Candidate</tt>s harvested for {@link #hostCandidate} by
      * this harvest.
      */
-    private final List<Candidate> candidates = new LinkedList<Candidate>();
+    private final List<LocalCandidate> candidates
+        = new LinkedList<LocalCandidate>();
 
     /**
      * The indicator which determines whether this <tt>StunCandidateHarvest</tt>
@@ -83,6 +95,38 @@ public class StunCandidateHarvest
      */
     private final Map<TransactionID, Request> requests
         = new HashMap<TransactionID, Request>();
+
+    /**
+     * The interval in milliseconds at which a new STUN keep-alive message is to
+     * be sent to the STUN server associated with the
+     * <tt>StunCandidateHarvester</tt> of this instance in order to keep one of
+     * the <tt>Candidate</tt>s harvested by this instance alive.
+     */
+    private long sendKeepAliveMessageInterval
+        = SEND_KEEP_ALIVE_MESSAGE_INTERVAL_NOT_SPECIFIED;
+
+    /**
+     * The <tt>Object</tt> used to synchronize access to the members related to
+     * the sending of STUN keep-alive messages to the STUN server associated
+     * with the <tt>StunCandidateHarvester</tt> of this instance.
+     */
+    private final Object sendKeepAliveMessageSyncRoot = new Object();
+
+    /**
+     * The <tt>Thread</tt> which sends the STUN keep-alive messages to the STUN
+     * server associated with the <tt>StunCandidateHarvester</tt> of this
+     * instance in order to keep the <tt>Candidate</tt>s harvested by this
+     * instance alive.
+     */
+    private Thread sendKeepAliveMessageThread;
+
+    /**
+     * The time stamp of the last call to {@link #sendKeepAliveMessage()} which
+     * completed without throwing an exception (note: it doesn't mean that the
+     * keep-alive message was a STUN <tt>Request</tt> and it received a success
+     * STUN <tt>Response</tt>).
+     */
+    private long sendKeepAliveMessageTimeStamp = -1;
 
     /**
      * Initializes a new <tt>StunCandidateHarvest</tt> which is to represent the
@@ -207,6 +251,38 @@ public class StunCandidateHarvest
     }
 
     /**
+     * Creates a new STUN <tt>Message</tt> to be sent to the STUN server
+     * associated with the <tt>StunCandidateHarvester</tt> of this instance in
+     * order to keep a specific <tt>LocalCandidate</tt> (harvested by this
+     * instance) alive.
+     *
+     * @param candidate the <tt>LocalCandidate</tt> (harvested by this instance)
+     * to create a new keep-alive STUN message for
+     * @return a new keep-alive STUN <tt>Message</tt> for the specified
+     * <tt>candidate</tt> or <tt>null</tt> if no keep-alive sending is to occur
+     * @throws StunException if anything goes wrong while creating the new
+     * keep-alive STUN <tt>Message</tt> for the specified <tt>candidate</tt>
+     * or the candidate is of an unsupported <tt>CandidateType</tt>
+     */
+    protected Message createKeepAliveMessage(LocalCandidate candidate)
+        throws StunException
+    {
+        /*
+         * We'll not be keeping a STUN Binding alive for now. If we decide to in
+         * the future, we'll have to create a Binding Indication and add support
+         * for sending it.
+         */
+        if (CandidateType.SERVER_REFLEXIVE_CANDIDATE.equals(
+                candidate.getType()))
+            return null;
+        else
+        {
+            throw
+                new StunException(StunException.ILLEGAL_ARGUMENT, "candidate");
+        }
+    }
+
+    /**
      * Creates a new <tt>Request</tt> instance which is to be sent by this
      * <tt>StunCandidateHarvest</tt> in order to retry a specific
      * <tt>Request</tt>. For example, the long-term credential mechanism
@@ -244,6 +320,29 @@ public class StunCandidateHarvest
     protected Request createRequestToStartResolvingCandidate()
     {
         return MessageFactory.createBindingRequest();
+    }
+
+    /**
+     * Creates and starts the {@link #sendKeepAliveMessageThread} which is to
+     * send STUN keep-alive <tt>Message</tt>s to the STUN server associated with
+     * the <tt>StunCandidateHarvester</tt> of this instance in order to keep the
+     * <tt>Candidate</tt>s harvested by this instance alive.
+     */
+    private void createSendKeepAliveMessageThread()
+    {
+        synchronized (sendKeepAliveMessageSyncRoot)
+        {
+            sendKeepAliveMessageThread
+                = new Thread()
+                        {
+                            @Override
+                            public void run()
+                            {
+                                runInSendKeepAliveMessageThread();
+                            }
+                        };
+            sendKeepAliveMessageThread.start();
+        }
     }
 
     /**
@@ -312,7 +411,7 @@ public class StunCandidateHarvest
      * @return an array containing the <tt>Candidate</tt>s harvested for
      * {@link #hostCandidate} during this harvest
      */
-    Candidate[] getCandidates()
+    LocalCandidate[] getCandidates()
     {
         return candidates.toArray(NO_CANDIDATES);
     }
@@ -363,7 +462,8 @@ public class StunCandidateHarvest
     private boolean processChallenge(
             byte[] realm,
             byte[] nonce,
-            Request request)
+            Request request,
+            TransactionID requestTransactionID)
         throws StunException
     {
         UsernameAttribute usernameAttribute
@@ -442,7 +542,27 @@ public class StunCandidateHarvest
 
         if (retryRequest != null)
         {
-            retryRequestTransactionID = sendRequest(retryRequest, false);
+            if (requestTransactionID != null)
+            {
+                Object applicationData
+                    = requestTransactionID.getApplicationData();
+
+                if (applicationData != null)
+                {
+                    byte[] retryRequestTransactionIDAsBytes
+                        = retryRequest.getTransactionID();
+
+                    retryRequestTransactionID
+                        = (retryRequestTransactionIDAsBytes == null)
+                            ? TransactionID.createNewTransactionID()
+                            : TransactionID.createTransactionID(
+                                    retryRequestTransactionIDAsBytes);
+                    retryRequestTransactionID.setApplicationData(
+                            applicationData);
+                }
+            }
+            retryRequestTransactionID
+                = sendRequest(retryRequest, false, retryRequestTransactionID);
         }
         return (retryRequestTransactionID != null);
     }
@@ -462,7 +582,10 @@ public class StunCandidateHarvest
      * @throws StunException if anything goes wrong while processing the
      * challenge
      */
-    private boolean processChallenge(Response response, Request request)
+    private boolean processChallenge(
+            Response response,
+            Request request,
+            TransactionID transactionID)
         throws StunException
     {
         boolean retried = false;
@@ -513,12 +636,36 @@ public class StunCandidateHarvest
                             = processChallenge(
                                     realmAttribute.getRealm(),
                                     nonceAttribute.getNonce(),
-                                    request);
+                                    request,
+                                    transactionID);
                     }
                 }
             }
         }
         return retried;
+    }
+
+    /**
+     * Notifies this <tt>StunCandidateHarvest</tt> that a specific
+     * <tt>Request</tt> has either received an error <tt>Response</tt> or has
+     * failed to receive any <tt>Response</tt>. Allows extenders to override and
+     * process unhandled error <tt>Response</tt>s or failures. The default
+     * implementation does no processing.
+     *
+     * @param response the error <tt>Response</tt> which has been received for
+     * <tt>request</tt>
+     * @param request the <tt>Request</tt> to which <tt>Response</tt> responds
+     * @return <tt>true</tt> if the error or failure condition has been
+     * processed and this instance can continue its execution (e.g. the
+     * resolution of the candidate) as if it was expected; otherwise,
+     * <tt>false</tt>
+     */
+    protected boolean processErrorOrFailure(
+            Response response,
+            Request request,
+            TransactionID transactionID)
+    {
+        return false;
     }
 
     /**
@@ -554,7 +701,18 @@ public class StunCandidateHarvest
             if (message instanceof Request)
                 request = (Request) message;
         }
-        completedResolvingCandidate(request, null);
+
+        boolean completedResolvingCandidate = true;
+        try
+        {
+            if (processErrorOrFailure(null, request, transactionID))
+                completedResolvingCandidate = false;
+        }
+        finally
+        {
+            if (completedResolvingCandidate)
+                completedResolvingCandidate(request, null);
+        }
     }
 
     /**
@@ -625,7 +783,7 @@ public class StunCandidateHarvest
                         return;
                 }
 
-                createCandidates(response);
+                processSuccess(response, request, transactionID);
             }
             else
             {
@@ -641,11 +799,17 @@ public class StunCandidateHarvest
                         switch (errorCodeAttr.getErrorNumber())
                         {
                         case 1: // 401 Unauthorized
-                            if (processUnauthorized(response, request))
+                            if (processUnauthorized(
+                                    response,
+                                    request,
+                                    transactionID))
                                 completedResolvingCandidate = false;
                             break;
                         case 38: // 438 Stale Nonce
-                            if (processStaleNonce(response, request))
+                            if (processStaleNonce(
+                                    response,
+                                    request,
+                                    transactionID))
                                 completedResolvingCandidate = false;
                             break;
                         }
@@ -655,6 +819,12 @@ public class StunCandidateHarvest
                         completedResolvingCandidate = true;
                     }
                 }
+                if (completedResolvingCandidate
+                        && processErrorOrFailure(
+                                response,
+                                request,
+                                transactionID))
+                    completedResolvingCandidate = false;
             }
         }
         finally
@@ -675,7 +845,10 @@ public class StunCandidateHarvest
      * @return <tt>true</tt> if the specified STUN error <tt>response</tt> was
      * successfully handled; <tt>false</tt>, otherwise
      */
-    private boolean processStaleNonce(Response response, Request request)
+    private boolean processStaleNonce(
+            Response response,
+            Request request,
+            TransactionID transactionID)
         throws StunException
     {
         /*
@@ -709,7 +882,26 @@ public class StunCandidateHarvest
         else
             challenge = false;
 
-        return (challenge && processChallenge(response, request));
+        return
+            (challenge && processChallenge(response, request, transactionID));
+    }
+
+    /**
+     * Handles a specific STUN success <tt>Response</tt> to a specific STUN
+     * <tt>Request</tt>.
+     *
+     * @param response the received STUN success <tt>Response</tt> which is to
+     * be handled
+     * @param request the STUN <tt>Request</tt> to which <tt>response</tt>
+     * responds
+     */
+    protected void processSuccess(
+            Response response,
+            Request request,
+            TransactionID transactionID)
+    {
+        if (!completedResolvingCandidate)
+            createCandidates(response);
     }
 
     /**
@@ -723,7 +915,10 @@ public class StunCandidateHarvest
      * @return <tt>true</tt> if the specified STUN error <tt>response</tt> was
      * successfully handled; <tt>false</tt>, otherwise
      */
-    private boolean processUnauthorized(Response response, Request request)
+    private boolean processUnauthorized(
+            Response response,
+            Request request,
+            TransactionID transactionID)
         throws StunException
     {
         /*
@@ -758,7 +953,162 @@ public class StunCandidateHarvest
             }
         }
 
-        return (challenge && processChallenge(response, request));
+        return
+            (challenge && processChallenge(response, request, transactionID));
+    }
+
+    /**
+     * Runs in {@link #sendKeepAliveMessageThread} and sends STUN
+     * keep-alive <tt>Message</tt>s to the STUN server associated with the
+     * <tt>StunCandidateHarvester</tt> of this instance 
+     */
+    private void runInSendKeepAliveMessageThread()
+    {
+        try
+        {
+            while (true)
+            {
+                synchronized (sendKeepAliveMessageSyncRoot)
+                {
+                    /*
+                     * Since we're going to #wait, make sure we're not canceled
+                     * yet.
+                     */
+                    if (sendKeepAliveMessageInterval
+                            == SEND_KEEP_ALIVE_MESSAGE_INTERVAL_NOT_SPECIFIED)
+                        break;
+
+                    /*
+                     * Determine the amount of milliseconds that we'll have to
+                     * #wait.
+                     */
+                    long timeout;
+
+                    if (sendKeepAliveMessageTimeStamp == -1)
+                    {
+                        /*
+                         * If we're just starting, don't just go and send a new
+                         * STUN keep-alive message but rather wait for the whole
+                         * interval.
+                         */
+                        timeout = sendKeepAliveMessageInterval;
+                    }
+                    else
+                    {
+                        timeout
+                            = sendKeepAliveMessageTimeStamp
+                                + sendKeepAliveMessageInterval
+                                - System.currentTimeMillis();
+                    }
+                    // At long last, #wait if necessary.
+                    if (timeout > 0)
+                    {
+                        try
+                        {
+                            sendKeepAliveMessageSyncRoot.wait(timeout);
+                        }
+                        catch (InterruptedException iex)
+                        {
+                        }
+                        /*
+                         * Apart from being the time to send the STUN keep-alive
+                         * message, it could be that we've experienced a
+                         * spurious wake-up or that we've been canceled.
+                         */
+                        continue;
+                    }
+                }
+
+                sendKeepAliveMessageTimeStamp = System.currentTimeMillis();
+                try
+                {
+                    sendKeepAliveMessage();
+                }
+                catch (StunException sex)
+                {
+                    logger.log(
+                            Level.INFO,
+                            "Failed to send STUN keep-alive message.",
+                            sex);
+                }
+            }
+        }
+        finally
+        {
+            synchronized (sendKeepAliveMessageSyncRoot)
+            {
+                if (sendKeepAliveMessageThread == Thread.currentThread())
+                    sendKeepAliveMessageThread = null;
+                /*
+                 * Well, if the currentThread is finishing and this instance is
+                 * still to send keep-alive messages, we'd better start another
+                 * Thread for the purpose to continue the work that the
+                 * currentThread was supposed to carry out. 
+                 */
+                if ((sendKeepAliveMessageThread == null)
+                        && (sendKeepAliveMessageInterval
+                                != SEND_KEEP_ALIVE_MESSAGE_INTERVAL_NOT_SPECIFIED))
+                    createSendKeepAliveMessageThread();
+            }
+        }
+    }
+
+    /**
+     * Sends a new STUN <tt>Message</tt> to the STUN server associated with the
+     * <tt>StunCandidateHarvester</tt> of this instance in order to keep a
+     * <tt>LocalCandidate</tt> harvested by this instance alive.
+     *
+     * @throws StunException if anything goes wrong while sending a new
+     * keep-alive STUN <tt>Message</tt>
+     */
+    protected void sendKeepAliveMessage()
+        throws StunException
+    {
+        for (LocalCandidate candidate : getCandidates())
+            if (sendKeepAliveMessage(candidate))
+                break;
+    }
+
+    /**
+     * Sends a new STUN <tt>Message</tt> to the STUN server associated with the
+     * <tt>StunCandidateHarvester</tt> of this instance in order to keep a
+     * specific <tt>LocalCandidate</tt> alive.
+     *
+     * @param candidate the <tt>LocalCandidate</tt> to send a new keep-alive
+     * STUN <tt>Message</tt> for
+     * @return <tt>true</tt> if a new STUN <tt>Message</tt> was sent to the
+     * STUN server associated with the <tt>StunCandidateHarvester</tt> of this
+     * instance or <tt>false</tt> if the STUN kee-alive functionality was not
+     * been used for the specified <tt>candidate</tt>
+     * @throws StunException if anything goes wrong while sending the new
+     * keep-alive STUN <tt>Message</tt> for the specified <tt>candidate</tt>
+     */
+    protected boolean sendKeepAliveMessage(LocalCandidate candidate)
+        throws StunException
+    {
+        Message keepAliveMessage = createKeepAliveMessage(candidate);
+
+        /*
+         * The #createKeepAliveMessage method javadoc says it returns null when
+         * the STUN keep-alive functionality of this StunCandidateHarvest is to
+         * not be utilized.
+         */
+        if (keepAliveMessage == null)
+            return false;
+        if (keepAliveMessage instanceof Request)
+        {
+            return
+                (sendRequest((Request) keepAliveMessage, false, null) != null);
+        }
+        else
+        {
+            throw
+                new StunException(
+                        StunException.ILLEGAL_ARGUMENT,
+                        "Failed to create keep-alive STUN message "
+                            + "for candidate: "
+                            + candidate);
+        }
     }
 
     /**
@@ -777,7 +1127,10 @@ public class StunCandidateHarvest
      * <tt>Request</tt> to the STUN server associated with this
      * <tt>StunCandidateHarvest</tt>
      */
-    protected TransactionID sendRequest(Request request, boolean firstRequest)
+    protected TransactionID sendRequest(
+            Request request,
+            boolean firstRequest,
+            TransactionID transactionID)
         throws StunException
     {
         if (!firstRequest && (longTermCredentialSession != null))
@@ -788,8 +1141,15 @@ public class StunCandidateHarvest
         TransportAddress hostCandidateTransportAddress
             = hostCandidate.getTransportAddress();
 
-        TransactionID transactionID;
+        if (transactionID == null)
+        {
+            byte[] transactionIDAsBytes = request.getTransactionID();
 
+            transactionID
+                = (transactionIDAsBytes == null)
+                    ? TransactionID.createNewTransactionID()
+                    : TransactionID.createTransactionID(transactionIDAsBytes);
+        }
         synchronized (requests)
         {
             try
@@ -800,7 +1160,8 @@ public class StunCandidateHarvest
                             request,
                             stunServer,
                             hostCandidateTransportAddress,
-                            this);
+                            this,
+                            transactionID);
             }
             catch (IllegalArgumentException iaex)
             {
@@ -843,6 +1204,41 @@ public class StunCandidateHarvest
     }
 
     /**
+     * Sets the interval in milliseconds at which a new STUN keep-alive message
+     * is to be sent to the STUN server associated with the
+     * <tt>StunCandidateHarvester</tt> of this instance in order to keep one of
+     * the <tt>Candidate</tt>s harvested by this instance alive.
+     *
+     * @param sendKeepAliveMessageInterval the interval in milliseconds at which
+     * a new STUN keep-alive message is to be sent to the STUN server associated
+     * with the <tt>StunCandidateHarvester</tt> of this instance in order to
+     * keep one of the <tt>Candidate</tt>s harvested by this instance alive or
+     * {@link #SEND_KEEP_ALIVE_MESSAGE_INTERVAL_NOT_SPECIFIED} if the keep-alive
+     * functionality is to not be utilized
+     */
+    protected void setSendKeepAliveMessageInterval(
+            long sendKeepAliveMessageInterval)
+    {
+        if ((sendKeepAliveMessageInterval
+                    != SEND_KEEP_ALIVE_MESSAGE_INTERVAL_NOT_SPECIFIED)
+                && (sendKeepAliveMessageInterval < 1))
+            throw new IllegalArgumentException("sendKeepAliveMessageInterval");
+
+        synchronized (sendKeepAliveMessageSyncRoot)
+        {
+            this.sendKeepAliveMessageInterval = sendKeepAliveMessageInterval;
+            if (sendKeepAliveMessageThread == null)
+            {
+                if (this.sendKeepAliveMessageInterval
+                        != SEND_KEEP_ALIVE_MESSAGE_INTERVAL_NOT_SPECIFIED)
+                    createSendKeepAliveMessageThread();
+            }
+            else
+                sendKeepAliveMessageSyncRoot.notify();
+        }
+    }
+
+    /**
      * Starts the harvesting of <tt>Candidate</tt>s to be performed for
      * {@link #hostCandidate}.
      *
@@ -865,7 +1261,7 @@ public class StunCandidateHarvest
             // Short-Term Credential Mechanism
             addShortTermCredentialAttributes(requestToStartResolvingCandidate);
 
-            sendRequest(requestToStartResolvingCandidate, true);
+            sendRequest(requestToStartResolvingCandidate, true, null);
             return true;
         }
         else

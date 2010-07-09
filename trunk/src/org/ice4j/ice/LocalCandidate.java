@@ -49,31 +49,6 @@ public abstract class LocalCandidate
     }
 
     /**
-     * Gets the actual/host <tt>DatagramSocket</tt> which implements the
-     * <tt>DatagramSocket</tt>s exposed by this <tt>LocalCandidate</tt>. The
-     * default implementation is supposed to be good enough for the general case
-     * and does not try to be universal - it returns the <tt>hostSocket</tt> of
-     * the <tt>base</tt> of this <tt>LocalCandidate</tt> if the <tt>base</tt> is
-     * different than <tt>this</tt> or the <tt>socket</tt> of this
-     * <tt>LocalCandidate</tt> if it equals its <tt>base</tt>. The row reasoning
-     * for the implementation is that if any <tt>Candidate</tt> knows about the
-     * actual/host <tt>DatagramSocket</tt>, this <tt>LocalCandidate</tt> would
-     * be based on it rather be related to it in any other way.
-     *
-     * @return the actual/host <tt>DatagramSocket</tt> which implements the
-     * <tt>DatagramSocket</tt>s exposed by this <tt>LocalCandidate</tt>
-     */
-    protected DatagramSocket getHostSocket()
-    {
-        LocalCandidate base = getBase();
-
-        return
-            ((base == this) || (base == null))
-                ? getSocket()
-                : base.getHostSocket();
-    }
-
-    /**
      * Gets the <tt>DatagramSocket</tt> associated with this <tt>Candidate</tt>.
      *
      * @return the <tt>DatagramSocket</tt> associated with this
@@ -96,14 +71,14 @@ public abstract class LocalCandidate
      */
     public DatagramSocket getStunSocket(TransportAddress serverAddress)
     {
-        DatagramSocket hostSocket = getHostSocket();
+        DatagramSocket hostSocket = getSocket();
         DatagramSocket stunSocket = null;
-        Throwable exception = null;
 
         if (hostSocket instanceof MultiplexingDatagramSocket)
         {
             DatagramPacketFilter stunDatagramPacketFilter
                 = createStunDatagramPacketFilter(serverAddress);
+            Throwable exception = null;
 
             try
             {
@@ -119,11 +94,24 @@ public abstract class LocalCandidate
                            sex);
                 exception = sex;
             }
+            if (stunSocket == null)
+            {
+                throw
+                    new IllegalStateException(
+                            "Failed to acquire DatagramSocket"
+                                + " specific to STUN communication",
+                            exception);
+            }
         }
-        if (stunSocket == null)
-            throw new IllegalArgumentException("hostCand", exception);
         else
-            return stunSocket;
+        {
+            throw
+                new IllegalStateException(
+                        "The socket of "
+                            + getClass().getSimpleName()
+                            + " must be a MultiplexingDatagramSocket instance");
+        }
+        return stunSocket;
     }
 
     /**
@@ -145,22 +133,33 @@ public abstract class LocalCandidate
 
     /**
      * Frees resources allocated by this candidate such as its
-     * <tt>DatagramSocket</tt> for example.
+     * <tt>DatagramSocket</tt>, for example. The <tt>socket</tt> of this
+     * <tt>LocalCandidate</tt> is closed only if it is not the <tt>socket</tt>
+     * of the <tt>base</tt> of this <tt>LocalCandidate</tt>.
      */
     protected void free()
     {
-        //remove our socket from the stack.
-        StunStack.getInstance().removeSocket(getTransportAddress());
-
-        // Close the socket associated with this Candidate.
+        // Close the socket associated with this LocalCandidate.
         DatagramSocket socket = getSocket();
 
-        /*
-         * Allow this LocalCandiate implementation to not create a socket if it
-         * still hasn't created one.
-         */
         if (socket != null)
-            socket.close();
+        {
+            LocalCandidate base = getBase();
+
+            if ((base == null)
+                    || (base == this)
+                    || (base.getSocket() != socket))
+            {
+                //remove our socket from the stack.
+                StunStack.getInstance().removeSocket(getTransportAddress());
+
+                /*
+                 * Allow this LocalCandiate implementation to not create a
+                 * socket if it still hasn't created one.
+                 */
+                socket.close();
+            }
+        }
     }
 
     /**

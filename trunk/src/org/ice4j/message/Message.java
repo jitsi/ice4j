@@ -22,6 +22,7 @@ import org.ice4j.stack.*;
  *
  * @author Emil Ivov
  * @author Sebastien Vincent
+ * @author Lubomir Marinov
  */
 public abstract class Message
 {
@@ -51,8 +52,9 @@ public abstract class Message
     /* TURN methods */
     public static final char TURN_METHOD_ALLOCATE  = 0x0003;
     public static final char TURN_METHOD_REFRESH  = 0x0004;
-    public static final char TURN_METHOD_SEND  = 0x0006;;
-    public static final char TURN_METHOD_DATA  = 0x0007;;
+    public static final char TURN_METHOD_SEND  = 0x0006;
+    public static final char TURN_METHOD_DATA  = 0x0007;
+    public static final char TURN_METHOD_CREATEPERMISSION = 0x0008;
     public static final char TURN_METHOD_CHANNELBIND  = 0x0009;
 
     public static final char ALLOCATE_REQUEST = (TURN_METHOD_ALLOCATE | STUN_REQUEST);
@@ -64,6 +66,9 @@ public abstract class Message
     public static final char CHANNELBIND_REQUEST = (TURN_METHOD_CHANNELBIND | STUN_REQUEST);
     public static final char CHANNELBIND_RESPONSE = (TURN_METHOD_CHANNELBIND | STUN_SUCCESS_RESP);
     public static final char CHANNELBIND_ERROR_RESPONSE = (TURN_METHOD_CHANNELBIND | STUN_ERROR_RESP);
+    public static final char CREATEPERMISSION_REQUEST = (TURN_METHOD_CREATEPERMISSION | STUN_REQUEST);
+    public static final char CREATEPERMISSION_RESPONSE = (TURN_METHOD_CREATEPERMISSION | STUN_SUCCESS_RESP);
+    public static final char CREATEPERMISSION_ERROR_RESPONSE = (TURN_METHOD_CREATEPERMISSION | STUN_ERROR_RESP);
     public static final char SEND_INDICATION = (TURN_METHOD_SEND | STUN_INDICATION);
     public static final char DATA_INDICATION = (TURN_METHOD_DATA | STUN_INDICATION);
 
@@ -116,7 +121,7 @@ public abstract class Message
     private static boolean rfc3489CompatibilityMode = false;
 
     /**
-     * Desribes which attributes are present in which messages.  An
+     * Describes which attributes are present in which messages.  An
      * M indicates that inclusion of the attribute in the message is
      * mandatory, O means its optional, C means it's conditional based on
      * some other aspect of the message, and N/A means that the attribute is
@@ -440,6 +445,16 @@ public abstract class Message
             case CHANNELBIND_REQUEST:          msgIndex = CHANNELBIND_REQUEST_PRESENTITY_INDEX; break;
             case SEND_INDICATION:              msgIndex = SEND_INDICATION_PRESENTITY_INDEX; break;
             case DATA_INDICATION:              msgIndex = DATA_INDICATION_PRESENTITY_INDEX; break;
+            default:
+                if (logger.isLoggable(Level.FINE))
+                {
+                    logger.log(
+                            Level.FINE,
+                            "Attribute presentity not defined for STUN message type: "
+                                + ((int) messageType)
+                                + ". Will assume optional.");
+                }
+                return O;
         }
 
         switch (attributeType)
@@ -494,12 +509,20 @@ public abstract class Message
         case BINDING_REQUEST:              return "BINDING-REQUEST";
         case BINDING_SUCCESS_RESPONSE:     return "BINDING-RESPONSE";
         case BINDING_ERROR_RESPONSE:       return "BINDING-ERROR-RESPONSE";
+        case CREATEPERMISSION_REQUEST:     return "CREATE-PERMISSION-REQUEST";
+        case CREATEPERMISSION_RESPONSE:    return "CREATE-PERMISSION-RESPONSE";
+        case CREATEPERMISSION_ERROR_RESPONSE:
+            return "CREATE-PERMISSION-ERROR-RESPONSE";
+        case DATA_INDICATION:              return "DATA-INDICATION";
+        case REFRESH_REQUEST:              return "REFRESH-REQUEST";
+        case REFRESH_RESPONSE:             return "REFRESH-RESPONSE";
+        case REFRESH_ERROR_RESPONSE:       return "REFRESH-ERROR-RESPONSE";
+        case SEND_INDICATION:              return "SEND-INDICATION";
         case SHARED_SECRET_REQUEST:        return "SHARED-SECRET-REQUEST";
         case SHARED_SECRET_RESPONSE:       return "SHARED-SECRET-RESPONSE";
         case SHARED_SECRET_ERROR_RESPONSE: return "SHARED-SECRET-ERROR-RESPONSE";
+        default:                           return "UNKNOWN-MESSAGE";
         }
-
-        return "UNKNOWN-MESSAGE";
     }
 
     /**
@@ -691,17 +714,11 @@ public abstract class Message
                                | (binMessage[offset++]&0xFF));
         Message message;
         if (Message.isResponseType(messageType))
-        {
             message = new Response();
-        }
         else if(Message.isRequestType(messageType))
-        {
             message = new Request();
-        }
         else /* indication */
-        {
             message = new Indication();
-        }
 
         message.setMessageType(messageType);
 
@@ -715,9 +732,16 @@ public abstract class Message
 
         if(arrayLen - offset - TRANSACTION_ID_LENGTH < length)
         {
-            throw new StunException( StunException.ILLEGAL_ARGUMENT,
-                            "The given binary array does not seem to "
-                            + "contain a whole StunMessage");
+            throw
+                new StunException(
+                        StunException.ILLEGAL_ARGUMENT,
+                        "The given binary array does not seem to contain"
+                            + " a whole StunMessage: given "
+                            + ((int) arrayLen)
+                            + " bytes of "
+                            + message.getName()
+                            + " but expecting "
+                            + (offset + TRANSACTION_ID_LENGTH + length));
         }
 
         byte tranID[] = new byte[TRANSACTION_ID_LENGTH];
@@ -846,7 +870,6 @@ public abstract class Message
     protected void validateAttributePresentity()
         throws IllegalStateException
     {
-        //the
         if(! rfc3489CompatibilityMode )
             return;
 

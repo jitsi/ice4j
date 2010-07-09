@@ -48,7 +48,7 @@ class Connector
     /**
      * A flag that is set to false to exit the message processor.
      */
-    private boolean isRunning;
+    private boolean running;
 
     /**
      * The instance to be notified if errors occur in the network listening
@@ -79,13 +79,12 @@ class Connector
                         socket.getLocalPort(), Transport.UDP);
     }
 
-
     /**
      * Start the network listening thread.
      */
     void start()
     {
-        this.isRunning = true;
+        this.running = true;
         Thread thread = new Thread(this, "IceConnector@"+hashCode());
         thread.setDaemon(true);
         thread.start();
@@ -107,46 +106,86 @@ class Connector
      */
     public void run()
     {
-        while (this.isRunning)
+        DatagramPacket packet = null;
+
+        while (this.running)
         {
             try
             {
-                int bufsize = sock.getReceiveBufferSize();
-                byte message[] = new byte[bufsize];
-                DatagramPacket packet = new DatagramPacket(message, bufsize);
-
                 DatagramSocket localSock;
 
                 synchronized (sockLock)
                 {
-                    if (!isRunning)
+                    if (!running)
                         return;
 
                     localSock = this.sock;
                 }
 
+                /*
+                 * Make sure localSock's receiveBufferSize is taken into
+                 * account including after it gets changed.
+                 */
+                int receiveBufferSize = localSock.getReceiveBufferSize();
+
+                if (packet == null)
+                {
+                    packet
+                        = new DatagramPacket(
+                                new byte[receiveBufferSize],
+                                receiveBufferSize);
+                }
+                else
+                {
+                    byte[] packetData = packet.getData();
+
+                    if ((packetData == null)
+                            || (packetData.length < receiveBufferSize))
+                    {
+                        packet.setData(
+                                new byte[receiveBufferSize],
+                                0,
+                                receiveBufferSize);
+                    }
+                    else
+                    {
+                        /*
+                         * XXX Tell the packet it is large enough because the
+                         * socket will not look at the length of the data array
+                         * property and will just respect the length property.
+                         */
+                        packet.setLength(receiveBufferSize);
+                    }
+                }
+
                 localSock.receive(packet);
 
                 //get lost if we are no longer running.
-                if(!isRunning)
+                if(!running)
                     return;
 
                 logger.finest("received datagram");
 
-                RawMessage rawMessage = new RawMessage( message,
-                    packet.getLength(),
-                    new TransportAddress( packet.getAddress(),
-                                    packet.getPort(), Transport.UDP),
-                    listenAddress);
+                RawMessage rawMessage
+                    = new RawMessage(
+                            packet.getData(),
+                            packet.getLength(),
+                            new TransportAddress(
+                                    packet.getAddress(),
+                                    packet.getPort(),
+                                    Transport.UDP),
+                            listenAddress);
 
                 messageQueue.add(rawMessage);
             }
             catch (SocketException ex)
             {
-                if (isRunning)
+                if (running)
                 {
-                    logger.log(Level.WARNING,
-                               "A connector died:", ex);
+                    logger.log(
+                            Level.WARNING,
+                            "Connector died: " + listenAddress,
+                            ex);
 
                     stop();
                     //Something wrong has happened
@@ -159,7 +198,7 @@ class Connector
                 else
                 {
                     //The exception was most probably caused by calling
-                    //this.stop() ....
+                    //this.stop().
                 }
             }
             catch (IOException ex)
@@ -192,7 +231,7 @@ class Connector
     {
         synchronized(sockLock)
         {
-            this.isRunning = false;
+            this.running = false;
             this.sock = null;
         }
     }
@@ -221,11 +260,9 @@ class Connector
     @Override
     public String toString()
     {
-        return "ice4j.Connector@"
-                + listenAddress
-                +" status: "
-                + (isRunning? "not":"")
-                +" running";
+        return
+            "ice4j.Connector@" + listenAddress
+                + " status: " + (running ? "not" : "") +" running";
      }
 
      /**
