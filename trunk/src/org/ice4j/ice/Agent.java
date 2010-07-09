@@ -1341,7 +1341,7 @@ public class Agent
     {
         if (terminationThread == null)
         {
-            terminationThread = new TerminationThread(this);
+            terminationThread = new TerminationThread();
             terminationThread.start();
         }
     }
@@ -1356,23 +1356,16 @@ public class Agent
      * This <tt>TerminationThread</tt> is scheduling such a termination and
      * garbage collection in three seconds.
      */
-    private static class TerminationThread
+    private class TerminationThread
         extends Thread
     {
-        /**
-         * The parent agent that created us.
-         */
-        private final Agent parentAgent;
 
         /**
          * Creates a new termination timer.
-         *
-         * @param parentAgent the <tt>Agent</tt> that created us.
          */
-        private TerminationThread(Agent parentAgent)
+        private TerminationThread()
         {
             super("TerminationThread");
-            this.parentAgent = parentAgent;
         }
 
         /**
@@ -1380,6 +1373,7 @@ public class Agent
          * interval the user has specified) and then moves this <tt>Agent</tt>
          * into the terminated state and frees all non-nominated candidates.
          */
+        @Override
         public synchronized void run()
         {
             long terminationDelay = Integer.getInteger(
@@ -1401,7 +1395,7 @@ public class Agent
                 }
             }
 
-            parentAgent.terminate(IceProcessingState.TERMINATED);
+            terminate(IceProcessingState.TERMINATED);
         }
     }
 
@@ -1417,9 +1411,7 @@ public class Agent
     {
         // free candidates
         for(IceMediaStream stream : getStreams())
-        {
             removeStream(stream);
-        }
 
         // stop listening for checks
         connCheckClient.stop();

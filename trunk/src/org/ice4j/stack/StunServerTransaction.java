@@ -32,7 +32,6 @@ import org.ice4j.message.*;
  *
  * @author Emil Ivov
  */
-
 class StunServerTransaction
     implements Runnable
 {

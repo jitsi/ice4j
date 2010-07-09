@@ -324,7 +324,6 @@ class StunClientTransaction
         }
     }
 
-
     /**
      * Cancels the transaction. Once this method is called the transaction is
      * considered terminated and will stop retransmissions.

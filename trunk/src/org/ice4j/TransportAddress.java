@@ -265,7 +265,7 @@ public class TransportAddress
             }
         }
 
-        //may add more unreachability condition here in the future;
+        //may add more unreachability conditions here in the future;
 
         return true;
     }

@@ -14,32 +14,33 @@ package org.ice4j.message;
  *
  * @author Sebastien Vincent
  */
-public class Indication extends Message
+public class Indication
+    extends Message
 {
     /**
      * Constructor.
      */
     Indication()
     {
-
     }
 
     /**
-     * Checks whether indicationType is a valid response type and if yes sets it
-     * as the type of the current instance.
+     * Checks whether indicationType is a valid indication type and if yes sets
+     * it as the type of this instance.
+     *
      * @param indicationType the type to set
      * @throws IllegalArgumentException if indicationType is not a valid
-     * response type
+     * indication type
      */
+    @Override
     public void setMessageType(char indicationType)
         throws IllegalArgumentException
     {
         if(!isIndicationType(indicationType))
             throw new IllegalArgumentException(
                     (int)(indicationType)
-                    + " - is not a valid response type.");
+                    + " - is not a valid indication type.");
 
         super.setMessageType(indicationType);
     }
 }
-
