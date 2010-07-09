@@ -15,7 +15,7 @@ import org.ice4j.*;
  *
  * @author Emil Ivov
  */
-interface MessageEventHandler
+public interface MessageEventHandler
 {
     /**
      * Called when an incoming message has been received, parsed and is ready

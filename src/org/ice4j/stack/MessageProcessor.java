@@ -44,7 +44,7 @@ class MessageProcessor
     /**
      * The flag that indicates whether we are still running.
      */
-    private boolean isRunning = false;
+    private boolean running = false;
 
     /**
      * A reference to the thread that we use to execute ourselves.
@@ -93,7 +93,7 @@ class MessageProcessor
         //avoid having dead threads in our pools.
         try
         {
-            while (isRunning)
+            while (running)
             {
                 RawMessage rawMessage;
                 try
@@ -127,7 +127,7 @@ class MessageProcessor
                 }
                 catch (StunException ex)
                 {
-                    errorHandler.handleError("Failed to decode a stun mesage!",
+                    errorHandler.handleError("Failed to decode a stun message!",
                                              ex);
 
                     continue; //let this one go and for better luck next time.
@@ -153,20 +153,19 @@ class MessageProcessor
      */
     void start()
     {
-        this.isRunning = true;
+        this.running = true;
 
         runningThread = new Thread(this, "Stun4J Message Processor");
         runningThread.setDaemon(true);
         runningThread.start();
     }
 
-
     /**
      * Shut down the message processor.
      */
     void stop()
     {
-        this.isRunning = false;
+        this.running = false;
         runningThread.interrupt();
     }
 
@@ -178,6 +177,6 @@ class MessageProcessor
      */
     boolean isRunning()
     {
-        return isRunning;
+        return running;
     }
 }

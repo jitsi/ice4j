@@ -101,18 +101,13 @@ public class DataAttribute
     }
 
     /**
-     * Returns a (cloned) byte array containg the data value of the data
+     * Returns a (cloned) byte array containing the data value of the data
      * attribute.
      * @return the binary array containing the data.
      */
     public byte[] getData()
     {
-        if (data == null)
-            return null;
-
-        byte[] copy = new byte[data.length];
-        System.arraycopy(data, 0, copy, 0, data.length);
-        return data;
+        return (data == null) ? null : data.clone();
     }
 
     /**

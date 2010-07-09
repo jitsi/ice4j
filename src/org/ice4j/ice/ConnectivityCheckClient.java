@@ -106,17 +106,17 @@ class ConnectivityCheckClient
      */
     private TransactionID startCheckForPair(CandidatePair candidatePair)
     {
+        LocalCandidate localCandidate = candidatePair.getLocalCandidate();
         //we don't need to do a canReach() verification here as it has been
         //already verified during the gathering process.
-        DatagramSocket stunSocket
-            = candidatePair.getLocalCandidate().getStunSocket(null);
+        DatagramSocket stunSocket = localCandidate.getStunSocket(null);
 
         Request request = MessageFactory.createBindingRequest();
 
         //the priority we'd like the remote party to use for a peer reflexive
         //candidate if one is discovered as a consequence of this check.
         PriorityAttribute priority = AttributeFactory.createPriorityAttribute(
-            candidatePair.getLocalCandidate().computePriorityForType(
+            localCandidate.computePriorityForType(
                             CandidateType.PEER_REFLEXIVE_CANDIDATE));
 
         request.addAttribute(priority);
@@ -148,7 +148,7 @@ class ConnectivityCheckClient
 
         request.addAttribute(unameAttr);
 
-        //todo: also implement SASL prepare
+        // TODO Also implement SASL prepare
         MessageIntegrityAttribute msgIntegrity = AttributeFactory
             .createMessageIntegrityAttribute(localUserName);
 
@@ -159,26 +159,30 @@ class ConnectivityCheckClient
 
         try
         {
-            stunStack.sendRequest(request,
-                candidatePair.getRemoteCandidate().getTransportAddress(),
-                candidatePair.getLocalCandidate().getTransportAddress(),
-                this, tran);
-
+            tran
+                = stunStack.sendRequest(request,
+                        candidatePair
+                            .getRemoteCandidate().getTransportAddress(),
+                        localCandidate.getTransportAddress(),
+                        this,
+                        tran);
             if(logger.isLoggable(Level.FINEST))
-                logger.finest("checking pair " + candidatePair + " with tran="
-                                + tran);
-
-            return tran;
+            {
+                logger.finest(
+                        "checking pair " + candidatePair
+                            + " with tran=" + tran);
+            }
         }
-        catch (Exception exception)
+        catch (Exception ex)
         {
-            logger.log( Level.INFO,
-                        "Failed to send " + request + " through "
-                        + stunSocket.getLocalSocketAddress(),
-                        exception);
-
-            return null;
+            logger.log(
+                    Level.INFO,
+                    "Failed to send " + request
+                        + " through " + stunSocket.getLocalSocketAddress(),
+                    ex);
+            tran = null;
         }
+        return tran;
     }
 
     /**
@@ -193,7 +197,7 @@ class ConnectivityCheckClient
     public void processResponse(StunResponseEvent evt)
     {
         CandidatePair checkedPair
-            = ((CandidatePair)evt.getTransactionID().getApplicationData());
+            = (CandidatePair) evt.getTransactionID().getApplicationData();
 
         //make sure that the response came from the right place.
         if (!checkSymmetricAddresses(evt))
@@ -296,8 +300,8 @@ class ConnectivityCheckClient
         Response response = evt.getResponse();
         Request  request  = evt.getRequest();
 
-        CandidatePair checkedPair = ((CandidatePair)evt.getTransactionID()
-                        .getApplicationData());
+        CandidatePair checkedPair
+            = (CandidatePair) evt.getTransactionID().getApplicationData();
 
         if(! response.containsAttribute(Attribute.XOR_MAPPED_ADDRESS))
         {

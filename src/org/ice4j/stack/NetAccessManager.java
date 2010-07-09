@@ -143,18 +143,20 @@ class NetAccessManager
      */
     protected void addSocket(DatagramSocket socket)
     {
-        //no null check - let it through a null pointer exception
-        TransportAddress localAddr = new TransportAddress(
-               socket.getLocalAddress(), socket.getLocalPort(), Transport.UDP);
+        //no null check - let it through as a NullPointerException
+        TransportAddress localAddr
+            = new TransportAddress(
+                    socket.getLocalAddress(),
+                    socket.getLocalPort(),
+                    Transport.UDP);
 
-        if(netAccessPoints.containsKey(localAddr))
-            return;
+        if (!netAccessPoints.containsKey(localAddr))
+        {
+            Connector ap = new Connector(socket, messageQueue, this);
 
-        Connector ap = new Connector(socket, messageQueue, this);
-
-        netAccessPoints.put(localAddr, ap);
-
-        ap.start();
+            netAccessPoints.put(localAddr, ap);
+            ap.start();
+        }
     }
 
     /**
