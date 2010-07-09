@@ -10,6 +10,7 @@ package org.ice4j.socket;
 import java.io.*;
 import java.net.*;
 import java.util.*;
+import java.util.logging.*;
 
 /**
  * Represents a <tt>DatagramSocket</tt> which allows filtering
@@ -23,6 +24,13 @@ import java.util.*;
 public class MultiplexingDatagramSocket
     extends SafeCloseDatagramSocket
 {
+
+    /**
+     * The <tt>Logger</tt> used by the <tt>MultiplexingDatagramSocket</tt> class
+     * and its instances for logging output.
+     */
+    private static final Logger logger
+        = Logger.getLogger(MultiplexingDatagramSocket.class.getName());
 
     /**
      * The constant which represents an empty array with
@@ -84,23 +92,18 @@ public class MultiplexingDatagramSocket
 
     /**
      * Initializes a new <tt>MultiplexingDatagramSocket</tt> instance which is
-     * to enable <tt>DatagramPacket</tt> filtering, bound to the specified local
-     * socket address.
-     * <p>
-     * If the specified local socket address is <tt>null</tt>, creates an
-     * unbound socket.
-     * </p>
+     * to enable <tt>DatagramPacket</tt> filtering on a specific
+     * <tt>DatagramSocket</tt>.
      *
-     * @param bindaddr local socket address to bind, or <tt>null</tt> for an
-     * unbound socket
-     * @throws SocketException if the socket could not be opened, or the socket
-     * could not bind to the specified local port
-     * @see DatagramSocket#DatagramSocket(SocketAddress)
+     * @param delegate the <tt>DatagramSocket</tt> on which
+     * <tt>DatagramPacket</tt> filtering is to be enabled by the new instance
+     * @throws SocketException if anything goes wrong while initializing the new
+     * instance
      */
-    public MultiplexingDatagramSocket(SocketAddress bindaddr)
+    public MultiplexingDatagramSocket(DatagramSocket delegate)
         throws SocketException
     {
-        super(bindaddr);
+        super(delegate);
     }
 
     /**
@@ -140,6 +143,27 @@ public class MultiplexingDatagramSocket
     }
 
     /**
+     * Initializes a new <tt>MultiplexingDatagramSocket</tt> instance which is
+     * to enable <tt>DatagramPacket</tt> filtering, bound to the specified local
+     * socket address.
+     * <p>
+     * If the specified local socket address is <tt>null</tt>, creates an
+     * unbound socket.
+     * </p>
+     *
+     * @param bindaddr local socket address to bind, or <tt>null</tt> for an
+     * unbound socket
+     * @throws SocketException if the socket could not be opened, or the socket
+     * could not bind to the specified local port
+     * @see DatagramSocket#DatagramSocket(SocketAddress)
+     */
+    public MultiplexingDatagramSocket(SocketAddress bindaddr)
+        throws SocketException
+    {
+        super(bindaddr);
+    }
+
+    /**
      * Initializes a new <tt>DatagramPacket</tt> instance which is a clone of a
      * specific <tt>DatagramPacket</tt> i.e. the properties of the clone
      * <tt>DatagramPacket</tt> are clones of the specified
@@ -149,20 +173,17 @@ public class MultiplexingDatagramSocket
      * @return a new <tt>DatagramPacket</tt> instance which is a clone of the
      * specified <tt>DatagramPacket</tt>
      */
-    static DatagramPacket clone(DatagramPacket p)
+    public static DatagramPacket clone(DatagramPacket p)
     {
         synchronized (p)
         {
             byte[] pData = p.getData();
-            byte[] cData = (pData == null) ? pData : pData.clone();
+            byte[] cData = (pData == null) ? null : pData.clone();
 
             return
                 new DatagramPacket(
-                        cData,
-                        p.getOffset(),
-                        p.getLength(),
-                        p.getAddress(),
-                        p.getPort());
+                        cData, p.getOffset(), p.getLength(),
+                        p.getAddress(), p.getPort());
         }
     }
 
@@ -189,12 +210,9 @@ public class MultiplexingDatagramSocket
                             = new MultiplexedDatagramSocket[socketCount - 1];
 
                         System.arraycopy(sockets, 0, newSockets, 0, i);
-                        System
-                            .arraycopy(
-                                sockets,
-                                i + 1,
-                                newSockets,
-                                i,
+                        System.arraycopy(
+                                sockets, i + 1,
+                                newSockets, i,
                                 newSockets.length - i);
                         sockets = newSockets;
                     }
@@ -212,13 +230,44 @@ public class MultiplexingDatagramSocket
      * @param dest the <tt>DatagramPacket</tt> which is to have its properties
      * set to the value of the respective properties of <tt>src</tt>
      */
-    static void copy(DatagramPacket src, DatagramPacket dest)
+    public static void copy(DatagramPacket src, DatagramPacket dest)
     {
         synchronized (dest)
         {
             dest.setAddress(src.getAddress());
-            dest.setData(src.getData(), src.getOffset(), src.getLength());
             dest.setPort(src.getPort());
+
+            byte[] srcData = src.getData();
+
+            if (srcData == null)
+                dest.setLength(0);
+            else
+            {
+                byte[] destData = dest.getData();
+
+                if (destData == null)
+                    dest.setLength(0);
+                else
+                {
+                    int destOffset = dest.getOffset();
+                    int destLength = destData.length - destOffset;
+                    int srcLength = src.getLength();
+
+                    if (destLength > srcLength)
+                        destLength = srcLength;
+                    else if (logger.isLoggable(Level.WARNING))
+                    {
+                        logger.log(
+                                Level.WARNING,
+                                "Truncating received DatagramPacket data!");
+                    }
+                    System.arraycopy(
+                            srcData, src.getOffset(),
+                            destData, destOffset,
+                            destLength);
+                    dest.setLength(destLength);
+                }
+            }
         }
     }
 

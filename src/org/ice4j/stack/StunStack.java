@@ -24,6 +24,7 @@ import org.ice4j.security.*;
  * configure the stack.
  *
  * @author Emil Ivov
+ * @author Lubomir Marinov
  */
 public class StunStack
     implements MessageEventHandler
@@ -281,6 +282,57 @@ public class StunStack
     }
 
     /**
+     * Sends a specific STUN <tt>Indication</tt> to a specific destination
+     * <tt>TransportAddress</tt> through a socket registered with this
+     * <tt>StunStack</tt> using a specific <tt>TransportAddress</tt>.
+     *
+     * @param indication the STUN <tt>Indication</tt> to be sent to the
+     * specified destination <tt>TransportAddress</tt> through the socket with
+     * the specified <tt>TransportAddress</tt>
+     * @param sendTo the <tt>TransportAddress</tt> of the destination to which
+     * the specified <tt>indication</tt> is to be sent
+     * @param sendThrough the <tt>TransportAddress</tt> of the socket registered
+     * with this <tt>StunStack</tt> through which the specified
+     * <tt>indication</tt> is to be sent
+     * @throws StunException if anything goes wrong while sending the specified
+     * <tt>indication</tt> to the destination <tt>sendTo</tt> through the socket
+     * identified by <tt>sendThrough</tt>
+     */
+    public void sendIndication(
+            Indication indication,
+            TransportAddress sendTo,
+            TransportAddress sendThrough)
+        throws StunException
+    {
+        if (indication.getTransactionID() == null)
+        {
+            indication.setTransactionID(
+                    TransactionID.createNewTransactionID().getBytes());
+        }
+
+        try
+        {
+            getNetAccessManager().sendMessage(indication, sendThrough, sendTo);
+        }
+        catch (IllegalArgumentException iaex)
+        {
+            throw
+                new StunException(
+                        StunException.ILLEGAL_ARGUMENT,
+                        "Failed to send STUN indication: " + indication,
+                        iaex);
+        }
+        catch (IOException ioex)
+        {
+            throw
+                new StunException(
+                        StunException.NETWORK_ERROR,
+                        "Failed to send STUN indication: " + indication,
+                        ioex);
+        }
+    }
+
+    /**
      * Sends the specified request through the specified access point, and
      * registers the specified ResponseCollector for later notification.
      * @param  request     the request to send
@@ -428,12 +480,48 @@ public class StunStack
     }
 
     /**
+     * Adds a new <tt>MessageEventHandler</tt> which is to be notified about
+     * STUN indications received at a specific local <tt>TransportAddress</tt>.
+     *
+     * @param localAddr the <tt>TransportAddress</tt> of the local socket for
+     * which received STUN indications are to be reported to the specified
+     * <tt>MessageEventHandler</tt>
+     * @param indicationListener the <tt>MessageEventHandler</tt> which is to be
+     * registered for notifications about STUN indications received at the
+     * specified local <tt>TransportAddress</tt>
+     */
+    public void addIndicationListener(
+            TransportAddress localAddr,
+            MessageEventHandler indicationListener)
+    {
+        eventDispatcher.addIndicationListener(localAddr, indicationListener);
+    }
+
+    /**
      * Sets the listener that should be notified when a new Request is received.
      * @param requestListener the listener interested in incoming requests.
      */
     public  void addRequestListener(RequestListener requestListener)
     {
         this.eventDispatcher.addRequestListener( requestListener );
+    }
+
+    /**
+     * Removes an existing <tt>MessageEventHandler</tt> to no longer be notified
+     * about STUN indications received at a specific local
+     * <tt>TransportAddress</tt>.
+     *
+     * @param localAddr the <tt>TransportAddress</tt> of the local socket for
+     * which received STUN indications are to no longer be reported to the
+     * specified <tt>MessageEventHandler</tt>
+     * @param indicationListener the <tt>MessageEventHandler</tt> which is to be
+     * unregistered for notifications about STUN indications received at the
+     * specified local <tt>TransportAddress</tt>
+     */
+    public void removeIndicationListener(
+            TransportAddress localAddr,
+            MessageEventHandler indicationListener)
+    {
     }
 
     /**
@@ -606,6 +694,11 @@ public class StunStack
                 logger.fine("response tid was - " + tid);
                 logger.fine("all tids in stock were" + clientTransactions);
             }
+        }
+        // indication
+        else if (msg instanceof Indication)
+        {
+            eventDispatcher.fireMessageEvent(event);
         }
     }
 

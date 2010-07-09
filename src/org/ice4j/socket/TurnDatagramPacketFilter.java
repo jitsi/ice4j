@@ -101,6 +101,7 @@ public class TurnDatagramPacketFilter
             {
             case Message.TURN_METHOD_ALLOCATE:
             case Message.TURN_METHOD_CHANNELBIND:
+            case Message.TURN_METHOD_CREATEPERMISSION:
             case Message.TURN_METHOD_DATA:
             case Message.TURN_METHOD_REFRESH:
             case Message.TURN_METHOD_SEND:

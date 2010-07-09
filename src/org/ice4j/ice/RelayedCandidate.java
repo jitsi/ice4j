@@ -25,12 +25,18 @@ import org.ice4j.socket.*;
 public class RelayedCandidate
     extends LocalCandidate
 {
+
     /**
-     * The <tt>RelayedCandidateDatagramSocket</tt> which represents the
-     * application-purposed <tt>DatagramSocket</tt> associated with this
+     * The <tt>RelayedCandidateDatagramSocket</tt> of this
+     * <tt>RelayedCandidate</tt>. 
+     */
+    private RelayedCandidateDatagramSocket relayedCandidateDatagramSocket;
+
+    /**
+     * The application-purposed <tt>DatagramSocket</tt> associated with this
      * <tt>Candidate</tt>.
      */
-    private RelayedCandidateDatagramSocket socket;
+    private DatagramSocket socket;
 
     /**
      * The <tt>TurnCandidateHarvest</tt> which has harvested this
@@ -71,29 +77,40 @@ public class RelayedCandidate
     }
 
     /**
-     * Gets the actual/host <tt>DatagramSocket</tt> which implements the
-     * <tt>DatagramSocket</tt>s exposed by this <tt>LocalCandidate</tt>. The
-     * default implementation is supposed to be good enough for the general case
-     * and does not try to be universal - it returns the <tt>hostSocket</tt> of
-     * the <tt>base</tt> of this <tt>LocalCandidate</tt> if the <tt>base</tt> is
-     * different than <tt>this</tt> or the <tt>socket</tt> of this
-     * <tt>LocalCandidate</tt> if it equals its <tt>base</tt>. The row reasoning
-     * for the implementation is that if any <tt>Candidate</tt> knows about the
-     * actual/host <tt>DatagramSocket</tt>, this <tt>LocalCandidate</tt> would
-     * be based on it rather be related to it in any other way.
+     * Gets the <tt>RelayedCandidateDatagramSocket</tt> of this
+     * <tt>RelayedCandidate</tt>.
+     * <p>
+     * <b>Note</b>: The method is part of the internal API of
+     * <tt>RelayedCandidate</tt> and <tt>TurnCandidateHarvest</tt> and is not
+     * intended for public use.
+     * </p>
      *
-     * @return the actual/host <tt>DatagramSocket</tt> which implements the
-     * <tt>DatagramSocket</tt>s exposed by this <tt>LocalCandidate</tt>
-     * @see LocalCandidate#getHostSocket()
+     * @return the <tt>RelayedCandidateDatagramSocket</tt> of this
+     * <tt>RelayedCandidate</tt>
      */
-    @Override
-    protected DatagramSocket getHostSocket()
+    public synchronized RelayedCandidateDatagramSocket
+        getRelayedCandidateDatagramSocket()
     {
-        return turnCandidateHarvest.hostCandidate.getSocket();
+        if (relayedCandidateDatagramSocket == null)
+        {
+            try
+            {
+                relayedCandidateDatagramSocket
+                    = new RelayedCandidateDatagramSocket(
+                            this,
+                            turnCandidateHarvest);
+            }
+            catch (SocketException sex)
+            {
+                throw new UndeclaredThrowableException(sex);
+            }
+        }
+        return relayedCandidateDatagramSocket;
     }
 
     /**
-     * Gets the <tt>DatagramSocket</tt> associated with this <tt>Candidate</tt>.
+     * Gets the application-purposed <tt>DatagramSocket</tt> associated with
+     * this <tt>Candidate</tt>.
      *
      * @return the <tt>DatagramSocket</tt> associated with this
      * <tt>Candidate</tt>
@@ -105,7 +122,9 @@ public class RelayedCandidate
         {
             try
             {
-                socket = new RelayedCandidateDatagramSocket();
+                socket
+                    = new MultiplexingDatagramSocket(
+                            getRelayedCandidateDatagramSocket());
             }
             catch (SocketException sex)
             {

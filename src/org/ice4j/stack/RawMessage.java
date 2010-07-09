@@ -55,12 +55,16 @@ public class RawMessage
                TransportAddress remoteAddress,
                TransportAddress localAddress)
     {
-        //... don't do a null check - let it throw an NP exception
-
-        this.messageBytes  = new byte[messageBytes.length];
+        /*
+         * Let NullPointerException go out.
+         * 
+         * The length of the array messgeBytes may be enormous while
+         * messageLength may be tiny so it does not make sense to clone
+         * messageBytes.
+         */
+        this.messageBytes  = new byte[messageLength];
+        System.arraycopy(messageBytes, 0, this.messageBytes, 0, messageLength);
         this.messageLength = messageLength;
-        System.arraycopy(messageBytes, 0, this.messageBytes,
-                                                       0, messageBytes.length);
         this.localAddress  = localAddress;
         this.remoteAddress = remoteAddress;
     }

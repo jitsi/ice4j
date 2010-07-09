@@ -63,7 +63,7 @@ public class StunCandidateHarvester
     /**
      * The stack to use for STUN communication.
      */
-    protected final StunStack stunStack = StunStack.getInstance();
+    public final StunStack stunStack = StunStack.getInstance();
 
     /**
      * Creates a new STUN harvester that will be running against the specified

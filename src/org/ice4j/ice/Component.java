@@ -67,8 +67,8 @@ public class Component
     /**
      * The list locally gathered candidates for this media stream.
      */
-    private List<LocalCandidate> localCandidates
-                                        = new LinkedList<LocalCandidate>();
+    private final List<LocalCandidate> localCandidates
+        = new LinkedList<LocalCandidate>();
 
     /**
      * The list of candidates that the peer agent sent for this stream.
@@ -79,8 +79,8 @@ public class Component
      * A <tt>Comparator</tt> that we use for sorting <tt>Candidate</tt>s by
      * their priority.
      */
-    private CandidatePrioritizer candidatePrioritizer
-                                              = new CandidatePrioritizer();
+    private final CandidatePrioritizer candidatePrioritizer
+        = new CandidatePrioritizer();
 
     /**
      * The default <tt>Candidate</tt> for this component or in other words, the
@@ -368,9 +368,7 @@ public class Component
 
             //first compute the actual priorities
             for (Candidate cand : candidates)
-            {
                 cand.computePriority();
-            }
 
             //sort
             Arrays.sort(candidates, candidatePrioritizer);
@@ -452,31 +450,38 @@ public class Component
      */
     protected void eliminateRedundantCandidates()
     {
-        List<LocalCandidate> candidatesCopy = getLocalCandidates();
-
-        for (Candidate cand : candidatesCopy)
+        /*
+         * Find and remove all candidates that have the same address and base as
+         * cand and a lower priority. The algorithm implemented bellow does rely
+         * on localCandidates being ordered in decreasing order (as said in its
+         * javadoc that the eliminateRedundantCandidates method is called only
+         * after prioritizeCandidates.
+         */
+        synchronized (localCandidates)
         {
-            //find and remove all candidates that have the same address and
-            //base as cand and a lower priority.
-            synchronized(localCandidates)
+            for (int i = 0; i < localCandidates.size(); i++)
             {
-                Iterator<LocalCandidate> localCandsIter
-                                                = localCandidates.iterator();
+                LocalCandidate cand = localCandidates.get(i);
 
-                while (localCandsIter.hasNext())
+                for (int j = i + 1; j < localCandidates.size();)
                 {
-                    Candidate cand2 = localCandsIter.next();
+                    LocalCandidate cand2 = localCandidates.get(j);
 
-                    if(   cand != cand2
-                       && cand.getTransportAddress()
-                                        .equals(cand2.getTransportAddress())
-                       && cand.getBase().equals(cand2.getBase())
-                       && cand.getPriority() >= cand2.getPriority() )
+                    if ((cand != cand2)
+                            && cand.getTransportAddress().equals(
+                                    cand2.getTransportAddress())
+                            && cand.getBase().equals(cand2.getBase())
+                            && (cand.getPriority() >= cand2.getPriority()))
                     {
-                       localCandsIter.remove();
-                       if(logger.isLoggable(Level.FINEST))
-                           logger.finest("eliminating redundant cand: "+ cand2);
+                        localCandidates.remove(j);
+                        if(logger.isLoggable(Level.FINEST))
+                        {
+                            logger.finest(
+                                    "eliminating redundant cand: "+ cand2);
+                        }
                     }
+                    else
+                        j++;
                 }
             }
         }
@@ -572,12 +577,76 @@ public class Component
     {
         synchronized (localCandidates)
         {
-            Iterator<LocalCandidate> cndIter = localCandidates.iterator();
-            while( cndIter.hasNext())
+            /*
+             * Since the sockets of the non-HostCandidate LocalCandidates may
+             * depend on the socket of the HostCandidate for which they have
+             * been harvested, order the freeing.
+             */
+            CandidateType[] candidateTypes
+                = new CandidateType[]
+                        {
+                            CandidateType.RELAYED_CANDIDATE,
+                            CandidateType.PEER_REFLEXIVE_CANDIDATE,
+                            CandidateType.SERVER_REFLEXIVE_CANDIDATE
+                        };
+
+            for (CandidateType candidateType : candidateTypes)
             {
-                LocalCandidate candidate = cndIter.next();
-                candidate.free();
-                cndIter.remove();
+                Iterator<LocalCandidate> localCandidateIter
+                    = localCandidates.iterator();
+
+                while (localCandidateIter.hasNext())
+                {
+                    LocalCandidate localCandidate = localCandidateIter.next();
+
+                    if (candidateType.equals(localCandidate.getType()))
+                    {
+                        free(localCandidate);
+                        localCandidateIter.remove();
+                    }
+                }
+            }
+
+            // Free whatever's left.
+            Iterator<LocalCandidate> localCandidateIter
+                = localCandidates.iterator();
+
+            while (localCandidateIter.hasNext())
+            {
+                LocalCandidate localCandidate = localCandidateIter.next();
+
+                free(localCandidate);
+                localCandidateIter.remove();
+            }
+        }
+    }
+
+    /**
+     * Frees a specific <tt>LocalCandidate</tt> and swallows any
+     * <tt>Throwable</tt> it throws while freeing itself in order to prevent its
+     * failure to affect the rest of the execution.
+     *
+     * @param localCandidate the <tt>LocalCandidate</tt> to be freed
+     */
+    private void free(LocalCandidate localCandidate)
+    {
+        try
+        {
+            localCandidate.free();
+        }
+        catch (Throwable t)
+        {
+            /*
+             * Don't let the failing of a single LocalCandidate to free itself
+             * to fail the freeing of the other LocalCandidates.
+             */
+            if (t instanceof ThreadDeath)
+                throw (ThreadDeath) t;
+            if (logger.isLoggable(Level.INFO))
+            {
+                logger.log(
+                        Level.INFO,
+                        "Failed to free LocalCandidate: " + localCandidate);
             }
         }
     }
