@@ -32,7 +32,7 @@ public class Ice
      * agent which is always started, of course).
      */
     private static final boolean START_CONNECTIVITY_ESTABLISHMENT_OF_REMOTE_PEER
-        = true;
+        = false;
 
     /**
      * Start time for debugging purposes.
