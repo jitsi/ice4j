@@ -341,6 +341,7 @@ public class RelayedCandidateDatagramSocket
             synchronized (packetsToReceive)
             {
                 packetsToReceive.add(packetToReceive);
+                packetsToReceive.notifyAll();
             }
         }
     }
