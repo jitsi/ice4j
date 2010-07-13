@@ -341,11 +341,6 @@ public class RelayedCandidateDatagramSocket
             synchronized (packetsToReceive)
             {
                 packetsToReceive.add(packetToReceive);
-System.err.println(
-        getClass().getSimpleName()
-            + ".handleMessageEvent: packetToReceive.length= "
-            + packetToReceive.getLength());
-                packetsToReceive.notifyAll();
             }
         }
     }
