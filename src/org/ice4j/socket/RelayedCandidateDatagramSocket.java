@@ -237,11 +237,8 @@ public class RelayedCandidateDatagramSocket
      */
     private boolean channelDataSocketAccept(DatagramPacket p)
     {
-        /*
-         * Is it from our TURN server and, more specifically, via the Allocation
-         * we have created on it?
-         */
-        if (getLocalSocketAddress().equals(p.getSocketAddress()))
+        // Is it from our TURN server?
+        if (turnCandidateHarvest.harvester.stunServer.equals(p.getSocketAddress()))
         {
             int pLength = p.getLength();
 
@@ -283,14 +280,7 @@ public class RelayedCandidateDatagramSocket
                      * the padding that is sometimes present in the data of the
                      * DatagramPacket.
                      */
-                    boolean accept
-                        = ((CHANNELDATA_LENGTH_LENGTH + length) >= pLength);
-
-System.err.println(
-        getClass().getSimpleName()
-            + ".channelDataSocketAccept: "
-            + accept);
-                    return accept;
+                    return ((CHANNELDATA_LENGTH_LENGTH + length) >= pLength);
                 }
             }
         }
@@ -916,14 +906,14 @@ System.err.println(
                      */
                     boolean forceBind = false;
 
-//                    if ((channelDataSocket != null)
-//                            && !channel.getChannelDataIsPreferred()
-//                            && !connectivityCheckRecognizer.accept(
-//                                    packetToSend))
-//                    {
-//                        channel.setChannelDataIsPreferred(true);
-//                        forceBind = true;
-//                    }
+                    if ((channelDataSocket != null)
+                            && !channel.getChannelDataIsPreferred()
+                            && !connectivityCheckRecognizer.accept(
+                                    packetToSend))
+                    {
+                        channel.setChannelDataIsPreferred(true);
+                        forceBind = true;
+                    }
 
                     /*
                      * Either bind the channel or send the packetToSend through
@@ -1411,11 +1401,11 @@ System.err.println(
                 }
 
                 // Channel Number
-                data[0] = (byte) (channelNumber >> 8);
-                data[1] = (byte) (channelNumber & 0xFF);
+                channelData[0] = (byte) (channelNumber >> 8);
+                channelData[1] = (byte) (channelNumber & 0xFF);
                 // Length
-                data[2] = (byte) (length >> 8);
-                data[3] = (byte) (length & 0xFF);
+                channelData[2] = (byte) (length >> 8);
+                channelData[3] = (byte) (length & 0xFF);
                 // Application Data
                 System.arraycopy(
                         data,
@@ -1431,10 +1421,11 @@ System.err.println(
                     {
                         channelDataPacket
                             = new DatagramPacket(
-                                    channelData, 0, channelData.length,
-                                    getLocalSocketAddress());
+                                    channelData, 0, channelDataLength,
+                                    turnCandidateHarvest.harvester.stunServer);
                     }
-                    channelDataPacket.setLength(channelDataLength);
+                    else
+                        channelDataPacket.setData(channelData, 0, channelDataLength);
 
                     channelDataSocket.send(channelDataPacket);
                 }
