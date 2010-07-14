@@ -302,6 +302,7 @@ public class TurnCandidateHarvest
         switch (request.getMessageType())
         {
         case Message.ALLOCATE_REQUEST:
+        {
             RequestedTransportAttribute requestedTransportAttribute
                 = (RequestedTransportAttribute)
                     request.getAttribute(Attribute.REQUESTED_TRANSPORT);
@@ -320,8 +321,40 @@ public class TurnCandidateHarvest
                 MessageFactory.createAllocateRequest(
                         (byte) requestedTransport,
                         rFlag);
+        }
+
+        case Message.CHANNELBIND_REQUEST:
+        {
+            ChannelNumberAttribute channelNumberAttribute
+                = (ChannelNumberAttribute)
+                    request.getAttribute(Attribute.CHANNEL_NUMBER);
+            char channelNumber = channelNumberAttribute.getChannelNumber();
+            XorPeerAddressAttribute peerAddressAttribute
+                = (XorPeerAddressAttribute)
+                    request.getAttribute(Attribute.XOR_PEER_ADDRESS);
+            TransportAddress peerAddress
+                = peerAddressAttribute.getAddress(request.getTransactionID());
+            byte[] retryTransactionID
+                = TransactionID.createNewTransactionID().getBytes();
+            Request retryChannelBindRequest
+                = MessageFactory.createChannelBindRequest(
+                        channelNumber,
+                        peerAddress,
+                        retryTransactionID);
+
+            try
+            {
+                retryChannelBindRequest.setTransactionID(retryTransactionID);
+            }
+            catch (StunException sex)
+            {
+                throw new UndeclaredThrowableException(sex);
+            }
+            return retryChannelBindRequest;
+        }
 
         case Message.CREATEPERMISSION_REQUEST:
+        {
             XorPeerAddressAttribute peerAddressAttribute
                 = (XorPeerAddressAttribute)
                     request.getAttribute(Attribute.XOR_PEER_ADDRESS);
@@ -344,8 +377,10 @@ public class TurnCandidateHarvest
                 throw new UndeclaredThrowableException(sex);
             }
             return retryCreatePermissionRequest;
+        }
 
         case Message.REFRESH_REQUEST:
+        {
             LifetimeAttribute lifetimeAttribute
                 = (LifetimeAttribute) request.getAttribute(Attribute.LIFETIME);
 
@@ -357,6 +392,7 @@ public class TurnCandidateHarvest
                     MessageFactory.createRefreshRequest(
                             lifetimeAttribute.getLifetime());
             }
+        }
 
         default:
             return super.createRequestToRetry(request);
@@ -401,10 +437,16 @@ public class TurnCandidateHarvest
      * @param response the error <tt>Response</tt> which has been received for
      * <tt>request</tt>
      * @param request the <tt>Request</tt> to which <tt>Response</tt> responds
+     * @param transactionID the <tt>TransactionID</tt> of <tt>response</tt> and
+     * <tt>request</tt> because <tt>response</tt> and <tt>request</tt> only have
+     * it as a <tt>byte</tt> array and <tt>TransactionID</tt> is required for
+     * the <tt>applicationData</tt> property value
      * @return <tt>true</tt> if the error or failure condition has been
      * processed and this instance can continue its execution (e.g. the
      * resolution of the candidate) as if it was expected; otherwise,
      * <tt>false</tt>
+     * @see StunCandidateHarvest#processErrorOrFailure(Response, Request,
+     * TransactionID)
      */
     @Override
     protected boolean processErrorOrFailure(
@@ -436,7 +478,12 @@ public class TurnCandidateHarvest
      * be handled
      * @param request the STUN <tt>Request</tt> to which <tt>response</tt>
      * responds
-     * @see StunCandidateHarvest#processSuccess(Response, Request)
+     * @param transactionID the <tt>TransactionID</tt> of <tt>response</tt> and
+     * <tt>request</tt> because <tt>response</tt> and <tt>request</tt> only have
+     * it as a <tt>byte</tt> array and <tt>TransactionID</tt> is required for
+     * the <tt>applicationData</tt> property value
+     * @see StunCandidateHarvest#processSuccess(Response, Request,
+     * TransactionID)
      */
     @Override
     protected void processSuccess(

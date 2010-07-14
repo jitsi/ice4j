@@ -18,6 +18,8 @@ import org.ice4j.message.*;
  * draft-ietf-behave-turn-16 "Traversal Using Relays around NAT (TURN): Relay
  * Extensions to Session Traversal Utilities for NAT (STUN)" and which are part
  * of the communication with a specific TURN server.
+ * <tt>TurnDatagramPacketFilter</tt> does not accept TURN ChannelData messages
+ * because they require knowledge of the value of the "Channel Number" field.
  *
  * @author Lubomir Marinov
  */
@@ -62,17 +64,14 @@ public class TurnDatagramPacketFilter
              */
             return true;
         }
-        else if ((stunServer != null)
-                && stunServer.equals(p.getSocketAddress()))
-        {
-            // TODO Accept ChannelData messages.
-            return false;
-        }
         else
         {
+
             /*
              * The specified DatagramPacket does not come from or is not being
-             * sent to the TURN server associated with this instance.
+             * sent to the TURN server associated with this instance or is a
+             * ChannelData message which is not supported by
+             * TurnDatagramPacketFilter.
              */
             return false;
         }
@@ -97,6 +96,7 @@ public class TurnDatagramPacketFilter
         if (super.acceptMethod(method))
             return true;
         else
+        {
             switch (method)
             {
             case Message.TURN_METHOD_ALLOCATE:
@@ -109,5 +109,6 @@ public class TurnDatagramPacketFilter
             default:
                 return false;
             }
+        }
     }
 }
