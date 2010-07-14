@@ -453,6 +453,10 @@ public class StunCandidateHarvest
      * been challenged for a long-term credential
      * @param request the STUN <tt>Request</tt> which has been challenged for a
      * long-term credential
+     * @param requestTransactionID the <tt>TransactionID</tt> of
+     * <tt>request</tt> because <tt>request</tt> only has it as a <tt>byte</tt>
+     * array and <tt>TransactionID</tt> is required for the
+     * <tt>applicationData</tt> property value
      * @return <tt>true</tt> if the challenge has been processed and this
      * <tt>StunCandidateHarvest</tt> is to continue processing STUN
      * <tt>Response</tt>s; otherwise, <tt>false</tt>
@@ -579,6 +583,10 @@ public class StunCandidateHarvest
      * @return <tt>true</tt> if the challenge has been processed and this
      * <tt>StunCandidateHarvest</tt> is to continue processing STUN
      * <tt>Response</tt>s; otherwise, <tt>false</tt>
+     * @param transactionID the <tt>TransactionID</tt> of <tt>response</tt> and
+     * <tt>request</tt> because <tt>response</tt> and <tt>request</tt> only have
+     * it as a <tt>byte</tt> array and <tt>TransactionID</tt> is required for
+     * the <tt>applicationData</tt> property value
      * @throws StunException if anything goes wrong while processing the
      * challenge
      */
@@ -655,6 +663,10 @@ public class StunCandidateHarvest
      * @param response the error <tt>Response</tt> which has been received for
      * <tt>request</tt>
      * @param request the <tt>Request</tt> to which <tt>Response</tt> responds
+     * @param transactionID the <tt>TransactionID</tt> of <tt>response</tt> and
+     * <tt>request</tt> because <tt>response</tt> and <tt>request</tt> only have
+     * it as a <tt>byte</tt> array and <tt>TransactionID</tt> is required for
+     * the <tt>applicationData</tt> property value
      * @return <tt>true</tt> if the error or failure condition has been
      * processed and this instance can continue its execution (e.g. the
      * resolution of the candidate) as if it was expected; otherwise,
@@ -842,8 +854,14 @@ public class StunCandidateHarvest
      * "438 Stale Nonce" which is to be handled
      * @param request the STUN <tt>Request</tt> to which <tt>response</tt>
      * responds
+     * @param transactionID the <tt>TransactionID</tt> of <tt>response</tt> and
+     * <tt>request</tt> because <tt>response</tt> and <tt>request</tt> only have
+     * it as a <tt>byte</tt> array and <tt>TransactionID</tt> is required for
+     * the <tt>applicationData</tt> property value
      * @return <tt>true</tt> if the specified STUN error <tt>response</tt> was
      * successfully handled; <tt>false</tt>, otherwise
+     * @throws StunException if anything goes wrong while handling the specified
+     * "438 Stale Nonce" error <tt>response</tt>
      */
     private boolean processStaleNonce(
             Response response,
@@ -894,6 +912,10 @@ public class StunCandidateHarvest
      * be handled
      * @param request the STUN <tt>Request</tt> to which <tt>response</tt>
      * responds
+     * @param transactionID the <tt>TransactionID</tt> of <tt>response</tt> and
+     * <tt>request</tt> because <tt>response</tt> and <tt>request</tt> only have
+     * it as a <tt>byte</tt> array and <tt>TransactionID</tt> is required for
+     * the <tt>applicationData</tt> property value
      */
     protected void processSuccess(
             Response response,
@@ -912,8 +934,14 @@ public class StunCandidateHarvest
      * "401 Unauthorized" which is to be handled
      * @param request the STUN <tt>Request</tt> to which <tt>response</tt>
      * responds
+     * @param transactionID the <tt>TransactionID</tt> of <tt>response</tt> and
+     * <tt>request</tt> because <tt>response</tt> and <tt>request</tt> only have
+     * it as a <tt>byte</tt> array and <tt>TransactionID</tt> is required for
+     * the <tt>applicationData</tt> property value
      * @return <tt>true</tt> if the specified STUN error <tt>response</tt> was
      * successfully handled; <tt>false</tt>, otherwise
+     * @throws StunException if anything goes wrong while handling the specified
+     * "401 Unauthorized" error <tt>response</tt>
      */
     private boolean processUnauthorized(
             Response response,
@@ -1123,6 +1151,10 @@ public class StunCandidateHarvest
      * @return the <tt>TransactionID</tt> of the STUN client transaction through
      * which the specified <tt>Request</tt> has been sent to the STUN server
      * associated with this <tt>StunCandidateHarvest</tt>
+     * @param transactionID the <tt>TransactionID</tt> of <tt>request</tt>
+     * because <tt>request</tt> only has it as a <tt>byte</tt> array and
+     * <tt>TransactionID</tt> is required for the <tt>applicationData</tt>
+     * property value
      * @throws StunException if anything goes wrong while sending the specified
      * <tt>Request</tt> to the STUN server associated with this
      * <tt>StunCandidateHarvest</tt>
