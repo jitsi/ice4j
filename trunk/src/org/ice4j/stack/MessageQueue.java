@@ -18,8 +18,12 @@ import java.util.logging.Logger;
  */
 class MessageQueue
 {
-    private static final Logger logger =
-        Logger.getLogger(MessageQueue.class.getName());
+    /**
+     * The <tt>Logger</tt> used by the <tt>MessageQueue</tt> and its instances
+     * for logging output.
+     */
+    private static final Logger logger
+        = Logger.getLogger(MessageQueue.class.getName());
 
     // not sure whether Vector is the best choice here since we explicitly
     //sync all methods ... review later
@@ -74,8 +78,8 @@ class MessageQueue
      *
      *
      * @return the oldest message in the fifo.
-     * @throws java.lang.InterruptedException if an InterruptedException is thrown
-     * wail waiting for a new message to be added.
+     * @throws java.lang.InterruptedException if an InterruptedException is
+     * thrown wail waiting for a new message to be added.
      */
     public synchronized RawMessage remove()
         throws InterruptedException
@@ -90,15 +94,13 @@ class MessageQueue
     /**
      * Blocks until there is at least one message in the queue.
      *
-     * @throws java.lang.InterruptedException if an InterruptedException is thrown
-     * wail waiting for a new message to be added.
+     * @throws java.lang.InterruptedException if an InterruptedException is
+     * thrown wail waiting for a new message to be added.
      */
-    public synchronized void waitWhileEmpty() throws InterruptedException
+    public synchronized void waitWhileEmpty()
+        throws InterruptedException
     {
         while (isEmpty())
-        {
             wait();
-        }
     }
-
 }

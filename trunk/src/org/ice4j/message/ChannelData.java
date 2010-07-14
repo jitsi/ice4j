@@ -104,13 +104,18 @@ public class ChannelData
         return (char)data.length;
     }
 
+    /**
+     * Determines whether a specific channel number is in the valid channel
+     * number range defined by the TURN RFC.
+     *
+     * @param channelNumber the channel number to be checked for being in the
+     * valid channel number range defined by the TURN RFC
+     * @return <tt>true</tt> if the specified <tt>channelNumber</tt> is in the
+     * valid channel number range defined by the TURN RFC
+     */
     private static boolean validateChannelNumber(char channelNumber)
     {
-        if(channelNumber <= 0x3FFF)
-        {
-            return false;
-        }
-        return true;
+        return (channelNumber > 0x3FFF);
     }
 
     /**

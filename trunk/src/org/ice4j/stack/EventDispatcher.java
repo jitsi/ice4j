@@ -303,8 +303,8 @@ public class EventDispatcher
          * implement <tt>MessageEventHandler</tt> for a specific
          * <tt>MessageEventHandler</tt> which handles STUN indications.
          *
-         * @param requestListener the <tt>RequestListener</tt> for which the new
-         * instance is to implement <tt>MessageEventHandler</tt>
+         * @param indicationListener the <tt>RequestListener</tt> for which the
+         * new instance is to implement <tt>MessageEventHandler</tt>
          */
         public IndicationEventHandler(MessageEventHandler indicationListener)
         {
@@ -330,6 +330,8 @@ public class EventDispatcher
      * implementations to specific <tt>Object</tt>s.
      *
      * @author Lubomir Marinov
+     * @param <T> the type of the delegate to which the notifications are to be
+     * forwarded 
      */
     private static abstract class MessageTypeEventHandler<T>
         implements MessageEventHandler
@@ -365,6 +367,15 @@ public class EventDispatcher
             this.delegate = delegate;
         }
 
+        /**
+         * Determines whether a specific <tt>Object</tt> is value equal to this
+         * <tt>Object</tt>.
+         *
+         * @param obj the <tt>Object</tt> to be compared to this <tt>Object</tt>
+         * for value equality
+         * @return <tt>true</tt> if this <tt>Object</tt> is value equal to the
+         * specified <tt>obj</tt>
+         */
         @Override
         public boolean equals(Object obj)
         {
@@ -380,6 +391,13 @@ public class EventDispatcher
                     && delegate.equals(mteh.delegate);
         }
 
+        /**
+         * Returns a hash code value for this <tt>Object</tt> for the benefit of
+         * hashtables.
+         *
+         * @return a hash code value for this <tt>Object</tt> for the benefit of
+         * hashtables
+         */
         @Override
         public int hashCode()
         {
