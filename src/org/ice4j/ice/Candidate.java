@@ -24,7 +24,7 @@ import org.ice4j.*;
  * </p>
  *
  * @author Emil Ivov
- * @author Lubomir Marinov
+ * @author Lyubomir Marinov
  */
 public abstract class Candidate
 {
@@ -80,7 +80,7 @@ public abstract class Candidate
      * The component that this candidate was created for. Every candidate is
      * always associated with a specific component for which it is a candidate.
      */
-    private Component parentComponent = null;
+    private final Component parentComponent;
 
     /**
      * The address of the STUN server that was used to obtain this

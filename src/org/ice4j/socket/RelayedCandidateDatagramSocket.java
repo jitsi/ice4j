@@ -28,7 +28,7 @@ import org.ice4j.stack.*;
  * Allocation on a TURN server and implements sends and receives through it
  * using TURN messages to and from that TURN server.
  *
- * @author Lubomir Marinov
+ * @author Lyubomir Marinov
  */
 public class RelayedCandidateDatagramSocket
     extends DatagramSocket
@@ -191,9 +191,13 @@ public class RelayedCandidateDatagramSocket
         this.relayedCandidate = relayedCandidate;
         this.turnCandidateHarvest = turnCandidateHarvest;
 
-        this.turnCandidateHarvest.harvester.stunStack.addIndicationListener(
-                this.turnCandidateHarvest.hostCandidate.getTransportAddress(),
-                this);
+        this.turnCandidateHarvest
+                .harvester
+                    .getStunStack()
+                        .addIndicationListener(
+                                this.turnCandidateHarvest.hostCandidate
+                                        .getTransportAddress(),
+                                this);
 
         DatagramSocket hostSocket
             = this.turnCandidateHarvest.hostCandidate.getSocket();
@@ -330,7 +334,7 @@ public class RelayedCandidateDatagramSocket
         {
             packetsToSend.notifyAll();
         }
-        turnCandidateHarvest.harvester.stunStack.removeIndicationListener(
+        turnCandidateHarvest.harvester.getStunStack().removeIndicationListener(
                 turnCandidateHarvest.hostCandidate.getTransportAddress(),
                 this);
         turnCandidateHarvest.close(this);
@@ -1449,7 +1453,7 @@ public class RelayedCandidateDatagramSocket
                             transactionID);
 
                 sendIndication.setTransactionID(transactionID);
-                turnCandidateHarvest.harvester.stunStack.sendIndication(
+                turnCandidateHarvest.harvester.getStunStack().sendIndication(
                         sendIndication,
                         turnCandidateHarvest.harvester.stunServer,
                         turnCandidateHarvest

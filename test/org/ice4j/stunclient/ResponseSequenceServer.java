@@ -21,26 +21,46 @@ import org.ice4j.stack.*;
  * sequences of responses. It may be used to test whether a STUN client
  * behaves correctly in different use cases.
  *
- *
  * @author Emil Ivov
  */
 public class ResponseSequenceServer
     implements RequestListener
 {
-    private static final Logger logger =
-        Logger.getLogger(ResponseSequenceServer.class.getName());
+    /**
+     * The <tt>Logger</tt> used by the <tt>ResponseSequenceServer</tt> class and
+     * its instances for logging output.
+     */
+    private static final Logger logger
+        = Logger.getLogger(ResponseSequenceServer.class.getName());
+
     /**
      * The sequence of responses to send.
      */
     private Vector<Object> messageSequence = new Vector<Object>();
 
-    private StunStack    stunStack    = null;
+    /**
+     * The <tt>StunStack</tt> used by this instance for the purposes of STUN
+     * communication.
+     */
+    private final StunStack stunStack;
 
     private TransportAddress serverAddress = null;
     private DatagramSocket localSocket = null;
 
-    public ResponseSequenceServer(TransportAddress bindAddress)
+    /**
+     * Initializes a new <tt>ResponseSequenceServer</tt> instance with a
+     * specific <tt>StunStack</tt> to be used for the purposes of STUN
+     * communication.
+     *
+     * @param stunStack the <tt>StunStack</tt> to be used by the new instance
+     * for the purposes of STUN communication
+     * @param bindAddress
+     */
+    public ResponseSequenceServer(
+            StunStack stunStack,
+            TransportAddress bindAddress)
     {
+        this.stunStack = stunStack;
         this.serverAddress = bindAddress;
     }
 
@@ -52,8 +72,6 @@ public class ResponseSequenceServer
     public void start()
         throws IOException, StunException
     {
-        stunStack    = StunStack.getInstance();
-
         localSocket = new SafeCloseDatagramSocket(serverAddress);
 
         stunStack.addSocket(localSocket);
@@ -69,8 +87,6 @@ public class ResponseSequenceServer
         stunStack.removeSocket(serverAddress);
         messageSequence.removeAllElements();
         localSocket.close();
-
-        stunStack    = null;
     }
 
     /**

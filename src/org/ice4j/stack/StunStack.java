@@ -24,20 +24,11 @@ import org.ice4j.security.*;
  * configure the stack.
  *
  * @author Emil Ivov
- * @author Lubomir Marinov
+ * @author Lyubomir Marinov
  */
 public class StunStack
     implements MessageEventHandler
 {
-    /**
-     * We shouldn't need more than one stack in the same application.
-     */
-    private static StunStack stackInstance = null;
-
-    /**
-     * Our network gateway.
-     */
-    private NetAccessManager netAccessManager = null;
 
     /**
      * The number of threads to split our flow in.
@@ -45,17 +36,32 @@ public class StunStack
     public static final int DEFAULT_THREAD_POOL_SIZE = 3;
 
     /**
+     * The <tt>Logger</tt> used by the <tt>StunStack</tt> class and its
+     * instances for logging output.
+     */
+    private static final Logger logger
+        = Logger.getLogger(StunStack.class.getName());
+
+    /**
+     * The indicator which determines whether
+     * <code>Mac.getInstance(MessageIntegrityAttribute.HMAC_SHA1_ALGORITHM)</code>
+     * has been called.
+     *
+     * @see #StunStack()
+     */
+    private static Mac mac;
+
+    /**
+     * Our network gateway.
+     */
+    private NetAccessManager netAccessManager = null;
+
+    /**
      * The {@link CredentialsManager} that we are using for retrieving
      * passwords.
      */
     private final CredentialsManager credentialsManager
         = new CredentialsManager();
-
-    /**
-     * Our class logger.
-     */
-    private static final Logger logger =
-        Logger.getLogger(StunStack.class.getName());
 
     /**
      * Stores active client transactions mapped against TransactionID-s.
@@ -76,34 +82,6 @@ public class StunStack
      * A dispatcher for incoming requests event;
      */
     private final EventDispatcher eventDispatcher = new EventDispatcher();
-
-    /**
-     * Returns a reference to the singleton StunStack instance. If the stack
-     * had not yet been initialized, a new instance will be created.
-     *
-     * @return a reference to the StunStack.
-     */
-    public static synchronized StunStack getInstance()
-    {
-        if (stackInstance == null)
-        {
-            //the Mac instantiation used in MessageIntegrityAttribute could
-            //take several hundred milliseconds so we don't want it instantiated
-            //only after we get a response because the delay may cause the
-            //transaction to fail.
-            try
-            {
-                Mac.getInstance(MessageIntegrityAttribute.HMAC_SHA1_ALGORITHM);
-            }
-            catch (NoSuchAlgorithmException e)
-            {
-                e.printStackTrace();
-            }
-            stackInstance = new StunStack();
-        }
-
-        return stackInstance;
-    }
 
     /**
      * Sets the number of Message processors running in the same time.
@@ -265,10 +243,32 @@ public class StunStack
     }
 
     /**
-     * Private constructor as we want a singleton pattern.
+     * Initializes a new <tt>StunStack</tt> instance.
      */
-    private StunStack()
+    public StunStack()
     {
+        /*
+         * The Mac instantiation used in MessageIntegrityAttribute could take
+         * several hundred milliseconds so we don't want it instantiated only
+         * after we get a response because the delay may cause the transaction
+         * to fail.
+         */
+        synchronized (StunStack.class)
+        {
+            if (mac == null)
+            {
+                try
+                {
+                    mac
+                        = Mac.getInstance(
+                                MessageIntegrityAttribute.HMAC_SHA1_ALGORITHM);
+                }
+                catch (NoSuchAlgorithmException nsaex)
+                {
+                    nsaex.printStackTrace();
+                }
+            }
+        }
         netAccessManager = new NetAccessManager(this);
     }
 
@@ -453,9 +453,9 @@ public class StunStack
                IOException,
                IllegalArgumentException
     {
-        TransactionID tid = TransactionID.createTransactionID(transactionID);
-        StunServerTransaction sTran =
-            serverTransactions.get(tid);
+        TransactionID tid
+            = TransactionID.createTransactionID(this, transactionID);
+        StunServerTransaction sTran = serverTransactions.get(tid);
 
         if(sTran == null)
         {
@@ -1012,7 +1012,7 @@ public class StunStack
      * @return <tt>true</tt> if <tt>username</tt> contains a valid username;
      * <tt>false</tt>, otherwise
      */
-    private static boolean validateUsername(String username)
+    private boolean validateUsername(String username)
     {
         int colon = username.indexOf(":");
 
@@ -1028,7 +1028,6 @@ public class StunStack
 
         String lfrag = username.substring(0, colon);
 
-        return StunStack.getInstance()
-                .getCredentialsManager().checkLocalUserName(lfrag);
+        return getCredentialsManager().checkLocalUserName(lfrag);
     }
 }

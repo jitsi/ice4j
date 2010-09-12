@@ -7,6 +7,7 @@
 package org.ice4j;
 
 import org.ice4j.message.*;
+import org.ice4j.stack.*;
 
 /**
  * The class is used to dispatch events that occur when a STUN transaction
@@ -31,18 +32,22 @@ public class StunFailureEvent
     /**
      * Constructs a <tt>StunFailureEvent</tt> according to the specified
      * message.
-     *
+     * 
+     * @param stunStack the <tt>StunStack</tt> to be associated with the new
+     * instance
      * @param message the message itself
      * @param localAddress the local address that the message was sent from.
      * @param cause the <tt>Exception</tt> that caused this failure or
      * <tt>null</tt> if there's no <tt>Exception</tt> associated with this
      * failure
      */
-    public StunFailureEvent(Message          message,
-                            TransportAddress localAddress,
-                            Throwable        cause)
+    public StunFailureEvent(
+            StunStack stunStack,
+            Message message,
+            TransportAddress localAddress,
+            Throwable cause)
     {
-        super(localAddress, message);
+        super(stunStack, localAddress, message);
 
         this.cause = cause;
     }

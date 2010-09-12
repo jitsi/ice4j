@@ -29,8 +29,8 @@ class NetAccessManager
     /**
      * Our class logger
      */
-    private static final Logger logger =
-        Logger.getLogger(NetAccessManager.class.getName());
+    private static final Logger logger
+        = Logger.getLogger(NetAccessManager.class.getName());
 
     /**
      * All access points currently in use. The table maps
@@ -54,7 +54,7 @@ class NetAccessManager
      * The instance that should be notified when an incoming message has been
      * processed and ready for delivery
      */
-    private MessageEventHandler messageEventHandler = null;
+    private final MessageEventHandler messageEventHandler;
 
     /**
      * The size of the thread pool to start with.
@@ -62,24 +62,62 @@ class NetAccessManager
     private int initialThreadPoolSize = StunStack.DEFAULT_THREAD_POOL_SIZE;
 
     /**
+     * The <tt>StunStack</tt> which has created this instance, is its owner and
+     * is the handler that incoming message requests should be passed to.
+     */
+    private final StunStack stunStack;
+
+    /**
      * Constructs a NetAccessManager.
      *
-     * @param evtHandler the handler that incoming message requests should be
-     * passed to.
+     * @param stunStack the <tt>StunStack</tt> which is creating the new
+     * instance, is going to be its owner and is the handler that incoming
+     * message requests should be passed to
      */
-    NetAccessManager(MessageEventHandler evtHandler)
+    NetAccessManager(StunStack stunStack)
     {
-        setEventHandler(evtHandler);
+        this.stunStack = stunStack;
+        this.messageEventHandler = stunStack;
+
         initThreadPool();
     }
 
     /**
-     * Sets the instance to notify for incoming message events.
-     * @param evtHandler the entity that will handle incoming messages.
+     * Gets the <tt>MessageEventHandler</tt> of this <tt>NetAccessManager</tt>
+     * which is to be notified when incoming messages have been processed and
+     * are ready for delivery.
+     *
+     * @return the <tt>MessageEventHandler</tt> of this
+     * <tt>NetAccessManager</tt> which is to be notified when incoming messages
+     * have been processed and are ready for delivery
      */
-    void setEventHandler(MessageEventHandler evtHandler)
+    MessageEventHandler getMessageEventHandler()
     {
-        messageEventHandler = evtHandler;
+        return messageEventHandler;
+    }
+
+    /**
+     * Gets the <tt>MessageQueue</tt> of this <tt>NetAccessManager</tt> in which
+     * incoming messages are stocked for processing.
+     * 
+     * @return the <tt>MessageQueue</tt> of this <tt>NetAccessManager</tt> in
+     * which incoming messages are stocked for processing
+     */
+    MessageQueue getMessageQueue()
+    {
+        return messageQueue;
+    }
+
+    /**
+     * Gets the <tt>StunStack</tt> which has created this instance and is its
+     * owner.
+     *
+     * @return the <tt>StunStack</tt> which has created this instance and is its
+     * owner
+     */
+    StunStack getStunStack()
+    {
+        return stunStack;
     }
 
     /**
@@ -127,7 +165,7 @@ class NetAccessManager
             mp.stop();
             messageProcessors.remove(mp);
 
-            mp = new MessageProcessor(messageQueue, messageEventHandler, this);
+            mp = new MessageProcessor(this);
             mp.start();
             logger.fine("A message processor has been relaunched because "
                         +"of an error.");
@@ -227,11 +265,9 @@ class NetAccessManager
 
         for (int i = messageProcessors.size(); i < newSize; i++)
         {
-            MessageProcessor mp = new MessageProcessor(messageQueue,
-                                                       messageEventHandler,
-                                                       this);
-            messageProcessors.add(mp);
+            MessageProcessor mp = new MessageProcessor(this);
 
+            messageProcessors.add(mp);
             mp.start();
         }
     }
@@ -263,12 +299,13 @@ class NetAccessManager
      * @throws IllegalArgumentException if the apDescriptor references an
      * access point that had not been installed,
      */
-    void sendMessage(Message          stunMessage,
-                     TransportAddress srcAddr,
-                     TransportAddress remoteAddr)
+    void sendMessage(
+            Message stunMessage,
+            TransportAddress srcAddr,
+            TransportAddress remoteAddr)
         throws IOException, IllegalArgumentException
     {
-        byte[] bytes = stunMessage.encode();
+        byte[] bytes = stunMessage.encode(stunStack);
         Connector ap = netAccessPoints.get(srcAddr);
 
         if (ap == null)

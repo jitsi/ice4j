@@ -37,9 +37,9 @@ class ConnectivityCheckServer
     private final Agent parentAgent;
 
     /**
-     * The stun stack that we will use for connectivity checks.
+     * The <tt>StunStack </tt> that we will use for connectivity checks.
      */
-    private StunStack stunStack = StunStack.getInstance();
+    private final StunStack stunStack;
 
     /**
      * Creates a new <tt>ConnectivityCheckServer</tt> setting
@@ -51,6 +51,8 @@ class ConnectivityCheckServer
     public ConnectivityCheckServer(Agent parentAgent)
     {
         this.parentAgent = parentAgent;
+
+        stunStack = this.parentAgent.getStunStack();
         stunStack.addRequestListener(this);
         stunStack.getCredentialsManager().registerAuthority(this);
     }
@@ -207,10 +209,11 @@ class ConnectivityCheckServer
 
                 try
                 {
-                    StunStack.getInstance().sendResponse(
-                                evt.getTransactionID().getBytes(),
-                                response, evt.getLocalAddress(),
-                                evt.getRemoteAddress());
+                    stunStack.sendResponse(
+                            evt.getTransactionID().getBytes(),
+                            response,
+                            evt.getLocalAddress(),
+                            evt.getRemoteAddress());
 
                     return false;
                 }
@@ -266,10 +269,11 @@ class ConnectivityCheckServer
 
                 try
                 {
-                    StunStack.getInstance().sendResponse(
-                                    evt.getTransactionID().getBytes(),
-                                    response, evt.getLocalAddress(),
-                                    evt.getRemoteAddress());
+                    stunStack.sendResponse(
+                            evt.getTransactionID().getBytes(),
+                            response,
+                            evt.getLocalAddress(),
+                            evt.getRemoteAddress());
 
                     return false;
                 }
@@ -366,6 +370,6 @@ class ConnectivityCheckServer
      */
     public void stop()
     {
-        StunStack.getInstance().removeRequestListener(this);
+        stunStack.removeRequestListener(this);
     }
 }

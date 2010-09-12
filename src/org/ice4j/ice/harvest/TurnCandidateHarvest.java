@@ -22,7 +22,7 @@ import org.ice4j.stack.*;
  * <tt>HostCandidate</tt> performed by a specific
  * <tt>TurnCandidateHarvester</tt>.
  *
- * @author Lubomir Marinov
+ * @author Lyubomir Marinov
  */
 public class TurnCandidateHarvest
     extends StunCandidateHarvest
@@ -245,7 +245,7 @@ public class TurnCandidateHarvest
                  * (application-purposed) socket of the RelayedCandidate and
                  * will not add it to the StunStack so we have to do it.
                  */
-                harvester.stunStack.addSocket(
+                harvester.getStunStack().addSocket(
                         relayedCandidate.getStunSocket(null));
 
                 addCandidate(relayedCandidate);

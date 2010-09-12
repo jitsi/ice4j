@@ -19,7 +19,7 @@ import org.ice4j.stack.*;
  * and are then included in outgoing offers or answers.
  *
  * @author Emil Ivov
- * @author Lubomir Marinov
+ * @author Lyubomir Marinov
  */
 public abstract class LocalCandidate
     extends Candidate
@@ -115,6 +115,20 @@ public abstract class LocalCandidate
     }
 
     /**
+     * Gets the <tt>StunStack</tt> associated with this <tt>Candidate</tt>.
+     *
+     * @return the <tt>StunStack</tt> associated with this <tt>Candidate</tt>
+     */
+    public StunStack getStunStack()
+    {
+        return
+            getParentComponent()
+                .getParentStream()
+                    .getParentAgent()
+                        .getStunStack();
+    }
+
+    /**
      * Creates a new <tt>StunDatagramPacketFilter</tt> which is to capture STUN
      * messages and make them available to the <tt>DatagramSocket</tt> returned
      * by {@link #getStunSocket(TransportAddress)}.
@@ -151,7 +165,7 @@ public abstract class LocalCandidate
                     || (base.getSocket() != socket))
             {
                 //remove our socket from the stack.
-                StunStack.getInstance().removeSocket(getTransportAddress());
+                getStunStack().removeSocket(getTransportAddress());
 
                 /*
                  * Allow this LocalCandiate implementation to not create a

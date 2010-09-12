@@ -9,6 +9,7 @@ package org.ice4j.attribute;
 import java.util.zip.*;
 
 import org.ice4j.*;
+import org.ice4j.stack.*;
 
 /**
  * The FINGERPRINT attribute is used to distinguish STUN packets from packets
@@ -145,6 +146,8 @@ public class FingerprintAttribute
     /**
      * Returns a binary representation of this attribute.
      *
+     * @param stunStack the <tt>StunStack</tt> in the context of which the
+     * request to encode this <tt>ContentDependentAttribute</tt> is being made
      * @param content the content of the message that this attribute will be
      * transported in
      * @param offset the <tt>content</tt>-related offset where the actual
@@ -154,7 +157,9 @@ public class FingerprintAttribute
      * @return a binary representation of this attribute valid for the message
      * with the specified <tt>content</tt>.
      */
-    public byte[] encode(byte[] content, int offset, int length)
+    public byte[] encode(
+            StunStack stunStack,
+            byte[] content, int offset, int length)
     {
         char type = getAttributeType();
         byte binValue[] = new byte[HEADER_LENGTH + getDataLength()];

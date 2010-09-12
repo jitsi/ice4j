@@ -83,7 +83,7 @@ public class SimpleAddressDetector
      */
     public void start()
     {
-        stunStack = StunStack.getInstance();
+        stunStack = new StunStack();
     }
 
 

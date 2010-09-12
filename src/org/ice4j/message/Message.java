@@ -22,16 +22,16 @@ import org.ice4j.stack.*;
  *
  * @author Emil Ivov
  * @author Sebastien Vincent
- * @author Lubomir Marinov
+ * @author Lyubomir Marinov
  */
 public abstract class Message
 {
     /**
-     * The <tt>Logger</tt> used by the <tt>Message</tt>
-     * class and its instances for logging output.
+     * The <tt>Logger</tt> used by the <tt>Message</tt> class and its instances
+     * for logging output.
      */
-    private static final Logger logger = Logger.getLogger(Message.class
-                    .getName());
+    private static final Logger logger
+        = Logger.getLogger(Message.class.getName());
 
     /* general declaration */
     public static final char STUN_REQUEST         = 0x0000;
@@ -561,12 +561,14 @@ public abstract class Message
     /**
      * Returns a binary representation of this message.
      *
+     * @param stunStack the <tt>StunStack</tt> in the context of which the
+     * request to encode this <tt>Message</tt> is being made
      * @return a binary representation of this message.
      *
      * @throws IllegalStateException if the message does not have all
      * required attributes.
      */
-    public byte[] encode()
+    public byte[] encode(StunStack stunStack)
         throws IllegalStateException
     {
         prepareForEncoding();
@@ -622,8 +624,8 @@ public abstract class Message
                 binMsg[messageLengthOffset + 1]
                     = (byte)(dataLengthForContentDependentAttribute & 0xFF);
                 binAtt
-                    = ((ContentDependentAttribute)attribute).encode(
-                            binMsg, 0, offset);
+                    = ((ContentDependentAttribute)attribute)
+                            .encode(stunStack, binMsg, 0, offset);
             }
             else
             {
@@ -695,8 +697,8 @@ public abstract class Message
      * @param arrayLen the length of the message
      * @return a Message object constructed from the binMessage array
      *
-     * @throws StunException ILLEGAL_ARGUMENT if one or more of the arguments
-     * have invalid values.
+     * @throws StunException <tt>ILLEGAL_ARGUMENT</tt> if one or more of the
+     * arguments have invalid values.
      */
     public static Message decode(byte binMessage[], char offset, char arrayLen)
         throws StunException
@@ -790,10 +792,9 @@ public abstract class Message
      * @param offset the index where data starts in <tt>binMessage</tt>.
      * @param msgLen the number of message bytes in <tt>binMessage</tt>.
      *
-     * @throws StunException if there's something in the
-     * <tt>attribute</tt> that caused us to discard the whole message (e.g. an
-     * invalid checksum
-     * or username)
+     * @throws StunException if there's something in the <tt>attribute</tt> that
+     * caused us to discard the whole message (e.g. an invalid checksum or
+     * username)
      */
     private static void performAttributeSpecificActions(Attribute attribute,
                                                         byte[]    binMessage,

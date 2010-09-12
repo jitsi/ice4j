@@ -10,6 +10,7 @@ import junit.framework.*;
 
 import org.ice4j.*;
 import org.ice4j.message.*;
+import org.ice4j.stack.*;
 
 /**
  * Makes basic stun tests for cases where local network addresses and the public
@@ -20,7 +21,7 @@ import org.ice4j.message.*;
  * The StunAddressDiscovererTest_XXX set of tests were created to verify stun
  * operation for scenarios of some basic types of firewalls. The purpose of
  * these tests is to make sure that transaction retransmissions and rereceptions
- * are handled transparently by the stack, as well as verify overal protocol
+ * are handled transparently by the stack, as well as verify overall protocol
  * operations for IPv4/IPv6 and mixed environments.
  *
  * <p>Company: Net Research Team, Louis Pasteur University</p>
@@ -66,14 +67,22 @@ public class StunAddressDiscovererTest_v4v6 extends TestCase {
         throws Exception
     {
         super.setUp();
+
+        StunStack stunStack = new StunStack();
+
         responseServer_v6
-            = new ResponseSequenceServer(responseServerAddress_v6);
+            = new ResponseSequenceServer(stunStack, responseServerAddress_v6);
         responseServer_v4
-            = new ResponseSequenceServer(responseServerAddress_v4);
-        stunAddressDiscoverer_v6 = new NetworkConfigurationDiscoveryProcess(
-            discovererAddress_v6, responseServerAddress_v6);
-        stunAddressDiscoverer_v4 = new NetworkConfigurationDiscoveryProcess(
-            discovererAddress_v4, responseServerAddress_v4);
+            = new ResponseSequenceServer(stunStack, responseServerAddress_v4);
+
+        stunAddressDiscoverer_v6
+            = new NetworkConfigurationDiscoveryProcess(
+                    stunStack,
+                    discovererAddress_v6, responseServerAddress_v6);
+        stunAddressDiscoverer_v4
+            = new NetworkConfigurationDiscoveryProcess(
+                    stunStack,
+                    discovererAddress_v4, responseServerAddress_v4);
 
         stunAddressDiscoverer_v6.start();
         stunAddressDiscoverer_v4.start();

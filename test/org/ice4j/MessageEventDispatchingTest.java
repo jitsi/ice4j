@@ -89,7 +89,7 @@ public class MessageEventDispatchingTest extends TestCase
     {
         super.setUp();
 
-        stunStack = StunStack.getInstance();
+        stunStack = new StunStack();
 
         clientSock = new SafeCloseDatagramSocket(clientAddress);
         serverSock = new SafeCloseDatagramSocket(serverAddress);

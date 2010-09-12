@@ -204,9 +204,10 @@ class StunServerTransaction
         if(expired || !isRetransmitting)
             return;
 
-        stackCallback.getNetAccessManager().sendMessage(response,
-                        localSendingAddress,
-                        responseDestination);
+        stackCallback.getNetAccessManager().sendMessage(
+                response,
+                localSendingAddress,
+                responseDestination);
     }
 
     /**

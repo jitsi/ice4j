@@ -10,12 +10,13 @@ import junit.framework.*;
 
 import org.ice4j.*;
 import org.ice4j.message.*;
+import org.ice4j.stack.*;
 
 /**
  * The StunAddressDiscovererTest_XXX set of tests were created to verify stun
  * operation for scenarios of some basic types of firewalls. The purpose of
  * these tests is to make sure that transaction retransmissions and rereceptions
- * are handled transparently by the stack, as well as verify overal protocol
+ * are handled transparently by the stack, as well as verify overall protocol
  * operations for IPv4/IPv6 and mixed environments.
  *
  * <p>Company: Net Research Team, Louis Pasteur University</p>
@@ -51,10 +52,14 @@ public class StunAddressDiscovererTest
         System.setProperty(StackProperties.MAX_CTRAN_RETRANS_TIMER, "100");
         System.setProperty(StackProperties.MAX_CTRAN_RETRANSMISSIONS, "2");
 
-        responseServer = new ResponseSequenceServer(responseServerAddress);
+        StunStack stunStack = new StunStack();
+
+        responseServer
+            = new ResponseSequenceServer(stunStack, responseServerAddress);
         stunAddressDiscoverer
-            = new NetworkConfigurationDiscoveryProcess(discovererAddress,
-                                                       responseServerAddress);
+            = new NetworkConfigurationDiscoveryProcess(
+                    stunStack,
+                    discovererAddress, responseServerAddress);
 
         stunAddressDiscoverer.start();
         responseServer.start();
@@ -72,7 +77,7 @@ public class StunAddressDiscovererTest
     }
 
     /**
-     * Performs a test where no responces are given the stun client so that
+     * Performs a test where no responses are given the stun client so that
      * it concludes it's in a network where UDP is blocked.
      *
      * @throws Exception if anything goes wrong ( surprised? ).
