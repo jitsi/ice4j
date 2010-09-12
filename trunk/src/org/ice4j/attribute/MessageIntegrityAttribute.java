@@ -228,6 +228,8 @@ public class MessageIntegrityAttribute
     /**
      * Returns a binary representation of this attribute.
      *
+     * @param stunStack the <tt>StunStack</tt> in the context of which the
+     * request to encode this <tt>ContentDependentAttribute</tt> is being made
      * @param content the content of the message that this attribute will be
      * transported in
      * @param offset the <tt>content</tt>-related offset where the actual
@@ -237,7 +239,9 @@ public class MessageIntegrityAttribute
      * @return a binary representation of this attribute valid for the message
      * with the specified <tt>content</tt>.
      */
-    public byte[] encode(byte[] content, int offset, int length)
+    public byte[] encode(
+            StunStack stunStack,
+            byte[] content, int offset, int length)
     {
         char type = getAttributeType();
         byte binValue[] = new byte[HEADER_LENGTH + getDataLength()];
@@ -250,8 +254,7 @@ public class MessageIntegrityAttribute
         binValue[2] = (byte)(getDataLength()>>8);
         binValue[3] = (byte)(getDataLength()&0x00FF);
 
-        byte[] key = StunStack.getInstance().getCredentialsManager()
-            .getRemoteKey(username);
+        byte[] key = stunStack.getCredentialsManager().getRemoteKey(username);
 
         //now calculate the HMAC-SHA1
         this.hmacSha1Content = calculateHmacSha1(content, offset, length, key);

@@ -12,6 +12,7 @@ import junit.framework.*;
 
 import org.ice4j.*;
 import org.ice4j.attribute.*;
+import org.ice4j.stack.*;
 
 public class MessageTest extends TestCase {
     private Message bindingRequest       = null;
@@ -25,11 +26,18 @@ public class MessageTest extends TestCase {
 
     private MsgFixture msgFixture;
 
+    /**
+     * The <tt>StunStack</tt> used by this <tt>MessageTest</tt>.
+     */
+    private StunStack stunStack;
+
     protected void setUp() throws Exception {
         super.setUp();
+
         msgFixture = new MsgFixture();
         msgFixture.setUp();
 
+        stunStack = new StunStack();
 
         //binding request
         bindingRequest = new Request();
@@ -78,9 +86,11 @@ public class MessageTest extends TestCase {
         changeRequest = null;
         changeRequest = null;
 
-        msgFixture.tearDown();
+        stunStack = null;
 
+        msgFixture.tearDown();
         msgFixture = null;
+
         super.tearDown();
     }
 
@@ -130,14 +140,14 @@ public class MessageTest extends TestCase {
         //Binding Request
         byte[] expectedReturn = msgFixture.bindingRequest;
 
-        byte[] actualReturn = bindingRequest.encode();
+        byte[] actualReturn = bindingRequest.encode(stunStack);
         assertTrue("A binding request was not properly encoded",
                    Arrays.equals(  expectedReturn, actualReturn ) );
 
         //Binding Response
         expectedReturn = msgFixture.bindingResponse;
 
-        actualReturn = bindingResponse.encode();
+        actualReturn = bindingResponse.encode(stunStack);
 
         assertTrue("A binding response was not properly encoded",
                      Arrays.equals(  expectedReturn, actualReturn ) );

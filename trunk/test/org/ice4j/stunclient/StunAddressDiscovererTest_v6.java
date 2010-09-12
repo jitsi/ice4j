@@ -10,6 +10,7 @@ import junit.framework.*;
 
 import org.ice4j.*;
 import org.ice4j.message.*;
+import org.ice4j.stack.*;
 
 /**
  * The StunAddressDiscovererTest_XXX set of tests were created to verify stun
@@ -44,11 +45,15 @@ public class StunAddressDiscovererTest_v6 extends TestCase {
     protected void setUp() throws Exception
     {
         super.setUp();
-        responseServer = new ResponseSequenceServer(responseServerAddress);
+
+        StunStack stunStack = new StunStack();
+
+        responseServer
+            = new ResponseSequenceServer(stunStack, responseServerAddress);
         stunAddressDiscoverer
             = new NetworkConfigurationDiscoveryProcess(
-                discovererAddress,
-                responseServerAddress);
+                    stunStack,
+                    discovererAddress, responseServerAddress);
 
         stunAddressDiscoverer.start();
         responseServer.start();

@@ -23,7 +23,7 @@ import org.ice4j.stack.*;
  * <tt>HostCandidate</tt> performed by a specific
  * <tt>StunCandidateHarvester</tt>.
  *
- * @author Lubomir Marinov
+ * @author Lyubomir Marinov
  */
 public class StunCandidateHarvest
     extends AbstractResponseCollector
@@ -226,8 +226,10 @@ public class StunCandidateHarvest
                 if (((response == null) || !response.isSuccessResponse())
                         && (longTermCredentialSession != null))
                 {
-                    harvester.stunStack.getCredentialsManager().unregisterAuthority(
-                            longTermCredentialSession);
+                    harvester
+                        .getStunStack()
+                            .getCredentialsManager()
+                                .unregisterAuthority(longTermCredentialSession);
                     longTermCredentialSession = null;
                 }
             }
@@ -492,7 +494,7 @@ public class StunCandidateHarvest
                                 longTermCredential,
                                 realm);
                     harvester
-                        .stunStack
+                        .getStunStack()
                             .getCredentialsManager()
                                 .registerAuthority(longTermCredentialSession);
                 }
@@ -560,6 +562,7 @@ public class StunCandidateHarvest
                         = (retryRequestTransactionIDAsBytes == null)
                             ? TransactionID.createNewTransactionID()
                             : TransactionID.createTransactionID(
+                                    harvester.getStunStack(),
                                     retryRequestTransactionIDAsBytes);
                     retryRequestTransactionID.setApplicationData(
                             applicationData);
@@ -785,7 +788,7 @@ public class StunCandidateHarvest
                      */
                     if (usernameAttribute == null)
                         return;
-                    if (!harvester.stunStack.validateMessageIntegrity(
+                    if (!harvester.getStunStack().validateMessageIntegrity(
                             messageIntegrityAttribute,
                             LongTermCredential.toString(
                                     usernameAttribute.getUsername()),
@@ -1168,7 +1171,7 @@ public class StunCandidateHarvest
         if (!firstRequest && (longTermCredentialSession != null))
             longTermCredentialSession.addAttributes(request);
 
-        StunStack stunStack = harvester.stunStack;
+        StunStack stunStack = harvester.getStunStack();
         TransportAddress stunServer = harvester.stunServer;
         TransportAddress hostCandidateTransportAddress
             = hostCandidate.getTransportAddress();
@@ -1180,7 +1183,9 @@ public class StunCandidateHarvest
             transactionID
                 = (transactionIDAsBytes == null)
                     ? TransactionID.createNewTransactionID()
-                    : TransactionID.createTransactionID(transactionIDAsBytes);
+                    : TransactionID.createTransactionID(
+                            harvester.getStunStack(),
+                            transactionIDAsBytes);
         }
         synchronized (requests)
         {

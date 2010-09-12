@@ -21,12 +21,19 @@ import org.ice4j.socket.*;
  *
  * @author Emil Ivov
  */
-public class ShallowStackTest extends TestCase {
+public class ShallowStackTest extends TestCase
+{
+    /**
+     * The <tt>Logger</tt> used by the <tt>ShallowStackTest<tt> class and its
+     * instances for logging output.
+     */
+    private static final Logger logger
+        = Logger.getLogger(ShallowStackTest.class.getName());
 
-    private static final Logger logger =
-        Logger.getLogger(ShallowStackTest.class.getName());
-
-    private StunStack    stunStack  = null;
+    /**
+     * The <tt>StunStack</tt> used by this <tt>ShallowStackTest</tt>
+     */
+    private StunStack    stunStack;
     private MsgFixture   msgFixture = null;
 
     private TransportAddress dummyServerAddress = null;
@@ -57,6 +64,7 @@ public class ShallowStackTest extends TestCase {
         throws Exception
     {
         super.setUp();
+
         msgFixture = new MsgFixture();
         msgFixture.setUp();
         //Addresses
@@ -66,7 +74,7 @@ public class ShallowStackTest extends TestCase {
                     "127.0.0.1", 5004, Transport.UDP);
 
         //init the stack
-        stunStack    = StunStack.getInstance();
+        stunStack = new StunStack();
 
         //access point
         localSock = new SafeCloseDatagramSocket(localAddress);
@@ -177,7 +185,7 @@ public class ShallowStackTest extends TestCase {
         assertNotNull("No request has been received", collectedRequest);
 
         byte expectedReturn[] = msgFixture.bindingRequest2;
-        byte actualReturn[]   = collectedRequest.encode();
+        byte actualReturn[]   = collectedRequest.encode(stunStack);
         assertTrue("Received request was not the same as the one that was sent",
                    Arrays.equals(expectedReturn, actualReturn));
     }
@@ -208,7 +216,7 @@ public class ShallowStackTest extends TestCase {
         Request collectedRequest = requestCollector.collectedRequest;
 
         byte expectedReturn[] = msgFixture.bindingRequest;
-        byte actualReturn[]   = collectedRequest.encode();
+        byte actualReturn[]   = collectedRequest.encode(stunStack);
         assertTrue("Received request was not the same as the one that was sent",
                    Arrays.equals(expectedReturn, actualReturn));
 
@@ -291,7 +299,7 @@ public class ShallowStackTest extends TestCase {
         Response collectedResponse = collector.collectedResponse;
 
         byte expectedReturn[] = response;
-        byte actualReturn[]   = collectedResponse.encode();
+        byte actualReturn[]   = collectedResponse.encode(stunStack);
         assertTrue("Received request was not the same as the one that was sent",
                    Arrays.equals(expectedReturn, actualReturn));
     }

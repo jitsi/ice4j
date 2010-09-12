@@ -254,6 +254,7 @@ class StunClientTransaction
             stackCallback.removeClientTransaction(this);
             responseCollector.processTimeout(
                     new StunTimeoutEvent(
+                            stackCallback,
                             this.request, getLocalAddress(), transactionID));
         }
     }
@@ -294,7 +295,9 @@ class StunClientTransaction
         }
 
         stackCallback.getNetAccessManager().sendMessage(
-            this.request, localAddress, requestDestination);
+                this.request,
+                localAddress,
+                requestDestination);
     }
 
     /**
@@ -359,9 +362,12 @@ class StunClientTransaction
         if( !Boolean.getBoolean(StackProperties.KEEP_CRANS_AFTER_A_RESPONSE) )
             this.cancel();
 
-        this.responseCollector.processResponse(new StunResponseEvent(
-            evt.getRawMessage(), (Response)evt.getMessage(),
-            this.request, getTransactionID()));
+        this.responseCollector.processResponse(
+                new StunResponseEvent(
+                        stackCallback,
+                        evt.getRawMessage(),
+                        (Response) evt.getMessage(),
+                        this.request, getTransactionID()));
     }
 
     /**

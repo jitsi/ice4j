@@ -30,6 +30,7 @@ import org.ice4j.stack.*;
  * <p>
  *
  * @author Emil Ivov
+ * @author Lyubomir Marinov
  */
 public class Agent
 {
@@ -190,12 +191,17 @@ public class Agent
         = new LinkedList<PropertyChangeListener>();
 
     /**
+     * The <tt>StunStack</tt> used by this <tt>Agent</tt>.
+     */
+    private StunStack stunStack;
+
+    /**
      * The thread that we use for moving from COMPLETED into a TERMINATED state.
      */
     private TerminationThread terminationThread;
 
     /**
-     * Creates an empty <tt>Agent</tt> with no streams, and no address
+     * Initializes an empty <tt>Agent</tt> with no streams, and no address.
      */
     public Agent()
     {
@@ -207,13 +213,11 @@ public class Agent
         tieBreaker = Math.abs(random.nextLong());
 
         //add the software attribute to all messages
-        String sware = StackProperties.getString(StackProperties.SOFTWARE);
-        if( sware == null)
+        if (StackProperties.getString(StackProperties.SOFTWARE) == null)
             System.setProperty(StackProperties.SOFTWARE, "ice4j.org");
 
         //add the FINGERPRINT attribute to all messages.
         System.setProperty(StackProperties.ALWAYS_SIGN, "true");
-
 
         nominator = new DefaultNominator(this);
     }
@@ -718,6 +722,18 @@ public class Agent
     }
 
     /**
+     * Gets the <tt>StunStack</tt> used by this <tt>Agent</tt>.
+     *
+     * @return the <tt>StunStack</tt> used by this <tt>Agent</tt>
+     */
+    public synchronized StunStack getStunStack()
+    {
+        if (stunStack == null)
+            stunStack = new StunStack();
+        return stunStack;
+    }
+
+    /**
      * Returns the number of {@link CheckList}s that are currently active.
      *
      * @return the number of {@link CheckList}s that are currently active.
@@ -1036,7 +1052,7 @@ public class Agent
                 TransactionID checkTransaction
                     = knownPair.getConnectivityCheckTransaction();
 
-                StunStack.getInstance().cancelTransaction(checkTransaction);
+                getStunStack().cancelTransaction(checkTransaction);
             }
         }
         else

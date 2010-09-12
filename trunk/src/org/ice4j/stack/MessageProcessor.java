@@ -27,19 +27,25 @@ class MessageProcessor
         = Logger.getLogger(MessageProcessor.class.getName());
 
     /**
+     * The listener that will be collecting error notifications.
+     */
+    private final ErrorHandler errorHandler;
+
+    /**
      * The queue where we store incoming messages until they are collected.
      */
-    private MessageQueue messageQueue = null;
+    private final MessageQueue messageQueue;
 
     /**
      * The listener that will be retrieving <tt>MessageEvent</tt>s
      */
-    private MessageEventHandler messageHandler = null;
+    private final MessageEventHandler messageEventHandler;
 
     /**
-     * The listener that will be collecting error notifications.
+     * The <tt>NetAccessManager</tt> which has created this instance and which
+     * is its owner.
      */
-    private ErrorHandler errorHandler  = null;
+    private final NetAccessManager netAccessManager;
 
     /**
      * The flag that indicates whether we are still running.
@@ -54,34 +60,41 @@ class MessageProcessor
     /**
      * Creates a Message processor.
      *
-     * @param queue the <tt>MessageQueue</tt> where we'll be storing incoming
-     * messages.
-     * @param messageHandler MessageEventHandler
-     * @param errorHandler the <tt>ErrorHandler</tt> that should handle
-     * exceptions in this processor
-     *
-     * @throws IllegalArgumentException if either of the parameters is null.
+     * @param netAccessManager the <tt>NetAccessManager</tt> which is creating
+     * the new instance, is going to be its owner, specifies the
+     * <tt>MessageQueue</tt> which is to store incoming messages, specifies the
+     * <tt>MessageEventHandler</tt> and represents the <tt>ErrorHandler</tt> to
+     * handle exceptions in the new instance
+     * @throws IllegalArgumentException if any of the mentioned properties of
+     * <tt>netAccessManager</tt> are <tt>null</tt>
      */
-    MessageProcessor(MessageQueue           queue,
-                     MessageEventHandler    messageHandler,
-                     ErrorHandler           errorHandler)
+    MessageProcessor(NetAccessManager netAccessManager)
         throws IllegalArgumentException
     {
-        if(queue == null)
-            throw new IllegalArgumentException(
-                "The message queue may not be " + null);
+        if (netAccessManager == null)
+            throw new NullPointerException("netAccessManager");
 
-        if(messageHandler == null)
+        MessageQueue messageQueue = netAccessManager.getMessageQueue();
+        
+        if (messageQueue == null)
+        {
             throw new IllegalArgumentException(
-                "The message handler may not be " + null);
+                    "The message queue may not be null");
+        }
 
-        if(errorHandler == null)
+        MessageEventHandler messageEventHandler
+            = netAccessManager.getMessageEventHandler();
+
+        if(messageEventHandler == null)
+        {
             throw new IllegalArgumentException(
-                "The error handler may not be " + null);
+                    "The message event handler may not be null");
+        }
 
-        this.messageQueue    = queue;
-        this.messageHandler  = messageHandler;
-        this.errorHandler    = errorHandler;
+        this.netAccessManager = netAccessManager;
+        this.messageQueue = messageQueue;
+        this.messageEventHandler = messageEventHandler;
+        this.errorHandler = netAccessManager;
     }
 
     /**
@@ -93,9 +106,12 @@ class MessageProcessor
         //avoid having dead threads in our pools.
         try
         {
+            StunStack stunStack = netAccessManager.getStunStack();
+
             while (running)
             {
                 RawMessage rawMessage;
+
                 try
                 {
                     rawMessage = messageQueue.remove();
@@ -127,18 +143,19 @@ class MessageProcessor
                 }
                 catch (StunException ex)
                 {
-                    errorHandler.handleError("Failed to decode a stun message!",
-                                             ex);
+                    errorHandler.handleError(
+                            "Failed to decode a stun message!",
+                            ex);
 
                     continue; //let this one go and for better luck next time.
                 }
 
                 logger.finest("Dispatching a StunMessageEvent.");
 
-                StunMessageEvent stunMessageEvent =
-                    new StunMessageEvent(rawMessage, stunMessage);
+                StunMessageEvent stunMessageEvent
+                    = new StunMessageEvent(stunStack, rawMessage, stunMessage);
 
-                messageHandler.handleMessageEvent(stunMessageEvent);
+                messageEventHandler.handleMessageEvent(stunMessageEvent);
             }
         }
         catch(Throwable err)

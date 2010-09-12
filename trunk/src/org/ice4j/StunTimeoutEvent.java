@@ -27,16 +27,21 @@ public class StunTimeoutEvent
      * Constructs a <tt>StunTimeoutEvent</tt> according to the specified
      * message.
      *
+     * @param stunStack the <tt>StunStack</tt> to be associated with the new
+     * instance
      * @param message the message itself
      * @param localAddress the local address that the message was sent from.
      * @param transactionID the ID of the  associated with this event.
      */
-    public StunTimeoutEvent(Message          message,
-                            TransportAddress localAddress,
-                            TransactionID    transactionID)
+    public StunTimeoutEvent(
+            StunStack stunStack,
+            Message message,
+            TransportAddress localAddress,
+            TransactionID transactionID)
     {
-        super(localAddress, message);
-        super.setTransactionID(transactionID);
+        super(stunStack, localAddress, message);
+
+        setTransactionID(transactionID);
     }
 
     /**

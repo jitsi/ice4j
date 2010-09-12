@@ -15,7 +15,6 @@ import java.util.logging.*;
 import org.ice4j.*;
 import org.ice4j.ice.*;
 import org.ice4j.socket.*;
-import org.ice4j.stack.*;
 
 /**
  * A <tt>HostCandidateHarvester</tt> gathers host <tt>Candidate</tt>s for a
@@ -242,6 +241,7 @@ public class HostCandidateHarvester
     private void createAndRegisterStunSocket(HostCandidate candidate)
     {
         DatagramSocket stunSocket = candidate.getStunSocket(null);
-        StunStack.getInstance().addSocket(stunSocket);
+
+        candidate.getStunStack().addSocket(stunSocket);
     }
 }

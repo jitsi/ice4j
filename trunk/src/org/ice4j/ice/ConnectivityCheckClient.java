@@ -20,7 +20,7 @@ import org.ice4j.stack.*;
  * will be handling their responses or lack thereof.
  *
  * @author Emil Ivov
- * @author Lubomir Marinov
+ * @author Lyubomir Marinov
  */
 class ConnectivityCheckClient
     implements ResponseCollector
@@ -38,9 +38,9 @@ class ConnectivityCheckClient
     private final Agent parentAgent;
 
     /**
-     * The stun stack that we will use for connectivity checks.
+     * The <tt>StunStack</tt> that we will use for connectivity checks.
      */
-    private static final StunStack stunStack = StunStack.getInstance();
+    private final StunStack stunStack;
 
     /**
      * The {@link PaceMaker}s that are currently running checks in this client.
@@ -57,6 +57,8 @@ class ConnectivityCheckClient
     public ConnectivityCheckClient(Agent parentAgent)
     {
         this.parentAgent = parentAgent;
+
+        stunStack = this.parentAgent.getStunStack();
     }
 
     /**
@@ -160,7 +162,8 @@ class ConnectivityCheckClient
         try
         {
             tran
-                = stunStack.sendRequest(request,
+                = stunStack.sendRequest(
+                        request,
                         candidatePair
                             .getRemoteCandidate().getTransportAddress(),
                         localCandidate.getTransportAddress(),

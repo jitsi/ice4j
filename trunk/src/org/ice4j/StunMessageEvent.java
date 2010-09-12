@@ -34,13 +34,18 @@ public class StunMessageEvent
     /**
      * Constructs a StunMessageEvent according to the specified message.
      *
+     * @param stunStack the <tt>StunStack</tt> to be associated with the new
+     * instance
      * @param rawMessage the crude message we got off the wire.
      * @param parsedMessage the message itself
      */
-    public StunMessageEvent(RawMessage rawMessage,
-                            Message    parsedMessage)
+    public StunMessageEvent(
+            StunStack stunStack,
+            RawMessage rawMessage,
+            Message parsedMessage)
     {
-        super(rawMessage.getLocalAddress(), parsedMessage);
+        super(stunStack, rawMessage.getLocalAddress(), parsedMessage);
+
         this.rawMessage = rawMessage;
     }
 

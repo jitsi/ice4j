@@ -47,6 +47,11 @@ public class TransactionSupportTests extends TestCase
     DatagramSocket serverSock = null;
 
     /**
+     * The <tt>StunStack</tt> used by this <tt>TransactionSupportTests</tt>.
+     */
+    private StunStack stunStack;
+
+    /**
      * The request we send in this test.
      */
     Request  bindingRequest = null;
@@ -79,8 +84,9 @@ public class TransactionSupportTests extends TestCase
         clientSock = new SafeCloseDatagramSocket(clientAddress);
         serverSock = new SafeCloseDatagramSocket(serverAddress);
 
-        StunStack.getInstance().addSocket(clientSock);
-        StunStack.getInstance().addSocket(serverSock);
+        stunStack = new StunStack();
+        stunStack.addSocket(clientSock);
+        stunStack.addSocket(serverSock);
 
         bindingRequest = MessageFactory.createBindingRequest();
         bindingResponse = MessageFactory.create3482BindingResponse(
@@ -89,16 +95,21 @@ public class TransactionSupportTests extends TestCase
         requestCollector = new PlainRequestCollector();
         responseCollector = new PlainResponseCollector();
 
-        System.setProperty(StackProperties.PROPAGATE_RECEIVED_RETRANSMISSIONS,
-                           "false");
-        System.setProperty(StackProperties.KEEP_CRANS_AFTER_A_RESPONSE,
-                           "false");
-        System.setProperty(StackProperties.MAX_CTRAN_RETRANSMISSIONS,
-                           "");
-        System.setProperty(StackProperties.MAX_CTRAN_RETRANS_TIMER,
-                           "");
-        System.setProperty(StackProperties.FIRST_CTRAN_RETRANS_AFTER,
-                           "");
+        System.setProperty(
+                StackProperties.PROPAGATE_RECEIVED_RETRANSMISSIONS,
+                "false");
+        System.setProperty(
+                StackProperties.KEEP_CRANS_AFTER_A_RESPONSE,
+                "false");
+        System.setProperty(
+                StackProperties.MAX_CTRAN_RETRANSMISSIONS,
+                "");
+        System.setProperty(
+                StackProperties.MAX_CTRAN_RETRANS_TIMER,
+                "");
+        System.setProperty(
+                StackProperties.FIRST_CTRAN_RETRANS_AFTER,
+                "");
     }
 
     /**
@@ -109,8 +120,8 @@ public class TransactionSupportTests extends TestCase
     protected void tearDown()
         throws Exception
     {
-        StunStack.getInstance().removeSocket(clientAddress);
-        StunStack.getInstance().removeSocket(serverAddress);
+        stunStack.removeSocket(clientAddress);
+        stunStack.removeSocket(serverAddress);
 
         clientSock.close();
         serverSock.close();
@@ -118,16 +129,21 @@ public class TransactionSupportTests extends TestCase
         requestCollector = null;
         responseCollector = null;
 
-        System.setProperty(StackProperties.PROPAGATE_RECEIVED_RETRANSMISSIONS,
-                           "false");
-        System.setProperty(StackProperties.KEEP_CRANS_AFTER_A_RESPONSE,
-                           "false");
-        System.setProperty(StackProperties.MAX_CTRAN_RETRANSMISSIONS,
-                           "");
-        System.setProperty(StackProperties.MAX_CTRAN_RETRANS_TIMER,
-                           "");
-        System.setProperty(StackProperties.FIRST_CTRAN_RETRANS_AFTER,
-                           "");
+        System.setProperty(
+                StackProperties.PROPAGATE_RECEIVED_RETRANSMISSIONS,
+                "false");
+        System.setProperty(
+                StackProperties.KEEP_CRANS_AFTER_A_RESPONSE,
+                "false");
+        System.setProperty(
+                StackProperties.MAX_CTRAN_RETRANSMISSIONS,
+                "");
+        System.setProperty(
+                StackProperties.MAX_CTRAN_RETRANS_TIMER,
+                "");
+        System.setProperty(
+                StackProperties.FIRST_CTRAN_RETRANS_AFTER,
+                "");
 
         super.tearDown();
     }
@@ -151,11 +167,13 @@ public class TransactionSupportTests extends TestCase
         System.setProperty(StackProperties.PROPAGATE_RECEIVED_RETRANSMISSIONS,
                            "true");
 
-        StunStack.getInstance()
-            .addRequestListener(serverAddress, requestCollector);
+        stunStack.addRequestListener(serverAddress, requestCollector);
         //send
-        StunStack.getInstance().sendRequest(bindingRequest,
-                         serverAddress, clientAddress, responseCollector);
+        stunStack.sendRequest(
+                bindingRequest,
+                serverAddress,
+                clientAddress,
+                responseCollector);
 
         //wait for retransmissions
         Thread.sleep(1000);
@@ -198,11 +216,13 @@ public class TransactionSupportTests extends TestCase
                 StackProperties.MAX_CTRAN_RETRANSMISSIONS);
         System.setProperty(StackProperties.MAX_CTRAN_RETRANSMISSIONS, "2");
         //prepare to listen
-        StunStack.getInstance().addRequestListener(
-                        serverAddress, requestCollector);
+        stunStack.addRequestListener(serverAddress, requestCollector);
         //send
-        StunStack.getInstance().sendRequest(bindingRequest,
-              serverAddress, clientAddress, responseCollector);
+        stunStack.sendRequest(
+                bindingRequest,
+                serverAddress,
+                clientAddress,
+                responseCollector);
 
         //wait for retransmissions
         Thread.sleep(1000);
@@ -240,14 +260,16 @@ public class TransactionSupportTests extends TestCase
         System.setProperty(StackProperties.MAX_CTRAN_RETRANS_TIMER, "100");
 
         //prepare to listen
-        System.setProperty(StackProperties.KEEP_CRANS_AFTER_A_RESPONSE,
-                           "true");
-        StunStack.getInstance().addRequestListener(
-                        serverAddress, requestCollector);
+        System.setProperty(
+                StackProperties.KEEP_CRANS_AFTER_A_RESPONSE,
+                "true");
+        stunStack.addRequestListener(serverAddress, requestCollector);
         //send
-        StunStack.getInstance().sendRequest(
-            bindingRequest, serverAddress,
-                clientAddress, responseCollector);
+        stunStack.sendRequest(
+                bindingRequest,
+                serverAddress,
+                clientAddress,
+                responseCollector);
 
         //wait for the message to arrive
         requestCollector.waitForRequest();
@@ -258,8 +280,12 @@ public class TransactionSupportTests extends TestCase
         StunMessageEvent evt = reqs.get(0);
 
         byte[] tid = evt.getMessage().getTransactionID();
-        StunStack.getInstance().sendResponse(
-                        tid, bindingResponse, serverAddress, clientAddress);
+
+        stunStack.sendResponse(
+                tid,
+                bindingResponse,
+                serverAddress,
+                clientAddress);
 
         //wait for retransmissions
         Thread.sleep(500);
@@ -287,11 +313,13 @@ public class TransactionSupportTests extends TestCase
      */
     public void testUniqueIDs() throws Exception
     {
-        StunStack.getInstance().addRequestListener(
-                            serverAddress, requestCollector);
+        stunStack.addRequestListener(serverAddress, requestCollector);
         //send req 1
-        StunStack.getInstance().sendRequest(bindingRequest,
-            serverAddress, clientAddress, responseCollector);
+        stunStack.sendRequest(
+                bindingRequest,
+                serverAddress,
+                clientAddress,
+                responseCollector);
 
         //wait for retransmissions
         requestCollector.waitForRequest();
@@ -303,12 +331,19 @@ public class TransactionSupportTests extends TestCase
 
         //send a response to make the other guy shut up
         byte[] tid = evt1.getMessage().getTransactionID();
-        StunStack.getInstance().sendResponse(tid,
-                    bindingResponse, serverAddress, clientAddress);
+
+        stunStack.sendResponse(
+                tid,
+                bindingResponse,
+                serverAddress,
+                clientAddress);
 
         //send req 2
-        StunStack.getInstance().sendRequest(bindingRequest,
-                        serverAddress, clientAddress, responseCollector);
+        stunStack.sendRequest(
+                bindingRequest,
+                serverAddress,
+                clientAddress,
+                responseCollector);
 
         //wait for retransmissions
         Thread.sleep(1000);
@@ -336,16 +371,19 @@ public class TransactionSupportTests extends TestCase
     {
         //MAX_RETRANSMISSIONS
 
-        System.setProperty(StackProperties.MAX_CTRAN_RETRANSMISSIONS,
-                           "2");
+        System.setProperty(StackProperties.MAX_CTRAN_RETRANSMISSIONS, "2");
         //make sure we see retransmissions so that we may count them
-        System.setProperty(StackProperties.PROPAGATE_RECEIVED_RETRANSMISSIONS,
-                           "true");
-        StunStack.getInstance().addRequestListener(
+        System.setProperty(
+                StackProperties.PROPAGATE_RECEIVED_RETRANSMISSIONS,
+                "true");
+        stunStack.addRequestListener(
                         serverAddress, requestCollector);
         //send
-        StunStack.getInstance().sendRequest(
-            bindingRequest, serverAddress, clientAddress, responseCollector);
+        stunStack.sendRequest(
+                bindingRequest,
+                serverAddress,
+                clientAddress,
+                responseCollector);
         //wait for retransmissions
         Thread.sleep(1600);
 
@@ -373,16 +411,18 @@ public class TransactionSupportTests extends TestCase
         throws Exception
     {
         //MAX_RETRANSMISSIONS
-        System.setProperty(StackProperties.FIRST_CTRAN_RETRANS_AFTER,
-                           "50");
+        System.setProperty(StackProperties.FIRST_CTRAN_RETRANS_AFTER, "50");
         //make sure we see retransmissions so that we may count them
-        System.setProperty(StackProperties.PROPAGATE_RECEIVED_RETRANSMISSIONS,
-                           "true");
-        StunStack.getInstance().addRequestListener(
-                        serverAddress, requestCollector);
+        System.setProperty(
+                StackProperties.PROPAGATE_RECEIVED_RETRANSMISSIONS,
+                "true");
+        stunStack.addRequestListener(serverAddress, requestCollector);
         //send
-        StunStack.getInstance().sendRequest(bindingRequest,
-            serverAddress, clientAddress, responseCollector);
+        stunStack.sendRequest(
+                bindingRequest,
+                serverAddress,
+                clientAddress,
+                responseCollector);
 
         //wait a while
         requestCollector.waitForRequest();
@@ -421,11 +461,13 @@ public class TransactionSupportTests extends TestCase
                            "true");
         System.setProperty(StackProperties.MAX_CTRAN_RETRANSMISSIONS,
                            "11");
-        StunStack.getInstance()
-            .addRequestListener(serverAddress, requestCollector);
+        stunStack.addRequestListener(serverAddress, requestCollector);
         //send
-        StunStack.getInstance().sendRequest(bindingRequest,
-            serverAddress, clientAddress, responseCollector);
+        stunStack.sendRequest(
+                bindingRequest,
+                serverAddress,
+                clientAddress,
+                responseCollector);
 
         //wait a while
         Thread.sleep(1200);

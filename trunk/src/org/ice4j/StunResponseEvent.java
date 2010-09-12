@@ -34,18 +34,22 @@ public class StunResponseEvent
     /**
      * Creates a new instance of this event.
      *
+     * @param stunStack the <tt>StunStack</tt> to be associated with the new
+     * instance
      * @param rawMessage the crude message we got off the wire.
      * @param response the STUN {@link Response} that we've just received.
      * @param request  the message itself
      * @param transactionID a reference to the exact {@link TransactionID}
      * instance that represents the corresponding client transaction.
      */
-    public StunResponseEvent(RawMessage    rawMessage,
-                             Response      response,
-                             Request       request,
-                             TransactionID transactionID)
+    public StunResponseEvent(
+            StunStack stunStack,
+            RawMessage rawMessage,
+            Response response,
+            Request request,
+            TransactionID transactionID)
     {
-        super(rawMessage, response);
+        super(stunStack, rawMessage, response);
         this.request = request;
         super.setTransactionID(transactionID);
     }

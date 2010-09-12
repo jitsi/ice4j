@@ -21,7 +21,7 @@ import org.ice4j.stack.*;
  * Traversal Utilities for NAT (STUN)" only.
  *
  * @author Emil Ivov
- * @author Lubomir Marinov
+ * @author Lyubomir Marinov
  */
 public class StunCandidateHarvester
     implements CandidateHarvester
@@ -61,9 +61,10 @@ public class StunCandidateHarvester
     public final TransportAddress stunServer;
 
     /**
-     * The stack to use for STUN communication.
+     * The <tt>StunSTack</tt> used by this instance for the purposes of STUN
+     * communication.
      */
-    public final StunStack stunStack = StunStack.getInstance();
+    private StunStack stunStack;
 
     /**
      * Creates a new STUN harvester that will be running against the specified
@@ -187,6 +188,20 @@ public class StunCandidateHarvester
     }
 
     /**
+     * Gets the <tt>StunStack</tt> used by this <tt>CandidateHarvester</tt> for
+     * the purposes of STUN communication. It is guaranteed to be available only
+     * during the execution of {@link CandidateHarvester#harvest(Component)}.
+     *
+     * @return the <tt>StunStack</tt> used by this <tt>CandidateHarvester</tt>
+     * for the purposes of STUN communication
+     * @see CandidateHarvester#harvest(Component)
+     */
+    public StunStack getStunStack()
+    {
+        return stunStack;
+    }
+
+    /**
      * Gathers STUN candidates for all host <tt>Candidate</tt>s that are already
      * present in the specified <tt>component</tt>. This method relies on the
      * specified <tt>component</tt> to already contain all its host candidates
@@ -197,6 +212,8 @@ public class StunCandidateHarvester
      */
     public void harvest(Component component)
     {
+        stunStack = component.getParentStream().getParentAgent().getStunStack();
+
         for (Candidate cand : component.getLocalCandidates())
             if (cand instanceof HostCandidate)
                 startResolvingCandidate((HostCandidate) cand);

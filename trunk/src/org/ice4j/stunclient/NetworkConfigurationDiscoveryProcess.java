@@ -80,7 +80,6 @@ import org.ice4j.stack.*;
  *
  * @author Emil Ivov
  */
-
 public class NetworkConfigurationDiscoveryProcess
 {
     /**
@@ -93,11 +92,6 @@ public class NetworkConfigurationDiscoveryProcess
      * and that the discoverer is operational.
      */
     private boolean started = false;
-
-    /**
-     * The stack to use for STUN communication.
-     */
-    private StunStack stunStack = null;
 
     /**
      * The point where we'll be listening.
@@ -122,18 +116,29 @@ public class NetworkConfigurationDiscoveryProcess
     private DatagramSocket sock = null;
 
     /**
-     * Creates a StunAddressDiscoverer. In order to use it one must start the
-     * discoverer.
+     * The <tt>StunStack</tt> used by this instance for the purposes of STUN
+     * communication.
+     */
+    private final StunStack stunStack;
+
+    /**
+     * Initializes a <tt>StunAddressDiscoverer</tt> with a specific
+     * <tt>StunStack</tt>. In order to use it one must first start it.
      *
+     * @param stunStack the <tt>StunStack</tt> to be used by the new instance
      * @param localAddress  the address where the stack should bind.
      * @param serverAddress the address of the server to interrogate.
      */
-    public NetworkConfigurationDiscoveryProcess(TransportAddress localAddress,
-                                                TransportAddress serverAddress)
+    public NetworkConfigurationDiscoveryProcess(
+            StunStack stunStack,
+            TransportAddress localAddress, TransportAddress serverAddress)
     {
+        if (stunStack == null)
+            throw new NullPointerException("stunStack");
+
+        this.stunStack = stunStack;
         this.localAddress  = localAddress;
         this.serverAddress = serverAddress;
-
     }
 
     /**
@@ -146,12 +151,10 @@ public class NetworkConfigurationDiscoveryProcess
         sock.close();
         sock = null;
 
-        stunStack     = null;
         localAddress  = null;
         requestSender = null;
 
         this.started = false;
-
     }
 
     /**
@@ -162,8 +165,6 @@ public class NetworkConfigurationDiscoveryProcess
     public void start()
         throws IOException, StunException
     {
-        stunStack = StunStack.getInstance();
-
         sock = new SafeCloseDatagramSocket(localAddress);
 
         stunStack.addSocket(sock);

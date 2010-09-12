@@ -84,24 +84,28 @@ public class TransactionID
      * to that transaction's instance so that we could use it to for storing
      * application data.
      *
+     * @param stunStack the <tt>StunStack</tt> in the context of which the
+     * request to create a <tt>TransactionID</tt> is being made
      * @param transactionID the value of the ID.
      *
      * @return a reference to the (possibly already existing)
      * <tt>TransactionID</tt> corresponding to the value of
      * <tt>transactionID</tt>
      */
-    public static TransactionID createTransactionID(byte[] transactionID)
+    public static TransactionID createTransactionID(
+            StunStack stunStack,
+            byte[] transactionID)
     {
         //first check whether we can find a client or a server tran with the
         //specified id.
-        StunClientTransaction cliTran = StunStack.getInstance()
-            .getClientTransaction(transactionID);
+        StunClientTransaction cliTran
+            = stunStack.getClientTransaction(transactionID);
 
         if(cliTran != null)
             return cliTran.getTransactionID();
 
-        StunServerTransaction serTran = StunStack.getInstance()
-            .getServerTransaction(transactionID);
+        StunServerTransaction serTran
+            = stunStack.getServerTransaction(transactionID);
 
         if(serTran != null)
             return serTran.getTransactionID();
