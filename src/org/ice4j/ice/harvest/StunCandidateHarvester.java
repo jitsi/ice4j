@@ -294,4 +294,20 @@ public class StunCandidateHarvester
                 Thread.currentThread().interrupt();
         }
     }
+
+    /**
+     * Returns a <tt>String</tt> representation of this harvester containing its
+     * type and server address.
+     *
+     * @return a <tt>String</tt> representation of this harvester containing its
+     * type and server address.
+     */
+    @Override
+    public String toString()
+    {
+        String proto = (this instanceof TurnCandidateHarvester)
+                                ? "TURN"
+                                : "STUN";
+        return proto + " harvester for srvr: " + this.stunServer;
+    }
 }
