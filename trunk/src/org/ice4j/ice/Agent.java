@@ -201,7 +201,16 @@ public class Agent
     private TerminationThread terminationThread;
 
     /**
-     * Initializes an empty <tt>Agent</tt> with no streams, and no address.
+     * Some protocols, such as XMPP, need to be able to distinguish the separate
+     * ICE sessions that occur as a result of ICE restarts, which is why we need
+     * to keep track of generations. A generation is an index, starting at 0,
+     * that enables the parties to keep track of updates to the candidate
+     * throughout the life of the session.
+     */
+    private int generation = 0;
+
+    /**
+     * Creates an empty <tt>Agent</tt> with no streams, and no address
      */
     public Agent()
     {
@@ -1434,5 +1443,29 @@ public class Agent
         connCheckServer.stop();
 
         setState(terminationState);
+    }
+
+    /**
+     * Returns the current generation of this ICE Agent. A generation is an
+     * index, starting at 0, that enables the parties to keep track of updates
+     * to the candidate throughout the life of the session.
+     *
+     * @return the current generation of this ICE Agent
+     */
+    public int getGeneration()
+    {
+        return generation;
+    }
+
+    /**
+     * Specifies the current generation of this ICE Agent. A generation is an
+     * index, starting at 0, that enables the parties to keep track of updates
+     * to the candidate throughout the life of the session.
+     *
+     * @param generation the current generation of this ICE Agent
+     */
+    public void setGeneration(int generation)
+    {
+        this.generation = generation;
     }
 }

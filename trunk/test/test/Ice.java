@@ -279,8 +279,9 @@ public class Ice
                             new TransportAddress(hostname, port, Transport.UDP),
                             longTermCredential));
 
+        //STREAMS
         createStream(rtpPort, "audio", agent);
-//        createStream(rtpPort + 2, "video", agent);
+        createStream(rtpPort + 2, "video", agent);
 
         return agent;
     }
@@ -320,12 +321,12 @@ public class Ice
                         + (endTime - startTime) +" ms");
         startTime = endTime;
         //rtcpComp
-//        agent.createComponent(
-//                stream, Transport.UDP, rtpPort + 1, rtpPort + 1, rtpPort + 101);
+        agent.createComponent(
+                stream, Transport.UDP, rtpPort + 1, rtpPort + 1, rtpPort + 101);
 
-//        endTime = System.currentTimeMillis();
-//        System.out.println("RTCP Component created in "
-//                        + (endTime - startTime) +" ms");
+        endTime = System.currentTimeMillis();
+        System.out.println("RTCP Component created in "
+                        + (endTime - startTime) +" ms");
 
         return stream;
     }
