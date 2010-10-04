@@ -45,9 +45,8 @@ public class RemoteCandidate
                            long             priority)
     {
         super(transportAddress, parentComponent, type);
-        super.setFoundation(foundation);
+        setFoundation(foundation);
         setPriority(priority);
-
     }
 
     /**
@@ -98,6 +97,7 @@ public class RemoteCandidate
      * as "related" for this <tt>Candidate</tt> or <tt>null</tt> if they didn't
      * include it in SDP.
      */
+    @Override
     public TransportAddress getRelatedAddress()
     {
         return raddr;

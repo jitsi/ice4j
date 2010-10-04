@@ -17,7 +17,6 @@ import java.util.logging.*;
 
 import org.ice4j.*;
 import org.ice4j.ice.harvest.*;
-import org.ice4j.message.*;
 import org.ice4j.stack.*;
 
 /**
@@ -56,18 +55,18 @@ public class Agent
         = new PropertyChangeListener[0];
 
     /**
-     * The <tt>Logger</tt> used by the <tt>Agent</tt>
-     * class and its instances for logging output.
+     * The <tt>Logger</tt> used by the <tt>Agent</tt> class and its instances
+     * for logging output.
      */
-    private static final Logger logger = Logger
-                    .getLogger(Agent.class.getName());
+    private static final Logger logger
+        = Logger.getLogger(Agent.class.getName());
 
     /**
      * The LinkedHashMap used to store the media streams
      * This map preserves the insertion order of the media streams.
      */
-    private Map<String, IceMediaStream> mediaStreams
-                                = new LinkedHashMap<String, IceMediaStream>();
+    private final Map<String, IceMediaStream> mediaStreams
+        = new LinkedHashMap<String, IceMediaStream>();
 
     /**
      * The candidate harvester that we use to gather candidate on the local
@@ -119,7 +118,7 @@ public class Agent
      * the necessary triggered checks.
      */
     private final List<CandidatePair> preDiscoveredPairsQueue
-        = new Vector<CandidatePair>();
+        = new LinkedList<CandidatePair>();
 
     /**
      * The lock that we use while starting connectivity establishment.
@@ -467,11 +466,17 @@ public class Agent
                 = stateListeners.toArray(NO_STATE_CHANGE_LISTENERS);
         }
 
-        PropertyChangeEvent evt = new PropertyChangeEvent(
-                    this, PROPERTY_ICE_PROCESSING_STATE, oldState, newState);
+        if (stateListenersCopy.length != 0)
+        {
+            PropertyChangeEvent evt
+                = new PropertyChangeEvent(
+                        this,
+                        PROPERTY_ICE_PROCESSING_STATE,
+                        oldState, newState);
 
-        for(PropertyChangeListener l : stateListenersCopy)
-            l.propertyChange(evt);
+            for(PropertyChangeListener l : stateListenersCopy)
+                l.propertyChange(evt);
+        }
     }
 
     /**
@@ -772,7 +777,7 @@ public class Agent
     @Override
     public String toString()
     {
-        StringBuffer buff = new StringBuffer("ICE Agent (stream-count=");
+        StringBuilder buff = new StringBuilder("ICE Agent (stream-count=");
 
         buff.append(getStreamCount()).append(" ice-pwd:")
             .append(getLocalPassword());
@@ -782,11 +787,8 @@ public class Agent
             .append(getTieBreaker());
         buff.append("):\n");
 
-        List<IceMediaStream> streams = getStreams();
-        for(IceMediaStream stream : streams)
-        {
+        for(IceMediaStream stream : getStreams())
             buff.append(stream.toString()).append("\n");
-        }
 
         return buff.toString();
     }
@@ -956,8 +958,9 @@ public class Agent
      * @param priority the priority that the remote party assigned to
      * @param remoteUFrag the user fragment that we should be using when and if
      * we decide to send a check to <tt>remoteAddress</tt>.
-     * @param useCandidate indicates whether the incoming check {@link Request}
-     * contained the USE-CANDIDATE ICE attribute.
+     * @param useCandidate indicates whether the incoming check
+     * {@link org.ice4j.message.Request} contained the USE-CANDIDATE ICE
+     * attribute.
      */
     protected void incomingCheckReceived(TransportAddress remoteAddress,
                                          TransportAddress localAddress,
