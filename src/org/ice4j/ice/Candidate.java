@@ -260,6 +260,7 @@ public abstract class Candidate
      *
      * @throws java.lang.NullPointerException if <tt>obj</tt> is null;
      */
+    @Override
     public boolean equals(Object obj)
         throws NullPointerException
     {
@@ -614,10 +615,10 @@ public abstract class Candidate
      *
      * @return a <tt>String</tt> representation of this <tt>Candidate</tt>.
      */
+    @Override
     public String toString()
     {
-        StringBuffer buff
-            = new StringBuffer("candidate: ");
+        StringBuilder buff = new StringBuilder("candidate: ");
 
         buff.append(" ").append(getFoundation());
         buff.append(" ").append(getParentComponent().getComponentID());
