@@ -26,7 +26,13 @@ import org.ice4j.stack.*;
  * As defined in RFC 3264, an agent is the protocol implementation involved in
  * the offer/answer exchange. There are two agents involved in an offer/answer
  * exchange.
+ * </p>
  * <p>
+ * <b>Note</b>: An <tt>Agent</tt> instance should be explicitly prepared for
+ * garbage collection by calling {@link #free()} on it if timely freeing of the
+ * associated resources is of importance; otherwise, it will wait for the
+ * garbage collector to call {@link #finalize()} on it.
+ * </p>
  *
  * @author Emil Ivov
  * @author Lyubomir Marinov
@@ -241,8 +247,8 @@ public class Agent
     {
         IceMediaStream mediaStream
             = new IceMediaStream(Agent.this, mediaStreamName);
-        mediaStreams.put(mediaStreamName, mediaStream);
 
+        mediaStreams.put(mediaStreamName, mediaStream);
         return mediaStream;
     }
 
@@ -327,10 +333,8 @@ public class Agent
         //todo: run harvesters in a parallel manner
         synchronized(harvesters)
         {
-            for (CandidateHarvester h : harvesters )
-            {
+            for (CandidateHarvester h : harvesters)
                 h.harvest(component);
-            }
         }
 
         computeFoundations(component);
@@ -374,15 +378,12 @@ public class Agent
             for(Component cmp : stream.getComponents())
             {
                 if(cmp.getRemoteCandidateCount() == 0)
-                {
                     stream.removeComponent(cmp);
-                }
             }
 
             if(stream.getComponentCount() == 0)
                 removeStream(stream);
         }
-
     }
 
     /**
@@ -531,9 +532,7 @@ public class Agent
         List<LocalCandidate> candidates = component.getLocalCandidates();
 
         for (Candidate cand : candidates)
-        {
             foundationsRegistry.assignFoundation(cand);
-        }
     }
 
     /**
@@ -759,6 +758,7 @@ public class Agent
         {
             int i=0;
             Collection<IceMediaStream> streams = mediaStreams.values();
+
             for (IceMediaStream stream : streams)
             {
                 if (stream.getCheckList().isActive())
@@ -930,14 +930,13 @@ public class Agent
             Collection<IceMediaStream> streamsCollection
                 = mediaStreams.values();
 
-            for( IceMediaStream stream : streamsCollection)
+            for (IceMediaStream stream : streamsCollection)
             {
-                CandidatePair pair = stream.findCandidatePair(
-                                localAddress, remoteAddress);
+                CandidatePair pair
+                    = stream.findCandidatePair(localAddress, remoteAddress);
+
                 if( pair != null )
-                {
                     return pair;
-                }
             }
         }
 
@@ -1165,9 +1164,7 @@ public class Agent
         CheckList checkList = parentStream.getCheckList();
 
         if( checkList.getState() == CheckListState.RUNNING )
-        {
             checkList.handleNominationConfirmed(nominatedPair);
-        }
 
         //Once there is at least one nominated pair in the valid list for
         //every component of the media stream and the state of the
@@ -1240,9 +1237,7 @@ public class Agent
             Collection<IceMediaStream> streamsCol = mediaStreams.values();
 
             for( IceMediaStream stream : streamsCol)
-            {
                 num += stream.countHostCandidates();
-            }
         }
 
         return num;
@@ -1404,9 +1399,10 @@ public class Agent
         @Override
         public synchronized void run()
         {
-            long terminationDelay = Integer.getInteger(
-                            StackProperties.TERMINATION_DELAY,
-                            DEFAULT_TERMINATION_DELAY);
+            long terminationDelay
+                = Integer.getInteger(
+                        StackProperties.TERMINATION_DELAY,
+                        DEFAULT_TERMINATION_DELAY);
 
             if (terminationDelay >= 0)
             {
@@ -1414,12 +1410,12 @@ public class Agent
                 {
                     wait(terminationDelay);
                 }
-                catch (InterruptedException iex)
+                catch (InterruptedException ie)
                 {
                     logger.log(
                             Level.FINEST, "Interrupted while waiting. Will "
                                     +"speed up termination",
-                            iex);
+                            ie);
                 }
             }
 
@@ -1428,24 +1424,65 @@ public class Agent
     }
 
     /**
-     * Prepares everything associated with this {@link Agent} for garbage
-     * collection and moves it into the terminated state.
+     * Terminates this <tt>Agent</tt> by stopping the handling of connectivity
+     * checks and setting a specific termination state on it.
      *
      * @param terminationState the state that we'd like processing to terminate
-     * with or in other words {@link IceProcessingState#TERMINATED} or
+     * with i.e. either {@link IceProcessingState#TERMINATED} or
      * {@link IceProcessingState#FAILED}
      */
     private void terminate(IceProcessingState terminationState)
     {
-        // free candidates
-        for(IceMediaStream stream : getStreams())
-            removeStream(stream);
+        if (!IceProcessingState.FAILED.equals(terminationState)
+                && !IceProcessingState.TERMINATED.equals(terminationState))
+            throw new IllegalArgumentException("terminationState");
 
         // stop listening for checks
         connCheckClient.stop();
         connCheckServer.stop();
 
         setState(terminationState);
+    }
+
+    /**
+     * Called by the garbage collector when garbage collection determines that
+     * there are no more references to this instance. Calls {@link #free()} on
+     * this instance.
+     *
+     * @throws Throwable if anything goes wrong and the finalization of this
+     * instance is to be halted
+     * @see #free()
+     */
+    @Override
+    protected void finalize()
+        throws Throwable
+    {
+        free();
+
+        super.finalize();
+    }
+
+    /**
+     * Prepares this <tt>Agent</tt> for garbage collection by setting the
+     * {@link IceProcessingState#TERMINATED} state on it unless this
+     * <tt>Agent</tt> is in termination state already and  freeing its
+     * <tt>IceMediaStream</tt>s, <tt>Component</tt>s and <tt>Candidate</tt>s.
+     */
+    public void free()
+    {
+        /*
+         * Set the IceProcessingState#TERMINATED state on this Agent unless it
+         * is in a termination state already.
+         */
+        IceProcessingState state = getState();
+
+        if (!IceProcessingState.FAILED.equals(state)
+                && !IceProcessingState.TERMINATED.equals(state))
+            terminate(IceProcessingState.TERMINATED);
+
+        // Free its IceMediaStreams, Components and Candidates.
+        for(IceMediaStream stream : getStreams())
+            removeStream(stream);
     }
 
     /**

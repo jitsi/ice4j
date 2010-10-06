@@ -30,7 +30,7 @@ public class HostCandidateHarvester
     /**
      * Our class logger.
      */
-    private final Logger logger
+    private static final Logger logger
         = Logger.getLogger(HostCandidateHarvester.class.getName());
 
     /**
@@ -95,12 +95,15 @@ public class HostCandidateHarvester
                     //there seems to be a problem with this particular address
                     //let's just move on for now and hope we will find better
                     if (logger.isLoggable(Level.WARNING))
-                        logger.warning("Failed to create a socket for:"
-                                        +"\naddr:" + addr
-                                        +"\npreferredPort:" + preferredPort
-                                        +"\nminPort:" + minPort
-                                        +"\nmaxPort:" + maxPort
-                                        +"\nContinuing with next address");
+                    {
+                        logger.warning(
+                                "Failed to create a socket for:"
+                                    +"\naddr:" + addr
+                                    +"\npreferredPort:" + preferredPort
+                                    +"\nminPort:" + minPort
+                                    +"\nmaxPort:" + maxPort
+                                    +"\nContinuing with next address");
+                    }
                     continue;
                 }
 
@@ -204,18 +207,22 @@ public class HostCandidateHarvester
                                 = new MultiplexingDatagramSocket(port, laddr);
 
                 if(logger.isLoggable(Level.FINEST))
-                    logger.log(Level.FINEST,
-                           "just bound to: " + sock.getLocalSocketAddress());
+                {
+                    logger.log(
+                            Level.FINEST,
+                            "just bound to: " + sock.getLocalSocketAddress());
+                }
                 return sock;
             }
             catch (SocketException se)
             {
-                logger.log(Level.INFO,
-                    "Retrying a bind because of a failure to bind to address "
-                        + laddr + " and port " + port
-                        + " (" + se.getMessage() +")");
+                logger.log(
+                        Level.INFO,
+                        "Retrying a bind because of a failure to bind to"
+                            + " address " + laddr
+                            + " and port " + port
+                            + " (" + se.getMessage() +")");
                 logger.log(Level.INFO, "", se);
-
             }
 
             port ++;

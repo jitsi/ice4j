@@ -112,7 +112,6 @@
             <fileset dir="${dest}">
                 <patternset refid="dest.exclude"/>
                 <include name="**/*.*"/>
-
             </fileset>
         </jar>
     </target>
