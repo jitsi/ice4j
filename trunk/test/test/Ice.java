@@ -20,7 +20,7 @@ import org.ice4j.security.*;
  * both agents and make one of them run checks against the other.
  *
  * @author Emil Ivov
- * @author Lubomir Marinov
+ * @author Lyubomir Marinov
  */
 public class Ice
 {
@@ -118,16 +118,17 @@ public class Ice
                     "Agent entered the " + iceProcessingState + " state.");
             if(iceProcessingState == IceProcessingState.COMPLETED)
             {
-                System.out.println("Total ICE processing time: "
-                                + (processingEndTime - startTime) + "ms");
+                System.out.println(
+                        "Total ICE processing time: "
+                            + (processingEndTime - startTime) + "ms");
                 Agent agent = (Agent)evt.getSource();
                 List<IceMediaStream> streams = agent.getStreams();
 
                 for(IceMediaStream stream : streams)
                 {
                     String streamName = stream.getName();
-                    System.out.println("Pairs selected for stream: "
-                                        + streamName);
+                    System.out.println(
+                            "Pairs selected for stream: " + streamName);
                     List<Component> components = stream.getComponents();
 
                     for(Component cmp : components)
@@ -142,8 +143,7 @@ public class Ice
                 for(IceMediaStream stream : streams)
                 {
                     String streamName = stream.getName();
-                    System.out.println("Check list for  stream: "
-                                        + streamName);
+                    System.out.println("Check list for  stream: " + streamName);
                     //uncomment for a more verbose output
                     System.out.println(stream.getCheckList());
                 }
@@ -151,6 +151,13 @@ public class Ice
             else if(iceProcessingState == IceProcessingState.TERMINATED
                     || iceProcessingState == IceProcessingState.FAILED)
             {
+                /*
+                 * Though the process will be instructed to die, demonstrate
+                 * that Agent instances are to be explicitly prepared for
+                 * garbage collection.
+                 */
+                ((Agent) evt.getSource()).free();
+
                 System.exit(0);
             }
         }
