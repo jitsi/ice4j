@@ -243,19 +243,22 @@ class ConnectivityCheckClient
      */
     private void updateCheckListAndTimerStates(CandidatePair checkedPair)
     {
-        IceMediaStream stream = checkedPair.getParentComponent()
-            .getParentStream();
+        IceMediaStream stream
+            = checkedPair.getParentComponent().getParentStream();
         CheckList checkList = stream.getCheckList();
 
         //If all of the pairs in the check list are now either in the Failed or
         //Succeeded state:
         boolean allPairsDone = true;
+
         synchronized(checkList)
         {
             for(CandidatePair pair : checkList)
             {
-                if(pair.getState() != CandidatePairState.FAILED
-                   && pair.getState() != CandidatePairState.SUCCEEDED)
+                CandidatePairState pairState = pair.getState();
+
+                if((pairState != CandidatePairState.FAILED)
+                        && (pairState != CandidatePairState.SUCCEEDED))
                 {
                     allPairsDone = false;
                 }
@@ -267,10 +270,7 @@ class ConnectivityCheckClient
             //If there is not a pair in the valid list for each component of the
             //media stream, the state of the check list is set to Failed.
             if ( !stream.validListContainsAllComponents())
-            {
                 checkList.setState(CheckListState.FAILED);
-            }
-
 
             //For each frozen check list, the agent groups together all of the
             //pairs with the same foundation, and for each group, sets the
@@ -278,10 +278,12 @@ class ConnectivityCheckClient
             //there is more than one such pair, the one with the highest
             //priority is used.
             List<IceMediaStream> allOtherStreams = parentAgent.getStreams();
-            allOtherStreams.remove(checkList);
+
+            allOtherStreams.remove(stream);
             for (IceMediaStream anotherStream : allOtherStreams)
             {
                 CheckList anotherCheckList = anotherStream.getCheckList();
+
                 if(anotherCheckList.isFrozen())
                 {
                     anotherCheckList.computeInitialCheckListPairStates();
