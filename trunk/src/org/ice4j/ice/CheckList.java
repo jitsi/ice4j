@@ -50,8 +50,8 @@ public class CheckList
      * Contains {@link PropertyChangeListener}s registered with this {@link
      * Agent} and following its changes of state.
      */
-    private List<PropertyChangeListener> stateListeners
-                                = new LinkedList<PropertyChangeListener>();
+    private final List<PropertyChangeListener> stateListeners
+        = new LinkedList<PropertyChangeListener>();
 
     /**
      * The name of the {@link PropertyChangeEvent} that we use to deliver
@@ -242,17 +242,14 @@ public class CheckList
      *
      * @return A <tt>String</tt> representation of this collection.
      */
+    @Override
     public String toString()
     {
-        StringBuffer buff = new StringBuffer("CheckList. (num pairs=");
-        buff.append(size() + ")\n");
+        StringBuilder buff = new StringBuilder("CheckList. (num pairs=");
+        buff.append(size()).append(")\n");
 
-        Iterator<CandidatePair> pairs = iterator();
-
-        while(pairs.hasNext())
-        {
-            buff.append(pairs.next().toString()).append("\n");
-        }
+        for (CandidatePair pair : this)
+            buff.append(pair).append("\n");
 
         return buff.toString();
     }
@@ -306,12 +303,8 @@ public class CheckList
         }
 
         //now put the pairs we've selected in the Waiting state.
-        Iterator<CandidatePair> pairsIter = pairsToWait.values().iterator();
-
-        while(pairsIter.hasNext())
-        {
-            pairsIter.next().setStateWaiting();
-        }
+        for (CandidatePair pairToWait : pairsToWait.values())
+            pairToWait.setStateWaiting();
     }
 
     /**
@@ -323,9 +316,7 @@ public class CheckList
     {
         //first, determine the pairs that we'd need to put in the waiting state.
         for(CandidatePair pair : this)
-        {
             pair.computePriority();
-        }
     }
 
     /**

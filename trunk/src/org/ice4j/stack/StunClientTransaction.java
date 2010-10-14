@@ -367,7 +367,8 @@ class StunClientTransaction
                         stackCallback,
                         evt.getRawMessage(),
                         (Response) evt.getMessage(),
-                        this.request, getTransactionID()));
+                        this.request,
+                        getTransactionID()));
     }
 
     /**

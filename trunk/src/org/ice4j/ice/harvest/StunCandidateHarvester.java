@@ -208,9 +208,11 @@ public class StunCandidateHarvester
      * so that it would resolve them.
      *
      * @param component the {@link Component} that we'd like to gather candidate
-     * STUN <tt>Candidate</tt>s for.
+     * STUN <tt>Candidate</tt>s for
+     * @return  the <tt>LocalCandidate</tt>s gathered by this
+     * <tt>CandidateHarvester</tt>
      */
-    public void harvest(Component component)
+    public Collection<LocalCandidate> harvest(Component component)
     {
         stunStack = component.getParentStream().getParentAgent().getStunStack();
 
@@ -219,6 +221,29 @@ public class StunCandidateHarvester
                 startResolvingCandidate((HostCandidate) cand);
 
         waitForResolutionEnd();
+
+        /*
+         * Report the LocalCandidates gathered by this CandidateHarvester so
+         * that the harvest is sure to be considered successful.
+         */
+        Collection<LocalCandidate> candidates = new HashSet<LocalCandidate>();
+
+        synchronized (completedHarvests)
+        {
+            for (StunCandidateHarvest completedHarvest : completedHarvests)
+            {
+                LocalCandidate[] completedHarvestCandidates
+                    = completedHarvest.getCandidates();
+
+                if ((completedHarvestCandidates != null)
+                        && (completedHarvestCandidates.length != 0))
+                {
+                    candidates.addAll(
+                            Arrays.asList(completedHarvestCandidates));
+                }
+            }
+        }
+        return candidates;
     }
 
     /**

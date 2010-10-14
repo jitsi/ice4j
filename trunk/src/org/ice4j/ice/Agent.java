@@ -82,11 +82,11 @@ public class Agent
                                                 = new HostCandidateHarvester();
 
     /**
-     * The list of harvesters (i.e. STUN, TURN, and others) that the agent
-     * should use when gathering candidates for components.
+     * The set of harvesters (i.e. STUN, TURN, and others) that the agent should
+     * use when gathering candidates for components.
      */
-    private final List<CandidateHarvester> harvesters
-                                        = new ArrayList<CandidateHarvester>();
+    private final CandidateHarvesterSet harvesters
+        = new CandidateHarvesterSet();
 
     /**
      * We use the <tt>FoundationsRegistry</tt> to keep track of the foundations
@@ -288,8 +288,12 @@ public class Agent
                BindException
     {
         if(transport != Transport.UDP)
-            throw new IllegalArgumentException("This implementation does not "
-                            +" currently support transport: " + transport);
+        {
+            throw new IllegalArgumentException(
+                    "This implementation does not currently support transport: "
+                        + transport);
+        }
+
         Component component = stream.createComponent(transport);
 
         gatherCandidates(component, preferredPort, minPort, maxPort );
@@ -314,7 +318,7 @@ public class Agent
      * before giving up and throwinG an exception.
      *
      * @throws IllegalArgumentException if either <tt>minPort</tt> or
-     * <tt>maxPort</tt> is not a valid port number or if <tt>minPort >
+     * <tt>maxPort</tt> is not a valid port number or if <tt>minPort &gt;
      * maxPort</tt>.
      * @throws IOException if an error occurs while the underlying resolver lib
      * is gathering candidates and we end up without even a single one.
@@ -327,15 +331,11 @@ public class Agent
                IOException
     {
         hostCandidateHarvester.harvest(
-                        component, preferredPort, minPort, maxPort);
+                component,
+                preferredPort, minPort, maxPort);
 
-        //apply other harvesters here:
-        //todo: run harvesters in a parallel manner
-        synchronized(harvesters)
-        {
-            for (CandidateHarvester h : harvesters)
-                h.harvest(component);
-        }
+        //apply other harvesters here
+        harvesters.harvest(component);
 
         computeFoundations(component);
 
@@ -544,10 +544,7 @@ public class Agent
      */
     public void addCandidateHarvester(CandidateHarvester harvester)
     {
-        synchronized(harvesters)
-        {
-            harvesters.add(harvester);
-        }
+        harvesters.add(harvester);
     }
 
     /**

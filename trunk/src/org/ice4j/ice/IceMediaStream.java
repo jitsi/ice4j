@@ -92,8 +92,8 @@ public class IceMediaStream
      * Contains {@link PropertyChangeListener}s registered with this {@link
      * Agent} and following the various events it may be generating.
      */
-    private List<PropertyChangeListener> streamListeners
-                                = new LinkedList<PropertyChangeListener>();
+    private final List<PropertyChangeListener> streamListeners
+        = new LinkedList<PropertyChangeListener>();
 
     /**
      * The maximum number of candidate pairs that we should have in our check
@@ -160,6 +160,7 @@ public class IceMediaStream
      *
      * @return a <tt>String</tt> representation of this media stream.
      */
+    @Override
     public String toString()
     {
         StringBuffer buff = new StringBuffer( "media stream:")
@@ -167,11 +168,8 @@ public class IceMediaStream
         buff.append(" (component count=").append(getComponentCount())
             .append(")");
 
-        List<Component> components = getComponents();
-        for (Component cmp : components)
-        {
+        for (Component cmp : getComponents())
             buff.append("\n").append(cmp);
-        }
 
         return buff.toString();
     }
@@ -654,7 +652,7 @@ public class IceMediaStream
                     components.remove(pair.getParentComponent());
         }
 
-        return components.size() == 0;
+        return components.isEmpty();
     }
 
     /**
@@ -668,9 +666,7 @@ public class IceMediaStream
      */
     protected boolean allComponentsHaveSelected()
     {
-        List<Component> components = getComponents();
-
-        for(Component component : components)
+        for(Component component : getComponents())
             if(component.getSelectedPair() == null)
                 return false;
 
