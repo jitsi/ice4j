@@ -69,8 +69,8 @@ class ConnectivityCheckClient
      */
     public void startChecks()
     {
-        CheckList firstCheckList = parentAgent.getStreams().get(0)
-            .getCheckList();
+        CheckList firstCheckList
+            = parentAgent.getStreams().get(0).getCheckList();
 
         startChecks(firstCheckList);
     }
@@ -82,7 +82,7 @@ class ConnectivityCheckClient
      * @param checkList the {@link CheckList} to start client side connectivity
      * checks for.
      */
-    private void startChecks(CheckList checkList)
+    public void startChecks(CheckList checkList)
     {
         PaceMaker paceMaker = new PaceMaker(checkList);
 
@@ -261,6 +261,7 @@ class ConnectivityCheckClient
                         && (pairState != CandidatePairState.SUCCEEDED))
                 {
                     allPairsDone = false;
+                    break;
                 }
             }
         }

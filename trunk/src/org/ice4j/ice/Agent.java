@@ -1079,7 +1079,21 @@ public class Agent
         // enqueueing the pair in the triggered check queue.  The state of
         // the pair is then changed to Waiting.
         // Emil: This actually applies for all cases.
-        parentStream.getCheckList().scheduleTriggeredCheck(triggerPair);
+        /*
+         * Lyubomir: The connectivity checks for a CheckList are started
+         * elsewhere as soon as and only if the CheckList changes from fronzen
+         * to unfrozen. Since CheckList#scheduleTriggeredCheck will change
+         * triggerPair to Waiting and will thus unfreeze its CheckList, make
+         * sure that the connectivity checks for the CheckList are started.
+         * Otherwise, the connectivity checks for the CheckList may never be
+         * started (which may make the Agent remain running forever).
+         */
+        CheckList checkList = parentStream.getCheckList();
+        boolean wasFrozen = checkList.isFrozen();
+
+        checkList.scheduleTriggeredCheck(triggerPair);
+        if (wasFrozen && !checkList.isFrozen())
+            connCheckClient.startChecks(checkList);
     }
 
     /**

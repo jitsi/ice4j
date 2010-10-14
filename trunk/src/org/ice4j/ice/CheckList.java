@@ -207,9 +207,13 @@ public class CheckList
     {
         for (CandidatePair pair : this)
         {
-            if (pair.getState() != CandidatePairState.SUCCEEDED
-                && pair.getState() != CandidatePairState.FAILED)
+            CandidatePairState pairState = pair.getState();
+
+            if ((pairState != CandidatePairState.SUCCEEDED)
+                    && (pairState != CandidatePairState.FAILED))
+            {
                 return false;
+            }
         }
         return true;
     }
@@ -229,7 +233,6 @@ public class CheckList
             if (pair.getState() != CandidatePairState.FROZEN)
                 return false;
         }
-
         return true;
     }
 
