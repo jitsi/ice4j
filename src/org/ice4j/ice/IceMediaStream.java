@@ -603,7 +603,6 @@ public class IceMediaStream
                 if (pair.getFoundation().equals(foundation))
                     return true;
         }
-
         return false;
     }
 

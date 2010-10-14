@@ -102,7 +102,7 @@ class ConnectivityCheckServer
                         && request.containsAttribute(Attribute.ICE_CONTROLLED)))
         {
             if (!repairRoleConflict(evt))
-            return;
+                return;
         }
 
         long priority = extractPriority(request);
