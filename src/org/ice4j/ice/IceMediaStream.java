@@ -322,12 +322,8 @@ public class IceMediaStream
      */
     protected void createCheckList(List<CandidatePair> checkList)
     {
-        List<Component> componentsList = getComponents();
-
-        for(Component cmp : componentsList)
-        {
+        for(Component cmp : getComponents())
             createCheckList(cmp, checkList);
-        }
     }
 
     /**
@@ -348,12 +344,12 @@ public class IceMediaStream
         {
             for(Candidate remoteCnd : remoteCnds)
             {
-                if(!localCnd.canReach(remoteCnd))
-                    continue;
+                if(localCnd.canReach(remoteCnd))
+                {
+                    CandidatePair pair = new CandidatePair(localCnd, remoteCnd);
 
-                CandidatePair pair = new CandidatePair(localCnd, remoteCnd);
-
-                checkList.add(pair);
+                    checkList.add(pair);
+                }
             }
         }
     }
@@ -632,9 +628,9 @@ public class IceMediaStream
     }
 
     /**
-     * Returns <tt>false</tt> if there is at least one nominated {@link
+     * Returns <tt>true</tt> if there is at least one nominated {@link
      * CandidatePair} in the valid list for every {@link Component} of this
-     * stream and <tt>true</tt> otherwise.
+     * stream and <tt>false</tt> otherwise.
      *
      * @return <tt>true</tt> if there is at least one nominated {@link
      * CandidatePair} in the valid list for every {@link Component} of this

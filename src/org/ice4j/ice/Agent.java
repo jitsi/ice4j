@@ -237,11 +237,11 @@ public class Agent
     }
 
     /**
-     * Creates a new media stream and stores it
+     * Creates a new media stream and stores it.
      *
-     * @param mediaStreamName    the name of the media stream
+     * @param mediaStreamName the name of the media stream
      *
-     * @return a reference to the newly created <tt>IceMediaStream</tt>.
+     * @return the newly created and stored <tt>IceMediaStream</tt>
      */
     public IceMediaStream createMediaStream(String mediaStreamName)
     {
@@ -296,7 +296,20 @@ public class Agent
 
         Component component = stream.createComponent(transport);
 
-        gatherCandidates(component, preferredPort, minPort, maxPort );
+        gatherCandidates(component, preferredPort, minPort, maxPort);
+
+        /*
+         * Lyubomir: After we've gathered the LocalCandidate for a Component and
+         * before we've make them available to the caller, we have to make sure
+         * that the ConnectivityCheckServer is started. If there's been a
+         * previous connectivity establishment which has completed, it has
+         * stopped the ConnectivityCheckServer. If the ConnectivtyCheckServer is
+         * not started after we've made the gathered LocalCandidates available
+         * to the caller, the caller may send them and a connectivity check may
+         * arrive from the remote Agent.
+         */
+        connCheckServer.start();
+
         return component;
     }
 
@@ -501,7 +514,8 @@ public class Agent
     protected void initCheckLists()
     {
         //first init the check list.
-        List<IceMediaStream> streams = getStreams();
+        List<IceMediaStream> streams
+            = getStreamsWithPendingConnectivityEstablishment();
 
         //init the maximum number of check list entries per stream.
         int maxCheckListSize = Integer.getInteger(
@@ -729,6 +743,44 @@ public class Agent
         {
             return mediaStreams.size();
         }
+    }
+
+    /**
+     * Gets the <tt>IceMediaStream</tt>s registered with this <tt>Agent</tt> for
+     * which connectivity establishment is pending. For example, after a set of
+     * <tt>IceMediaStream</tt>s is registered with this <tt>Agent</tt>,
+     * connectivity establishment completes for them and then a new set of
+     * <tt>IceMediaStream</tt>s is registered with this <tt>Agent</tt>, the
+     * <tt>IceMediaStream</tt>s with pending connectivity establishment are
+     * those from the second set.
+     *
+     * @return a <tt>List</tt> of the <tt>IceMediaStream</tt>s registered with
+     * this <tt>Agent</tt> for which connectivity is pending.
+     */
+    List<IceMediaStream> getStreamsWithPendingConnectivityEstablishment()
+    {
+
+        /*
+         * Lyubomir: We want to support establishing connectivity for streams
+         * which have been created after connectivity has been established for
+         * previously created streams. That is why we will remove the streams
+         * which have their connectivity checks completed or failed i.e. these
+         * streams have been handled by a previous connectivity establishment.
+         */
+        List<IceMediaStream> streams = getStreams();
+        Iterator<IceMediaStream> streamIter = streams.iterator();
+
+        while (streamIter.hasNext())
+        {
+            IceMediaStream stream = streamIter.next();
+            CheckList checkList = stream.getCheckList();
+            CheckListState checkListState = checkList.getState();
+
+            if (CheckListState.COMPLETED.equals(checkListState)
+                    || CheckListState.FAILED.equals(checkListState))
+                streamIter.remove();
+        }
+        return streams;
     }
 
     /**

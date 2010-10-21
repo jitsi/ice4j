@@ -70,7 +70,10 @@ class ConnectivityCheckClient
     public void startChecks()
     {
         CheckList firstCheckList
-            = parentAgent.getStreams().get(0).getCheckList();
+            = parentAgent
+                .getStreamsWithPendingConnectivityEstablishment()
+                    .get(0)
+                        .getCheckList();
 
         startChecks(firstCheckList);
     }
