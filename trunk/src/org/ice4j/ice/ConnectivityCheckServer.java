@@ -19,6 +19,7 @@ import org.ice4j.stack.*;
  * checks.
  *
  * @author Emil Ivov
+ * @author Lyubomir Marinov
  */
 class ConnectivityCheckServer
     implements RequestListener,
@@ -28,13 +29,19 @@ class ConnectivityCheckServer
      * The <tt>Logger</tt> used by the <tt>ConnectivityCheckServer</tt>
      * class and its instances for logging output.
      */
-    private static final Logger logger = Logger
-                    .getLogger(ConnectivityCheckServer.class.getName());
+    private static final Logger logger
+        = Logger.getLogger(ConnectivityCheckServer.class.getName());
 
     /**
      * The agent that created us.
      */
     private final Agent parentAgent;
+
+    /**
+     * The indicator which determines whether this
+     * <tt>ConnectivityCheckServer</tt> is currently started.
+     */
+    private boolean started = false;
 
     /**
      * The <tt>StunStack </tt> that we will use for connectivity checks.
@@ -53,8 +60,9 @@ class ConnectivityCheckServer
         this.parentAgent = parentAgent;
 
         stunStack = this.parentAgent.getStunStack();
-        stunStack.addRequestListener(this);
         stunStack.getCredentialsManager().registerAuthority(this);
+
+        start();
     }
 
     /**
@@ -366,10 +374,26 @@ class ConnectivityCheckServer
     }
 
     /**
-     * Stops this server.
+     * Starts this <tt>ConnectivityCheckServer</tt>. If it is not currently
+     * running, does nothing.
+     */
+    public void start()
+    {
+        if (!started)
+        {
+            stunStack.addRequestListener(this);
+            started = true;
+        }
+    }
+
+    /**
+     * Stops this <tt>ConnectivityCheckServer</tt>. A stopped
+     * <tt>ConnectivityCheckServer</tt> can be restarted by calling
+     * {@link #start()} on it.
      */
     public void stop()
     {
         stunStack.removeRequestListener(this);
+        started = false;
     }
 }
