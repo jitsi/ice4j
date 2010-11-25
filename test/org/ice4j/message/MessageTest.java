@@ -14,7 +14,8 @@ import org.ice4j.*;
 import org.ice4j.attribute.*;
 import org.ice4j.stack.*;
 
-public class MessageTest extends TestCase {
+public class MessageTest extends TestCase
+{
     private Message bindingRequest       = null;
     private Message bindingResponse      = null;
 
@@ -31,7 +32,8 @@ public class MessageTest extends TestCase {
      */
     private StunStack stunStack;
 
-    protected void setUp() throws Exception {
+    protected void setUp() throws Exception
+    {
         super.setUp();
 
         msgFixture = new MsgFixture();
@@ -44,9 +46,9 @@ public class MessageTest extends TestCase {
         bindingRequest.setMessageType(Message.BINDING_REQUEST);
 
         changeRequest = AttributeFactory.createChangeRequestAttribute(
-                   msgFixture.CHANGE_IP_FLAG_1, msgFixture.CHANGE_PORT_FLAG_1);
+                   MsgFixture.CHANGE_IP_FLAG_1, MsgFixture.CHANGE_PORT_FLAG_1);
         bindingRequest.addAttribute(changeRequest);
-        bindingRequest.setTransactionID(msgFixture.TRANSACTION_ID);
+        bindingRequest.setTransactionID(MsgFixture.TRANSACTION_ID);
 
         //binding response
         bindingResponse = new Response();
@@ -54,26 +56,26 @@ public class MessageTest extends TestCase {
 
         mappedAddress = AttributeFactory.createMappedAddressAttribute(
             new TransportAddress(
-                            msgFixture.ADDRESS_ATTRIBUTE_ADDRESS,
-                            msgFixture.ADDRESS_ATTRIBUTE_PORT,
+                            MsgFixture.ADDRESS_ATTRIBUTE_ADDRESS,
+                            MsgFixture.ADDRESS_ATTRIBUTE_PORT,
                             Transport.UDP));
 
         bindingResponse.addAttribute(mappedAddress);
 
         sourceAddress = AttributeFactory.createSourceAddressAttribute(
             new TransportAddress(
-                            msgFixture.ADDRESS_ATTRIBUTE_ADDRESS_2,
-                            msgFixture.ADDRESS_ATTRIBUTE_PORT_2,
+                            MsgFixture.ADDRESS_ATTRIBUTE_ADDRESS_2,
+                            MsgFixture.ADDRESS_ATTRIBUTE_PORT_2,
                             Transport.UDP));
 
         bindingResponse.addAttribute(sourceAddress);
 
         changedAddress = AttributeFactory.createChangedAddressAttribute(
-            new TransportAddress( msgFixture.ADDRESS_ATTRIBUTE_ADDRESS_3,
-                        msgFixture.ADDRESS_ATTRIBUTE_PORT_3, Transport.UDP));
+            new TransportAddress( MsgFixture.ADDRESS_ATTRIBUTE_ADDRESS_3,
+                        MsgFixture.ADDRESS_ATTRIBUTE_PORT_3, Transport.UDP));
 
         bindingResponse.addAttribute(changedAddress);
-        bindingResponse.setTransactionID(msgFixture.TRANSACTION_ID);
+        bindingResponse.setTransactionID(MsgFixture.TRANSACTION_ID);
     }
 
     protected void tearDown() throws Exception
@@ -101,8 +103,8 @@ public class MessageTest extends TestCase {
      *
      * @throws StunException java.lang.Exception if we fail
      */
-
-    public void testAddAndGetAttribute() throws StunException {
+    public void testAddAndGetAttribute() throws StunException
+    {
 
         Response   message = new Response();
         message.setMessageType(Message.BINDING_SUCCESS_RESPONSE);
@@ -157,7 +159,7 @@ public class MessageTest extends TestCase {
      * Encodes a bindingRequest and then a binding response and checks whether
      * they match the corresponding binary arrays.
      *
-     * @throws StunException java.lang.Exception if we fail
+     * @throws Exception java.lang.Exception if we fail
      */
     public void testDecode()
         throws Exception
@@ -238,7 +240,8 @@ public class MessageTest extends TestCase {
     /**
      * Tests  whether attributes are properly counted
      */
-    public void testGetAttributeCount() {
+    public void testGetAttributeCount()
+    {
         int expectedReturn = 1;
         int actualReturn = bindingRequest.getAttributeCount();
         assertEquals("getAttributeCount failed for a bindingRequest",
@@ -252,7 +255,8 @@ public class MessageTest extends TestCase {
     /**
      * Test whether attributes are properly removed.
      */
-    public void testRemoveAttribute() {
+    public void testRemoveAttribute()
+    {
 
         bindingRequest.removeAttribute(changeRequest.getAttributeType());
 

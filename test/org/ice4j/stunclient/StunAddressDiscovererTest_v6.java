@@ -22,7 +22,8 @@ import org.ice4j.stack.*;
  * <p>Company: Net Research Team, Louis Pasteur University</p>
  * @author Emil Ivov
  */
-public class StunAddressDiscovererTest_v6 extends TestCase {
+public class StunAddressDiscovererTest_v6 extends TestCase
+{
     private NetworkConfigurationDiscoveryProcess  stunAddressDiscoverer = null;
     private TransportAddress discovererAddress
         = new TransportAddress("::1", 16555, Transport.UDP);
@@ -290,9 +291,4 @@ public class StunAddressDiscovererTest_v6 extends TestCase {
             expectedReturn, actualReturn);
 
     }
-
-
-
-
-
 }

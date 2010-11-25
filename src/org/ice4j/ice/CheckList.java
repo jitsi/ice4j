@@ -170,6 +170,7 @@ public class CheckList
                    || pair.getPriority() > highestPriorityPair.getPriority())
                 {
                     highestPriorityPair = pair;
+                    pair.setStateWaiting();
                 }
             }
         }
@@ -401,19 +402,23 @@ public class CheckList
      * nominated {@link CandidatePair} for the specified <tt>component</tt>
      * and <tt>false</tt> otherwise.
      *
-     * @param componennt the {@link Component} that we'd whose nominees we are
+     * @param component the {@link Component} that we'd whose nominees we are
      * interested in.
      *
      * @return <tt>true</tt> if this <tt>CheckList</tt> already contains a
      * nominated {@link CandidatePair} for the specified <tt>component</tt>
      * and <tt>false</tt> otherwise.
+     * @deprecated This method takes into account only candidates in the
+     * checklist. In case of peer reflexives candidates nominated, they do not
+     * appears in checklist but in valid list.
      */
+    @Deprecated
     public synchronized boolean containsNomineeForComponent(
-                                                        Component componennt)
+                                                        Component component)
     {
         for (CandidatePair pair : this)
         {
-            if (pair.isNominated() && pair.getParentComponent() == componennt)
+            if (pair.isNominated() && pair.getParentComponent() == component)
                 return true;
         }
 

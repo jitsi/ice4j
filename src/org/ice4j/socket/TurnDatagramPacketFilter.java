@@ -15,11 +15,11 @@ import org.ice4j.message.*;
 /**
  * Implements a <tt>DatagramPacketFilter</tt> which accepts
  * <tt>DatagramPacket</tt>s which represent TURN messages defined in
- * draft-ietf-behave-turn-16 "Traversal Using Relays around NAT (TURN): Relay
- * Extensions to Session Traversal Utilities for NAT (STUN)" and which are part
- * of the communication with a specific TURN server.
- * <tt>TurnDatagramPacketFilter</tt> does not accept TURN ChannelData messages
- * because they require knowledge of the value of the "Channel Number" field.
+ * RFC 5766 "Traversal Using Relays around NAT (TURN): Relay Extensions to
+ * Session Traversal Utilities for NAT (STUN)" and which are part of the
+ * communication with a specific TURN server. <tt>TurnDatagramPacketFilter</tt>
+ * does not accept TURN ChannelData messages because they require knowledge of
+ * the value of the "Channel Number" field.
  *
  * @author Lubomir Marinov
  */

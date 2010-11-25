@@ -375,6 +375,21 @@ public class Agent
             //change state before we actually send checks so that we don't
             //miss responses and hence the possibility to nominate a pair.
             setState(IceProcessingState.RUNNING);
+
+            //if we have received connectivity checks before RUNNING state,
+            //trigger a check for those candidate pairs.
+            if(this.preDiscoveredPairsQueue.size() > 0)
+            {
+                Iterator<CandidatePair> it = preDiscoveredPairsQueue.iterator();
+
+                while(it.hasNext())
+                {
+                    triggerCheck(it.next());
+                }
+
+                this.preDiscoveredPairsQueue.clear();
+            }
+
             connCheckClient.startChecks();
         }
     }
@@ -1029,7 +1044,9 @@ public class Agent
             = new CandidatePair(localCandidate, remoteCandidate);
 
         if(useCandidate)
+        {
             triggeredPair.setUseCandidateReceived();
+        }
 
         synchronized(startLock)
         {
@@ -1042,7 +1059,7 @@ public class Agent
             else
             {
                 //we are not started yet so we'd better wait until we get the
-                //remote candidates incase we are holding to a new PR one.
+                //remote candidates in case we are holding to a new PR one.
                 this.preDiscoveredPairsQueue.add(triggeredPair);
             }
         }
@@ -1133,7 +1150,7 @@ public class Agent
         // Emil: This actually applies for all cases.
         /*
          * Lyubomir: The connectivity checks for a CheckList are started
-         * elsewhere as soon as and only if the CheckList changes from fronzen
+         * elsewhere as soon as and only if the CheckList changes from frozen
          * to unfrozen. Since CheckList#scheduleTriggeredCheck will change
          * triggerPair to Waiting and will thus unfreeze its CheckList, make
          * sure that the connectivity checks for the CheckList are started.
@@ -1176,7 +1193,7 @@ public class Agent
      *
      * @see Agent#setNominationStrategy(NominationStrategy)
      */
-    public void nominate(CandidatePair pair)
+    public synchronized void nominate(CandidatePair pair)
         throws IllegalStateException
     {
         if(! isControlling() )
@@ -1185,12 +1202,14 @@ public class Agent
 
         Component parentComponent = pair.getParentComponent();
         IceMediaStream parentStream = parentComponent.getParentStream();
-        CheckList checkList = parentStream.getCheckList();
+        //CheckList checkList = parentStream.getCheckList();
 
         //If the pair is not already nominated and if its parent component
         //does not already contain a nominated pair - nominate it.
         if(!pair.isNominated()
-            && !checkList.containsNomineeForComponent(parentComponent))
+              && !parentStream.validListContainsNomineeForComponent(
+                      parentComponent))
+        /*    && !checkList.containsNomineeForComponent(parentComponent)) */
         {
             pair.nominate();
             pair.getParentComponent().getParentStream()
@@ -1267,6 +1286,7 @@ public class Agent
                 atLeastOneListSucceeded = true;
             }
         }
+
         //Once the state of each check list is Completed:
         //The agent sets the state of ICE processing overall to Completed.
         if(allListsEnded)

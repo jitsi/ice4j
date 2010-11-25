@@ -230,7 +230,6 @@ public class StunAddressDiscovererTest
         assertEquals(
             "The StunAddressDiscoverer failed for a no-udp environment.",
             expectedReturn, actualReturn);
-
     }
 
     /**

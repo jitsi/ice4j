@@ -119,7 +119,7 @@ class ConnectivityCheckServer
 
         //tell our address handler we saw a new remote address;
         parentAgent.incomingCheckReceived(evt.getRemoteAddress(),
-            evt.getLocalAddress(), priority, remoteUfrag, useCandidate);
+                evt.getLocalAddress(), priority, remoteUfrag, useCandidate);
 
         Response response = MessageFactory.createBindingResponse(
                         request, evt.getRemoteAddress());
@@ -127,7 +127,7 @@ class ConnectivityCheckServer
         try
         {
             stunStack.sendResponse(evt.getTransactionID().getBytes(),
-                response, evt.getLocalAddress(), evt.getRemoteAddress());
+                    response, evt.getLocalAddress(), evt.getRemoteAddress());
         }
         catch (Exception e)
         {
@@ -176,7 +176,7 @@ class ConnectivityCheckServer
     }
 
     /**
-     * Resolves a role conflicts by either sendinf a <tt>487 Role Conflict</tt>
+     * Resolves a role conflicts by either sending a <tt>487 Role Conflict</tt>
      * response or by changing this server's parent agent role. The method
      * returns <tt>true</tt> if the role conflict is silently resolved and
      * processing can continue. It returns <tt>false</tt> if we had to reply

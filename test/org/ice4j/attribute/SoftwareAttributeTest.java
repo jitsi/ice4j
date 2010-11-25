@@ -26,7 +26,8 @@ public class SoftwareAttributeTest extends TestCase
             (byte)(SoftwareAttribute.SOFTWARE>>8),
             (byte)(SoftwareAttribute.SOFTWARE & 0x00FF),
             0, (byte)softwareValue.length(),
-            't', 'u', 'r', 'n', 's', 'e', 'r','v', 'e', 'r', '.', 'o', 'r', 'g', 0x00, 0x00};
+            't', 'u', 'r', 'n', 's', 'e', 'r','v', 'e', 'r', '.', 'o', 'r', 'g',
+            0x00, 0x00};
 
     protected void setUp() throws Exception
     {

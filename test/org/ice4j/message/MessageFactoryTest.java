@@ -11,31 +11,33 @@ import junit.framework.*;
 import org.ice4j.*;
 import org.ice4j.attribute.*;
 
-public class MessageFactoryTest extends TestCase {
-    private MessageFactory messageFactory = null;
+public class MessageFactoryTest extends TestCase
+{
     private MsgFixture msgFixture;
 
-    public MessageFactoryTest(String name) {
+    public MessageFactoryTest(String name)
+    {
         super(name);
     }
 
-    protected void setUp() throws Exception {
+    protected void setUp() throws Exception
+    {
         super.setUp();
-        messageFactory = new MessageFactory();
         msgFixture = new MsgFixture();
 
         msgFixture.setUp();
     }
 
-    protected void tearDown() throws Exception {
-        messageFactory = null;
+    protected void tearDown() throws Exception
+    {
         msgFixture.tearDown();
 
         msgFixture = null;
         super.tearDown();
     }
 
-    public void testCreateBindingErrorResponse() throws StunException {
+    public void testCreateBindingErrorResponse() throws StunException
+    {
         char errorCode = 400;
 
         Response expectedReturn = new Response();
@@ -46,11 +48,12 @@ public class MessageFactoryTest extends TestCase {
         expectedReturn.addAttribute(errorCodeAtt);
 
         Message actualReturn
-            = messageFactory.createBindingErrorResponse(errorCode);
+            = MessageFactory.createBindingErrorResponse(errorCode);
         assertEquals("return value", expectedReturn, actualReturn);
     }
 
-    public void testCreateBindingErrorResponse1() throws StunException {
+    public void testCreateBindingErrorResponse1() throws StunException
+    {
         char errorCode = 400;
         String reasonPhrase = "Bad Request";
 
@@ -61,7 +64,7 @@ public class MessageFactoryTest extends TestCase {
             .createErrorCodeAttribute(errorCode, reasonPhrase);
         expectedReturn.addAttribute(errorCodeAtt);
 
-        Message actualReturn = messageFactory
+        Message actualReturn = MessageFactory
             .createBindingErrorResponse(errorCode, reasonPhrase);
         assertEquals("Failed to create an error code attribute.",
                         expectedReturn, actualReturn);
@@ -92,7 +95,7 @@ public class MessageFactoryTest extends TestCase {
         expectedReturn.addAttribute(unknownAtts);
 
         //create the same message using the factory
-        Message actualReturn = messageFactory
+        Message actualReturn = MessageFactory
             .createBindingErrorResponseUnknownAttributes(unknownAttributes);
         //compare
         assertEquals("return value", expectedReturn, actualReturn);
@@ -121,7 +124,7 @@ public class MessageFactoryTest extends TestCase {
         }
         expectedReturn.addAttribute(unknownAtts);
 
-        Message actualReturn = messageFactory
+        Message actualReturn = MessageFactory
             .createBindingErrorResponseUnknownAttributes(
                                            reasonPhrase, unknownAttributes);
         assertEquals("return value", expectedReturn, actualReturn);
@@ -137,7 +140,7 @@ public class MessageFactoryTest extends TestCase {
                     msgFixture.CHANGE_IP_FLAG_1, msgFixture.CHANGE_PORT_FLAG_1);
         bindingRequest.addAttribute(changeRequest);
 */
-        Request actualReturn = messageFactory.createBindingRequest();
+        Request actualReturn = MessageFactory.createBindingRequest();
         assertEquals("return value", expectedReturn, actualReturn);
     }
 
@@ -148,37 +151,37 @@ public class MessageFactoryTest extends TestCase {
         bindingResponse.setMessageType(Message.BINDING_SUCCESS_RESPONSE);
 
         Attribute mappedAddress = AttributeFactory.createMappedAddressAttribute(
-            new TransportAddress( msgFixture.ADDRESS_ATTRIBUTE_ADDRESS,
-                                  msgFixture.ADDRESS_ATTRIBUTE_PORT,
+            new TransportAddress( MsgFixture.ADDRESS_ATTRIBUTE_ADDRESS,
+                                  MsgFixture.ADDRESS_ATTRIBUTE_PORT,
                                   Transport.UDP));
 
         bindingResponse.addAttribute(mappedAddress);
 
         Attribute sourceAddress = AttributeFactory.createSourceAddressAttribute(
-            new TransportAddress( msgFixture.ADDRESS_ATTRIBUTE_ADDRESS_2,
-                                  msgFixture.ADDRESS_ATTRIBUTE_PORT_2,
+            new TransportAddress( MsgFixture.ADDRESS_ATTRIBUTE_ADDRESS_2,
+                                  MsgFixture.ADDRESS_ATTRIBUTE_PORT_2,
                                   Transport.UDP));
 
         bindingResponse.addAttribute(sourceAddress);
 
         Attribute changedAddress = AttributeFactory.
             createChangedAddressAttribute(
-                new TransportAddress( msgFixture.ADDRESS_ATTRIBUTE_ADDRESS_3,
-                                      msgFixture.ADDRESS_ATTRIBUTE_PORT_3,
+                new TransportAddress( MsgFixture.ADDRESS_ATTRIBUTE_ADDRESS_3,
+                                      MsgFixture.ADDRESS_ATTRIBUTE_PORT_3,
                                       Transport.UDP));
 
         bindingResponse.addAttribute(changedAddress);
 
         Message expectedReturn = bindingResponse;
-        Message actualReturn = messageFactory.create3482BindingResponse(
-            new TransportAddress( msgFixture.ADDRESS_ATTRIBUTE_ADDRESS,
-                                  msgFixture.ADDRESS_ATTRIBUTE_PORT,
+        Message actualReturn = MessageFactory.create3482BindingResponse(
+            new TransportAddress( MsgFixture.ADDRESS_ATTRIBUTE_ADDRESS,
+                                  MsgFixture.ADDRESS_ATTRIBUTE_PORT,
                                   Transport.UDP),
-            new TransportAddress( msgFixture.ADDRESS_ATTRIBUTE_ADDRESS_2,
-                                  msgFixture.ADDRESS_ATTRIBUTE_PORT_2,
+            new TransportAddress( MsgFixture.ADDRESS_ATTRIBUTE_ADDRESS_2,
+                                  MsgFixture.ADDRESS_ATTRIBUTE_PORT_2,
                                   Transport.UDP),
-            new TransportAddress( msgFixture.ADDRESS_ATTRIBUTE_ADDRESS_3,
-                                  msgFixture.ADDRESS_ATTRIBUTE_PORT_3,
+            new TransportAddress( MsgFixture.ADDRESS_ATTRIBUTE_ADDRESS_3,
+                                  MsgFixture.ADDRESS_ATTRIBUTE_PORT_3,
                                   Transport.UDP));
         assertEquals("return value", expectedReturn, actualReturn);
     }

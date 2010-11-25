@@ -12,15 +12,23 @@ import java.util.*;
 
 import org.ice4j.*;
 
-public class UnknownAttributesAttributeTest extends TestCase {
+/**
+ * Tests the UNKNOWN attribute class.
+ *
+ * @author Emil Ivov
+ */
+public class UnknownAttributesAttributeTest extends TestCase
+{
     private UnknownAttributesAttribute unknownAttributesAttribute = null;
     private MsgFixture binMessagesFixture;
 
-    public UnknownAttributesAttributeTest(String name) {
+    public UnknownAttributesAttributeTest(String name)
+    {
         super(name);
     }
 
-    protected void setUp() throws Exception {
+    protected void setUp() throws Exception
+    {
         super.setUp();
         unknownAttributesAttribute = new UnknownAttributesAttribute();
         binMessagesFixture = new MsgFixture();
@@ -28,7 +36,8 @@ public class UnknownAttributesAttributeTest extends TestCase {
         binMessagesFixture.setUp();
     }
 
-    protected void tearDown() throws Exception {
+    protected void tearDown() throws Exception
+    {
         unknownAttributesAttribute = null;
         binMessagesFixture.tearDown();
 
@@ -40,7 +49,8 @@ public class UnknownAttributesAttributeTest extends TestCase {
      * Verify the the constructed object has the correct (UNKNOWN-ATTRIBUTES)
      * type.
      */
-    public void testUnknownAttributesAttribute() {
+    public void testUnknownAttributesAttribute()
+    {
         unknownAttributesAttribute = new UnknownAttributesAttribute();
 
         assertEquals("UnknownAttributesAttribute() did not properly set the "
@@ -55,7 +65,8 @@ public class UnknownAttributesAttributeTest extends TestCase {
      * and that a second addition of the same id would not augment the attribute
      * count.
      */
-    public void testAddAttributeID() {
+    public void testAddAttributeID()
+    {
         char attributeID = 0x22; // unknown attribute id
 
         unknownAttributesAttribute.addAttributeID(attributeID);
@@ -85,7 +96,8 @@ public class UnknownAttributesAttributeTest extends TestCase {
      * Tests whether a sample binary array is properly decoded.
      * @throws StunException if anything goes wrong.
      */
-    public void testDecodeAttributeBody() throws StunException {
+    public void testDecodeAttributeBody() throws StunException
+    {
         //a copy of the array in the fixture:
         byte[] attributeValue = binMessagesFixture.unknownAttsDecodeTestValue;
 
@@ -126,7 +138,8 @@ public class UnknownAttributesAttributeTest extends TestCase {
      * Creates a new UnknownAttributesAttribute encodes it and assert equality
      * with binMessagesFixture.unknownAttsEncodeExpectedResult.
      */
-    public void testEncode() {
+    public void testEncode()
+    {
         byte[] expectedReturn = binMessagesFixture.unknownAttsEncodeExpectedResult;
 
         unknownAttributesAttribute.addAttributeID(
@@ -145,7 +158,8 @@ public class UnknownAttributesAttributeTest extends TestCase {
      * Tests the equals method against a null, a different and an identical
      * object.
      */
-    public void testEquals() {
+    public void testEquals()
+    {
         UnknownAttributesAttribute target = new UnknownAttributesAttribute();
 
         boolean expectedReturn = false;
@@ -173,7 +187,8 @@ public class UnknownAttributesAttributeTest extends TestCase {
      * Tests that getAttribute() return the correct attribute id, preserving
      * entry order.
      */
-    public void testGetAttribute() {
+    public void testGetAttribute()
+    {
         char expectedId1 = 20;
         char expectedId2 = 21;
 
@@ -194,7 +209,8 @@ public class UnknownAttributesAttributeTest extends TestCase {
      * Add some attributes and test whether their number is properly calculated.
      * Tests duplicate id handling as well.
      */
-    public void testGetAttributeCount() {
+    public void testGetAttributeCount()
+    {
         int expectedReturn = 5;
 
         unknownAttributesAttribute.addAttributeID((char)21);
@@ -213,7 +229,8 @@ public class UnknownAttributesAttributeTest extends TestCase {
      * Same as testGetAttributeID, only attribute attributes are extracted
      * through the getAttributes()'s iterator.
      */
-    public void testGetAttributes() {
+    public void testGetAttributes()
+    {
         char expectedId1 = 20;
         char expectedId2 = 21;
 
@@ -239,7 +256,8 @@ public class UnknownAttributesAttributeTest extends TestCase {
      * Test is first performed for an odd number of attributes and then again
      * (after adding another attribute id). Both results should be the same.
      */
-    public void testGetDataLength() {
+    public void testGetDataLength()
+    {
         char expectedReturn = 8;
 
         unknownAttributesAttribute.addAttributeID((char)20);
@@ -261,7 +279,8 @@ public class UnknownAttributesAttributeTest extends TestCase {
     /**
      * Tests whether getName returns a relevant name.
      */
-    public void testGetName() {
+    public void testGetName()
+    {
         String expectedReturn = "UNKNOWN-ATTRIBUTES";
         String actualReturn = unknownAttributesAttribute.getName();
         assertEquals("getName() return", expectedReturn, actualReturn);
