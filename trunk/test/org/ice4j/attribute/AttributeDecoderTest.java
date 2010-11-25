@@ -14,15 +14,18 @@ import junit.framework.*;
  * We have already tested individual decode methods, so our job here
  * is to verify that that AttributeDecoder.decode distributes the right way.
  */
-public class AttributeDecoderTest extends TestCase {
+public class AttributeDecoderTest extends TestCase
+{
     private MsgFixture msgFixture;
     private byte[] expectedAttributeValue = null;
 
-    public AttributeDecoderTest(String name) {
+    public AttributeDecoderTest(String name)
+    {
         super(name);
     }
 
-    protected void setUp() throws Exception {
+    protected void setUp() throws Exception
+    {
         super.setUp();
 
         msgFixture = new MsgFixture();
@@ -38,7 +41,8 @@ public class AttributeDecoderTest extends TestCase {
         msgFixture.setUp();
     }
 
-    protected void tearDown() throws Exception {
+    protected void tearDown() throws Exception
+    {
         msgFixture.tearDown();
 
         msgFixture = null;

@@ -12,15 +12,23 @@ import java.util.Arrays;
 
 import org.ice4j.*;
 
-public class ChangeRequestAttributeTest extends TestCase {
+/**
+ * Tests the CHANGE-REQUEST attribute class.
+ *
+ * @author Emil Ivov
+ */
+public class ChangeRequestAttributeTest extends TestCase
+{
     private ChangeRequestAttribute changeRequestAttribute = null;
     private MsgFixture binMessagesFixture;
 
-    public ChangeRequestAttributeTest(String name) {
+    public ChangeRequestAttributeTest(String name)
+    {
         super(name);
     }
 
-    protected void setUp() throws Exception {
+    protected void setUp() throws Exception
+    {
         super.setUp();
         changeRequestAttribute = new ChangeRequestAttribute();
         binMessagesFixture = new MsgFixture();
@@ -28,7 +36,8 @@ public class ChangeRequestAttributeTest extends TestCase {
         binMessagesFixture.setUp();
     }
 
-    protected void tearDown() throws Exception {
+    protected void tearDown() throws Exception
+    {
         changeRequestAttribute = null;
         binMessagesFixture.tearDown();
 
@@ -39,7 +48,8 @@ public class ChangeRequestAttributeTest extends TestCase {
     /**
      * Test whether the constructed object has the proper type.
      */
-    public void testChangeRequestAttribute() {
+    public void testChangeRequestAttribute()
+    {
         changeRequestAttribute = new ChangeRequestAttribute();
 
         assertEquals(
@@ -64,11 +74,11 @@ public class ChangeRequestAttributeTest extends TestCase {
         changeRequestAttribute.decodeAttributeBody(attributeValue, offset, length);
 
         assertEquals("decodeAttributeBody() did not properly decode the changeIpFlag",
-                     binMessagesFixture.CHANGE_IP_FLAG_1,
+                     MsgFixture.CHANGE_IP_FLAG_1,
                      changeRequestAttribute.getChangeIpFlag()
                      );
         assertEquals("decodeAttributeBody() did not properly decode the changePortFlag",
-                     binMessagesFixture.CHANGE_PORT_FLAG_1,
+                     MsgFixture.CHANGE_PORT_FLAG_1,
                      changeRequestAttribute.getChangePortFlag()
                      );
 
@@ -76,11 +86,11 @@ public class ChangeRequestAttributeTest extends TestCase {
         attributeValue = binMessagesFixture.chngReqTestValue2;
         changeRequestAttribute.decodeAttributeBody(attributeValue, offset, length);
         assertEquals("decodeAttributeBody() did not properly decode the changeIpFlag",
-                     binMessagesFixture.CHANGE_IP_FLAG_2,
+                     MsgFixture.CHANGE_IP_FLAG_2,
                      changeRequestAttribute.getChangeIpFlag()
                      );
         assertEquals("decodeAttributeBody() did not properly decode the changePortFlag",
-                     binMessagesFixture.CHANGE_PORT_FLAG_2,
+                     MsgFixture.CHANGE_PORT_FLAG_2,
                      changeRequestAttribute.getChangePortFlag()
                      );
 
@@ -91,13 +101,14 @@ public class ChangeRequestAttributeTest extends TestCase {
     /**
      * Create sample objects and test whether they encode properly.
      */
-    public void testEncode() {
+    public void testEncode()
+    {
         byte[] expectedReturn = binMessagesFixture.chngReqTestValue1;
 
         changeRequestAttribute = new ChangeRequestAttribute();
 
-        changeRequestAttribute.setChangeIpFlag(binMessagesFixture.CHANGE_IP_FLAG_1);
-        changeRequestAttribute.setChangePortFlag(binMessagesFixture.CHANGE_PORT_FLAG_1);
+        changeRequestAttribute.setChangeIpFlag(MsgFixture.CHANGE_IP_FLAG_1);
+        changeRequestAttribute.setChangePortFlag(MsgFixture.CHANGE_PORT_FLAG_1);
 
         byte[] actualReturn = changeRequestAttribute.encode();
         assertTrue("Object did not encode properly.",
@@ -107,8 +118,8 @@ public class ChangeRequestAttributeTest extends TestCase {
         expectedReturn = binMessagesFixture.chngReqTestValue2;
         changeRequestAttribute = new ChangeRequestAttribute();
 
-        changeRequestAttribute.setChangeIpFlag(binMessagesFixture.CHANGE_IP_FLAG_2);
-        changeRequestAttribute.setChangePortFlag(binMessagesFixture.CHANGE_PORT_FLAG_2);
+        changeRequestAttribute.setChangeIpFlag(MsgFixture.CHANGE_IP_FLAG_2);
+        changeRequestAttribute.setChangePortFlag(MsgFixture.CHANGE_PORT_FLAG_2);
 
         actualReturn = changeRequestAttribute.encode();
         assertTrue("Object did not encode properly.",
@@ -121,7 +132,8 @@ public class ChangeRequestAttributeTest extends TestCase {
      * Tests the equals method against a null, a different and an identical
      * object.
      */
-    public void testEquals() {
+    public void testEquals()
+    {
         ChangeRequestAttribute target = null;
         boolean expectedReturn = false;
 
@@ -161,7 +173,8 @@ public class ChangeRequestAttributeTest extends TestCase {
     /**
      * Test whether the returned value is always 4.
      */
-    public void testGetDataLength() {
+    public void testGetDataLength()
+    {
         char expectedReturn = 4; // constant 4 bytes of data
         char actualReturn = changeRequestAttribute.getDataLength();
         assertEquals("data length returned an invalid value",
@@ -171,7 +184,8 @@ public class ChangeRequestAttributeTest extends TestCase {
     /**
      * Test whether we get a relevant name.
      */
-    public void testGetName() {
+    public void testGetName()
+    {
         String expectedReturn = "CHANGE-REQUEST";
         String actualReturn = changeRequestAttribute.getName();
         assertEquals("Invalid name", expectedReturn, actualReturn);

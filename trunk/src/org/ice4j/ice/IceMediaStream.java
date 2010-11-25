@@ -493,7 +493,6 @@ public class IceMediaStream
         return null;
     }
 
-
     /**
      * Returns the {@link CandidatePair} with the specified remote and local
      * addresses or <tt>null</tt> if neither of the {@link CheckList}s in this
@@ -598,6 +597,34 @@ public class IceMediaStream
             for(CandidatePair pair : validList)
                 if (pair.getFoundation().equals(foundation))
                     return true;
+        }
+        return false;
+    }
+
+    /**
+     * Returns <tt>true</tt> if this stream's <tt>validList</tt> contains a
+     * pair that is nominated for the specified <tt>Component</tt> and
+     * <tt>false</tt> otherwise.
+     *
+     * @param component the <tt>Component</tt> we'd like to search our
+     * validList for.
+     *
+     * @return <tt>true</tt> if this stream's <tt>validList</tt> contains a
+     * pair that is nominated for the specified <tt>Component</tt> and
+     * <tt>false</tt> otherwise.
+     */
+    protected boolean validListContainsNomineeForComponent(Component component)
+    {
+        synchronized(validList)
+        {
+            for(CandidatePair pair : validList)
+            {
+                if (pair.isNominated() && pair.getParentComponent() ==
+                    component)
+                {
+                    return true;
+                }
+            }
         }
         return false;
     }
@@ -744,7 +771,7 @@ public class IceMediaStream
         }
 
         PropertyChangeEvent evt = new PropertyChangeEvent(
-                        source, PROPERTY_PAIR_VALIDATED, oldValue, newValue);
+                        source, propertyName, oldValue, newValue);
 
         for(PropertyChangeListener l : listenersCopy)
         {

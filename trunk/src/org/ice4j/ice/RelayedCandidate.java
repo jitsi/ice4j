@@ -28,7 +28,7 @@ public class RelayedCandidate
 
     /**
      * The <tt>RelayedCandidateDatagramSocket</tt> of this
-     * <tt>RelayedCandidate</tt>. 
+     * <tt>RelayedCandidate</tt>.
      */
     private RelayedCandidateDatagramSocket relayedCandidateDatagramSocket;
 
@@ -49,7 +49,7 @@ public class RelayedCandidate
      * specific <tt>TransportAddress</tt> harvested through a specific
      * <tt>HostCandidate</tt> and a TURN server with a specific
      * <tt>TransportAddress</tt>.
-     * 
+     *
      * @param transportAddress the <tt>TransportAddress</tt> to be represented
      * by the new instance
      * @param turnCandidateHarvest the <tt>TurnCandidateHarvest</tt> which has

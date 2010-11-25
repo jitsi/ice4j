@@ -485,7 +485,7 @@ public class DelegatingDatagramSocket
     @Override
     public boolean isClosed()
     {
-        return (delegate == null) ? super.isClosed() : this.isClosed();
+        return (delegate == null) ? super.isClosed() : delegate.isClosed();
     }
 
     /**
@@ -498,7 +498,8 @@ public class DelegatingDatagramSocket
     @Override
     public boolean isConnected()
     {
-        return (delegate == null) ? super.isConnected() : this.isConnected();
+        return (delegate == null) ? super.isConnected() :
+            delegate.isConnected();
     }
 
     /**

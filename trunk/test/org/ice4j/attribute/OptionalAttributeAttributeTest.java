@@ -47,8 +47,6 @@ public class OptionalAttributeAttributeTest extends TestCase
         super.tearDown();
     }
 
-
-
     /**
      * Test whether sample binary arrays are correctly decoded.
      * @throws StunException if anything goes wrong.

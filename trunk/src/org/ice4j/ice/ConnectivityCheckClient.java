@@ -164,12 +164,15 @@ class ConnectivityCheckClient
 
         try
         {
+            TransportAddress localAddr = localCandidate.getBase().
+                getTransportAddress();
+
             tran
                 = stunStack.sendRequest(
                         request,
                         candidatePair
                             .getRemoteCandidate().getTransportAddress(),
-                        localCandidate.getTransportAddress(),
+                        localAddr,
                         this,
                         tran);
             if(logger.isLoggable(Level.FINEST))
@@ -402,7 +405,8 @@ class ConnectivityCheckClient
         CheckList parentCheckList = parentStream.getCheckList();
 
         for(CandidatePair pair : parentCheckList)
-            if (pair.getState() == CandidatePairState.FROZEN)
+            if ((pair.getState() == CandidatePairState.FROZEN) &&
+                    (checkedPair.getFoundation().equals(pair.getFoundation())))
                 pair.setStateWaiting();
 
         // The agent examines the check list for all other streams in turn
@@ -484,9 +488,10 @@ class ConnectivityCheckClient
     {
         CandidatePair pair = ((CandidatePair)evt.getTransactionID()
                         .getApplicationData());
+        TransportAddress localAddr = pair.getLocalCandidate().getBase().
+            getTransportAddress();
 
-        boolean sym = pair.getLocalCandidate().getTransportAddress()
-                                        .equals(evt.getLocalAddress())
+        boolean sym = localAddr.equals(evt.getLocalAddress())
            && pair.getRemoteCandidate().getTransportAddress()
                                         .equals(evt.getRemoteAddress());
 
@@ -640,7 +645,8 @@ class ConnectivityCheckClient
                         }
                         catch (InterruptedException e)
                         {
-                            logger.log(Level.FINER, "PaceMake got interrupted", e);
+                            logger.log(Level.FINER, "PaceMaker got interrupted",
+                                    e);
                         }
 
                         if (!running)

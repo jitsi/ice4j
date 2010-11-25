@@ -337,13 +337,13 @@ public abstract class Candidate
      */
     public long computePriorityForType(CandidateType candidateType)
     {
-        //According to the ICE speck we compute priority this way:
+        //According to the ICE spec we compute priority this way:
         //priority = (2^24)*(type preference) +
         //           (2^8)*(local preference) +
         //           (2^0)*(256 - component ID)
 
-        return (long)( getTypePreference(candidateType)  << 24 )+
-               (long)( getLocalPreference()              << 8  )+
+        return (long) (getTypePreference(candidateType)  << 24) +
+               (long) (getLocalPreference()              << 8 ) +
                (long) (256 - getParentComponent().getComponentID());
 
     }
@@ -421,7 +421,6 @@ public abstract class Candidate
         //from a VPN interface SHOULD have a priority of 0.
         if(isVirtual())
             return MIN_LOCAL_PREFERENCE;
-
 
         InetAddress addr = getTransportAddress().getAddress();
 

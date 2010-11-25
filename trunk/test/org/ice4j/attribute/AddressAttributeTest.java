@@ -320,10 +320,10 @@ public class AddressAttributeTest extends TestCase {
 
         assertEquals(
             "AddressAttribute.decode() did not properly decode the port field.",
-            msgFixture.ADDRESS_ATTRIBUTE_PORT, addressAttribute.getPort());
+            MsgFixture.ADDRESS_ATTRIBUTE_PORT, addressAttribute.getPort());
         assertTrue(
             "AddressAttribute.decode() did not properly decode the address field.",
-            Arrays.equals( msgFixture.ADDRESS_ATTRIBUTE_ADDRESS,
+            Arrays.equals( MsgFixture.ADDRESS_ATTRIBUTE_ADDRESS,
             addressAttribute.getAddressBytes()));
 
 
@@ -342,10 +342,10 @@ public class AddressAttributeTest extends TestCase {
 
 
         assertEquals("decode() failed for an IPv6 Addr's port.",
-                     msgFixture.ADDRESS_ATTRIBUTE_PORT,
+                     MsgFixture.ADDRESS_ATTRIBUTE_PORT,
                      addressAttribute.getPort());
         assertTrue("AddressAttribute.decode() failed for an IPv6 address.",
-                     Arrays.equals( msgFixture.ADDRESS_ATTRIBUTE_ADDRESS_V6,
+                     Arrays.equals( MsgFixture.ADDRESS_ATTRIBUTE_ADDRESS_V6,
                      addressAttribute.getAddressBytes()));
 
 
@@ -354,7 +354,7 @@ public class AddressAttributeTest extends TestCase {
     /**
      * Test whether attributes are properly encoded.
      *
-     * @throws StunException java.lang.Exception if we fail
+     * @throws Exception java.lang.Exception if we fail
      */
     public void testEncode()
         throws Exception
@@ -362,8 +362,8 @@ public class AddressAttributeTest extends TestCase {
         byte[] expectedReturn = msgFixture.mappedAddress;
 
         addressAttribute.setAddress(
-            new TransportAddress(msgFixture.ADDRESS_ATTRIBUTE_ADDRESS,
-                                 msgFixture.ADDRESS_ATTRIBUTE_PORT,
+            new TransportAddress(MsgFixture.ADDRESS_ATTRIBUTE_ADDRESS,
+                                 MsgFixture.ADDRESS_ATTRIBUTE_PORT,
                                  Transport.UDP));
 
         byte[] actualReturn = addressAttribute.encode();
@@ -375,7 +375,7 @@ public class AddressAttributeTest extends TestCase {
     /**
      * Test whether attributes are properly encoded.
      *
-     * @throws StunException java.lang.Exception if we fail
+     * @throws Exception java.lang.Exception if we fail
      */
     public void testEncodev6()
         throws Exception
@@ -383,8 +383,8 @@ public class AddressAttributeTest extends TestCase {
         byte[] expectedReturn = msgFixture.mappedAddressv6;
 
         addressAttribute.setAddress(
-            new TransportAddress(msgFixture.ADDRESS_ATTRIBUTE_ADDRESS_V6,
-                        msgFixture.ADDRESS_ATTRIBUTE_PORT, Transport.UDP));
+            new TransportAddress(MsgFixture.ADDRESS_ATTRIBUTE_ADDRESS_V6,
+                        MsgFixture.ADDRESS_ATTRIBUTE_PORT, Transport.UDP));
 
         byte[] actualReturn = addressAttribute.encode();
         assertTrue("An AddressAttribute did not properly encode an IPv6 addr.",
@@ -396,7 +396,7 @@ public class AddressAttributeTest extends TestCase {
      * Tests the equals method against a null, a different and an identical
      * object.
      *
-     * @throws StunException java.lang.Exception if we fail
+     * @throws Exception java.lang.Exception if we fail
      */
     public void testEquals()
         throws Exception
@@ -412,13 +412,13 @@ public class AddressAttributeTest extends TestCase {
         //difference test
         target = new MappedAddressAttribute();
 
-        char port = (char)(msgFixture.ADDRESS_ATTRIBUTE_PORT + 1 );
+        char port = (char)(MsgFixture.ADDRESS_ATTRIBUTE_PORT + 1 );
         target.setAddress(  new TransportAddress(
-            msgFixture.ADDRESS_ATTRIBUTE_ADDRESS, port, Transport.UDP));
+            MsgFixture.ADDRESS_ATTRIBUTE_ADDRESS, port, Transport.UDP));
 
         addressAttribute.setAddress( new TransportAddress(
-            msgFixture.ADDRESS_ATTRIBUTE_ADDRESS,
-            msgFixture.ADDRESS_ATTRIBUTE_PORT,
+            MsgFixture.ADDRESS_ATTRIBUTE_ADDRESS,
+            MsgFixture.ADDRESS_ATTRIBUTE_PORT,
             Transport.UDP));
 
         expectedReturn = false;
@@ -429,8 +429,8 @@ public class AddressAttributeTest extends TestCase {
 
         //equality test
         target.setAddress( new TransportAddress(
-            msgFixture.ADDRESS_ATTRIBUTE_ADDRESS,
-            msgFixture.ADDRESS_ATTRIBUTE_PORT, Transport.UDP ));
+            MsgFixture.ADDRESS_ATTRIBUTE_ADDRESS,
+            MsgFixture.ADDRESS_ATTRIBUTE_PORT, Transport.UDP ));
 
         expectedReturn = true;
         actualReturn = addressAttribute.equals(target);
@@ -440,12 +440,12 @@ public class AddressAttributeTest extends TestCase {
 
         //ipv6 equality test
         target.setAddress(  new TransportAddress(
-            msgFixture.ADDRESS_ATTRIBUTE_ADDRESS_V6,
-            msgFixture.ADDRESS_ATTRIBUTE_PORT, Transport.UDP));
+            MsgFixture.ADDRESS_ATTRIBUTE_ADDRESS_V6,
+            MsgFixture.ADDRESS_ATTRIBUTE_PORT, Transport.UDP));
 
         addressAttribute.setAddress(new TransportAddress(
-            msgFixture.ADDRESS_ATTRIBUTE_ADDRESS_V6,
-            msgFixture.ADDRESS_ATTRIBUTE_PORT,
+            MsgFixture.ADDRESS_ATTRIBUTE_ADDRESS_V6,
+            MsgFixture.ADDRESS_ATTRIBUTE_PORT,
             Transport.UDP));
 
         expectedReturn = true;
@@ -457,7 +457,7 @@ public class AddressAttributeTest extends TestCase {
     /**
      * Tests whether data length is properly calculated.
      *
-     * @throws StunException java.lang.Exception if we fail
+     * @throws Exception java.lang.Exception if we fail
      */
     public void testGetDataLength()
         throws Exception
@@ -465,8 +465,8 @@ public class AddressAttributeTest extends TestCase {
         char expectedReturn = 8;//1-padding + 1-family + 2-port + 4-address
 
         addressAttribute.setAddress( new TransportAddress(
-            msgFixture.ADDRESS_ATTRIBUTE_ADDRESS,
-            msgFixture.ADDRESS_ATTRIBUTE_PORT,
+            MsgFixture.ADDRESS_ATTRIBUTE_ADDRESS,
+            MsgFixture.ADDRESS_ATTRIBUTE_PORT,
             Transport.UDP));
 
         char actualReturn = addressAttribute.getDataLength();
@@ -476,8 +476,8 @@ public class AddressAttributeTest extends TestCase {
 
         expectedReturn = 20;//1-padding + 1-family + 2-port + 16-address
         addressAttribute.setAddress( new TransportAddress(
-            msgFixture.ADDRESS_ATTRIBUTE_ADDRESS_V6,
-            msgFixture.ADDRESS_ATTRIBUTE_PORT, Transport.UDP));
+            MsgFixture.ADDRESS_ATTRIBUTE_ADDRESS_V6,
+            MsgFixture.ADDRESS_ATTRIBUTE_PORT, Transport.UDP));
 
         actualReturn = addressAttribute.getDataLength();
 
@@ -487,14 +487,16 @@ public class AddressAttributeTest extends TestCase {
 
     /**
      * Tests that the address family is always 1.
+     *
+     * @throws Exception java.lang.Exception if we fail
      */
     public void testGetFamily()
         throws Exception
     {
         byte expectedReturn = 1;
         addressAttribute.setAddress(new TransportAddress(
-            msgFixture.ADDRESS_ATTRIBUTE_ADDRESS,
-            msgFixture.ADDRESS_ATTRIBUTE_PORT, Transport.UDP));
+            MsgFixture.ADDRESS_ATTRIBUTE_ADDRESS,
+            MsgFixture.ADDRESS_ATTRIBUTE_PORT, Transport.UDP));
         byte actualReturn = addressAttribute.getFamily();
         assertEquals("Address family was not 1 for an IPv4",
                      expectedReturn, actualReturn);
@@ -502,8 +504,8 @@ public class AddressAttributeTest extends TestCase {
         //ipv6
         expectedReturn = 2;
         addressAttribute.setAddress(new TransportAddress(
-                       msgFixture.ADDRESS_ATTRIBUTE_ADDRESS_V6,
-                       msgFixture.ADDRESS_ATTRIBUTE_PORT, Transport.UDP));
+                       MsgFixture.ADDRESS_ATTRIBUTE_ADDRESS_V6,
+                       MsgFixture.ADDRESS_ATTRIBUTE_PORT, Transport.UDP));
         actualReturn = addressAttribute.getFamily();
         assertEquals("Address family was not 2 for an IPv6 address",
                      expectedReturn, actualReturn);
