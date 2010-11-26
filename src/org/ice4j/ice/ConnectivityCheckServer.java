@@ -124,6 +124,17 @@ class ConnectivityCheckServer
         Response response = MessageFactory.createBindingResponse(
                         request, evt.getRemoteAddress());
 
+        /* add USERNAME and MESSAGE-INTEGRITY attribute in the response */
+        Attribute usernameAttribute = AttributeFactory.createUsernameAttribute(
+                parentAgent.generateLocalUserName());
+
+        Attribute messageIntegrityAttribute =
+            AttributeFactory.createMessageIntegrityAttribute(
+                parentAgent.generateLocalUserName());
+
+        response.addAttribute(usernameAttribute);
+        response.addAttribute(messageIntegrityAttribute);
+
         try
         {
             stunStack.sendResponse(evt.getTransactionID().getBytes(),
