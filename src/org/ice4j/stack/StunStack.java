@@ -872,7 +872,7 @@ public class StunStack
      * supposed to have been built for.
      * @param shortTermCredentialMechanism <tt>true</tt> if <tt>msgInt</tt> is
      * to be validated as part of the STUN short-term credential mechanism or
-     * <tt>false</tt> for the STUN long-term credential mechanism 
+     * <tt>false</tt> for the STUN long-term credential mechanism
      * @param message the message whose SHA1 checksum we'd need to recalculate.
      *
      * @return <tt>true</tt> if <tt>msgInt</tt> contains a valid SHA1 value and
@@ -972,7 +972,7 @@ public class StunStack
     /**
      * Returns a <tt>String</tt> representation of a specific <tt>byte</tt>
      * array as an unsigned integer in base 16.
-     *  
+     *
      * @param bytes the <tt>byte</tt> to get the <tt>String</tt> representation
      * of as an unsigned integer in base 16
      * @return a <tt>String</tt> representation of the specified <tt>byte</tt>
