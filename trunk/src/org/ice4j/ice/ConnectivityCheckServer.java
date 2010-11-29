@@ -128,9 +128,12 @@ class ConnectivityCheckServer
         Attribute usernameAttribute = AttributeFactory.createUsernameAttribute(
                 parentAgent.generateLocalUserName());
 
+        /* The responses utilize the same usernames and passwords as the
+         * requests
+         */
         Attribute messageIntegrityAttribute =
             AttributeFactory.createMessageIntegrityAttribute(
-                parentAgent.generateLocalUserName());
+                new String(uname.getUsername()));
 
         response.addAttribute(usernameAttribute);
         response.addAttribute(messageIntegrityAttribute);
@@ -334,8 +337,8 @@ class ConnectivityCheckServer
     }
 
     /**
-     * Implements the {@link CredentialsAuthority#getLocalKey(String)} method in a
-     * way that would return this handler's parent agent password if
+     * Implements the {@link CredentialsAuthority#getLocalKey(String)} method in
+     * a way that would return this handler's parent agent password if
      * <tt>username</tt> is either the local ufrag or the username that the
      * agent's remote peer was expected to use.
      *
@@ -379,7 +382,10 @@ class ConnectivityCheckServer
         {
             //caller gave us the entire username.
             if (username.equals(parentAgent.generateLocalUserName()))
-                return parentAgent.getRemotePassword().getBytes();
+            {
+                if(parentAgent.getRemotePassword() != null)
+                    return parentAgent.getRemotePassword().getBytes();
+            }
         }
         return null;
     }

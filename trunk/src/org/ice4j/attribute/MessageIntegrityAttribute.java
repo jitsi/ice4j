@@ -11,6 +11,7 @@ import java.util.*;
 import javax.crypto.*;
 import javax.crypto.spec.*;
 
+import org.ice4j.message.*;
 import org.ice4j.stack.*;
 
 /**
@@ -254,7 +255,20 @@ public class MessageIntegrityAttribute
         binValue[2] = (byte)(getDataLength()>>8);
         binValue[3] = (byte)(getDataLength()&0x00FF);
 
-        byte[] key = stunStack.getCredentialsManager().getRemoteKey(username);
+        byte[] key = null;
+        char msgType = (char)((content[0] << 8) + content[1]);
+
+        if(Message.isRequestType(msgType))
+        {
+            /* attribute part of a request, use the remote key */
+            key = stunStack.getCredentialsManager().getRemoteKey(username);
+        }
+        else if(Message.isSuccessResponseType(msgType) ||
+                Message.isErrorResponseType(msgType))
+        {
+            /* attribute part of a response, use the local key */
+            key = stunStack.getCredentialsManager().getLocalKey(username);
+        }
 
         //now calculate the HMAC-SHA1
         this.hmacSha1Content = calculateHmacSha1(content, offset, length, key);
