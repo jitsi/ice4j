@@ -142,16 +142,6 @@ public class Agent
     private final String password;
 
     /**
-     * The user fragment that we received from the remote party.
-     */
-    private String remoteUfrag;
-
-    /**
-     * The password that we received from the remote party.
-     */
-    private String remotePassword;
-
-    /**
      * The tie-breaker number is used in connectivity checks to detect and
      * repair the case where both agents believe to have the controlling or the
      * controlled role.
@@ -435,7 +425,8 @@ public class Agent
      */
     public boolean isStarted()
     {
-        return state != IceProcessingState.WAITING;
+        return state != IceProcessingState.WAITING &&
+        state != IceProcessingState.TERMINATED;
     }
 
     /**
@@ -601,40 +592,6 @@ public class Agent
     }
 
     /**
-     * Returns the user name that we received from the remote peer or
-     * <tt>null</tt> if we haven't received a user name from them yet.
-     *
-     * @return the user name that we received from the remote peer or
-     * <tt>null</tt> if we haven't received a user name from them yet.
-     */
-    public String getRemoteUfrag()
-    {
-        return remoteUfrag;
-    }
-
-    /**
-     * Returns the password that we received from the remote peer or
-     * <tt>null</tt> if we haven't received a password from them yet.
-     *
-     * @return the password that we received from the remote peer or
-     * <tt>null</tt> if we haven't received a password from them yet.
-     */
-    public String getRemotePassword()
-    {
-        return remotePassword;
-    }
-
-    /**
-     * Specifies the user name that we received from the remote peer.
-     *
-     * @param remoteUfrag the user name that we received from the remote peer.
-     */
-    public void setRemoteUfrag(String remoteUfrag)
-    {
-        this.remoteUfrag = remoteUfrag;
-    }
-
-    /**
      * Returns the user name that this <tt>Agent</tt> should use in connectivity
      * checks for outgoing Binding Requests. According to RFC 5245, a Binding
      * Request serving as a connectivity check MUST utilize the STUN short term
@@ -650,12 +607,20 @@ public class Agent
      * password of RPASS.  A connectivity check from R to L (and its response)
      * utilize the username LFRAG:RFRAG and a password of LPASS.
      *
+     * @param media media name that we want to generate local username for.
      * @return a user name that this <tt>Agent</tt> can use in connectivity
      * check for outgoing Binding Requests.
      */
-    public String generateLocalUserName()
+    public String generateLocalUserName(String media)
     {
-        return getRemoteUfrag() + ":" + getLocalUfrag();
+        IceMediaStream stream = getStream(media);
+
+        if(stream == null || stream.getRemoteUfrag() == null)
+        {
+            return null;
+        }
+
+        return stream.getRemoteUfrag() + ":" + getLocalUfrag();
     }
 
     /**
@@ -675,23 +640,20 @@ public class Agent
      * password of RPASS.  A connectivity check from R to L (and its response)
      * utilize the username LFRAG:RFRAG and a password of LPASS.
      *
+     * @param media media name that we want to generate local username for.
      * @return a user name that a peer <tt>Agent</tt> would use in connectivity
      * check for outgoing Binding Requests.
      */
-    public String generateRemoteUserName()
+    public String generateRemoteUserName(String media)
     {
-        return getLocalUfrag() + ":" + getRemoteUfrag();
-    }
+        IceMediaStream stream = getStream(media);
 
-    /**
-     * Specifies the password that we received from the remote peer.
-     *
-     * @param remotePassword the user name that we received from the remote
-     * peer.
-     */
-    public void setRemotePassword(String remotePassword)
-    {
-        this.remotePassword = remotePassword;
+        if(stream == null)
+        {
+            return null;
+        }
+
+        return getLocalUfrag() + ":" + stream.getRemoteUfrag();
     }
 
     /**

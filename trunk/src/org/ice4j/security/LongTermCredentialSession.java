@@ -195,13 +195,14 @@ public class LongTermCredentialSession
      *
      * @param username the remote user name or user frag whose credentials
      * we'd like to obtain
+     * @param media not used
      * @return the key (password) that corresponds to the specified remote
      * username or user frag,  an empty array if there was no password for
      * that username or <tt>null</tt> if the username is not a remote user
      * name recognized by this <tt>CredentialsAuthority</tt>
      * @see CredentialsAuthority#getRemoteKey(String)
      */
-    public byte[] getRemoteKey(String username)
+    public byte[] getRemoteKey(String username, String media)
     {
         // The password is the same on the local and the remote sides.
         return getLocalKey(username);

@@ -67,17 +67,18 @@ public class CredentialsManager
      *
      * @param username a remote user name or user frag whose credentials we'd
      * like to obtain.
+     * @param media the media name that we want to get remote key.
      *
      * @return <tt>null</tt> if username was not a recognized remote user name
      * for none of the currently registered <tt>CredentialsAuthority</tt>s or
      * a <tt>byte</tt> array containing the first non-<tt>null</tt> password
      * that one of them returned.
      */
-    public byte[] getRemoteKey(String username)
+    public byte[] getRemoteKey(String username, String media)
     {
         for (CredentialsAuthority auth : authorities)
         {
-            byte[] passwd = auth.getRemoteKey(username);
+            byte[] passwd = auth.getRemoteKey(username, media);
 
             if (passwd != null)
             {

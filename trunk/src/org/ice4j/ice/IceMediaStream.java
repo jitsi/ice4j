@@ -107,6 +107,16 @@ public class IceMediaStream
     private int maxCheckListSize = Agent.DEFAULT_MAX_CHECK_LIST_SIZE;
 
     /**
+     * The user fragment that we received from the remote party.
+     */
+    private String remoteUfrag = null;
+
+    /**
+     * The password that we received from the remote party.
+     */
+    private String remotePassword = null;
+
+    /**
      * Initializes a new <tt>IceMediaStream</tt> object.
      *
      * @param name the name of the media stream
@@ -309,7 +319,7 @@ public class IceMediaStream
             createCheckList(checkList);
 
             orderCheckList();
-            pruneCheckList();
+            pruneCheckList(checkList);
             logger.finest("Checklist initialized.");
         }
     }
@@ -377,8 +387,10 @@ public class IceMediaStream
      *  In addition, in order to limit the attacks described in Section 18.5.2
      *  of the ICE spec, we limit the total number of pairs and hence
      *  (connectivity checks) to a specific value, (a total of 100 by default).
+     *
+     * @param checkList the checklist to prune
      */
-    private void pruneCheckList()
+    protected void pruneCheckList(List<CandidatePair> checkList)
     {
         //a list that we only use for storing pairs that we've already gone
         //through. The list is destroyed at the end of this method.
@@ -802,5 +814,50 @@ public class IceMediaStream
         }
 
         return null;
+    }
+
+    /**
+     * Specifies the user name that we received from the remote peer.
+     *
+     * @param remoteUfrag the user name that we received from the remote peer.
+     */
+    public void setRemoteUfrag(String remoteUfrag)
+    {
+        this.remoteUfrag = remoteUfrag;
+    }
+
+    /**
+     * Returns the user name that we received from the remote peer or
+     * <tt>null</tt> if we haven't received a user name from them yet.
+     *
+     * @return the user name that we received from the remote peer or
+     * <tt>null</tt> if we haven't received a user name from them yet.
+     */
+    public String getRemoteUfrag()
+    {
+        return remoteUfrag;
+    }
+
+    /**
+     * Specifies the password that we received from the remote peer.
+     *
+     * @param remotePassword the user name that we received from the remote
+     * peer.
+     */
+    public void setRemotePassword(String remotePassword)
+    {
+        this.remotePassword = remotePassword;
+    }
+
+    /**
+     * Returns the password that we received from the remote peer or
+     * <tt>null</tt> if we haven't received a password from them yet.
+     *
+     * @return the password that we received from the remote peer or
+     * <tt>null</tt> if we haven't received a password from them yet.
+     */
+    public String getRemotePassword()
+    {
+        return remotePassword;
     }
 }

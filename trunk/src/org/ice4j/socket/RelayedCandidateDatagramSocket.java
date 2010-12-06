@@ -67,7 +67,7 @@ public class RelayedCandidateDatagramSocket
 
     /**
      * The minimum channel number which is valid for TURN ChannelBind
-     * <tt>Request</tt>s. 
+     * <tt>Request</tt>s.
      */
     private static final char MIN_CHANNEL_NUMBER = 0x4000;
 
@@ -79,7 +79,7 @@ public class RelayedCandidateDatagramSocket
 
     /**
      * The time in milliseconds before a TURN permission expires that a
-     * <tt>RelayedCandidateDatagramSocket</tt> is to try to reinstall it. 
+     * <tt>RelayedCandidateDatagramSocket</tt> is to try to reinstall it.
      */
     private static final long PERMISSION_LIFETIME_LEEWAY
         = 60 /* seconds */ * 1000L;
@@ -242,7 +242,8 @@ public class RelayedCandidateDatagramSocket
     private boolean channelDataSocketAccept(DatagramPacket p)
     {
         // Is it from our TURN server?
-        if (turnCandidateHarvest.harvester.stunServer.equals(p.getSocketAddress()))
+        if (turnCandidateHarvest.harvester.stunServer.equals(
+                p.getSocketAddress()))
         {
             int pLength = p.getLength();
 
@@ -278,13 +279,16 @@ public class RelayedCandidateDatagramSocket
                             ((pData[pOffset++] << 8)
                                     | (pData[pOffset++] & 0xFF));
 
+                    int padding = ((length % 4) > 0) ? 4 - (length % 4) : 0;
+
                     /*
                      * The Length field specifies the length in bytes of the
                      * Application Data field. The Length field does not include
                      * the padding that is sometimes present in the data of the
                      * DatagramPacket.
                      */
-                    return ((CHANNELDATA_LENGTH_LENGTH + length) >= pLength);
+                    return (length ==
+                        (pLength - padding - CHANNELDATA_LENGTH_LENGTH));
                 }
             }
         }
@@ -547,7 +551,7 @@ public class RelayedCandidateDatagramSocket
         /*
          * RFC 5766: When the client receives a Data indication, it checks that
          * the Data indication contains both an XOR-PEER-ADDRESS and a DATA
-         * attribute, and discards the indication if it does not. 
+         * attribute, and discards the indication if it does not.
          */
         XorPeerAddressAttribute peerAddressAttribute
             = (XorPeerAddressAttribute)
@@ -1312,7 +1316,7 @@ public class RelayedCandidateDatagramSocket
         /**
          * Gets the indication which determines whether this instance is
          * currently considered bound/installed.
-         * 
+         *
          * @return <tt>true</tt> if this instance is currently considered
          * bound/installed; otherwise, <tt>false</tt>
          */
@@ -1502,7 +1506,7 @@ public class RelayedCandidateDatagramSocket
          *
          * @param channelNumberIsConfirmed <tt>true</tt> if allocation of the
          * channel number has been confirmed by a success <tt>Response</tt> to
-         * our ChannelBind <tt>Request</tt> 
+         * our ChannelBind <tt>Request</tt>
          * @param channelNumberIsConfirmedTransactionID an array of
          * <tt>byte</tt>s which represents the ID of the transaction with which
          * the confirmation about the allocation of the channel number has

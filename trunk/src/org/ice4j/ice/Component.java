@@ -22,6 +22,7 @@ import org.ice4j.*;
  *
  * @author Emil Ivov
  * @author Namal Senarathne
+ * @author Sebastien Vincent
  */
 public class Component
 {
@@ -74,6 +75,13 @@ public class Component
      * The list of candidates that the peer agent sent for this stream.
      */
     private List<Candidate> remoteCandidates = new LinkedList<Candidate>();
+
+    /**
+     * The list of candidates that the peer agent sent for this stream after
+     * connectivity establishment.
+     */
+    private List<Candidate> remoteUpdateCandidates =
+        new LinkedList<Candidate>();
 
     /**
      * A <tt>Comparator</tt> that we use for sorting <tt>Candidate</tt>s by
@@ -201,6 +209,71 @@ public class Component
         synchronized(remoteCandidates)
         {
             remoteCandidates.add(candidate);
+        }
+    }
+
+    /**
+     * Update the media-stream <tt>Component</tt> with the specified
+     * <tt>Candidate</tt>.
+     *
+     * @param candidate new <tt>Candidate</tt> to add.
+     */
+    public void addUpdateRemoteCandidate(Candidate candidate)
+    {
+        synchronized(remoteUpdateCandidates)
+        {
+            remoteUpdateCandidates.add(candidate);
+        }
+    }
+
+    /**
+     * Update ICE processing with the new <tt>Candidate</tt>s.
+     */
+    public void updateRemoteCandidate()
+    {
+        List<CandidatePair> checkList = null;
+
+        synchronized(remoteUpdateCandidates)
+        {
+            if(remoteUpdateCandidates.size() == 0)
+                return;
+
+            List<LocalCandidate> localCnds = getLocalCandidates();
+            checkList = new Vector<CandidatePair>();
+
+            for(LocalCandidate localCnd : localCnds)
+            {
+                for(Candidate remoteCnd : remoteUpdateCandidates)
+                {
+                    if(localCnd.canReach(remoteCnd))
+                    {
+                        CandidatePair pair = new CandidatePair(localCnd, remoteCnd);
+
+                        checkList.add(pair);
+                    }
+                }
+            }
+            remoteUpdateCandidates.clear();
+        }
+
+        /* sort and prune update checklist */
+        Collections.sort(checkList, CandidatePair.comparator);
+        parentStream.pruneCheckList(checkList);
+
+        if(parentStream.getCheckList().getState().equals(
+                CheckListState.RUNNING))
+        {
+            /* add the update CandidatePair list to the currently running
+             * checklist
+             */
+            CheckList streamCheckList = parentStream.getCheckList();
+            synchronized(streamCheckList)
+            {
+                for(CandidatePair pair : checkList)
+                {
+                    streamCheckList.add(pair);
+                }
+            }
         }
     }
 
@@ -747,7 +820,7 @@ public class Component
      * with this component.
      *
      * @return "RTP" if the component ID is 1, "RTCP" if the component id is 2
-     * and the compoent id itself otherwise.
+     * and the component id itself otherwise.
      */
     public String getName()
     {
