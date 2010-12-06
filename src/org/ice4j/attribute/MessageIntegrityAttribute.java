@@ -106,6 +106,11 @@ public class MessageIntegrityAttribute
     private String username;
 
     /**
+     * The media name if we use short-term authentication.
+     */
+    private String media;
+
+    /**
      * Creates a <tt>MessageIntegrityAttribute</tt>.
      */
     protected MessageIntegrityAttribute()
@@ -125,6 +130,17 @@ public class MessageIntegrityAttribute
     public void setUsername(String username)
     {
         this.username = username;
+    }
+
+    /**
+     * Sets the media name that we should use to get the corresponding remote
+     * key (short-term authentication only).
+     *
+     * @param media name
+     */
+    public void setMedia(String media)
+    {
+        this.media = media;
     }
 
     /**
@@ -261,7 +277,8 @@ public class MessageIntegrityAttribute
         if(Message.isRequestType(msgType))
         {
             /* attribute part of a request, use the remote key */
-            key = stunStack.getCredentialsManager().getRemoteKey(username);
+            key = stunStack.getCredentialsManager().getRemoteKey(username,
+                    media);
         }
         else if(Message.isSuccessResponseType(msgType) ||
                 Message.isErrorResponseType(msgType))

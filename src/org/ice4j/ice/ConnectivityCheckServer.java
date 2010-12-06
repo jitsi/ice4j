@@ -125,12 +125,13 @@ class ConnectivityCheckServer
                         request, evt.getRemoteAddress());
 
         /* add USERNAME and MESSAGE-INTEGRITY attribute in the response */
-        Attribute usernameAttribute = AttributeFactory.createUsernameAttribute(
-                parentAgent.generateLocalUserName());
 
         /* The responses utilize the same usernames and passwords as the
          * requests
          */
+        Attribute usernameAttribute =
+            AttributeFactory.createUsernameAttribute(uname.getUsername());
+
         Attribute messageIntegrityAttribute =
             AttributeFactory.createMessageIntegrityAttribute(
                 new String(uname.getUsername()));
@@ -362,29 +363,36 @@ class ConnectivityCheckServer
      * are expected to use when querying the remote peer.
      *
      * @param username the remote ufrag that we should return a password for.
+     * @param media the media name that we want to get remote key.
      *
      * @return this handler's parent agent remote password if <tt>username</tt>
      * equals the remote ufrag and <tt>null</tt> otherwise.
      */
-    public byte[] getRemoteKey(String username)
+    public byte[] getRemoteKey(String username, String media)
     {
         //support both the case where username is the local fragment or the
         //entire user name.
         int colon = username.indexOf(":");
 
+        IceMediaStream stream = parentAgent.getStream(media);
+        if(stream == null)
+        {
+            return null;
+        }
+
         if (colon < 0)
         {
             //caller gave us a ufrag
-            if (username.equals(parentAgent.getRemoteUfrag()))
-                return parentAgent.getRemotePassword().getBytes();
+            if (username.equals(stream.getRemoteUfrag()))
+                return stream.getRemotePassword().getBytes();
         }
         else
         {
             //caller gave us the entire username.
-            if (username.equals(parentAgent.generateLocalUserName()))
+            if (username.equals(parentAgent.generateLocalUserName(media)))
             {
-                if(parentAgent.getRemotePassword() != null)
-                    return parentAgent.getRemotePassword().getBytes();
+                if(stream.getRemotePassword() != null)
+                    return stream.getRemotePassword().getBytes();
             }
         }
         return null;

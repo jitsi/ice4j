@@ -119,8 +119,11 @@ public class SdpUtils
         SdpFactory factory = SdpFactory.getInstance();
         SessionDescription sdess = factory.createSessionDescription(sdp);
 
-        localAgent.setRemotePassword(sdess.getAttribute("ice-pwd"));
-        localAgent.setRemoteUfrag(sdess.getAttribute("ice-ufrag"));
+        for(IceMediaStream stream : localAgent.getStreams())
+        {
+            stream.setRemotePassword(sdess.getAttribute("ice-pwd"));
+            stream.setRemoteUfrag(sdess.getAttribute("ice-ufrag"));
+        }
 
         Connection globalConn = sdess.getConnection();
         String globalConnAddr = null;

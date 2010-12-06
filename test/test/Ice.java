@@ -63,14 +63,20 @@ public class Ice
         long endTime = System.currentTimeMillis();
 
         transferRemoteCandidates(localAgent, remotePeer);
-        localAgent.setRemoteUfrag(remotePeer.getLocalUfrag());
-        localAgent.setRemotePassword(remotePeer.getLocalPassword());
+        for(IceMediaStream stream : localAgent.getStreams())
+        {
+            stream.setRemoteUfrag(remotePeer.getLocalUfrag());
+            stream.setRemotePassword(remotePeer.getLocalPassword());
+        }
 
         if (START_CONNECTIVITY_ESTABLISHMENT_OF_REMOTE_PEER)
             transferRemoteCandidates(remotePeer, localAgent);
 
-        remotePeer.setRemoteUfrag(localAgent.getLocalUfrag());
-        remotePeer.setRemotePassword(localAgent.getLocalPassword());
+        for(IceMediaStream stream : remotePeer.getStreams())
+        {
+            stream.setRemoteUfrag(localAgent.getLocalUfrag());
+            stream.setRemotePassword(localAgent.getLocalPassword());
+        }
 
         System.out.println("Total candidate gathering time: "
                         + (endTime - startTime) + "ms");

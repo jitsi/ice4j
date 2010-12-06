@@ -147,7 +147,9 @@ class ConnectivityCheckClient
         }
 
         //credentials
-        String localUserName = parentAgent.generateLocalUserName();
+        String localUserName = parentAgent.generateLocalUserName(
+                candidatePair.getParentComponent().getParentStream().getName());
+
         UsernameAttribute unameAttr = AttributeFactory.createUsernameAttribute(
                         localUserName);
 
@@ -156,6 +158,12 @@ class ConnectivityCheckClient
         // TODO Also implement SASL prepare
         MessageIntegrityAttribute msgIntegrity = AttributeFactory
             .createMessageIntegrityAttribute(localUserName);
+
+        // when we will encode the MESSAGE-INTEGRITY attribute (thus generate
+        // the HMAC-SHA1 authentication), we need to know the remote key of the
+        // current stream, that why we pass the media name.
+        msgIntegrity.setMedia(
+                candidatePair.getParentComponent().getParentStream().getName());
 
         request.addAttribute(msgIntegrity);
 

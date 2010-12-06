@@ -39,13 +39,14 @@ public interface CredentialsAuthority
      *
      * @param username the remote user name or user frag whose credentials we'd
      * like to obtain.
+     * @param media the media name that we want to get remote key.
      *
      * @return the key (password) that corresponds to the specified remote
      * username or user frag,  an empty array if there was no password for that
      * username or <tt>null</tt> if the username is not a remote user name
      * recognized by this <tt>CredentialsAuthority</tt>.
      */
-    public byte[] getRemoteKey(String username);
+    public byte[] getRemoteKey(String username, String media);
 
     /**
      * Verifies whether <tt>username</tt> is currently known to this authority
