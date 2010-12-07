@@ -84,6 +84,11 @@ public class StunStack
     private final EventDispatcher eventDispatcher = new EventDispatcher();
 
     /**
+     * The packet logger instance.
+     */
+    private static PacketLogger packetLogger;
+
+    /**
      * Sets the number of Message processors running in the same time.
      *
      * @param threadPoolSize the number of message process threads to run.
@@ -1029,5 +1034,33 @@ public class StunStack
         String lfrag = username.substring(0, colon);
 
         return getCredentialsManager().checkLocalUserName(lfrag);
+    }
+
+    /**
+     * Returns the currently set packet logger.
+     * @return the currently available packet logger.
+     */
+    static PacketLogger getPacketLogger()
+    {
+        return packetLogger;
+    }
+
+    /**
+     * Setting a packet logger for the stack.
+     * @param packetLogger the packet logger to use.
+     */
+    public static void setPacketLogger(PacketLogger packetLogger)
+    {
+        StunStack.packetLogger = packetLogger;
+    }
+
+    /**
+     * Checks whether packet logger is set and enabled.
+     * @return <tt>true</tt> if we have a packet logger instance and
+     *  it is enabled.
+     */
+    static boolean isPacketLoggerEnabled()
+    {
+        return packetLogger != null && packetLogger.isEnabled();
     }
 }
