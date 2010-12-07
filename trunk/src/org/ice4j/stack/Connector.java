@@ -251,6 +251,18 @@ class Connector
                         message, 0, message.length, address);
 
         sock.send(datagramPacket);
+
+        // no exception packet is successfully sent, log it 
+        if(StunStack.isPacketLoggerEnabled())
+        {
+            StunStack.getPacketLogger().logPacket(
+                sock.getLocalAddress().getAddress(),
+                sock.getLocalPort(),
+                address.getAddressBytes(),
+                address.getPort(),
+                message,
+                true);
+        }
     }
 
     /**
