@@ -1171,7 +1171,6 @@ public class Agent
         if(!pair.isNominated()
               && !parentStream.validListContainsNomineeForComponent(
                       parentComponent))
-        /*    && !checkList.containsNomineeForComponent(parentComponent)) */
         {
             pair.nominate();
             pair.getParentComponent().getParentStream()

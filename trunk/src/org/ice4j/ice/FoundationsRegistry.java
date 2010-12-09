@@ -57,7 +57,7 @@ public class FoundationsRegistry
             server = candidate.getStunServerAddress().getHostAddress();
             break;
         case RELAYED_CANDIDATE:
-            server = candidate.getTurnServerAddress().getHostAddress();
+            server = candidate.getRelayServerAddress().getHostAddress();
             break;
         default:
             server = null;
