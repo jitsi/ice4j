@@ -90,11 +90,11 @@ public abstract class Candidate
     private TransportAddress stunServerAddress = null;
 
     /**
-     * The address of the TURN server that was used to obtain this
-     * <tt>Candidate</tt>. Will be <tt>null</tt> if this is not a relayed
-     * candidate.
+     * The address of the relay server (i.e. TURN, Jingle Nodes, ...) that was
+     * used to obtain this <tt>Candidate</tt>. Will be <tt>null</tt> if this is
+     * not a relayed candidate.
      */
-    private TransportAddress turnServerAddress = null;
+    private TransportAddress relayServerAddress = null;
 
     /**
      * The address that our TURN/STUN server returned as mapped if this is a
@@ -442,7 +442,6 @@ public abstract class Candidate
             //IPv4
             return 10;
         }
-
     }
 
     /**
@@ -511,28 +510,30 @@ public abstract class Candidate
     }
 
     /**
-     * Returns the address of the TURN server that was used to obtain this
-     * <tt>Candidate</tt> or <tt>null</tt> if this is not a relayed candidate.
+     * Returns the address of the relay server (i.e. TURN, Jingle Nodes, ...)
+     * that was used to obtain this <tt>Candidate</tt> or <tt>null</tt> if this
+     * is not a relayed candidate.
      *
-     * @return the address of the TURN server that was used to obtain this
+     * @return the address of the relay server that was used to obtain this
      * <tt>Candidate</tt> or <tt>null</tt> if this is not a relayed candidate.
      */
-    public TransportAddress getTurnServerAddress()
+    public TransportAddress getRelayServerAddress()
     {
-        return turnServerAddress;
+        return relayServerAddress;
     }
 
     /**
-     * Sets the address of the TURN server that was used to obtain this
-     * <tt>Candidate</tt>. Only makes sense if this is a relayed candidate.
+     * Sets the address of the relay server (i.e. TURN, Jingle Nodes, ...) that
+     * was used to obtain this <tt>Candidate</tt>. Only makes sense if this is a
+     *  relayed candidate.
      *
-     * @param address the address of the TURN server that was used to obtain
+     * @param address the address of the relay server that was used to obtain
      * this <tt>Candidate</tt> or <tt>null</tt> if this is not a relayed
      * candidate.
      */
-    protected void setTurnServerAddress(TransportAddress address)
+    protected void setRelayServerAddress(TransportAddress address)
     {
-        this.turnServerAddress = address;
+        this.relayServerAddress = address;
     }
 
     /**

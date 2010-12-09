@@ -401,10 +401,12 @@ public class TurnCandidateHarvest
 
     /**
      * Creates a new <tt>Request</tt> which is to be sent to
-     * {@link TurnCandidateHarvester#stunServer} in order to start resolving {@link #hostCandidate}.
+     * {@link TurnCandidateHarvester#stunServer} in order to start resolving
+     * {@link #hostCandidate}.
      *
      * @return a new <tt>Request</tt> which is to be sent to
-     * {@link TurnCandidateHarvester#stunServer} in order to start resolving {@link #hostCandidate}
+     * {@link TurnCandidateHarvester#stunServer} in order to start resolving
+     * {@link #hostCandidate}
      * @see StunCandidateHarvest#createRequestToStartResolvingCandidate()
      */
     @Override

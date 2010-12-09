@@ -453,7 +453,7 @@ public class RelayedCandidateDatagramSocket
 
     /**
      * Returns the port number on the local host to which this socket is bound.
-     * <tt>RelayedCandidateDatagram</tt> returns the <tt>port</tt> of its
+     * <tt>RelayedCandidateDatagramSocket</tt> returns the <tt>port</tt> of its
      * <tt>localSocketAddress</tt>.
      *
      * @return the port number on the local host to which this socket is bound
@@ -1433,7 +1433,8 @@ public class RelayedCandidateDatagramSocket
                                     turnCandidateHarvest.harvester.stunServer);
                     }
                     else
-                        channelDataPacket.setData(channelData, 0, channelDataLength);
+                        channelDataPacket.setData(channelData, 0,
+                                channelDataLength);
 
                     channelDataSocket.send(channelDataPacket);
                 }

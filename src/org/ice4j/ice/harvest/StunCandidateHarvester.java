@@ -61,7 +61,7 @@ public class StunCandidateHarvester
     public final TransportAddress stunServer;
 
     /**
-     * The <tt>StunSTack</tt> used by this instance for the purposes of STUN
+     * The <tt>StunStack</tt> used by this instance for the purposes of STUN
      * communication.
      */
     private StunStack stunStack;

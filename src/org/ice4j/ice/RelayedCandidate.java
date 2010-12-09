@@ -72,7 +72,7 @@ public class RelayedCandidate
 
         // RFC 5245: The base of a relayed candidate is that candidate itself.
         setBase(this);
-        setTurnServerAddress(turnCandidateHarvest.harvester.stunServer);
+        setRelayServerAddress(turnCandidateHarvest.harvester.stunServer);
         setMappedAddress(mappedAddress);
     }
 
