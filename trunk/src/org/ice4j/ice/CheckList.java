@@ -8,6 +8,7 @@ package org.ice4j.ice;
 
 import java.beans.*;
 import java.util.*;
+import java.util.logging.*;
 
 /**
  * A check list is a list of <tt>CandidatePair</tt>s with a state (i.e. a
@@ -22,6 +23,12 @@ import java.util.*;
 public class CheckList
     extends Vector<CandidatePair>
 {
+    /**
+     * The logger.
+     */
+    private static final Logger logger =
+        Logger.getLogger(CheckList.class.getName());
+
     /**
      * A dummy serialization id.
      */
@@ -348,6 +355,10 @@ public class CheckList
                                                     CandidatePair nominatedPair)
     {
         Component cmp = nominatedPair.getParentComponent();
+
+        logger.info("Selected pair for stream " +
+                cmp.toShortString() + ": " +
+                nominatedPair.toShortString());
 
         cmp.setSelectedPair(nominatedPair);
 

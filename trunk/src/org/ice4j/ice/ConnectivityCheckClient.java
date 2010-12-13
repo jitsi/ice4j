@@ -75,6 +75,7 @@ class ConnectivityCheckClient
                     .get(0)
                         .getCheckList();
 
+        logger.info("Start connectivity checks!");
         startChecks(firstCheckList);
     }
 
@@ -136,8 +137,12 @@ class ConnectivityCheckClient
             //if we are the controlling agent then we need to indicate our
             //nominated pairs.
             if(candidatePair.isNominated())
+            {
+                logger.fine("Add USE-CANDIDATE in check for: " +
+                        candidatePair.toShortString());
                 request.addAttribute(AttributeFactory
                                 .createUseCandidateAttribute());
+            }
         }
         else
         {
@@ -220,7 +225,7 @@ class ConnectivityCheckClient
         if (!checkSymmetricAddresses(evt))
         {
             logger.fine("Received a non-symmetric response for pair: "
-                        + checkedPair +". Failing");
+                        + checkedPair.toShortString() +". Failing");
             checkedPair.setStateFailed();
         }
         //handle error responses.
@@ -285,7 +290,11 @@ class ConnectivityCheckClient
             //If there is not a pair in the valid list for each component of the
             //media stream, the state of the check list is set to Failed.
             if ( !stream.validListContainsAllComponents())
+            {
+                logger.info("CheckList for stream " + stream.getName() +
+                        " FAILED");
                 checkList.setState(CheckListState.FAILED);
+            }
 
             //For each frozen check list, the agent groups together all of the
             //pairs with the same foundation, and for each group, sets the
@@ -327,6 +336,7 @@ class ConnectivityCheckClient
         {
             logger.fine("Received a success response with no "
                             +"XOR_MAPPED_ADDRESS attribute.");
+            logger.info("Pair failed: "  + checkedPair.toShortString());
             checkedPair.setStateFailed();
             return; //malformed error response
         }
@@ -375,6 +385,9 @@ class ConnectivityCheckClient
             //remote candidates. This is not necessary; a valid pair will be
             //generated from it momentarily
             validLocalCandidate = peerReflexiveCandidate;
+
+            logger.fine("Receive a peer-reflexive candidate: " +
+                    peerReflexiveCandidate.getTransportAddress());
         }
 
         //check if the resulting valid pair was already in our check lists.
@@ -401,10 +414,14 @@ class ConnectivityCheckClient
         //The agent sets the state of the pair that *generated* the check to
         //Succeeded.  Note that, the pair which *generated* the check may be
         //different than the valid pair constructed above
+        logger.info("Pair succeeded: " + checkedPair.toShortString());
         checkedPair.setStateSucceeded();
 
         if(! validPair.isValid())
+        {
+            logger.info("Pair validated: " + validPair.toShortString());
             parentAgent.validatePair(validPair);
+        }
 
         //The agent changes the states for all other Frozen pairs for the
         //same media stream and same foundation to Waiting.
@@ -451,7 +468,11 @@ class ConnectivityCheckClient
                 checkList.computeInitialCheckListPairStates();
 
             if (wasFrozen)
+            {
+                logger.info("Start checks for checkList of stream " +
+                        stream.getName() + " that was frozen");
                 startChecks(checkList);
+            }
         }
 
         //If the agent was a controlling agent, and it had included a USE-
@@ -460,6 +481,8 @@ class ConnectivityCheckClient
         if(parentAgent.isControlling()
                 && request.containsAttribute(Attribute.USE_CANDIDATE))
         {
+            logger.info("Nomination confirmed for pair: " +
+                    validPair.toShortString());
             parentAgent.nominationConfirmed( validPair );
         }
         //If the agent is the controlled agent, the response may be the result
@@ -469,7 +492,11 @@ class ConnectivityCheckClient
         //the pair learned from the original request.
         else if(checkedPair.useCandidateReceived()
                  && ! checkedPair.isNominated())
+        {
+            logger.info("Nomination confirmed for pair: " +
+                    validPair.toShortString());
             parentAgent.nominationConfirmed( checkedPair );
+        }
     }
 
     /**
@@ -542,7 +569,8 @@ class ConnectivityCheckClient
         else
         {
             logger.fine("Received an unrecoverable error response for pair "
-                            + pair + " will mark the pair as FAILED.");
+                            + pair.toShortString() +
+                            " will mark the pair as FAILED.");
             pair.setStateFailed();
         }
     }
@@ -559,8 +587,7 @@ class ConnectivityCheckClient
     {
         CandidatePair pair = ((CandidatePair)event.getTransactionID()
                         .getApplicationData());
-        logger.fine("timeout for pair=" + pair);
-
+        logger.info("timeout for pair: " + pair.toShortString() +", failing.");
         pair.setStateFailed();
         updateCheckListAndTimerStates(pair);
     }
@@ -682,7 +709,11 @@ class ConnectivityCheckClient
                                 = startCheckForPair(pairToCheck);
 
                             if(transactionID == null)
+                            {
+                                logger.info("Pair failed: "  +
+                                        pairToCheck.toShortString());
                                 pairToCheck.setStateFailed();
+                            }
                             else
                                 pairToCheck.setStateInProgress(transactionID);
                         }
