@@ -206,6 +206,9 @@ public class Component
      */
     public void addRemoteCandidate(Candidate candidate)
     {
+        logger.info("Add remote candidate for " + toShortString() + ": " +
+                candidate.getTransportAddress());
+
         synchronized(remoteCandidates)
         {
             remoteCandidates.add(candidate);
@@ -220,6 +223,9 @@ public class Component
      */
     public void addUpdateRemoteCandidate(Candidate candidate)
     {
+        logger.info("Update remote candidate for " + toShortString() + ": " +
+                candidate.getTransportAddress());
+
         synchronized(remoteUpdateCandidates)
         {
             remoteUpdateCandidates.add(candidate);
@@ -423,6 +429,23 @@ public class Component
         {
             buff.append("\nno remote candidates.");
         }
+
+        return buff.toString();
+    }
+
+    /**
+     * Returns a short <tt>String</tt> representation of this
+     * <tt>Component</tt>.
+     *
+     * @return  a short <tt>String</tt> representation of this
+     * <tt>Component</tt>.
+     */
+    public String toShortString()
+    {
+        StringBuffer buff
+        = new StringBuffer(parentStream.getName());
+        buff.append(".");
+        buff.append(componentID);
 
         return buff.toString();
     }

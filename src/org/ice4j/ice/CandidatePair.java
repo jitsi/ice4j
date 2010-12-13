@@ -419,6 +419,18 @@ public class CandidatePair
     }
 
     /**
+     * Returns a short String representation of this <tt>CandidatePair</tt>.
+     *
+     * @return a short String representation of the object.
+     */
+    public String toShortString()
+    {
+        return getLocalCandidate().getTransportAddress() + " -> " +
+            getRemoteCandidate().getTransportAddress() +
+            " (" + getParentComponent().toShortString() + ")";
+    }
+
+    /**
      * A <tt>Comparator</tt> using the <tt>compareTo</tt> method of the
      * <tt>CandidatePair</tt>
      */

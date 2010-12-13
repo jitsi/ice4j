@@ -8,6 +8,7 @@ package org.ice4j.ice;
 
 import java.beans.*;
 import java.util.*;
+import java.util.logging.*;
 
 /**
  * Implements ice4j internal nomination strategies.
@@ -17,6 +18,12 @@ import java.util.*;
 public class DefaultNominator
     implements PropertyChangeListener
 {
+    /**
+     * The logger.
+     */
+    private static Logger logger =
+        Logger.getLogger(DefaultNominator.class.getName());
+
     /**
      * The Agent that created us.
      */
@@ -91,6 +98,8 @@ public class DefaultNominator
         if(IceMediaStream.PROPERTY_PAIR_VALIDATED.equals(evt.getPropertyName()))
         {
             CandidatePair validPair = (CandidatePair)evt.getSource();
+
+            logger.info("Nominate (first valid): " + validPair.toShortString());
             parentAgent.nominate(validPair);
         }
     }
@@ -125,7 +134,11 @@ public class DefaultNominator
             {
                 CandidatePair pair = parentStream.getValidPair(component);
                 if(pair != null)
+                {
+                    logger.info("Nominate (highest priority): " +
+                            validPair.toShortString());
                     parentAgent.nominate(pair);
+                }
             }
         }
     }

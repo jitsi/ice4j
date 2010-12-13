@@ -235,6 +235,7 @@ public class Agent
      */
     public IceMediaStream createMediaStream(String mediaStreamName)
     {
+        logger.info("Create media stream for " + mediaStreamName);
         IceMediaStream mediaStream
             = new IceMediaStream(Agent.this, mediaStreamName);
 
@@ -286,7 +287,14 @@ public class Agent
 
         Component component = stream.createComponent(transport);
 
+        logger.info("Create component " + component.toShortString());
+
         gatherCandidates(component, preferredPort, minPort, maxPort);
+
+        for(Candidate candidate : component.getLocalCandidates())
+        {
+            logger.info("\t" + candidate.getTransportAddress());
+        }
 
         /*
          * Lyubomir: After we've gathered the LocalCandidate for a Component and
@@ -333,6 +341,9 @@ public class Agent
         throws IllegalArgumentException,
                IOException
     {
+        logger.info("Gather candidates for component " +
+                component.toShortString());
+
         hostCandidateHarvester.harvest(
                 component,
                 preferredPort, minPort, maxPort);
@@ -359,6 +370,7 @@ public class Agent
     {
         synchronized(startLock)
         {
+            logger.info("Start ICE connectivity establishment");
             pruneNonMatchedStreams();
             initCheckLists();
 
@@ -532,6 +544,7 @@ public class Agent
 
         for(IceMediaStream stream : streams)
         {
+            logger.info("Init checklist for stream " + stream.getName());
             stream.setMaxCheckListSize(maxPerStreamSize);
             stream.initCheckList();
         }
@@ -1020,6 +1033,7 @@ public class Agent
             }
             else
             {
+                logger.fine("Receive STUN checks before our ICE has started");
                 //we are not started yet so we'd better wait until we get the
                 //remote candidates in case we are holding to a new PR one.
                 this.preDiscoveredPairsQueue.add(triggeredPair);
@@ -1164,7 +1178,6 @@ public class Agent
 
         Component parentComponent = pair.getParentComponent();
         IceMediaStream parentStream = parentComponent.getParentStream();
-        //CheckList checkList = parentStream.getCheckList();
 
         //If the pair is not already nominated and if its parent component
         //does not already contain a nominated pair - nominate it.
@@ -1244,6 +1257,8 @@ public class Agent
             }
             else if(checkListState == CheckListState.COMPLETED)
             {
+                logger.info("CheckList of stream " + stream.getName() +
+                        " is COMPLETED");
                 atLeastOneListSucceeded = true;
             }
         }
@@ -1256,12 +1271,14 @@ public class Agent
             {
                 if(getState() == IceProcessingState.RUNNING)
                 {
+                    logger.info("ICE state is COMPLETED");
                     setState(IceProcessingState.COMPLETED);
                     scheduleTermination();
                 }
             }
             else
             {
+                logger.info("ICE state is FAILED");
                 terminate(IceProcessingState.FAILED);
             }
         }
@@ -1463,6 +1480,7 @@ public class Agent
                 }
             }
 
+            logger.info("ICE state is TERMINATED");
             terminate(IceProcessingState.TERMINATED);
         }
     }
@@ -1514,6 +1532,8 @@ public class Agent
      */
     public void free()
     {
+        logger.info("Free ICE agent");
+
         /*
          * Set the IceProcessingState#TERMINATED state on this Agent unless it
          * is in a termination state already.
