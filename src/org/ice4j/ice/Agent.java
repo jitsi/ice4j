@@ -20,8 +20,8 @@ import org.ice4j.ice.harvest.*;
 import org.ice4j.stack.*;
 
 /**
- * An <tt>Agent</tt> could be described as the main class (i.e. the chef d'orchestre)
- * of an ICE implementation.
+ * An <tt>Agent</tt> could be described as the main class (i.e. the chef
+ * d'orchestre) of an ICE implementation.
  * <p>
  * As defined in RFC 3264, an agent is the protocol implementation involved in
  * the offer/answer exchange. There are two agents involved in an offer/answer

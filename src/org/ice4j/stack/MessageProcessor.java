@@ -75,7 +75,7 @@ class MessageProcessor
             throw new NullPointerException("netAccessManager");
 
         MessageQueue messageQueue = netAccessManager.getMessageQueue();
-        
+
         if (messageQueue == null)
         {
             throw new IllegalArgumentException(
@@ -155,7 +155,8 @@ class MessageProcessor
                 try
                 {
                     StunMessageEvent stunMessageEvent
-                        = new StunMessageEvent(stunStack, rawMessage, stunMessage);
+                        = new StunMessageEvent(stunStack, rawMessage,
+                                stunMessage);
 
                     messageEventHandler.handleMessageEvent(stunMessageEvent);
                 }

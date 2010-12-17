@@ -726,6 +726,7 @@ class ConnectivityCheckClient
                          * processTimeout() or processFailure() method.
                          */
                         logger.finest("will skip a check beat.");
+                        checkList.fireEndOfOrdinaryChecks();
                     }
                 }
             }

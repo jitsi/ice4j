@@ -39,6 +39,15 @@ public enum NominationStrategy
     NOMINATE_HIGHEST_PRIO("NominateHighestPriority"),
 
     /**
+     * The strategy consists in nominating the first host or server reflexive
+     * that's confirmed as valid pair. When a relayed candidate pair is
+     * validated first, a timer is armed and only if no host or server
+     * reflexive pair gets validated prior to timeout, the relayed ones
+     * gets nominated.
+     */
+    NOMINATE_FIRST_HOST_OR_REFLEXIVE_VALID("NominateFirstHostOrReflexiveValid"),
+
+    /**
      * The strategy consists in nominating the pair that showed the best
      * shortest round trip time once all checks in a list completed.
      */
