@@ -61,10 +61,23 @@ public class CheckList
         = new LinkedList<PropertyChangeListener>();
 
     /**
+     * Contains {@link PropertyChangeListener}s registered with this {@link
+     * Agent} and following its changes of state.
+     */
+    private final List<PropertyChangeListener> checkListeners
+        = new LinkedList<PropertyChangeListener>();
+
+    /**
      * The name of the {@link PropertyChangeEvent} that we use to deliver
      * changes on the state of this check list.
      */
     public static final String PROPERTY_CHECK_LIST_STATE = "CheckListState";
+
+    /**
+     * The name of the {@link PropertyChangeEvent} that we use to deliver
+     * changes on the end of checks of this check list.
+     */
+    public static final String PROPERTY_CHECK_LIST_CHECKS = "CheckListChecks";
 
     /**
      * Creates a check list with the specified name.
@@ -485,6 +498,65 @@ public class CheckList
 
         PropertyChangeEvent evt = new PropertyChangeEvent(
                         this, PROPERTY_CHECK_LIST_STATE, oldState, newState);
+
+        for(PropertyChangeListener l : listenersCopy)
+        {
+            l.propertyChange(evt);
+        }
+    }
+
+    /**
+     * Add a <tt>CheckListener</tt>. It will be notified when ordinary checks
+     * ended.
+     *
+     * @param l <tt>CheckListener</tt> to add
+     */
+    public void addChecksListener(PropertyChangeListener l)
+    {
+        synchronized(checkListeners)
+        {
+            if(!checkListeners.contains(l))
+            {
+                checkListeners.add(l);
+            }
+        }
+    }
+
+    /**
+     * Remove a <tt>CheckListener</tt>.
+     *
+     * @param l <tt>CheckListener</tt> to remove
+     */
+    public void removeChecksListener(PropertyChangeListener l)
+    {
+        synchronized(checkListeners)
+        {
+            if(checkListeners.contains(l))
+            {
+                checkListeners.remove(l);
+            }
+        }
+    }
+
+    /**
+     * Creates a new {@link PropertyChangeEvent} and delivers it to all
+     * currently registered checks listeners.
+     *
+     * @param oldState old state
+     * @param newState new state
+     */
+    protected void fireEndOfOrdinaryChecks()
+    {
+        List<PropertyChangeListener> listenersCopy;
+
+        synchronized(checkListeners)
+        {
+            listenersCopy
+                = new LinkedList<PropertyChangeListener>(checkListeners);
+        }
+
+        PropertyChangeEvent evt = new PropertyChangeEvent(
+                        this, PROPERTY_CHECK_LIST_CHECKS, false, true);
 
         for(PropertyChangeListener l : listenersCopy)
         {

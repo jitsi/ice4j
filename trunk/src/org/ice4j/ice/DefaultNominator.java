@@ -36,6 +36,13 @@ public class DefaultNominator
         = NominationStrategy.NOMINATE_FIRST_VALID;
 
     /**
+     * Map that will remember association between validated relayed candidate
+     * and a timer. It is use with the NOMINATE_FIRST_HIGHEST_VALID strategy.
+     */
+    private Map<String, TimerTask> validatedCandidates =
+        new HashMap<String, TimerTask>();
+
+    /**
      * Creates a new instance of this nominator using <tt>parentAgent</tt> as
      * a reference to the <tt>Agent</tt> instance that we should use to
      * nominate pairs.
@@ -83,7 +90,9 @@ public class DefaultNominator
             strategyNominateFirstValid(evt);
         else if (strategy == NominationStrategy.NOMINATE_HIGHEST_PRIO)
             strategyNominateHighestPrio(evt);
-
+        else if (strategy ==
+            NominationStrategy.NOMINATE_FIRST_HOST_OR_REFLEXIVE_VALID)
+            strategyNominateFirstHostOrReflexiveValid(evt);
     }
 
     /**
@@ -153,5 +162,178 @@ public class DefaultNominator
     public void setStrategy(NominationStrategy strategy)
     {
         this.strategy = strategy;
+    }
+
+    /**
+     * Implements a nomination strategy that consists in nominating directly
+     * host or server reflexive pair that has become valid for a
+     * check list. For relayed pair, a timer is armed to see if no other host or
+     * server reflexive pair gets validated prior to timeout, the relayed ones
+     * gets nominated.
+     *
+     * @param evt the {@link PropertyChangeEvent} containing the pair which
+     * has been validated.
+     */
+    private void strategyNominateFirstHostOrReflexiveValid(
+            PropertyChangeEvent evt)
+    {
+        if(IceMediaStream.PROPERTY_PAIR_VALIDATED.equals(evt.getPropertyName()))
+        {
+            CandidatePair validPair = (CandidatePair)evt.getSource();
+
+            TimerTask task = validatedCandidates.get(
+                    validPair.getParentComponent().toShortString());
+            boolean isRelayed =
+                validPair.getLocalCandidate() instanceof HostCandidate;
+
+            if(isRelayed && task == null)
+            {
+                /* armed a timer and see if a host or server reflexive pair
+                 * gets nominated. Otherwise nominate the relayed candidate pair
+                 */
+                Timer timer = new Timer();
+                task = new RelayedCandidateTask(validPair);
+
+                logger.info("Wait timeout to nominate relayed candidate");
+                timer.schedule(task, 0);
+                synchronized(validatedCandidates)
+                {
+                    validatedCandidates.put(
+                            validPair.getParentComponent().toShortString(),
+                            task);
+                }
+            }
+            else if(!isRelayed)
+            {
+                // host or server reflexive candidate pair
+                if(task != null)
+                {
+                    task.cancel();
+                    logger.info("Found a better candidate pair to nominate for "
+                            + validPair.getParentComponent().toShortString());
+                }
+
+                logger.info("Nominate (first highest valid): " +
+                        validPair.toShortString());
+                parentAgent.nominate(validPair);
+            }
+        }
+    }
+
+    /**
+     * TimerTask that will wait a certain amount of time to let other candidate
+     * pair to be validated and possibly be better than the relayed candidate.
+     *
+     * @author Sebastien Vincent
+     */
+    private class RelayedCandidateTask
+        extends TimerTask
+        implements PropertyChangeListener
+    {
+        /**
+         * Wait time in milliseconds.
+         */
+        private static final int WAIT_TIME = 1000;
+
+        /**
+         * The relayed candidate pair.
+         */
+        private final CandidatePair pair;
+
+        /**
+         * If the task has been canceled.
+         */
+        private boolean canceled = false;
+
+        /**
+         * Constructor.
+         *
+         * @param pair relayed candidate pair
+         */
+        public RelayedCandidateTask(CandidatePair pair)
+        {
+            this.pair = pair;
+            pair.getParentComponent().getParentStream().getCheckList().
+                addChecksListener(this);
+        }
+
+        /**
+         * Tracks end of checks of the {@link CheckList}.
+         *
+         * @param evt the event
+         */
+        public void propertyChange(PropertyChangeEvent evt)
+        {
+            /* check list has running out of ordinary checks, see if all other
+             * candidates are FAILED, in which case we nominate immediately
+             * the relayed candidate
+             */
+            CheckList checkList = (CheckList)evt.getSource();
+            boolean allFailed = true;
+
+            synchronized(checkList)
+            {
+                for(CandidatePair c : checkList)
+                {
+                    if(c != pair && c.getState() != CandidatePairState.FAILED)
+                    {
+                        allFailed = false;
+                    }
+                }
+            }
+
+            if(allFailed)
+            {
+                // all other pairs are failed to do not waste time, cancel
+                // timer and nominate ourself (the relayed candidate).
+                this.cancel();
+
+                logger.info("Nominate (first highest valid): " +
+                        pair.toShortString());
+                parentAgent.nominate(pair);
+            }
+        }
+
+        /**
+         * Cancel task.
+         */
+        @Override
+        public boolean cancel()
+        {
+            canceled = true;
+            return super.cancel();
+        }
+
+        /**
+         * Task entry point.
+         */
+        public void run()
+        {
+            try
+            {
+                Thread.sleep(WAIT_TIME);
+            }
+            catch(InterruptedException e)
+            {
+                canceled = true;
+            }
+
+            pair.getParentComponent().getParentStream().getCheckList().
+                removeChecksListener(this);
+            validatedCandidates.remove(
+                    pair.getParentComponent().toShortString());
+
+            if(canceled)
+            {
+                return;
+            }
+
+            logger.info("Nominate (first highest valid): " +
+                    pair.toShortString());
+
+            // task has not been canceled after WAIT_TIME milliseconds so
+            // nominate the pair
+            parentAgent.nominate(pair);
+        }
     }
 }
