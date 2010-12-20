@@ -184,7 +184,7 @@ public class DefaultNominator
             TimerTask task = validatedCandidates.get(
                     validPair.getParentComponent().toShortString());
             boolean isRelayed =
-                validPair.getLocalCandidate() instanceof HostCandidate;
+                validPair.getLocalCandidate() instanceof RelayedCandidate;
 
             if(isRelayed && task == null)
             {
