@@ -14,6 +14,7 @@
         <pathelement location="${dest}"/>
         <pathelement location="${JUnit.home}/junit.jar"/>
         <pathelement location="${lib}/jain-sdp.jar"/>
+        <pathelement location="${lib}/weupnp-0.1.2-SNAPSHOT.jar"/>
     </path>
 
     <!--Patternset to exclude files from the output directory:-->

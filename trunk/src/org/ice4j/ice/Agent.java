@@ -1007,6 +1007,14 @@ public class Agent
                                          boolean          useCandidate)
     {
         LocalCandidate localCandidate = findLocalCandidate(localAddress);
+
+        if(localCandidate == null)
+        {
+            logger.info("No localAddress for this incoming checks: " +
+                    localAddress);
+            return;
+        }
+
         Component parentComponent = localCandidate.getParentComponent();
 
         RemoteCandidate remoteCandidate = new RemoteCandidate(
