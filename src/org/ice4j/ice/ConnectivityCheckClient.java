@@ -386,7 +386,7 @@ class ConnectivityCheckClient
             //generated from it momentarily
             validLocalCandidate = peerReflexiveCandidate;
 
-            logger.fine("Receive a peer-reflexive candidate: " +
+            logger.info("Receive a peer-reflexive candidate: " +
                     peerReflexiveCandidate.getTransportAddress());
         }
 
