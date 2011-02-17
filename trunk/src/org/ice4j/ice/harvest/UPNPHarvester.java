@@ -119,6 +119,7 @@ public class UPNPHarvester
                 {
                     port++;
                 }
+                retries++;
             }
         }
         catch(Throwable e)
