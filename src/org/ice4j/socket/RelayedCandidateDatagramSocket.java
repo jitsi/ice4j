@@ -721,7 +721,8 @@ public class RelayedCandidateDatagramSocket
 
         while (!closed)
         {
-            int receiveBufferSize = channelDataSocket.getReceiveBufferSize();
+            // read one datagram a time
+            int receiveBufferSize = 1500;
 
             if (p == null)
             {
