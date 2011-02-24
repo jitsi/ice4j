@@ -293,7 +293,8 @@ public class Agent
 
         for(Candidate candidate : component.getLocalCandidates())
         {
-            logger.info("\t" + candidate.getTransportAddress());
+            logger.info("\t" + candidate.getTransportAddress() + " (" +
+                    candidate.getType() + ")");
         }
 
         /*
@@ -1282,6 +1283,47 @@ public class Agent
                     logger.info("ICE state is COMPLETED");
                     setState(IceProcessingState.COMPLETED);
                     scheduleTermination();
+
+                    List<IceMediaStream> strms = getStreams();
+
+                    // logs the harvester type and server used for each of
+                    // of the components
+                    for(IceMediaStream stream : strms)
+                    {
+                        for(Component c : stream.getComponents())
+                        {
+                            TransportAddress serverAddr = c.getSelectedPair().
+                                getLocalCandidate().getStunServerAddress();
+                            TransportAddress relayAddr =
+                                c.getSelectedPair().getLocalCandidate().
+                                getRelayServerAddress();
+
+                            StringBuffer buf = new StringBuffer(
+                                    "Harvester selected for ");
+                            buf.append(c.toShortString());
+                            buf.append(" ");
+                            buf.append(c.getSelectedPair().getLocalCandidate().
+                                    getType());
+
+                            if(serverAddr != null)
+                            {
+                                buf.append(" (server = ");
+                                buf.append(c.getSelectedPair().
+                                        getLocalCandidate().
+                                        getStunServerAddress());
+                                buf.append(")");
+                            }
+                            else if(relayAddr != null)
+                            {
+                                buf.append(" (relay = ");
+                                buf.append(c.getSelectedPair().
+                                        getLocalCandidate().
+                                        getRelayServerAddress());
+                                buf.append(")");
+                            }
+                            logger.info(buf.toString());
+                        }
+                    }
                 }
             }
             else
