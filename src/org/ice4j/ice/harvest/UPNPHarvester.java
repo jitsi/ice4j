@@ -103,11 +103,20 @@ public class UPNPHarvester
                             "UDP",
                             "Ice4J: " + port))
                     {
-                        LocalCandidate cand = createUPNPCandidate(socket,
+                        List<LocalCandidate> cands = createUPNPCandidate(socket,
                                 localAddress, externalIPAddress, externalPort,
                                 component, device);
-                        component.addLocalCandidate(cand);
-                        candidates.add(cand);
+
+                        // we have to add the UPNPCandidate and also the base.
+                        // if we don't add the base, we won't be able to add
+                        // peer reflexive candidate if someone contact us on the
+                        // UPNPCandidate
+                        for(LocalCandidate cand : cands)
+                        {
+                            component.addLocalCandidate(cand);
+                            candidates.add(cand);
+                        }
+
                         break;
                     }
                     else
@@ -143,11 +152,12 @@ public class UPNPHarvester
      * represents the specified <tt>TransportAddress</tt>
      * @throws Exception if something goes wrong during candidate creation
      */
-    public UPNPCandidate createUPNPCandidate(DatagramSocket socket,
+    public List<LocalCandidate> createUPNPCandidate(DatagramSocket socket,
             InetAddress localAddr, String externalIP, int port, Component cmp,
             GatewayDevice device)
         throws Exception
     {
+        List<LocalCandidate> ret = new ArrayList<LocalCandidate>();
         TransportAddress addr = new TransportAddress(externalIP, port,
                 Transport.UDP);
 
@@ -157,6 +167,9 @@ public class UPNPHarvester
         DatagramSocket stunSocket = candidate.getStunSocket(null);
         candidate.getStunStack().addSocket(stunSocket);
 
-        return candidate;
+        ret.add(candidate);
+        ret.add(base);
+
+        return ret;
     }
 }

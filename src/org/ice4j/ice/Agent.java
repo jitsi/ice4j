@@ -964,7 +964,6 @@ public class Agent
     public CandidatePair findCandidatePair(TransportAddress localAddress,
                                            TransportAddress remoteAddress)
     {
-
         synchronized(mediaStreams)
         {
             Collection<IceMediaStream> streamsCollection
