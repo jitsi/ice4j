@@ -87,6 +87,11 @@ public class ChannelData
         return this.data;
     }
 
+    /**
+     * Get the data length.
+     *
+     * @return data length
+     */
     public char getDataLength()
     {
         char length = 0;

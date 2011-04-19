@@ -362,10 +362,10 @@ class ConnectivityCheckServer
     }
 
     /**
-     * Implements the {@link CredentialsAuthority#getRemoteKey(String)} method
-     * in a way that would return this handler's parent agent remote password if
-     * <tt>username</tt> is either the remote ufrag or the username that we
-     * are expected to use when querying the remote peer.
+     * Implements the {@link CredentialsAuthority#getRemoteKey(String, String)}
+     * method in a way that would return this handler's parent agent remote
+     * password if <tt>username</tt> is either the remote ufrag or the username
+     * that we are expected to use when querying the remote peer.
      *
      * @param username the remote ufrag that we should return a password for.
      * @param media the media name that we want to get remote key.

@@ -37,6 +37,11 @@ public class ChangeRequestAttribute
     extends org.ice4j.attribute.Attribute
 {
     /**
+     * Attribute name.
+     */
+    public static final String NAME = "CHANGE-REQUEST";
+
+    /**
      * This is the "change IP" flag.  If true, it requests the server
      * to send the Binding Response with a different IP address than the
      * one the Binding Request was received on.
@@ -74,8 +79,6 @@ public class ChangeRequestAttribute
     {
         return NAME;
     }
-
-    public static final String NAME = "CHANGE-REQUEST";
 
     /**
      * Compares two STUN Attributes. Attributes are considered equal when their
