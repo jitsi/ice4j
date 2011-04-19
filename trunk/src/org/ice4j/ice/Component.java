@@ -760,7 +760,6 @@ public class Component
      */
     public LocalCandidate findLocalCandidate(TransportAddress localAddress)
     {
-
         for( LocalCandidate localCnd : localCandidates)
         {
             if(localCnd.getTransportAddress().equals(localAddress))
