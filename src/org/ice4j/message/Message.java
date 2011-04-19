@@ -14,7 +14,7 @@ import org.ice4j.attribute.*;
 import org.ice4j.stack.*;
 
 /**
- * This class represents a STUN message. STUN messages are TLV (type-length-value)
+ * This class represents a STUN message. Messages are TLV (type-length-value)
  * encoded using big endian (network ordered) binary.  All STUN messages start
  * with a STUN header, followed by a STUN payload.  The payload is a series of
  * STUN attributes, the set of which depends on the message type.  The STUN
@@ -41,10 +41,12 @@ public abstract class Message
 
     /* STUN methods */
     public static final char STUN_METHOD_BINDING = 0x0001;
-
-    public static final char BINDING_REQUEST               = (STUN_METHOD_BINDING | STUN_REQUEST);
-    public static final char BINDING_SUCCESS_RESPONSE      = (STUN_METHOD_BINDING | STUN_SUCCESS_RESP);
-    public static final char BINDING_ERROR_RESPONSE        = (STUN_METHOD_BINDING | STUN_ERROR_RESP);
+    public static final char BINDING_REQUEST               =
+        (STUN_METHOD_BINDING | STUN_REQUEST);
+    public static final char BINDING_SUCCESS_RESPONSE      =
+        (STUN_METHOD_BINDING | STUN_SUCCESS_RESP);
+    public static final char BINDING_ERROR_RESPONSE        =
+        (STUN_METHOD_BINDING | STUN_ERROR_RESP);
     public static final char SHARED_SECRET_REQUEST         = 0x0002;
     public static final char SHARED_SECRET_RESPONSE        = 0x0102;
     public static final char SHARED_SECRET_ERROR_RESPONSE  = 0x0112;
@@ -57,20 +59,34 @@ public abstract class Message
     public static final char TURN_METHOD_CREATEPERMISSION = 0x0008;
     public static final char TURN_METHOD_CHANNELBIND  = 0x0009;
 
-    public static final char ALLOCATE_REQUEST = (TURN_METHOD_ALLOCATE | STUN_REQUEST);
-    public static final char ALLOCATE_RESPONSE = (TURN_METHOD_ALLOCATE | STUN_SUCCESS_RESP);
-    public static final char ALLOCATE_ERROR_RESPONSE = (TURN_METHOD_ALLOCATE | STUN_ERROR_RESP);
-    public static final char REFRESH_REQUEST = (TURN_METHOD_REFRESH | STUN_REQUEST);
-    public static final char REFRESH_RESPONSE = (TURN_METHOD_REFRESH | STUN_SUCCESS_RESP);
-    public static final char REFRESH_ERROR_RESPONSE = (TURN_METHOD_REFRESH | STUN_ERROR_RESP);
-    public static final char CHANNELBIND_REQUEST = (TURN_METHOD_CHANNELBIND | STUN_REQUEST);
-    public static final char CHANNELBIND_RESPONSE = (TURN_METHOD_CHANNELBIND | STUN_SUCCESS_RESP);
-    public static final char CHANNELBIND_ERROR_RESPONSE = (TURN_METHOD_CHANNELBIND | STUN_ERROR_RESP);
-    public static final char CREATEPERMISSION_REQUEST = (TURN_METHOD_CREATEPERMISSION | STUN_REQUEST);
-    public static final char CREATEPERMISSION_RESPONSE = (TURN_METHOD_CREATEPERMISSION | STUN_SUCCESS_RESP);
-    public static final char CREATEPERMISSION_ERROR_RESPONSE = (TURN_METHOD_CREATEPERMISSION | STUN_ERROR_RESP);
-    public static final char SEND_INDICATION = (TURN_METHOD_SEND | STUN_INDICATION);
-    public static final char DATA_INDICATION = (TURN_METHOD_DATA | STUN_INDICATION);
+    public static final char ALLOCATE_REQUEST =
+        (TURN_METHOD_ALLOCATE | STUN_REQUEST);
+    public static final char ALLOCATE_RESPONSE =
+        (TURN_METHOD_ALLOCATE | STUN_SUCCESS_RESP);
+    public static final char ALLOCATE_ERROR_RESPONSE =
+        (TURN_METHOD_ALLOCATE | STUN_ERROR_RESP);
+    public static final char REFRESH_REQUEST =
+        (TURN_METHOD_REFRESH | STUN_REQUEST);
+    public static final char REFRESH_RESPONSE =
+        (TURN_METHOD_REFRESH | STUN_SUCCESS_RESP);
+    public static final char REFRESH_ERROR_RESPONSE =
+        (TURN_METHOD_REFRESH | STUN_ERROR_RESP);
+    public static final char CHANNELBIND_REQUEST =
+        (TURN_METHOD_CHANNELBIND | STUN_REQUEST);
+    public static final char CHANNELBIND_RESPONSE =
+        (TURN_METHOD_CHANNELBIND | STUN_SUCCESS_RESP);
+    public static final char CHANNELBIND_ERROR_RESPONSE =
+        (TURN_METHOD_CHANNELBIND | STUN_ERROR_RESP);
+    public static final char CREATEPERMISSION_REQUEST =
+        (TURN_METHOD_CREATEPERMISSION | STUN_REQUEST);
+    public static final char CREATEPERMISSION_RESPONSE =
+        (TURN_METHOD_CREATEPERMISSION | STUN_SUCCESS_RESP);
+    public static final char CREATEPERMISSION_ERROR_RESPONSE =
+        (TURN_METHOD_CREATEPERMISSION | STUN_ERROR_RESP);
+    public static final char SEND_INDICATION =
+        (TURN_METHOD_SEND | STUN_INDICATION);
+    public static final char DATA_INDICATION =
+        (TURN_METHOD_DATA | STUN_INDICATION);
 
     //Message fields
     /**
@@ -110,7 +126,6 @@ public abstract class Message
     //not sure this is the best solution but I'm trying to keep entry order
     protected LinkedHashMap<Character, Attribute> attributes
                                 = new LinkedHashMap<Character, Attribute>();
-
 
     /**
      * Attribute presentity is a thing of RFC 3489 and no longer exists in
@@ -157,58 +172,60 @@ public abstract class Message
     public static final byte M   = 3;
 
     //Message indices
-    protected static final byte BINDING_REQUEST_PRESENTITY_INDEX              = 0;
-    protected static final byte BINDING_RESPONSE_PRESENTITY_INDEX             = 1;
-    protected static final byte BINDING_ERROR_RESPONSE_PRESENTITY_INDEX       = 2;
-    protected static final byte SHARED_SECRET_REQUEST_PRESENTITY_INDEX        = 3;
-    protected static final byte SHARED_SECRET_RESPONSE_PRESENTITY_INDEX       = 4;
-    protected static final byte SHARED_SECRET_ERROR_RESPONSE_PRESENTITY_INDEX = 5;
-    protected static final byte ALLOCATE_REQUEST_PRESENTITY_INDEX             = 6;
-    protected static final byte ALLOCATE_RESPONSE_PRESENTITY_INDEX            = 7;
-    protected static final byte REFRESH_REQUEST_PRESENTITY_INDEX              = 8;
-    protected static final byte REFRESH_RESPONSE_PRESENTITY_INDEX             = 9;
-    protected static final byte CHANNELBIND_REQUEST_PRESENTITY_INDEX          = 10;
-    protected static final byte CHANNELBIND_RESPONSE_PRESENTITY_INDEX         = 11;
-    protected static final byte SEND_INDICATION_PRESENTITY_INDEX              = 12;
-    protected static final byte DATA_INDICATION_PRESENTITY_INDEX              = 13;
+    protected static final byte BINDING_REQUEST_PRESENTITY_INDEX           = 0;
+    protected static final byte BINDING_RESPONSE_PRESENTITY_INDEX          = 1;
+    protected static final byte BINDING_ERROR_RESPONSE_PRESENTITY_INDEX    = 2;
+    protected static final byte SHARED_SECRET_REQUEST_PRESENTITY_INDEX     = 3;
+    protected static final byte SHARED_SECRET_RESPONSE_PRESENTITY_INDEX    = 4;
+    protected static final byte SHARED_SECRET_ERROR_RESPONSE_PRESENTITY_INDEX =
+        5;
+    protected static final byte ALLOCATE_REQUEST_PRESENTITY_INDEX          = 6;
+    protected static final byte ALLOCATE_RESPONSE_PRESENTITY_INDEX         = 7;
+    protected static final byte REFRESH_REQUEST_PRESENTITY_INDEX           = 8;
+    protected static final byte REFRESH_RESPONSE_PRESENTITY_INDEX          = 9;
+    protected static final byte CHANNELBIND_REQUEST_PRESENTITY_INDEX       = 10;
+    protected static final byte CHANNELBIND_RESPONSE_PRESENTITY_INDEX      = 11;
+    protected static final byte SEND_INDICATION_PRESENTITY_INDEX           = 12;
+    protected static final byte DATA_INDICATION_PRESENTITY_INDEX           = 13;
 
     //Attribute indices
-    protected static final byte MAPPED_ADDRESS_PRESENTITY_INDEX               =  0;
-    protected static final byte RESPONSE_ADDRESS_PRESENTITY_INDEX             =  1;
-    protected static final byte CHANGE_REQUEST_PRESENTITY_INDEX               =  2;
-    protected static final byte SOURCE_ADDRESS_PRESENTITY_INDEX               =  3;
-    protected static final byte CHANGED_ADDRESS_PRESENTITY_INDEX              =  4;
-    protected static final byte USERNAME_PRESENTITY_INDEX                     =  5;
-    protected static final byte PASSWORD_PRESENTITY_INDEX                     =  6;
-    protected static final byte MESSAGE_INTEGRITY_PRESENTITY_INDEX            =  7;
-    protected static final byte ERROR_CODE_PRESENTITY_INDEX                   =  8;
-    protected static final byte UNKNOWN_ATTRIBUTES_PRESENTITY_INDEX           =  9;
-    protected static final byte REFLECTED_FROM_PRESENTITY_INDEX               = 10;
-    protected static final byte XOR_MAPPED_ADDRESS_PRESENTITY_INDEX           = 11;
-    protected static final byte XOR_ONLY_PRESENTITY_INDEX                     = 12;
-    protected static final byte SOFTWARE_PRESENTITY_INDEX                     = 13;
-    protected static final byte UNKNOWN_OPTIONAL_ATTRIBUTES_PRESENTITY_INDEX  = 14;
-    protected static final byte ALTERNATE_SERVER_PRESENTITY_INDEX             = 15;
-    protected static final byte REALM_PRESENTITY_INDEX                        = 16;
-    protected static final byte NONCE_PRESENTITY_INDEX                        = 17;
-    protected static final byte FINGERPRINT_PRESENTITY_INDEX                  = 18;
+    protected static final byte MAPPED_ADDRESS_PRESENTITY_INDEX            =  0;
+    protected static final byte RESPONSE_ADDRESS_PRESENTITY_INDEX          =  1;
+    protected static final byte CHANGE_REQUEST_PRESENTITY_INDEX            =  2;
+    protected static final byte SOURCE_ADDRESS_PRESENTITY_INDEX            =  3;
+    protected static final byte CHANGED_ADDRESS_PRESENTITY_INDEX           =  4;
+    protected static final byte USERNAME_PRESENTITY_INDEX                  =  5;
+    protected static final byte PASSWORD_PRESENTITY_INDEX                  =  6;
+    protected static final byte MESSAGE_INTEGRITY_PRESENTITY_INDEX         =  7;
+    protected static final byte ERROR_CODE_PRESENTITY_INDEX                =  8;
+    protected static final byte UNKNOWN_ATTRIBUTES_PRESENTITY_INDEX        =  9;
+    protected static final byte REFLECTED_FROM_PRESENTITY_INDEX            = 10;
+    protected static final byte XOR_MAPPED_ADDRESS_PRESENTITY_INDEX        = 11;
+    protected static final byte XOR_ONLY_PRESENTITY_INDEX                  = 12;
+    protected static final byte SOFTWARE_PRESENTITY_INDEX                  = 13;
+    protected static final byte UNKNOWN_OPTIONAL_ATTRIBUTES_PRESENTITY_INDEX  =
+        14;
+    protected static final byte ALTERNATE_SERVER_PRESENTITY_INDEX          = 15;
+    protected static final byte REALM_PRESENTITY_INDEX                     = 16;
+    protected static final byte NONCE_PRESENTITY_INDEX                     = 17;
+    protected static final byte FINGERPRINT_PRESENTITY_INDEX               = 18;
 
     /* TURN attributes */
-    protected static final byte CHANNEL_NUMBER_PRESENTITY_INDEX               = 19;
-    protected static final byte LIFETIME_PRESENTITY_INDEX                     = 20;
-    protected static final byte XOR_PEER_ADDRESS_PRESENTITY_INDEX             = 21;
-    protected static final byte DATA_PRESENTITY_INDEX                         = 22;
-    protected static final byte XOR_RELAYED_ADDRESS_PRESENTITY_INDEX          = 23;
-    protected static final byte EVEN_PORT_PRESENTITY_INDEX                    = 24;
-    protected static final byte REQUESTED_TRANSPORT_PRESENTITY_INDEX          = 25;
-    protected static final byte DONT_FRAGMENT_PRESENTITY_INDEX                = 26;
-    protected static final byte RESERVATION_TOKEN_PRESENTITY_INDEX            = 27;
+    protected static final byte CHANNEL_NUMBER_PRESENTITY_INDEX            = 19;
+    protected static final byte LIFETIME_PRESENTITY_INDEX                  = 20;
+    protected static final byte XOR_PEER_ADDRESS_PRESENTITY_INDEX          = 21;
+    protected static final byte DATA_PRESENTITY_INDEX                      = 22;
+    protected static final byte XOR_RELAYED_ADDRESS_PRESENTITY_INDEX       = 23;
+    protected static final byte EVEN_PORT_PRESENTITY_INDEX                 = 24;
+    protected static final byte REQUESTED_TRANSPORT_PRESENTITY_INDEX       = 25;
+    protected static final byte DONT_FRAGMENT_PRESENTITY_INDEX             = 26;
+    protected static final byte RESERVATION_TOKEN_PRESENTITY_INDEX         = 27;
 
     /* ICE attributes */
-    protected static final byte PRIORITY_PRESENTITY_INDEX                     = 28;
-    protected static final byte ICE_CONTROLLING_PRESENTITY_INDEX              = 29;
-    protected static final byte ICE_CONTROLLED_PRESENTITY_INDEX               = 30;
-    protected static final byte USE_CANDIDATE_PRESENTITY_INDEX                = 31;
+    protected static final byte PRIORITY_PRESENTITY_INDEX                  = 28;
+    protected static final byte ICE_CONTROLLING_PRESENTITY_INDEX           = 29;
+    protected static final byte ICE_CONTROLLED_PRESENTITY_INDEX            = 30;
+    protected static final byte USE_CANDIDATE_PRESENTITY_INDEX             = 31;
 
     protected final static byte attributePresentities[][] = new byte[][]{
     //                                            Binding   Shared   Shared   Shared  Alloc   Alloc   Rfrsh   Rfrsh   ChnlBnd  ChnlBnd Send    Data
@@ -270,7 +287,7 @@ public abstract class Message
             int attLen = att.getDataLength() + Attribute.HEADER_LENGTH;
 
             //take attribute padding into account:
-            attLen += (4 - attLen%4)%4;
+            attLen += (4 - (attLen % 4)) % 4;
 
             length += attLen;
         }
@@ -320,8 +337,8 @@ public abstract class Message
      * attribute exists.
      *
      * @param attributeType the type of the attribute
-     * @return the attribute with the specified type or null if no such attribute
-     * exists
+     * @return the attribute with the specified type or null if no such
+     * attribute exists
      */
     public Attribute getAttribute(char attributeType)
     {
@@ -390,7 +407,8 @@ public abstract class Message
      *
      * @param tranID the transaction id to set in this message.
      *
-     * @throws StunException ILLEGAL_ARGUMENT if the transaction id is not valid.
+     * @throws StunException ILLEGAL_ARGUMENT if the transaction id is not
+     * valid.
      */
     public void setTransactionID(byte[] tranID)
         throws StunException
@@ -434,24 +452,35 @@ public abstract class Message
 
         switch (messageType)
         {
-            case BINDING_REQUEST:              msgIndex = BINDING_REQUEST_PRESENTITY_INDEX; break;
-            case BINDING_SUCCESS_RESPONSE:             msgIndex = BINDING_RESPONSE_PRESENTITY_INDEX; break;
-            case BINDING_ERROR_RESPONSE:       msgIndex = BINDING_ERROR_RESPONSE_PRESENTITY_INDEX; break;
-            case SHARED_SECRET_REQUEST:        msgIndex = SHARED_SECRET_REQUEST_PRESENTITY_INDEX; break;
-            case SHARED_SECRET_RESPONSE:       msgIndex = SHARED_SECRET_RESPONSE_PRESENTITY_INDEX; break;
-            case SHARED_SECRET_ERROR_RESPONSE: msgIndex = SHARED_SECRET_ERROR_RESPONSE_PRESENTITY_INDEX; break;
-            case ALLOCATE_REQUEST:             msgIndex = ALLOCATE_REQUEST_PRESENTITY_INDEX; break;
-            case REFRESH_REQUEST:              msgIndex = REFRESH_REQUEST_PRESENTITY_INDEX; break;
-            case CHANNELBIND_REQUEST:          msgIndex = CHANNELBIND_REQUEST_PRESENTITY_INDEX; break;
-            case SEND_INDICATION:              msgIndex = SEND_INDICATION_PRESENTITY_INDEX; break;
-            case DATA_INDICATION:              msgIndex = DATA_INDICATION_PRESENTITY_INDEX; break;
+            case BINDING_REQUEST:
+                msgIndex = BINDING_REQUEST_PRESENTITY_INDEX; break;
+            case BINDING_SUCCESS_RESPONSE:
+                msgIndex = BINDING_RESPONSE_PRESENTITY_INDEX; break;
+            case BINDING_ERROR_RESPONSE:
+                msgIndex = BINDING_ERROR_RESPONSE_PRESENTITY_INDEX; break;
+            case SHARED_SECRET_REQUEST:
+                msgIndex = SHARED_SECRET_REQUEST_PRESENTITY_INDEX; break;
+            case SHARED_SECRET_RESPONSE:
+                msgIndex = SHARED_SECRET_RESPONSE_PRESENTITY_INDEX; break;
+            case SHARED_SECRET_ERROR_RESPONSE:
+                msgIndex = SHARED_SECRET_ERROR_RESPONSE_PRESENTITY_INDEX; break;
+            case ALLOCATE_REQUEST:
+                msgIndex = ALLOCATE_REQUEST_PRESENTITY_INDEX; break;
+            case REFRESH_REQUEST:
+                msgIndex = REFRESH_REQUEST_PRESENTITY_INDEX; break;
+            case CHANNELBIND_REQUEST:
+                msgIndex = CHANNELBIND_REQUEST_PRESENTITY_INDEX; break;
+            case SEND_INDICATION:
+                msgIndex = SEND_INDICATION_PRESENTITY_INDEX; break;
+            case DATA_INDICATION:
+                msgIndex = DATA_INDICATION_PRESENTITY_INDEX; break;
             default:
                 if (logger.isLoggable(Level.FINE))
                 {
                     logger.log(
                             Level.FINE,
-                            "Attribute presentity not defined for STUN message type: "
-                                + ((int) messageType)
+                            "Attribute presentity not defined for STUN " +
+                            "message type: " + ((int) messageType)
                                 + ". Will assume optional.");
                 }
                 return O;
@@ -459,34 +488,63 @@ public abstract class Message
 
         switch (attributeType)
         {
-            case Attribute.MAPPED_ADDRESS:     attributeIndex = MAPPED_ADDRESS_PRESENTITY_INDEX; break;
-            case Attribute.RESPONSE_ADDRESS:   attributeIndex = RESPONSE_ADDRESS_PRESENTITY_INDEX; break;
-            case Attribute.CHANGE_REQUEST:     attributeIndex = CHANGE_REQUEST_PRESENTITY_INDEX; break;
-            case Attribute.SOURCE_ADDRESS:     attributeIndex = SOURCE_ADDRESS_PRESENTITY_INDEX; break;
-            case Attribute.CHANGED_ADDRESS:    attributeIndex = CHANGED_ADDRESS_PRESENTITY_INDEX; break;
-            case Attribute.USERNAME:           attributeIndex = USERNAME_PRESENTITY_INDEX; break;
-            case Attribute.PASSWORD:           attributeIndex = PASSWORD_PRESENTITY_INDEX; break;
-            case Attribute.MESSAGE_INTEGRITY:  attributeIndex = MESSAGE_INTEGRITY_PRESENTITY_INDEX; break;
-            case Attribute.ERROR_CODE:         attributeIndex = ERROR_CODE_PRESENTITY_INDEX; break;
-            case Attribute.UNKNOWN_ATTRIBUTES: attributeIndex = UNKNOWN_ATTRIBUTES_PRESENTITY_INDEX; break;
-            case Attribute.REFLECTED_FROM:     attributeIndex = REFLECTED_FROM_PRESENTITY_INDEX; break;
-            case Attribute.XOR_MAPPED_ADDRESS: attributeIndex = XOR_MAPPED_ADDRESS_PRESENTITY_INDEX; break;
-            case Attribute.XOR_ONLY:           attributeIndex = XOR_ONLY_PRESENTITY_INDEX; break;
-            case Attribute.SOFTWARE:           attributeIndex = SOFTWARE_PRESENTITY_INDEX; break;
-            case Attribute.ALTERNATE_SERVER:   attributeIndex = ALTERNATE_SERVER_PRESENTITY_INDEX; break;
-            case Attribute.REALM:              attributeIndex = REALM_PRESENTITY_INDEX; break;
-            case Attribute.NONCE:              attributeIndex = NONCE_PRESENTITY_INDEX; break;
-            case Attribute.FINGERPRINT:        attributeIndex = FINGERPRINT_PRESENTITY_INDEX; break;
-            case Attribute.CHANNEL_NUMBER:     attributeIndex = CHANNEL_NUMBER_PRESENTITY_INDEX; break;
-            case Attribute.LIFETIME:           attributeIndex = LIFETIME_PRESENTITY_INDEX; break;
-            case Attribute.XOR_PEER_ADDRESS:   attributeIndex = XOR_PEER_ADDRESS_PRESENTITY_INDEX; break;
-            case Attribute.DATA:               attributeIndex = DATA_PRESENTITY_INDEX; break;
-            case Attribute.XOR_RELAYED_ADDRESS:attributeIndex = XOR_RELAYED_ADDRESS_PRESENTITY_INDEX; break;
-            case Attribute.EVEN_PORT:          attributeIndex = EVEN_PORT_PRESENTITY_INDEX; break;
-            case Attribute.REQUESTED_TRANSPORT:attributeIndex = REQUESTED_TRANSPORT_PRESENTITY_INDEX; break;
-            case Attribute.DONT_FRAGMENT:      attributeIndex = DONT_FRAGMENT_PRESENTITY_INDEX; break;
-            case Attribute.RESERVATION_TOKEN:  attributeIndex = RESERVATION_TOKEN_PRESENTITY_INDEX; break;
-            default: attributeIndex = UNKNOWN_OPTIONAL_ATTRIBUTES_PRESENTITY_INDEX; break;
+            case Attribute.MAPPED_ADDRESS:
+                attributeIndex = MAPPED_ADDRESS_PRESENTITY_INDEX; break;
+            case Attribute.RESPONSE_ADDRESS:
+                attributeIndex = RESPONSE_ADDRESS_PRESENTITY_INDEX; break;
+            case Attribute.CHANGE_REQUEST:
+                attributeIndex = CHANGE_REQUEST_PRESENTITY_INDEX; break;
+            case Attribute.SOURCE_ADDRESS:
+                attributeIndex = SOURCE_ADDRESS_PRESENTITY_INDEX; break;
+            case Attribute.CHANGED_ADDRESS:
+                attributeIndex = CHANGED_ADDRESS_PRESENTITY_INDEX; break;
+            case Attribute.USERNAME:
+                attributeIndex = USERNAME_PRESENTITY_INDEX; break;
+            case Attribute.PASSWORD:
+                attributeIndex = PASSWORD_PRESENTITY_INDEX; break;
+            case Attribute.MESSAGE_INTEGRITY:
+                attributeIndex = MESSAGE_INTEGRITY_PRESENTITY_INDEX; break;
+            case Attribute.ERROR_CODE:
+                attributeIndex = ERROR_CODE_PRESENTITY_INDEX; break;
+            case Attribute.UNKNOWN_ATTRIBUTES:
+                attributeIndex = UNKNOWN_ATTRIBUTES_PRESENTITY_INDEX; break;
+            case Attribute.REFLECTED_FROM:
+                attributeIndex = REFLECTED_FROM_PRESENTITY_INDEX; break;
+            case Attribute.XOR_MAPPED_ADDRESS:
+                attributeIndex = XOR_MAPPED_ADDRESS_PRESENTITY_INDEX; break;
+            case Attribute.XOR_ONLY:
+                attributeIndex = XOR_ONLY_PRESENTITY_INDEX; break;
+            case Attribute.SOFTWARE:
+                attributeIndex = SOFTWARE_PRESENTITY_INDEX; break;
+            case Attribute.ALTERNATE_SERVER:
+                attributeIndex = ALTERNATE_SERVER_PRESENTITY_INDEX; break;
+            case Attribute.REALM:
+                attributeIndex = REALM_PRESENTITY_INDEX; break;
+            case Attribute.NONCE:
+                attributeIndex = NONCE_PRESENTITY_INDEX; break;
+            case Attribute.FINGERPRINT:
+                attributeIndex = FINGERPRINT_PRESENTITY_INDEX; break;
+            case Attribute.CHANNEL_NUMBER:
+                attributeIndex = CHANNEL_NUMBER_PRESENTITY_INDEX; break;
+            case Attribute.LIFETIME:
+                attributeIndex = LIFETIME_PRESENTITY_INDEX; break;
+            case Attribute.XOR_PEER_ADDRESS:
+                attributeIndex = XOR_PEER_ADDRESS_PRESENTITY_INDEX; break;
+            case Attribute.DATA:
+                attributeIndex = DATA_PRESENTITY_INDEX; break;
+            case Attribute.XOR_RELAYED_ADDRESS:
+                attributeIndex = XOR_RELAYED_ADDRESS_PRESENTITY_INDEX; break;
+            case Attribute.EVEN_PORT:
+                attributeIndex = EVEN_PORT_PRESENTITY_INDEX; break;
+            case Attribute.REQUESTED_TRANSPORT:
+                attributeIndex = REQUESTED_TRANSPORT_PRESENTITY_INDEX; break;
+            case Attribute.DONT_FRAGMENT:
+                attributeIndex = DONT_FRAGMENT_PRESENTITY_INDEX; break;
+            case Attribute.RESERVATION_TOKEN:
+                attributeIndex = RESERVATION_TOKEN_PRESENTITY_INDEX; break;
+            default:
+                attributeIndex = UNKNOWN_OPTIONAL_ATTRIBUTES_PRESENTITY_INDEX;
+                break;
         }
 
         return attributePresentities[ attributeIndex ][ msgIndex ];
@@ -520,7 +578,8 @@ public abstract class Message
         case SEND_INDICATION:              return "SEND-INDICATION";
         case SHARED_SECRET_REQUEST:        return "SHARED-SECRET-REQUEST";
         case SHARED_SECRET_RESPONSE:       return "SHARED-SECRET-RESPONSE";
-        case SHARED_SECRET_ERROR_RESPONSE: return "SHARED-SECRET-ERROR-RESPONSE";
+        case SHARED_SECRET_ERROR_RESPONSE:
+            return "SHARED-SECRET-ERROR-RESPONSE";
         default:                           return "UNKNOWN-MESSAGE";
         }
     }
@@ -874,7 +933,7 @@ public abstract class Message
         if(! rfc3489CompatibilityMode )
             return;
 
-        for(char i = Attribute.MAPPED_ADDRESS; i < Attribute.REFLECTED_FROM; i++)
+        for(char i = Attribute.MAPPED_ADDRESS; i < Attribute.REFLECTED_FROM;i++)
             if(getAttributePresentity(i) == M && getAttribute(i) == null)
                 throw new IllegalStateException(
                     "A mandatory attribute (type=" +(int)i + ") is missing!");

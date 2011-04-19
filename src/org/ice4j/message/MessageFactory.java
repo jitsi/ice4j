@@ -397,7 +397,7 @@ public class MessageFactory
      * @param realm the value for the REALM <tt>Attribute</tt> to be added to
      * <tt>request</tt>
      * @param nonce the value for the NONCE <tt>Attribute</tt> to be added to
-     * <tt>request</tt> 
+     * <tt>request</tt>
      *
      * @throws StunException if anything goes wrong while adding the
      * <tt>Attribute</tt>s to <tt>request</tt> which support the STUN long-term
@@ -603,18 +603,36 @@ public class MessageFactory
     }
 
     // ======================== NOT CURRENTLY SUPPORTED
-    public static Request createShareSecretRequest()
+    /**
+     * Create a shared secret request.
+     * WARNING: This is not currently supported.
+     *
+     * @return request
+     */
+    public static Request createSharedSecretRequest()
     {
         throw new UnsupportedOperationException(
                         "Shared Secret Support is not currently implemented");
     }
 
+    /**
+     * Create a shared secret response.
+     * WARNING: This is not currently supported.
+     *
+     * @return response
+     */
     public static Response createSharedSecretResponse()
     {
         throw new UnsupportedOperationException(
                         "Shared Secret Support is not currently implemented");
     }
 
+    /**
+     * Create a shared secret error response.
+     * WARNING: This is not currently supported.
+     *
+     * @return error response
+     */
     public static Response createSharedSecretErrorResponse()
     {
         throw new UnsupportedOperationException(

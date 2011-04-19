@@ -21,7 +21,9 @@ package org.ice4j.attribute;
 
 public class ReflectedFromAttribute extends AddressAttribute
 {
-
+    /**
+     * Attribute name.
+     */
     public static final String NAME = "REFLECTED-FROM";
 
     /**

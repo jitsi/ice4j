@@ -73,18 +73,61 @@ package org.ice4j.attribute;
  */
 public class ErrorCodeAttribute extends Attribute
 {
-    // Common error codes
-    public static final char BAD_REQUEST   = 400;
-    public static final char UNAUTHORIZED  = 401;
-    public static final char UNKNOWN_ATTRIBUTE = 420;
-    public static final char STALE_CREDENTIALS = 430;
-    public static final char INTEGRITY_CHECK_FAILURE = 431;
-    public static final char MISSING_USERNAME = 432;
-    public static final char USE_TLS = 433;
-    public static final char ROLE_CONFLICT   = 487;
-    public static final char SERVER_ERROR = 500;
-    public static final char GLOBAL_FAILURE = 600;
+    /**
+     * Attribute's name.
+     */
+    public static final String NAME = "ERROR-CODE";
 
+    // Common error codes
+    /**
+     * Bad request error code.
+     */
+    public static final char BAD_REQUEST   = 400;
+
+    /**
+     * Unauthorized error code.
+     */
+    public static final char UNAUTHORIZED  = 401;
+
+    /**
+     * Unknown attribute error code.
+     */
+    public static final char UNKNOWN_ATTRIBUTE = 420;
+
+    /**
+     * Stale credentials error code.
+     */
+    public static final char STALE_CREDENTIALS = 430;
+
+    /**
+     * Integrity check failure error code.
+     */
+    public static final char INTEGRITY_CHECK_FAILURE = 431;
+
+    /**
+     * Missing username error code.
+     */
+    public static final char MISSING_USERNAME = 432;
+
+    /**
+     * Use TLS error code.
+     */
+    public static final char USE_TLS = 433;
+
+    /**
+     * Role conflict error code.
+     */
+    public static final char ROLE_CONFLICT   = 487;
+
+    /**
+     * Server error code.
+     */
+    public static final char SERVER_ERROR = 500;
+
+    /**
+     * Global failure error code.
+     */
+    public static final char GLOBAL_FAILURE = 600;
 
     /**
      * The class represents the hundreds digit of the response code.  The
@@ -262,8 +305,6 @@ public class ErrorCodeAttribute extends Attribute
     {
         return NAME;
     }
-
-    public static final String NAME = "ERROR-CODE";
 
     /**
      * Returns the length of this attribute's body.

@@ -200,7 +200,7 @@ public class LongTermCredentialSession
      * username or user frag,  an empty array if there was no password for
      * that username or <tt>null</tt> if the username is not a remote user
      * name recognized by this <tt>CredentialsAuthority</tt>
-     * @see CredentialsAuthority#getRemoteKey(String)
+     * @see CredentialsAuthority#getRemoteKey(String, String)
      */
     public byte[] getRemoteKey(String username, String media)
     {

@@ -34,11 +34,18 @@ import org.ice4j.*;
 public class UnknownAttributesAttribute extends Attribute
 {
     /**
+     * Attribute name.
+     */
+    public static String NAME = "UNKNOWN-ATTRIBUTES";
+
+    /**
      * A list of attribute types that were not understood by the server.
      */
     private ArrayList<Character> unknownAttributes = new ArrayList<Character>();
 
-
+    /**
+     * Constructor.
+     */
     UnknownAttributesAttribute()
     {
         super(UNKNOWN_ATTRIBUTES);
@@ -54,8 +61,6 @@ public class UnknownAttributesAttribute extends Attribute
     {
         return NAME;
     }
-
-    public static String NAME = "UNKNOWN-ATTRIBUTES";
 
    /**
     * Returns the length (in bytes) of this attribute's body.

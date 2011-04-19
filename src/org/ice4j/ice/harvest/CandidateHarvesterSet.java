@@ -100,7 +100,7 @@ public class CandidateHarvesterSet
 
         /**
          * Represents a task to be executed by the specified executorService and
-         * to call {@link CandidateHarvester#harvestComponent)} on the specified
+         * to call {@link CandidateHarvester#harvestComponent} on the specified
          * harvesters.
          */
         class CandidateHarvesterSetTask
