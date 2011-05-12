@@ -75,6 +75,7 @@ public class UPNPHarvester
 
         try
         {
+            logger.info("Begin UPnP harvesting");
             GatewayDevice device = discover.getValidGateway();
 
             if(device == null)
@@ -106,6 +107,9 @@ public class UPNPHarvester
                         List<LocalCandidate> cands = createUPNPCandidate(socket,
                                 localAddress, externalIPAddress, externalPort,
                                 component, device);
+
+                        logger.info("Add UPnP port mapping: " + 
+                                externalIPAddress + " " + externalPort);
 
                         // we have to add the UPNPCandidate and also the base.
                         // if we don't add the base, we won't be able to add
