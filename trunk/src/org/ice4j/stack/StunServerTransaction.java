@@ -272,7 +272,7 @@ class StunServerTransaction
      * @return <tt>true</tt> if this transaction is still retransmitting and
      * false <tt>otherwise</tt>
      */
-    public boolean isReransmitting()
+    public boolean isRetransmitting()
     {
         return isRetransmitting;
     }
