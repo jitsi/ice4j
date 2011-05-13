@@ -132,7 +132,7 @@ public class MessageFactory
      * @throws IllegalArgumentException if there was something wrong with the
      * way we are trying to create the response.
      */
-    public static Response create3482BindingResponse(
+    public static Response create3489BindingResponse(
                     TransportAddress mappedAddress,
                     TransportAddress sourceAddress,
                     TransportAddress changedAddress)

@@ -108,10 +108,10 @@ public class StunAddressDiscovererTest
     public void testRecognizeSymmetricNat() throws Exception
     {
         //define the server response sequence
-        Response testIResponse1 = MessageFactory.create3482BindingResponse(
+        Response testIResponse1 = MessageFactory.create3489BindingResponse(
             mappedClientAddress, responseServerAddress, responseServerAddress);
         Response testIResponse2 = null;
-        Response testIResponse3 = MessageFactory.create3482BindingResponse(
+        Response testIResponse3 = MessageFactory.create3489BindingResponse(
             mappedClientAddressPort2,
             responseServerAddress,
             responseServerAddress);
@@ -144,10 +144,10 @@ public class StunAddressDiscovererTest
         throws Exception
     {
         //define the server response sequence
-        Response testIResponse1 = MessageFactory.create3482BindingResponse(
+        Response testIResponse1 = MessageFactory.create3489BindingResponse(
             mappedClientAddress, responseServerAddress, responseServerAddress);
         Response testIResponse2 = null;
-        Response testIResponse3 = MessageFactory.create3482BindingResponse(
+        Response testIResponse3 = MessageFactory.create3489BindingResponse(
             mappedClientAddress, responseServerAddress, responseServerAddress);
         Response testIResponse4 = null;
 
@@ -177,12 +177,12 @@ public class StunAddressDiscovererTest
     public void testRecognizeRestrictedCone() throws Exception
     {
         //define the server response sequence
-        Response testIResponse1 = MessageFactory.create3482BindingResponse(
+        Response testIResponse1 = MessageFactory.create3489BindingResponse(
             mappedClientAddress, responseServerAddress, responseServerAddress);
         Response testIResponse2 = null;
-        Response testIResponse3 = MessageFactory.create3482BindingResponse(
+        Response testIResponse3 = MessageFactory.create3489BindingResponse(
             mappedClientAddress, responseServerAddress, responseServerAddress);
-        Response testIResponse4 = MessageFactory.create3482BindingResponse(
+        Response testIResponse4 = MessageFactory.create3489BindingResponse(
             mappedClientAddress, responseServerAddress, responseServerAddress);
 
         responseServer.addMessage(testIResponse1);
@@ -212,9 +212,9 @@ public class StunAddressDiscovererTest
         throws Exception
     {
         //define the server response sequence
-        Response testIResponse1 = MessageFactory.create3482BindingResponse(
+        Response testIResponse1 = MessageFactory.create3489BindingResponse(
             mappedClientAddress, responseServerAddress, responseServerAddress);
-        Response testIResponse2 = MessageFactory.create3482BindingResponse(
+        Response testIResponse2 = MessageFactory.create3489BindingResponse(
             mappedClientAddress, responseServerAddress, responseServerAddress);
 
         responseServer.addMessage(testIResponse1);
@@ -242,7 +242,7 @@ public class StunAddressDiscovererTest
         throws Exception
     {
         //define the server response sequence
-        Response testIResponse1 = MessageFactory.create3482BindingResponse(
+        Response testIResponse1 = MessageFactory.create3489BindingResponse(
             discovererAddress, responseServerAddress, responseServerAddress);
         Response testIResponse2 = null;
 
@@ -272,9 +272,9 @@ public class StunAddressDiscovererTest
         throws Exception
     {
         //define the server response sequence
-        Response testIResponse1 = MessageFactory.create3482BindingResponse(
+        Response testIResponse1 = MessageFactory.create3489BindingResponse(
             discovererAddress, responseServerAddress, responseServerAddress);
-        Response testIResponse2 = MessageFactory.create3482BindingResponse(
+        Response testIResponse2 = MessageFactory.create3489BindingResponse(
             discovererAddress, responseServerAddress, responseServerAddress);
 
         responseServer.addMessage(testIResponse1);

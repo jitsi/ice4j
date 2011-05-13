@@ -469,7 +469,7 @@ public class StunStack
                                 + "(tid="+ tid.toString() +") "
                                 + "object does not exist.");
         }
-        else if( sTran.isReransmitting())
+        else if( sTran.isRetransmitting())
         {
             throw new StunException(StunException.TRANSACTION_DOES_NOT_EXIST,
                                     "The transaction specified in the response "
