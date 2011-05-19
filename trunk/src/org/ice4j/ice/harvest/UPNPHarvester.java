@@ -38,9 +38,31 @@ public class UPNPHarvester
     private static final int MAX_RETRIES = 5;
 
     /**
-     * The UPnP discover.
+     * ST search field for WANIPConnection.
      */
-    private GatewayDiscover discover = new GatewayDiscover();
+    private static final String stIP =
+        "urn:schemas-upnp-org:service:WANIPConnection:1";
+
+    /**
+     * ST search field for WANPPPConnection.
+     */
+    private static final String stPPP =
+        "urn:schemas-upnp-org:service:WANPPPConnection:1";
+
+    /**
+     * Synchronization object.
+     */
+    private final Object rootSync = new Object();
+
+    /**
+     * Gateway device.
+     */
+    private GatewayDevice device = null;
+
+    /**
+     * Number of UPnP discover threads that have finished.
+     */
+    private int finishThreads = 0;
 
     /**
      * Constructor.
@@ -49,7 +71,31 @@ public class UPNPHarvester
     {
         try
         {
-            discover.discover();
+            logger.info("Begin UPnP harvesting");
+
+            UPNPThread wanIPThread = new UPNPThread(stIP);
+            UPNPThread wanPPPThread = new UPNPThread(stPPP);
+
+            wanIPThread.start();
+            wanPPPThread.start();
+
+            while(finishThreads != 2)
+            {
+                synchronized(rootSync)
+                {
+                    rootSync.wait();
+                }
+            }
+
+            if(wanIPThread.getDevice() != null)
+            {
+                device = wanIPThread.getDevice();
+            }
+            else if(wanPPPThread.getDevice() != null)
+            {
+                device = wanPPPThread.getDevice();
+            }
+
         }
         catch(Exception e)
         {
@@ -75,9 +121,6 @@ public class UPNPHarvester
 
         try
         {
-            logger.info("Begin UPnP harvesting");
-            GatewayDevice device = discover.getValidGateway();
-
             if(device == null)
             {
                 return candidates;
@@ -108,7 +151,7 @@ public class UPNPHarvester
                                 localAddress, externalIPAddress, externalPort,
                                 component, device);
 
-                        logger.info("Add UPnP port mapping: " + 
+                        logger.info("Add UPnP port mapping: " +
                                 externalIPAddress + " " + externalPort);
 
                         // we have to add the UPNPCandidate and also the base.
@@ -175,5 +218,80 @@ public class UPNPHarvester
         ret.add(base);
 
         return ret;
+    }
+
+    /**
+     * UPnP discover thread.
+     */
+    private class UPNPThread
+        extends Thread
+    {
+        /**
+         * Gateway device.
+         */
+        private GatewayDevice device = null;
+
+        /**
+         * ST search field.
+         */
+        private final String st;
+
+        /**
+         * Constructor.
+         *
+         * @param st ST search field
+         */
+        public UPNPThread(String st)
+        {
+            this.st = st;
+        }
+
+        /**
+         * Returns gateway device.
+         *
+         * @return gateway device
+         */
+        public GatewayDevice getDevice()
+        {
+            return device;
+        }
+
+        /**
+         * Thread Entry point.
+         */
+        public void run()
+        {
+            try
+            {
+                GatewayDiscover gd = new GatewayDiscover(st);
+
+                gd.discover();
+
+                if(gd.getValidGateway() != null)
+                {
+                    device = gd.getValidGateway();
+                }
+            }
+            catch(Throwable e)
+            {
+                logger.info("Failed to harvest UPnP: " + e);
+
+                /*
+                 * The Javadoc on ThreadDeath says: If ThreadDeath is caught by
+                 * a method, it is important that it be rethrown so that the
+                 * thread actually dies.
+                 */
+                if(e instanceof ThreadDeath)
+                    throw (ThreadDeath)e;
+            }
+            finally
+            {
+                synchronized(rootSync)
+                {
+                    finishThreads++;
+                    rootSync.notify();
+                }
+            }
+        }
     }
 }
