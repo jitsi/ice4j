@@ -225,7 +225,9 @@ class ConnectivityCheckClient
         if (!checkSymmetricAddresses(evt))
         {
             logger.fine("Received a non-symmetric response for pair: "
-                        + checkedPair.toShortString() +". Failing");
+                        + checkedPair.toShortString() + ". Failing");
+            logger.info("non-symmetric response for pair: "
+                        + checkedPair.toShortString() + ", failing");
             checkedPair.setStateFailed();
         }
         //handle error responses.
@@ -335,7 +337,7 @@ class ConnectivityCheckClient
         if(! response.containsAttribute(Attribute.XOR_MAPPED_ADDRESS))
         {
             logger.fine("Received a success response with no "
-                            +"XOR_MAPPED_ADDRESS attribute.");
+                            + "XOR_MAPPED_ADDRESS attribute.");
             logger.info("Pair failed: "  + checkedPair.toShortString());
             checkedPair.setStateFailed();
             return; //malformed error response
@@ -571,6 +573,8 @@ class ConnectivityCheckClient
             logger.fine("Received an unrecoverable error response for pair "
                             + pair.toShortString() +
                             " will mark the pair as FAILED.");
+            logger.info("Error response for pair: " + pair.toShortString() +
+                            ", failing.");
             pair.setStateFailed();
         }
     }
@@ -587,7 +591,7 @@ class ConnectivityCheckClient
     {
         CandidatePair pair = ((CandidatePair)event.getTransactionID()
                         .getApplicationData());
-        logger.info("timeout for pair: " + pair.toShortString() +", failing.");
+        logger.info("timeout for pair: " + pair.toShortString() + ", failing.");
         pair.setStateFailed();
         updateCheckListAndTimerStates(pair);
     }
