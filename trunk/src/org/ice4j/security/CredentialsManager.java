@@ -47,16 +47,18 @@ public class CredentialsManager
      */
     public byte[] getLocalKey(String username)
     {
-        for (CredentialsAuthority auth : authorities)
+        synchronized(authorities)
         {
-            byte[] passwd = auth.getLocalKey(username);
-
-            if (passwd != null)
+            for (CredentialsAuthority auth : authorities)
             {
-                return passwd;
+                byte[] passwd = auth.getLocalKey(username);
+
+                if (passwd != null)
+                {
+                    return passwd;
+                }
             }
         }
-
         return null;
     }
 
@@ -76,17 +78,19 @@ public class CredentialsManager
      */
     public byte[] getRemoteKey(String username, String media)
     {
-        for (CredentialsAuthority auth : authorities)
+        synchronized(authorities)
         {
-            byte[] passwd = auth.getRemoteKey(username, media);
-
-            if (passwd != null)
+            for (CredentialsAuthority auth : authorities)
             {
-                /** @todo: we should probably add SASLprep here.*/
-                return passwd;
+                byte[] passwd = auth.getRemoteKey(username, media);
+
+                if (passwd != null)
+                {
+                    /** @todo: we should probably add SASLprep here.*/
+                    return passwd;
+                }
             }
         }
-
         return null;
     }
 
@@ -103,12 +107,14 @@ public class CredentialsManager
      */
     public boolean checkLocalUserName(String username)
     {
-        for (CredentialsAuthority auth : authorities)
+        synchronized(authorities)
         {
-            if( auth.checkLocalUserName(username))
-                return true;
+            for (CredentialsAuthority auth : authorities)
+            {
+                if( auth.checkLocalUserName(username))
+                    return true;
+            }
         }
-
         return false;
     }
 
@@ -120,8 +126,11 @@ public class CredentialsManager
      */
     public void registerAuthority(CredentialsAuthority authority)
     {
-        if(!authorities.contains(authority))
-            authorities.add(authority);
+        synchronized(authorities)
+        {
+            if(!authorities.contains(authority))
+                authorities.add(authority);
+        }
     }
 
     /**
@@ -133,6 +142,9 @@ public class CredentialsManager
      */
     public void unregisterAuthority(CredentialsAuthority authority)
     {
-        authorities.remove(authority);
+        synchronized(authorities)
+        {
+            authorities.remove(authority);
+        }
     }
 }
