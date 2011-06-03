@@ -28,5 +28,4 @@ public class ResponseAddressAttribute extends AddressAttribute
     {
         super(RESPONSE_ADDRESS);
     }
-
 }

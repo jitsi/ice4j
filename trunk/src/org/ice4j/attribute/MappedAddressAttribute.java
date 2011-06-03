@@ -27,7 +27,6 @@ package org.ice4j.attribute;
  *
  * @author Emil Ivov
  */
-
 public class MappedAddressAttribute extends AddressAttribute
 {
     /**
@@ -35,9 +34,11 @@ public class MappedAddressAttribute extends AddressAttribute
      */
     public static final String NAME = "MAPPED-ADDRESS";
 
+    /**
+     * Constructor.
+     */
     MappedAddressAttribute()
     {
         super(MAPPED_ADDRESS);
     }
-
 }

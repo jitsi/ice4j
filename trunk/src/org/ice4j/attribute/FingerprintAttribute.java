@@ -61,7 +61,6 @@ public class FingerprintAttribute
      */
     private byte[] crc;
 
-
     /**
      * Creates a <tt>FingerPrintAttribute</tt> instance.
      */
@@ -81,6 +80,7 @@ public class FingerprintAttribute
     {
         return crc;
     }
+
     /**
      * Returns the length of this attribute's body.
      *
@@ -140,7 +140,7 @@ public class FingerprintAttribute
     {
         throw new UnsupportedOperationException(
                         "ContentDependentAttributes should be encoded "
-                        +"through the contend-dependent encode method");
+                        + "through the contend-dependent encode method");
     }
 
     /**
@@ -165,11 +165,11 @@ public class FingerprintAttribute
         byte binValue[] = new byte[HEADER_LENGTH + getDataLength()];
 
         //Type
-        binValue[0] = (byte)(type>>8);
-        binValue[1] = (byte)(type&0x00FF);
+        binValue[0] = (byte)(type >> 8);
+        binValue[1] = (byte)(type & 0x00FF);
         //Length
-        binValue[2] = (byte)(getDataLength()>>8);
-        binValue[3] = (byte)(getDataLength()&0x00FF);
+        binValue[2] = (byte)(getDataLength() >> 8);
+        binValue[3] = (byte)(getDataLength() & 0x00FF);
 
         //calculate the check sum
         byte[] xorCrc32 = calculateXorCRC32(content, offset, length);
@@ -246,4 +246,3 @@ public class FingerprintAttribute
         return xorCRC32;
     }
 }
-

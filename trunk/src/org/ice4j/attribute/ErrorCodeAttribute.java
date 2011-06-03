@@ -157,9 +157,9 @@ public class ErrorCodeAttribute extends Attribute
 
     /**
      * A convenience method that sets error class and number according to the
-     * specified errorCode.The class represents the hundreds digit of the error code.
-     * The value MUST be between 1 and 6.  The number represents the response
-     * code modulo 100, and its value MUST be between 0 and 99.
+     * specified errorCode.The class represents the hundreds digit of the error
+     * code. The value MUST be between 1 and 6.  The number represents the
+     * response code modulo 100, and its value MUST be between 0 and 99.
      *
      * @param errorCode the errorCode that this class encapsulates.
      * @throws IllegalArgumentException if errorCode is not a valid error code.
@@ -167,7 +167,7 @@ public class ErrorCodeAttribute extends Attribute
     public void setErrorCode(char errorCode)
         throws IllegalArgumentException
     {
-        setErrorClass((byte)(errorCode/100));
+        setErrorClass((byte)(errorCode / 100));
         setErrorNumber((byte)(errorCode % 100));
     }
 
@@ -178,7 +178,7 @@ public class ErrorCodeAttribute extends Attribute
      */
     public char getErrorCode()
     {
-        return (char)(getErrorClass()*100 + getErrorNumber());
+        return (char)(getErrorClass() * 100 + getErrorNumber());
     }
 
     /**
@@ -190,9 +190,11 @@ public class ErrorCodeAttribute extends Attribute
     public void setErrorNumber(byte errorNumber)
         throws IllegalArgumentException
     {
-        if(errorNumber < 0 || errorNumber > 99)
+        /*
+        if(errorNumber < 0 || errorNumber > 9999)
             throw new IllegalArgumentException(
                             errorNumber + " is not a valid error number!");
+         */
         this.errorNumber = errorNumber;
     }
 
@@ -312,8 +314,8 @@ public class ErrorCodeAttribute extends Attribute
      */
     public char getDataLength()
     {
-        char len = (char)( 4 //error code numbers
-           + (char)(reasonPhrase == null? 0:reasonPhrase.length));
+        char len = (char)(4 //error code numbers
+           + (char)(reasonPhrase == null ? 0 : reasonPhrase.length));
 
         return len;
     }
@@ -326,7 +328,7 @@ public class ErrorCodeAttribute extends Attribute
     {
         byte binValue[] =  new byte[HEADER_LENGTH + getDataLength()
                                     //add padding
-                                    + (4 - getDataLength()%4)%4];
+                                    + (4 - getDataLength() % 4) % 4];
 
         //Type
         binValue[0] = (byte) (getAttributeType() >> 8);
@@ -404,6 +406,5 @@ public class ErrorCodeAttribute extends Attribute
         System.arraycopy(attributeValue, offset, reasonBytes,
                             0, reasonBytes.length);
         setReasonPhrase(new String(reasonBytes));
-
     }
 }

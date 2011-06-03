@@ -18,7 +18,6 @@ package org.ice4j.attribute;
  *
  * @author Emil Ivov
  */
-
 public class ReflectedFromAttribute extends AddressAttribute
 {
     /**
@@ -33,5 +32,4 @@ public class ReflectedFromAttribute extends AddressAttribute
     {
         super(REFLECTED_FROM);
     }
-
 }

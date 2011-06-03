@@ -30,7 +30,7 @@ public class AttributeFactory
     public static ChangeRequestAttribute createChangeRequestAttribute()
     {
         return createChangeRequestAttribute(false, false);
-    };
+    }
 
     /**
      * Creates a ChangeRequestAttribute with the specified flag values.
@@ -48,7 +48,7 @@ public class AttributeFactory
         attribute.setChangePortFlag(changePort);
 
         return attribute;
-    };
+    }
 
     /**
      * Creates a changedAddressAttribute of the specified type and with the
@@ -65,8 +65,7 @@ public class AttributeFactory
         attribute.setAddress(address);
 
         return attribute;
-
-    };
+    }
 
     /**
      * Creates an ErrorCodeAttribute with the specified error class and number
@@ -83,7 +82,7 @@ public class AttributeFactory
         throws StunException
     {
         return createErrorCodeAttribute(errorClass, errorNumber, null);
-    };
+    }
 
     /**
      * Creates an ErrorCodeAttribute with the specified error class, number and
@@ -114,7 +113,7 @@ public class AttributeFactory
                         : reasonPhrase);
 
         return attribute;
-    };
+    }
 
     /**
      * Creates an ErrorCodeAttribute with the specified error code and a default
@@ -129,7 +128,7 @@ public class AttributeFactory
                     throws StunException
     {
         return createErrorCodeAttribute(errorCode, null);
-    };
+    }
 
     /**
      * Creates an ErrorCodeAttribute with the specified error code and reason
@@ -157,7 +156,7 @@ public class AttributeFactory
                         : reasonPhrase);
 
         return attribute;
-    };
+    }
 
     /**
      * Creates a MappedAddressAttribute of the specified type and with the
@@ -174,8 +173,7 @@ public class AttributeFactory
         attribute.setAddress(address);
 
         return attribute;
-
-    };
+    }
 
     /**
      * Creates a ReflectedFromAddressAttribute of the specified type and with
@@ -192,8 +190,7 @@ public class AttributeFactory
         attribute.setAddress(address);
 
         return attribute;
-
-    };
+    }
 
     /**
      * Creates a ResponseFromAddressAttribute of the specified type and with the
@@ -210,8 +207,7 @@ public class AttributeFactory
         attribute.setAddress(address);
 
         return attribute;
-
-    };
+    }
 
     /**
      * Creates a SourceFromAddressAttribute of the specified type and with the
@@ -228,8 +224,7 @@ public class AttributeFactory
         attribute.setAddress(address);
 
         return attribute;
-
-    };
+    }
 
     /**
      * Creates an empty UnknownAttributesAttribute.
@@ -241,7 +236,7 @@ public class AttributeFactory
         UnknownAttributesAttribute attribute = new UnknownAttributesAttribute();
 
         return attribute;
-    };
+    }
 
     /**
      * Creates a XorRelayedAddressAttribute of the specified type and with the
@@ -299,8 +294,7 @@ public class AttributeFactory
         attribute.setAddress(address, tranID);
 
         return attribute;
-
-    };
+    }
 
     /**
      * Create a UsernameAttribute.
@@ -357,7 +351,7 @@ public class AttributeFactory
 
         attribute.setUsername(username);
         return attribute;
-    };
+    }
 
     /**
      * Creates an empty <tt>FingerprintAttribute</tt> with a 0 check sum. Once
@@ -371,7 +365,7 @@ public class AttributeFactory
         FingerprintAttribute attribute = new FingerprintAttribute();
 
         return attribute;
-    };
+    }
 
     /**
      * Create a ChannelNumberAttribute.
@@ -467,7 +461,8 @@ public class AttributeFactory
     public static RequestedTransportAttribute createRequestedTransportAttribute(
                     byte protocol)
     {
-        RequestedTransportAttribute attribute = new RequestedTransportAttribute();
+        RequestedTransportAttribute attribute =
+            new RequestedTransportAttribute();
 
         attribute.setRequestedTransport(protocol);
         return attribute;
@@ -559,6 +554,35 @@ public class AttributeFactory
     {
         IceControllingAttribute attribute = new IceControllingAttribute();
         attribute.setTieBreaker(tieBreaker);
+
+        return attribute;
+    }
+
+    /**
+     * Creates a MagicCookieAttribute.
+     *
+     * @return the created MagicCookieAttribute
+     */
+    public static MagicCookieAttribute createMagicCookieAttribute()
+    {
+        MagicCookieAttribute attribute = new MagicCookieAttribute();
+        return attribute;
+    }
+
+    /**
+     * Creates a DestinationFromAddressAttribute of the specified type and with
+     * the specified address and port
+     *
+     * @param address the address value of the address attribute
+     * @return the newly created address attribute.
+     */
+    public static DestinationAddressAttribute createDestinationAddressAttribute(
+                    TransportAddress address)
+    {
+        DestinationAddressAttribute attribute =
+            new DestinationAddressAttribute();
+
+        attribute.setAddress(address);
 
         return attribute;
     }

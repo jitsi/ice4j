@@ -11,7 +11,7 @@ import java.util.*;
 import org.ice4j.*;
 
 /**
- * The REALM attribute contains a text whcih meets the grammar for
+ * The REALM attribute contains a text which meets the grammar for
  * "realm value" as described in RFC3261 but without the double quotes.
  *
  * @author Sebastien Vincent
@@ -46,12 +46,12 @@ public class RealmAttribute extends Attribute
      * @param length the length of the binary array.
      * @throws StunException if attributeValue contains invalid data.
      */
-    void decodeAttributeBody(byte[] attributeValue, char offset, char length) throws
-        StunException
-        {
-            realm = new byte[length];
-            System.arraycopy(attributeValue, offset, realm, 0, length);
-        }
+    void decodeAttributeBody(byte[] attributeValue, char offset, char length)
+        throws StunException
+    {
+        realm = new byte[length];
+        System.arraycopy(attributeValue, offset, realm, 0, length);
+    }
 
     /**
      * Returns a binary representation of this attribute.
@@ -60,15 +60,16 @@ public class RealmAttribute extends Attribute
     public byte[] encode()
     {
         char type = getAttributeType();
-        byte binValue[] = new byte[HEADER_LENGTH + getDataLength() + (getDataLength() % 4)];
+        byte binValue[] = new byte[HEADER_LENGTH + getDataLength() +
+                                   (getDataLength() % 4)];
 
         //Type
-        binValue[0] = (byte)(type>>8);
-        binValue[1] = (byte)(type&0x00FF);
+        binValue[0] = (byte)(type >> 8);
+        binValue[1] = (byte)(type & 0x00FF);
 
         //Length
-        binValue[2] = (byte)(getDataLength()>>8);
-        binValue[3] = (byte)(getDataLength()&0x00FF);
+        binValue[2] = (byte)(getDataLength() >> 8);
+        binValue[3] = (byte)(getDataLength() & 0x00FF);
 
         /* realm */
         System.arraycopy(realm, 0, binValue, 4, getDataLength());
@@ -144,4 +145,3 @@ public class RealmAttribute extends Attribute
         return true;
     }
 }
-

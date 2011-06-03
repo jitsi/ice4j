@@ -30,7 +30,6 @@ package org.ice4j.attribute;
  *
  * @author Sebastien Vincent
  */
-
 public class AlternateServerAttribute extends AddressAttribute
 {
     /**

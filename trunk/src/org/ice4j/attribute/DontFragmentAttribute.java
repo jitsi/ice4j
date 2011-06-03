@@ -82,8 +82,8 @@ public class DontFragmentAttribute extends Attribute
         byte binValue[] = new byte[HEADER_LENGTH];
 
         //Type
-        binValue[0] = (byte)(getAttributeType()>>8);
-        binValue[1] = (byte)(getAttributeType()&0x00FF);
+        binValue[0] = (byte)(getAttributeType() >> 8);
+        binValue[1] = (byte)(getAttributeType() & 0x00FF);
         //Length
         binValue[2] = (byte)(getDataLength() >> 8);
         binValue[3] = (byte)(getDataLength() & 0x00FF);
@@ -101,7 +101,8 @@ public class DontFragmentAttribute extends Attribute
      * @param length the length of the binary array.
      * @throws StunException if attrubteValue contains invalid data.
      */
-    void decodeAttributeBody(byte[] attributeValue, char offset, char length) throws StunException
+    void decodeAttributeBody(byte[] attributeValue, char offset, char length)
+        throws StunException
     {
         if(length != 0)
         {

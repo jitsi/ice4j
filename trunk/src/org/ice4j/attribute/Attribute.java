@@ -65,41 +65,182 @@ import org.ice4j.*;
 public abstract class Attribute
 {
     /* STUN attributes */
+    /**
+     * Mapped address attribute.
+     */
     public static final char MAPPED_ADDRESS = 0x0001;
+
+    /**
+     * Response address attribute.
+     */
     public static final char RESPONSE_ADDRESS = 0x0002;
+
+    /**
+     * Change request attribute.
+     */
     public static final char CHANGE_REQUEST = 0x0003;
+
+    /**
+     * Source address attribute.
+     */
     public static final char SOURCE_ADDRESS = 0x0004;
+
+    /**
+     * Changed address attribute.
+     */
     public static final char CHANGED_ADDRESS = 0x0005;
+
+    /**
+     * Username attribute.
+     */
     public static final char USERNAME = 0x0006;
+
+    /**
+     * Password attribute.
+     */
     public static final char PASSWORD = 0x0007;
+
+    /**
+     * Message integrity attribute.
+     */
     public static final char MESSAGE_INTEGRITY = 0x0008;
+
+    /**
+     * Error code attribute.
+     */
     public static final char ERROR_CODE = 0x0009;
+
+    /**
+     * Unknown attributes attribute.
+     */
     public static final char UNKNOWN_ATTRIBUTES = 0x000a;
+
+    /**
+     * Reflected from attribute.
+     */
     public static final char REFLECTED_FROM = 0x000b;
+
+    /**
+     * Realm attribute.
+     */
     public static final char REALM = 0x0014;
+
+    /**
+     * Nonce attribute.
+     */
     public static final char NONCE = 0x0015;
+
+    /**
+     * XOR Mapped address attribute.
+     */
     public static final char XOR_MAPPED_ADDRESS = 0x0020;
+
+    /**
+     * XOR only attribute.
+     */
     public static final char XOR_ONLY = 0x0021;
+
+    /**
+     * Software attribute.
+     */
     public static final char SOFTWARE = 0x8022;
+
+    /**
+     * Alternate server attribute.
+     */
     public static final char ALTERNATE_SERVER = 0x8023;
+
+    /**
+     * Fingerprint attribute.
+     */
     public static final char FINGERPRINT = 0x8028;
+
+    /**
+     * Unknown optional attribute.
+     */
     public static final char UNKNOWN_OPTIONAL_ATTRIBUTE = 0x8000;
 
     /* TURN attributes */
+    /**
+     * Channel number attribute.
+     */
     public static final char CHANNEL_NUMBER = 0x000c;
+
+    /**
+     * Lifetime attribute.
+     */
     public static final char LIFETIME = 0x000d;
+
+    /**
+     * XOR peer address attribute.
+     */
     public static final char XOR_PEER_ADDRESS = 0x0012;
+
+    /**
+     * Data attribute.
+     */
     public static final char DATA = 0x0013;
+
+    /**
+     * XOR relayed address attribute.
+     */
     public static final char XOR_RELAYED_ADDRESS = 0x0016;
+
+    /**
+     * Even port attribute.
+     */
     public static final char EVEN_PORT = 0x0018;
+
+    /**
+     * Requested transport attribute.
+     */
     public static final char REQUESTED_TRANSPORT = 0x0019;
+
+    /**
+     * Don't fragment attribute.
+     */
     public static final char DONT_FRAGMENT = 0x001a;
+
+    /**
+     * Reservation token attribute.
+     */
     public static final char RESERVATION_TOKEN = 0x0022;
 
+    /* Old TURN attributes */
+    /**
+     * Magic cookie attribute.
+     */
+    public static final char MAGIC_COOKIE = 0x000f;
+
+    /**
+     * Destination address attribute.
+     */
+    public static final char DESTINATION_ADDRESS = 0x0011;
+
+    /**
+     * Destination address attribute.
+     */
+    public static final char REMOTE_ADDRESS = 0x0012;
+
     /* ICE attributes */
+    /**
+     * Priority attribute.
+     */
     public static final char PRIORITY = 0x0024;
+
+    /**
+     * Use candidate attribute.
+     */
     public static final char USE_CANDIDATE = 0x0025;
+
+    /**
+     * ICE controlled attribute.
+     */
     public static final char ICE_CONTROLLED = 0x8029;
+
+    /**
+     * ICE controlling attribute.
+     */
     public static final char ICE_CONTROLLING = 0x802a;
 
     /**

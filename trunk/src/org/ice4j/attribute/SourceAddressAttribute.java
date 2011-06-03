@@ -13,7 +13,6 @@ package org.ice4j.attribute;
  *
  * @author Emil Ivov
  */
-
 public class SourceAddressAttribute extends AddressAttribute
 {
     /**

@@ -94,8 +94,8 @@ public class ChannelNumberAttribute extends Attribute
         byte binValue[] = new byte[HEADER_LENGTH + DATA_LENGTH];
 
         //Type
-        binValue[0] = (byte)(getAttributeType()>>8);
-        binValue[1] = (byte)(getAttributeType()&0x00FF);
+        binValue[0] = (byte)(getAttributeType() >> 8);
+        binValue[1] = (byte)(getAttributeType() & 0x00FF);
         //Length
         binValue[2] = (byte)(getDataLength() >> 8);
         binValue[3] = (byte)(getDataLength() & 0x00FF);
@@ -118,14 +118,16 @@ public class ChannelNumberAttribute extends Attribute
      * @param length the length of the binary array.
      * @throws StunException if attrubteValue contains invalid data.
      */
-    void decodeAttributeBody(byte[] attributeValue, char offset, char length) throws StunException
+    void decodeAttributeBody(byte[] attributeValue, char offset, char length)
+        throws StunException
     {
         if(length != 4)
         {
             throw new StunException("length invalid");
         }
 
-        channelNumber = ((char)((attributeValue[0] << 8 ) | (attributeValue[1]&0xFF) ));
+        channelNumber =
+            ((char)((attributeValue[0] << 8 ) | (attributeValue[1] & 0xFF) ));
     }
 
     /**
@@ -146,4 +148,3 @@ public class ChannelNumberAttribute extends Attribute
         return channelNumber;
     }
 }
-

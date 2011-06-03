@@ -16,17 +16,16 @@ package org.ice4j.attribute;
  */
 public class XorPeerAddressAttribute extends XorMappedAddressAttribute
 {
-  /**
-   * Attribute name.
-   */
-  public static final String NAME = "XOR-PEER-ADDRESS";
+    /**
+     * Attribute name.
+     */
+    public static final String NAME = "XOR-PEER-ADDRESS";
 
-  /**
-   * Constructor.
-   */
-  XorPeerAddressAttribute()
-  {
-    super(XOR_PEER_ADDRESS);
-  }
+    /**
+     * Constructor.
+     */
+    XorPeerAddressAttribute()
+    {
+        super(XOR_PEER_ADDRESS);
+    }
 }
-

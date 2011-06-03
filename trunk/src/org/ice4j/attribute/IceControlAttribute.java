@@ -59,11 +59,11 @@ public abstract class IceControlAttribute
     void decodeAttributeBody(byte[] attributeValue, char offset, char length)
             throws StunException
     {
-        // array used to hold the intermediate long values reconstructed from the
-        // attributeValue array
+        // array used to hold the intermediate long values reconstructed from
+        // the attributeValue array
 
         // Reading in the network byte order (Big-Endian)
-        tieBreaker= ((attributeValue[offset++] & 0xffl) << 56)
+        tieBreaker = ((attributeValue[offset++] & 0xffl) << 56)
                   | ((attributeValue[offset++] & 0xffl) << 48)
                   | ((attributeValue[offset++] & 0xffl) << 40)
                   | ((attributeValue[offset++] & 0xffl) << 32)
@@ -84,12 +84,12 @@ public abstract class IceControlAttribute
         byte[] binValue = new byte[HEADER_LENGTH + getDataLength()];
 
         //Type
-        binValue[0] = (byte)(type>>8);
-        binValue[1] = (byte)(type&0x00FF);
+        binValue[0] = (byte)(type >> 8);
+        binValue[1] = (byte)(type & 0x00FF);
 
         //Length
-        binValue[2] = (byte)(getDataLength()>>8);
-        binValue[3] = (byte)(getDataLength()&0x00FF);
+        binValue[2] = (byte)(getDataLength() >> 8);
+        binValue[3] = (byte)(getDataLength() & 0x00FF);
 
         //Tie-Breaker
         binValue[4]  = (byte)((tieBreaker & 0xFF00000000000000L) >> 56);

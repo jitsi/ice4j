@@ -14,7 +14,8 @@ import org.ice4j.*;
  *
  * @author Sebastien Vincent
  */
-public class LifetimeAttribute extends Attribute
+public class LifetimeAttribute
+    extends Attribute
 {
     /**
      * Attribute name.
@@ -55,8 +56,8 @@ public class LifetimeAttribute extends Attribute
             return true;
 
         LifetimeAttribute att = (LifetimeAttribute) obj;
-        if (att.getAttributeType()   != getAttributeType()
-                || att.getDataLength()   != getDataLength()
+        if (att.getAttributeType() != getAttributeType()
+                || att.getDataLength() != getDataLength()
                 /* compare data */
                 || att.lifetime != lifetime
            )
@@ -94,8 +95,8 @@ public class LifetimeAttribute extends Attribute
         byte binValue[] = new byte[HEADER_LENGTH + DATA_LENGTH];
 
         //Type
-        binValue[0] = (byte)(getAttributeType()>>8);
-        binValue[1] = (byte)(getAttributeType()&0x00FF);
+        binValue[0] = (byte)(getAttributeType() >> 8);
+        binValue[1] = (byte)(getAttributeType() & 0x00FF);
         //Length
         binValue[2] = (byte)(getDataLength() >> 8);
         binValue[3] = (byte)(getDataLength() & 0x00FF);
@@ -118,15 +119,18 @@ public class LifetimeAttribute extends Attribute
      * @param length the length of the binary array.
      * @throws StunException if attrubteValue contains invalid data.
      */
-    void decodeAttributeBody(byte[] attributeValue, char offset, char length) throws StunException
+    void decodeAttributeBody(byte[] attributeValue, char offset, char length)
+        throws StunException
     {
         if(length != 4)
         {
             throw new StunException("length invalid");
         }
 
-        lifetime = ((attributeValue[0] << 24) & 0xff000000) + ((attributeValue[1] << 16) & 0x00ff0000)
-            + ((attributeValue[2] << 8) & 0x0000ff00) + (attributeValue[3] & 0x000000ff);
+        lifetime = ((attributeValue[0] << 24) & 0xff000000) +
+            ((attributeValue[1] << 16) & 0x00ff0000) +
+            ((attributeValue[2] << 8) & 0x0000ff00) +
+            (attributeValue[3] & 0x000000ff);
     }
 
     /**
@@ -147,4 +151,3 @@ public class LifetimeAttribute extends Attribute
         return lifetime;
     }
 }
-

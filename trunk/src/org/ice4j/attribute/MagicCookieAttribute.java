@@ -9,20 +9,19 @@ package org.ice4j.attribute;
 import org.ice4j.*;
 
 /**
- * The REQUESTED-TRANSPORT attribute is used to allocate a
- * TURN address of certain transport protocol.
+ * The MAGIC-COOKIE attribute.
  *
- * In the original TURN specification, only UDP is supported.
- * Support of TCP is detailed in draft-ietf-behave-turn-tcp-07.
+ * It is used with old version of TURN (Google, Live messenger variant, ...).
  *
  * @author Sebastien Vincent
  */
-public class RequestedTransportAttribute extends Attribute
+public class MagicCookieAttribute
+    extends Attribute
 {
     /**
      * Attribute name.
      */
-    public static final String NAME = "REQUESTED-TRANSPORT";
+    public static final String NAME = "MAGIC-COOKIE";
 
     /**
      * The length of the data contained by this attribute.
@@ -30,51 +29,23 @@ public class RequestedTransportAttribute extends Attribute
     public static final char DATA_LENGTH = 4;
 
     /**
-     * Transport protocol.
-     *
-     * 17 = UDP;
-     * 6 = TCP.
+     * Magic cookie value.
      */
-    byte transportProtocol = 17;
+    private int value = 0x72c64bc6;
 
     /**
      * Constructor.
      */
-    RequestedTransportAttribute()
+    MagicCookieAttribute()
     {
-        super(REQUESTED_TRANSPORT);
-    }
-
-    /**
-     * Compares two STUN Attributes. Attributes are considered equal when their
-     * type, length, and all data are the same.
-     * @param obj the object to compare this attribute with.
-     * @return true if the attributes are equal and false otherwise.
-     */
-    public boolean equals(Object obj)
-    {
-        if (! (obj instanceof RequestedTransportAttribute)
-                || obj == null)
-            return false;
-
-        if (obj == this)
-            return true;
-
-        RequestedTransportAttribute att = (RequestedTransportAttribute) obj;
-        if (att.getAttributeType()   != getAttributeType()
-                || att.getDataLength()   != getDataLength()
-                /* compare data */
-                || att.transportProtocol != transportProtocol
-           )
-            return false;
-
-        return true;
+        super(MAGIC_COOKIE);
     }
 
     /**
      * Returns the human readable name of this attribute. Attribute names do
      * not really matter from the protocol point of view. They are only used
      * for debugging and readability.
+     *
      * @return this attribute's name.
      */
     public String getName()
@@ -84,6 +55,7 @@ public class RequestedTransportAttribute extends Attribute
 
     /**
      * Returns the length of this attribute's body.
+     *
      * @return the length of this attribute's value (8 bytes).
      */
     public char getDataLength()
@@ -92,7 +64,35 @@ public class RequestedTransportAttribute extends Attribute
     }
 
     /**
+     * Compares two STUN Attributes. Attributes are considered equal when their
+     * type, length, and all data are the same.
+     *
+     * @param obj the object to compare this attribute with.
+     * @return true if the attributes are equal and false otherwise.
+     */
+    public boolean equals(Object obj)
+    {
+        if (! (obj instanceof LifetimeAttribute)
+                || obj == null)
+            return false;
+
+        if (obj == this)
+            return true;
+
+        MagicCookieAttribute att = (MagicCookieAttribute) obj;
+        if (att.getAttributeType()   != getAttributeType()
+                || att.getDataLength() != getDataLength()
+                /* compare data */
+                || att.value != value
+           )
+            return false;
+
+        return true;
+    }
+
+    /**
      * Returns a binary representation of this attribute.
+     *
      * @return a binary representation of this attribute.
      */
     public byte[] encode()
@@ -106,16 +106,17 @@ public class RequestedTransportAttribute extends Attribute
         binValue[2] = (byte)(getDataLength() >> 8);
         binValue[3] = (byte)(getDataLength() & 0x00FF);
         //Data
-        binValue[4] = transportProtocol;
-        binValue[5] = 0x00;
-        binValue[6] = 0x00;
-        binValue[7] = 0x00;
+        binValue[4] = (byte)((value >> 24) & 0xff);
+        binValue[5] = (byte)((value >> 16) & 0xff);
+        binValue[6] = (byte)((value >> 8) & 0xff);
+        binValue[7] = (byte)((value) & 0xff);
 
         return binValue;
     }
 
     /**
      * Sets this attribute's fields according to attributeValue array.
+     *
      * @param attributeValue a binary array containing this attribute's field
      *                       values and NOT containing the attribute header.
      * @param offset the position where attribute values begin (most often
@@ -125,31 +126,16 @@ public class RequestedTransportAttribute extends Attribute
      * @throws StunException if attrubteValue contains invalid data.
      */
     void decodeAttributeBody(byte[] attributeValue, char offset, char length)
-        throws StunException
+            throws StunException
     {
         if(length != 4)
         {
             throw new StunException("length invalid");
         }
 
-        transportProtocol = attributeValue[0];
-    }
-
-    /**
-     * Set the transport protocol.
-     * @param transportProtocol transport protocol
-     */
-    public void setRequestedTransport(byte transportProtocol)
-    {
-        this.transportProtocol = transportProtocol;
-    }
-
-    /**
-     * Get the transport protocol.
-     * @return transport protocol
-     */
-    public int getRequestedTransport()
-    {
-        return transportProtocol;
+        value = ((attributeValue[0] << 24) & 0xff000000) +
+            ((attributeValue[1] << 16) & 0x00ff0000) +
+            ((attributeValue[2] << 8) & 0x0000ff00) +
+            (attributeValue[3] & 0x000000ff);
     }
 }
