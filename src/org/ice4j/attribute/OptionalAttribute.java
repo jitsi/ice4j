@@ -12,13 +12,12 @@ import org.ice4j.*;
 
 /**
  * This class is used for representing attributes not explicitly supported by
- * the stack. Such attributes will generally be kept in  binary form and won't be
- * subdued to any processing by the stack. One could use this class for both
+ * the stack. Such attributes will generally be kept in  binary form and won't
+ * be subdued to any processing by the stack. One could use this class for both
  * dealing with attributes in received messages, and generating messages
  * containing attributes not explicitly supported by the stack.
  *
  * @author Emil Ivov
- *
  */
 public class OptionalAttribute
     extends Attribute
@@ -44,7 +43,8 @@ public class OptionalAttribute
         throws StunException
     {
         this.attributeValue = new byte[length];
-        System.arraycopy(attributeValue, offset, this.attributeValue, 0, length);
+        System.arraycopy(attributeValue, offset, this.attributeValue, 0,
+                length);
     }
 
     /**
@@ -59,11 +59,11 @@ public class OptionalAttribute
         byte binValue[] = new byte[HEADER_LENGTH + attributeValue.length];
 
         //Type
-        binValue[0] = (byte)(type>>8);
-        binValue[1] = (byte)(type&0x00FF);
+        binValue[0] = (byte)(type >> 8);
+        binValue[1] = (byte)(type & 0x00FF);
         //Length
-        binValue[2] = (byte)(getDataLength()>>8);
-        binValue[3] = (byte)(getDataLength()&0x00FF);
+        binValue[2] = (byte)(getDataLength() >> 8);
+        binValue[3] = (byte)(getDataLength() & 0x00FF);
 
         System.arraycopy(attributeValue, 0,
                          binValue, HEADER_LENGTH, attributeValue.length);
@@ -113,7 +113,6 @@ public class OptionalAttribute
         this.attributeValue = new byte[length];
         System.arraycopy(body, offset, this.attributeValue, 0, length);
     }
-
 
     /**
      * Compares two STUN Attributes. Two attributes are considered equal when they

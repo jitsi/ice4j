@@ -76,7 +76,7 @@ public class UnknownAttributesAttribute extends Attribute
         if( (len % 2 ) != 0 )
             len++;
 
-        return (char)(len*2);
+        return (char)(len * 2);
     }
 
     /**
@@ -111,7 +111,6 @@ public class UnknownAttributesAttribute extends Attribute
     public Iterator<Character> getAttributes()
     {
         return unknownAttributes.iterator();
-
     }
 
     /**
@@ -152,9 +151,10 @@ public class UnknownAttributesAttribute extends Attribute
 
 
         Iterator<Character> attributes = getAttributes();
-        while (attributes.hasNext()) {
+        while (attributes.hasNext())
+        {
             char att = attributes.next().charValue();
-            binValue[offset++] = (byte)(att>>8);
+            binValue[offset++] = (byte)(att >> 8);
             binValue[offset++] = (byte)(att & 0x00FF);
         }
 
@@ -167,7 +167,6 @@ public class UnknownAttributesAttribute extends Attribute
            binValue[offset++] = (byte) (att >> 8);
            binValue[offset++] = (byte) (att & 0x00FF);
        }
-
 
         return binValue;
     }
@@ -196,7 +195,6 @@ public class UnknownAttributesAttribute extends Attribute
             return false;
 
         return true;
-
     }
 
     /**
@@ -210,17 +208,17 @@ public class UnknownAttributesAttribute extends Attribute
      * @param length the length of the binary array.
      * @throws StunException if attrubteValue contains invalid data.
      */
-    void decodeAttributeBody(byte[] attributeValue, char offset, char length) throws
-        StunException
+    void decodeAttributeBody(byte[] attributeValue, char offset, char length)
+    throws StunException
     {
-
         if( (length % 2 ) != 0)
             throw new StunException("Attribute IDs are 2 bytes long and the "
-                                    +"passed binary array has an odd length value.");
+                                    + "passed binary array has an odd length " +
+                                            "value.");
         char originalOffset = offset;
-        for(int i = offset; i < originalOffset + length; i+=2)
+        for(int i = offset; i < originalOffset + length; i += 2)
         {
-            char attributeID = (char)( (attributeValue[offset++]<<8) |
+            char attributeID = (char)( (attributeValue[offset++] << 8) |
                                (attributeValue[offset++]) );
             addAttributeID(attributeID);
         }

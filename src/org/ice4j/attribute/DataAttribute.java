@@ -51,8 +51,8 @@ public class DataAttribute
      * @param length the length of the binary array.
      * @throws StunException if attributeValue contains invalid data.
      */
-    void decodeAttributeBody(byte[] attributeValue, char offset, char length) throws
-        StunException
+    void decodeAttributeBody(byte[] attributeValue, char offset, char length)
+        throws StunException
     {
         data = new byte[length];
           System.arraycopy(attributeValue, offset, data, 0, length);
@@ -65,15 +65,16 @@ public class DataAttribute
     public byte[] encode()
     {
         char type = getAttributeType();
-        byte binValue[] = new byte[HEADER_LENGTH + getDataLength() + (getDataLength() % 4)];
+        byte binValue[] = new byte[HEADER_LENGTH + getDataLength() +
+                                   (getDataLength() % 4)];
 
         //Type
         binValue[0] = (byte)(type>>8);
-        binValue[1] = (byte)(type&0x00FF);
+        binValue[1] = (byte)(type & 0x00FF);
 
         //Length
-        binValue[2] = (byte)(getDataLength()>>8);
-        binValue[3] = (byte)(getDataLength()&0x00FF);
+        binValue[2] = (byte)(getDataLength() >> 8);
+        binValue[3] = (byte)(getDataLength() & 0x00FF);
 
         //data
         System.arraycopy(data, 0, binValue, 4, getDataLength());
@@ -129,8 +130,8 @@ public class DataAttribute
     }
 
     /**
-     * Compares two STUN Attributes. Two attributes are considered equal when they
-     * have the same type length and value.
+     * Compares two STUN Attributes. Two attributes are considered equal when
+     * they have the same type length and value.
      * @param obj the object to compare this attribute with.
      * @return true if the attributes are equal and false otherwise.
      */
@@ -153,4 +154,3 @@ public class DataAttribute
         return true;
     }
 }
-

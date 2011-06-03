@@ -7,25 +7,24 @@
 package org.ice4j.attribute;
 
 /**
- * The XOR-RELAYED-ADDRESS attribute is given by a TURN server to
- * indicates the client its relayed address.
- *
- * It has the same format as XOR-MAPPED-ADDRESS.
+ * The REMOTE-ADDRESS is present in Data Indication of old TURN versions.
+ * It specifies the address and port where the data is sent. It is encoded
+ * in the same way as MAPPED-ADDRESS.
  *
  * @author Sebastien Vincent
  */
-public class XorRelayedAddressAttribute extends XorMappedAddressAttribute
+public class RemoteAddressAttribute extends AddressAttribute
 {
     /**
      * Attribute name.
      */
-    public static final String NAME = "XOR-RELAYED-ADDRESS";
+    public static final String NAME = "REMOTE-ADDRESS";
 
     /**
      * Constructor.
      */
-    XorRelayedAddressAttribute()
+    RemoteAddressAttribute()
     {
-        super(XOR_RELAYED_ADDRESS);
+        super(REMOTE_ADDRESS);
     }
 }

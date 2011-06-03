@@ -100,7 +100,7 @@ abstract class AddressAttribute extends Attribute
                 || type == SOURCE_ADDRESS || type == CHANGED_ADDRESS
                 || type == REFLECTED_FROM || type == XOR_MAPPED_ADDRESS
                 || type == ALTERNATE_SERVER || type == XOR_PEER_ADDRESS
-                || type == XOR_RELAYED_ADDRESS);
+                || type == XOR_RELAYED_ADDRESS || type == DESTINATION_ADDRESS);
     }
 
     /**
@@ -199,18 +199,18 @@ abstract class AddressAttribute extends Attribute
         byte binValue[] = new byte[HEADER_LENGTH + getDataLength()];
 
         //Type
-        binValue[0] = (byte)(type>>8);
-        binValue[1] = (byte)(type&0x00FF);
+        binValue[0] = (byte)(type >> 8);
+        binValue[1] = (byte)(type & 0x00FF);
         //Length
-        binValue[2] = (byte)(getDataLength()>>8);
-        binValue[3] = (byte)(getDataLength()&0x00FF);
+        binValue[2] = (byte)(getDataLength() >> 8);
+        binValue[3] = (byte)(getDataLength() & 0x00FF);
         //Not used
         binValue[4] = 0x00;
         //Family
         binValue[5] = getFamily();
         //port
-        binValue[6] = (byte)(getPort()>>8);
-        binValue[7] = (byte)(getPort()&0x00FF);
+        binValue[6] = (byte)(getPort() >> 8);
+        binValue[7] = (byte)(getPort() & 0x00FF);
 
         //address
         if(getFamily() == ADDRESS_FAMILY_IPV6){
@@ -262,7 +262,6 @@ abstract class AddressAttribute extends Attribute
             return ADDRESS_FAMILY_IPV6;
         else
             return ADDRESS_FAMILY_IPV4;
-
     }
 
     /**
@@ -296,14 +295,16 @@ abstract class AddressAttribute extends Attribute
 
         //port
         char port = ((char)((attributeValue[offset++] << 8 )
-                        | (attributeValue[offset++]&0xFF) ));
+                        | (attributeValue[offset++] & 0xFF) ));
 
         //address
         byte address[] = null;
-        if(family == ADDRESS_FAMILY_IPV6){
+        if(family == ADDRESS_FAMILY_IPV6)
+        {
             address = new byte[16];
         }
-        else{
+        else
+        {
             //ipv4
             address = new byte[4];
         }
@@ -317,7 +318,5 @@ abstract class AddressAttribute extends Attribute
         {
             throw new StunException(e);
         }
-
     }
-
 }

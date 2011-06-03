@@ -34,7 +34,7 @@ import org.ice4j.*;
  */
 
 public class ChangeRequestAttribute
-    extends org.ice4j.attribute.Attribute
+    extends Attribute
 {
     /**
      * Attribute name.
@@ -126,20 +126,20 @@ public class ChangeRequestAttribute
         byte binValue[] = new byte[HEADER_LENGTH + DATA_LENGTH];
 
         //Type
-        binValue[0] = (byte)(getAttributeType()>>8);
-        binValue[1] = (byte)(getAttributeType()&0x00FF);
+        binValue[0] = (byte)(getAttributeType() >> 8);
+        binValue[1] = (byte)(getAttributeType() & 0x00FF);
         //Length
-        binValue[2] = (byte)(getDataLength()>>8);
-        binValue[3] = (byte)(getDataLength()&0x00FF);
+        binValue[2] = (byte)(getDataLength() >> 8);
+        binValue[3] = (byte)(getDataLength() & 0x00FF);
         //Data
         binValue[4] = 0x00;
         binValue[5] = 0x00;
         binValue[6] = 0x00;
-        binValue[7] = (byte)((getChangeIpFlag()?4:0) + (getChangePortFlag()?2:0));
+        binValue[7] = (byte)((getChangeIpFlag() ? 4 : 0) +
+                (getChangePortFlag() ? 2 : 0));
 
         return binValue;
     }
-
 
     //========================= set/get methods
     /**
@@ -155,7 +155,7 @@ public class ChangeRequestAttribute
     }
 
     /**
-     * Returns tha value of the changeIpFlag. The "change IP" flag,  if true,
+     * Returns the value of the changeIpFlag. The "change IP" flag,  if true,
      * requests the server to send the Binding Response with a different IP
      * address than the one the Binding Request was received on.
      *
@@ -179,7 +179,7 @@ public class ChangeRequestAttribute
     }
 
     /**
-     * Returns the value of the changePortFlag. The "change port" flag.  If true,
+     * Returns the value of the changePortFlag. The "change port" flag. If true,
      * requests the server to send the Binding Response with a different port
      * than the one the Binding Request was received on.
      *
@@ -201,14 +201,11 @@ public class ChangeRequestAttribute
       * @param length the length of the binary array.
       * @throws StunException if attrubteValue contains invalid data.
       */
-     void decodeAttributeBody(byte[] attributeValue, char offset, char length) throws
-         StunException
+     void decodeAttributeBody(byte[] attributeValue, char offset, char length)
+         throws StunException
      {
          offset += 3; // first three bytes of change req att are not used
-         setChangeIpFlag((attributeValue[offset]&4)>0);
-         setChangePortFlag((attributeValue[offset] & 0x2)>0);
-
+         setChangeIpFlag((attributeValue[offset] & 4) > 0);
+         setChangePortFlag((attributeValue[offset] & 0x2) > 0);
      }
-
-
 }

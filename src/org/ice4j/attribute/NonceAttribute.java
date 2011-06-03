@@ -63,12 +63,12 @@ public class NonceAttribute extends Attribute
             = new byte[HEADER_LENGTH + getDataLength() + (getDataLength() % 4)];
 
         //Type
-        binValue[0] = (byte)(type>>8);
-        binValue[1] = (byte)(type&0x00FF);
+        binValue[0] = (byte)(type >> 8);
+        binValue[1] = (byte)(type & 0x00FF);
 
         //Length
-        binValue[2] = (byte)(getDataLength()>>8);
-        binValue[3] = (byte)(getDataLength()&0x00FF);
+        binValue[2] = (byte)(getDataLength() >> 8);
+        binValue[3] = (byte)(getDataLength() & 0x00FF);
 
         /* nonce */
         System.arraycopy(nonce, 0, binValue, 4, (int)getDataLength());

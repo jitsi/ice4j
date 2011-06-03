@@ -62,15 +62,15 @@ public class SoftwareAttribute
         char type = getAttributeType();
         byte binValue[] = new byte[HEADER_LENGTH + getDataLength()
                                    //add padding
-                                   + (4 - getDataLength()%4)%4];
+                                   + (4 - getDataLength() % 4) % 4];
 
         //Type
-        binValue[0] = (byte)(type>>8);
-        binValue[1] = (byte)(type&0x00FF);
+        binValue[0] = (byte)(type >> 8);
+        binValue[1] = (byte)(type & 0x00FF);
 
         //Length
-        binValue[2] = (byte)(getDataLength()>>8);
-        binValue[3] = (byte)(getDataLength()&0x00FF);
+        binValue[2] = (byte)(getDataLength() >> 8);
+        binValue[3] = (byte)(getDataLength() & 0x00FF);
 
         //software
         System.arraycopy(software, 0, binValue, 4, getDataLength());
@@ -99,7 +99,7 @@ public class SoftwareAttribute
     }
 
     /**
-     * Returns a (cloned) byte array containg the data value of the software
+     * Returns a (cloned) byte array containing the data value of the software
      * attribute.
      * @return the binary array containing the software.
      */
@@ -132,13 +132,12 @@ public class SoftwareAttribute
     }
 
     /**
-     * Compares two STUN Attributes. Two attributes are considered equal when they
-     * have the same type length and value.
+     * Compares two STUN Attributes. Two attributes are considered equal when
+     * they have the same type length and value.
      *
      * @param obj the object to compare this attribute with.
      * @return true if the attributes are equal and false otherwise.
      */
-
     public boolean equals(Object obj)
     {
         if (! (obj instanceof SoftwareAttribute)
@@ -156,5 +155,4 @@ public class SoftwareAttribute
 
         return true;
     }
-
 }

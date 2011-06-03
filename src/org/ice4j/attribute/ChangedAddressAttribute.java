@@ -6,7 +6,6 @@
  */
 package org.ice4j.attribute;
 
-
 /**
  * The CHANGED-ADDRESS attribute indicates the IP address and port where
  * responses would have been sent from if the "change IP" and "change
@@ -32,5 +31,4 @@ public class ChangedAddressAttribute extends AddressAttribute
     {
         super(CHANGED_ADDRESS);
     }
-
 }
