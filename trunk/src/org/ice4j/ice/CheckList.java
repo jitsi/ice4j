@@ -369,6 +369,11 @@ public class CheckList
     {
         Component cmp = nominatedPair.getParentComponent();
 
+        if(cmp.getSelectedPair() != null)
+        {
+            return;
+        }
+
         logger.info("Selected pair for stream " +
                 cmp.toShortString() + ": " +
                 nominatedPair.toShortString());
