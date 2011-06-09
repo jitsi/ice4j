@@ -25,6 +25,11 @@ public class RemoteCandidate
     private TransportAddress raddr;
 
     /**
+     * Ufrag for the Google Talk candidate.
+     */
+    private String ufrag = null;
+
+    /**
      * Creates a <tt>RemoteCandidate</tt> instance for the specified transport
      * address and properties.
      *
@@ -47,6 +52,32 @@ public class RemoteCandidate
         super(transportAddress, parentComponent, type);
         setFoundation(foundation);
         setPriority(priority);
+    }
+
+    /**
+     * Creates a <tt>RemoteCandidate</tt> instance for the specified transport
+     * address and properties.
+     *
+     * @param transportAddress  the transport address that this candidate is
+     * encapsulating.
+     * @param parentComponent the <tt>Component</tt> that this candidate
+     * belongs to.
+     * @param type the <tt>CandidateType</tt> for this <tt>Candidate</tt>.
+     * @param foundation the <tt>RemoteCandidate</tt>'s foundation as reported
+     * by the session description protocol.
+     * @param priority the <tt>RemoteCandidate</tt>'s priority as reported
+     * by the session description protocol.
+     * @param ufrag ufrag for the remote candidate
+     */
+    public RemoteCandidate(TransportAddress transportAddress,
+                           Component        parentComponent,
+                           CandidateType    type,
+                           String           foundation,
+                           long             priority,
+                           String			ufrag)
+    {
+        this(transportAddress, parentComponent, type, foundation, priority);
+        this.ufrag = ufrag;
     }
 
     /**
@@ -113,5 +144,15 @@ public class RemoteCandidate
     public void setRelatedAddress(TransportAddress relatedAddr)
     {
         this.raddr = relatedAddr;
+    }
+
+    /**
+     * Get the remote ufrag.
+     *
+     * @return remote ufrag
+     */
+    public String getUfrag()
+    {
+        return ufrag;
     }
 }

@@ -200,7 +200,6 @@ public class HostCandidateHarvester
         int port = preferredPort;
         for (int i = 0; i < bindRetries; i++)
         {
-
             try
             {
                 DatagramSocket sock

@@ -25,6 +25,11 @@ public abstract class LocalCandidate
     extends Candidate
 {
     /**
+     * Ufrag for the local candidat
+     */
+    private String ufrag = null;
+
+    /**
      * The <tt>Logger</tt> used by the <tt>LocalCandidate</tt> class and its
      * instances for logging output.
      */
@@ -190,5 +195,25 @@ public abstract class LocalCandidate
         Component parentCmp = getParentComponent();
 
         return (parentCmp != null) && equals(parentCmp.getDefaultCandidate());
+    }
+
+    /**
+     * Set the local ufrag.
+     *
+     * @param ufrag local ufrag
+     */
+    public void setUfrag(String ufrag)
+    {
+        this.ufrag = ufrag;
+    }
+
+    /**
+     * Get the local ufrag.
+     *
+     * @return local ufrag
+     */
+    public String getUfrag()
+    {
+        return ufrag;
     }
 }

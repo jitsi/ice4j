@@ -18,9 +18,19 @@ import java.util.*;
 public class TransactionID
 {
     /**
+     * RFC5289 Transaction ID length.
+     */
+    public static final int RFC5389_TRANSACTION_ID_LENGTH = 12;
+
+    /**
+     * RFC3489 Transaction ID length.
+     */
+    public static final int RFC3489_TRANSACTION_ID_LENGTH = 16;
+
+    /**
      * The id itself
      */
-    private final byte transactionID[] = new byte[12];
+    private final byte transactionID[];
 
     /**
      * Any object that the application would like to correlate to a transaction.
@@ -43,6 +53,24 @@ public class TransactionID
      */
     private TransactionID()
     {
+        transactionID = new byte[RFC5389_TRANSACTION_ID_LENGTH];
+    }
+
+    /**
+     * Limits access to <tt>TransactionID</tt> instantiation.
+     *
+     * @param rfc3489Compatibility true to create a RFC3489 transaction ID
+     */
+    private TransactionID(boolean rfc3489Compatibility)
+    {
+        if(rfc3489Compatibility)
+        {
+            transactionID = new byte[RFC3489_TRANSACTION_ID_LENGTH];
+        }
+        else
+        {
+            transactionID = new byte[RFC5389_TRANSACTION_ID_LENGTH];
+        }
     }
 
     /**
@@ -59,13 +87,44 @@ public class TransactionID
     {
         TransactionID tid = new TransactionID();
 
-        long left  = System.currentTimeMillis();//the first 6 bytes of the id
-        long right = random.nextLong();//the last 6 bytes of the id
+        generateTransactionID(tid, 12);
+        return tid;
+    }
 
-        for(int i = 0; i < 6; i++)
+    /**
+     * Creates a RFC3489 transaction id object.The transaction id itself is
+     * generated using the following algorithm:
+     *
+     * The first 8 bytes of the id are given the value of
+     * <tt>System.currentTimeMillis()</tt>. Putting the right most bits first
+     * so that we get a more optimized equals() method.
+     *
+     * @return A <tt>TransactionID</tt> object with a unique transaction id.
+     */
+    public static TransactionID createNewRFC3489TransactionID()
+    {
+        TransactionID tid = new TransactionID(true);
+
+        generateTransactionID(tid, 16);
+        return tid;
+    }
+
+    /**
+     * Generates a random transaction ID
+     *
+     * @param tid transaction ID
+     * @param nb number of bytes to generate
+     */
+    private static void generateTransactionID(TransactionID tid, int nb)
+    {
+        long left  = System.currentTimeMillis();//the first nb/2 bytes of the id
+        long right = random.nextLong();//the last nb/2 bytes of the id
+        int b = nb / 2;
+
+        for(int i = 0; i < b; i++)
         {
-            tid.transactionID[i]   = (byte)((left  >> (i*8))& 0xFFl);
-            tid.transactionID[i+6] = (byte)((right >> (i*8))& 0xFFl);
+            tid.transactionID[i]   = (byte)((left  >> (i * 8)) & 0xFFl);
+            tid.transactionID[i + b] = (byte)((right >> (i * 8)) & 0xFFl);
         }
 
         //calculate hashcode for Hashtable storage.
@@ -73,8 +132,6 @@ public class TransactionID
                        | (tid.transactionID[2] << 16 & 0x00FF0000)
                        | (tid.transactionID[1] << 8  & 0x0000FF00)
                        | (tid.transactionID[0]       & 0x000000FF);
-
-        return tid;
     }
 
     /**
@@ -111,9 +168,11 @@ public class TransactionID
             return serTran.getTransactionID();
 
         //seems that the caller really wants a new ID
-        TransactionID tid = new TransactionID();
+        TransactionID tid = null;
+        tid = new TransactionID((transactionID.length == 16));
 
-        System.arraycopy(transactionID, 0, tid.transactionID, 0, 12);
+        System.arraycopy(transactionID, 0, tid.transactionID, 0,
+                tid.transactionID.length);
 
         //calculate hashcode for Hashtable storage.
         tid.hashCode =   (tid.transactionID[3] << 24 & 0xFF000000)
@@ -125,12 +184,24 @@ public class TransactionID
     }
 
     /**
-     * Returns the transaction id byte array (length 12).
+     * Returns the transaction id byte array (length 12 or 16 if RFC3489
+     * compatible).
+     *
      * @return the transaction ID byte array.
      */
     public byte[] getBytes()
     {
         return transactionID;
+    }
+
+    /**
+     * If the transaction is compatible with RFC3489 (16 bytes).
+     *
+     * @return true if transaction ID is compatible with RFC3489
+     */
+    public boolean isRFC3489Compatible()
+    {
+        return (transactionID.length == 16);
     }
 
     /**
@@ -197,12 +268,12 @@ public class TransactionID
         for(int i = 0; i < transactionID.length; i++)
         {
 
-            if((transactionID[i]&0xFF) <= 15)
+            if((transactionID[i] & 0xFF) <= 15)
             {
                 idStr.append("0");
             }
 
-            idStr.append(Integer.toHexString(transactionID[i]&0xff)
+            idStr.append(Integer.toHexString(transactionID[i] & 0xff)
                             .toUpperCase());
         }
 

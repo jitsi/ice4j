@@ -322,6 +322,20 @@ public abstract class Candidate
     }
 
     /**
+     * Computes the priority for this <tt>Candidate</tt> based on the procedures
+     * defined in the Google Talk specification.
+     *
+     * @return the priority for this <tt>Candidate</tt> as per the procedures
+     * defined in the ICE specification..
+     */
+    public long computeGTalkPriority()
+    {
+        this.priority = computeGTalkPriorityForType(getType());
+
+        return this.priority;
+    }
+
+    /**
      * Computes the priority this <tt>Candidate</tt> would have if it were of
      * the specified <tt>candidateType</tt> and based on the procedures
      * defined in the ICE specification. The reason we need this method in
@@ -345,7 +359,45 @@ public abstract class Candidate
         return (long) (getTypePreference(candidateType)  << 24) +
                (long) (getLocalPreference()              << 8 ) +
                (long) (256 - getParentComponent().getComponentID());
+    }
 
+    /**
+     * Computes the priority this <tt>Candidate</tt> would have if it were of
+     * the specified <tt>candidateType</tt> and based on the procedures
+     * defined in the Google Talk specification.
+     *
+     * @param candidateType the hypothetical type that we'd like to use when
+     * computing the priority for this <tt>Candidate</tt>.
+     * @return the priority this <tt>Candidate</tt> would have had if it were
+     * of the specified <tt>candidateType</tt>.
+     */
+    public long computeGTalkPriorityForType(CandidateType candidateType)
+    {
+        long priority = 0;
+
+        /* Google Talk priority is in range 0 - 1, we multiply this by 1000
+         * to have a long rather than float
+         */
+        if(candidateType == CandidateType.HOST_CANDIDATE)
+        {
+           priority += 1 * 1000;
+        }
+        else if(candidateType == CandidateType.PEER_REFLEXIVE_CANDIDATE)
+        {
+            priority += (long)(0.9 * 1000);
+        }
+        else if(candidateType == CandidateType.SERVER_REFLEXIVE_CANDIDATE)
+        {
+            priority += (long)(0.9 * 1000);
+        }
+        else //relayed candidates
+        {
+            priority += (long)(0.5 * 1000);
+        }
+
+        priority -= getParentComponent().getComponentID() - 1;
+
+        return priority;
     }
 
     /**

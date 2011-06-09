@@ -380,6 +380,29 @@ public class MessageFactory
     }
 
     /**
+     * Create an allocate request for a Google TURN relay (old TURN protocol
+     * modified).
+     *
+     * @param username short-term username
+     * @return an allocation request
+     */
+    public static Request createGoogleAllocateRequest(String username)
+    {
+        Request allocateRequest = new Request();
+        Attribute usernameAttr = AttributeFactory.createUsernameAttribute(
+                username);
+        Attribute magicCookieAttr =
+            AttributeFactory.createMagicCookieAttribute();
+
+        allocateRequest.setMessageType(Message.ALLOCATE_REQUEST);
+        // first attribute is MAGIC-COOKIE
+        allocateRequest.addAttribute(magicCookieAttr);
+        allocateRequest.addAttribute(usernameAttr);
+
+        return allocateRequest;
+    }
+
+    /**
      * Adds the <tt>Attribute</tt>s to a specific <tt>Request</tt> which support
      * the STUN long-term credential mechanism.
      * <p>
@@ -600,6 +623,51 @@ public class MessageFactory
         }
 
         return sendIndication;
+    }
+
+    /**
+     * Create a old Send Request.
+     * @param username the username
+     * @param peerAddress peer address
+     * @param data data (could be 0 byte)
+     * @return send indication message
+     */
+    public static Request createSendRequest(
+                    String username, TransportAddress peerAddress, byte[] data)
+    {
+        Request sendRequest = new Request();
+
+        try
+        {
+            sendRequest.setMessageType(Message.SEND_REQUEST);
+
+            /* add MAGIC-COOKIE attribute */
+            sendRequest.addAttribute(
+                    AttributeFactory.createMagicCookieAttribute());
+
+            /* add USERNAME attribute */
+            sendRequest.addAttribute(
+                    AttributeFactory.createUsernameAttribute(username));
+
+            /* add DESTINATION-ADDRESS attribute */
+            DestinationAddressAttribute peerAddressAttribute = AttributeFactory
+                            .createDestinationAddressAttribute(peerAddress);
+            sendRequest.addAttribute(peerAddressAttribute);
+
+            /* add DATA if data */
+            if (data != null && data.length > 0)
+            {
+                DataAttribute dataAttribute = AttributeFactory
+                                .createDataAttribute(data);
+                sendRequest.addAttribute(dataAttribute);
+            }
+        }
+        catch (IllegalArgumentException ex)
+        {
+            logger.log(Level.FINE, "Failed to set message type.", ex);
+        }
+
+        return sendRequest;
     }
 
     // ======================== NOT CURRENTLY SUPPORTED

@@ -91,17 +91,12 @@ class ConnectivityCheckServer
         UsernameAttribute uname = (UsernameAttribute)request
             .getAttribute(Attribute.USERNAME);
 
-        if(uname == null
-           || !checkLocalUserName(new String(uname.getUsername())))
+        if(uname == null ||
+                (parentAgent.getCompatibilityMode() == CompatibilityMode.RFC5245
+                       && !checkLocalUserName(new String(uname.getUsername()))))
         {
             return;
         }
-
-        String username = new String(uname.getUsername());
-        int colon = username.indexOf(":");
-
-        //caller gave us the entire username.
-        String remoteUfrag = username.substring(0, colon);
 
         //detect role conflicts
         if( ( parentAgent.isControlling()
@@ -113,9 +108,37 @@ class ConnectivityCheckServer
                 return;
         }
 
-        long priority = extractPriority(request);
+        long priority = 0;
         boolean useCandidate
             = request.containsAttribute(Attribute.USE_CANDIDATE);
+        String username = new String(uname.getUsername());
+        //caller gave us the entire username.
+        String remoteUfrag = null;
+
+        if(parentAgent.getCompatibilityMode() == CompatibilityMode.GTALK)
+        {
+            /* Google Talk ICE dialect considers every request to have
+             * USE-CANDIDATE behavior.
+             */
+            useCandidate = true;
+
+            /* Google Talk STUN request does not contains PRIORITY attribute
+             * set it to the peer reflexive value (0.9 * 1000);
+             *
+             * In all cases priority will just be used if a we discover that
+             * effectively the peer is a peer reflexive ones.
+             */
+            priority = 900;
+
+            /* Google Talk uses username of length 16 for local and remote */
+            remoteUfrag = username.substring(0, 16);
+        }
+        else
+        {
+            priority = extractPriority(request);
+            int colon = username.indexOf(":");
+            remoteUfrag = username.substring(0, colon);
+        }
 
         //tell our address handler we saw a new remote address;
         parentAgent.incomingCheckReceived(evt.getRemoteAddress(),
@@ -131,13 +154,24 @@ class ConnectivityCheckServer
          */
         Attribute usernameAttribute =
             AttributeFactory.createUsernameAttribute(uname.getUsername());
-
-        Attribute messageIntegrityAttribute =
-            AttributeFactory.createMessageIntegrityAttribute(
-                new String(uname.getUsername()));
-
         response.addAttribute(usernameAttribute);
-        response.addAttribute(messageIntegrityAttribute);
+
+        if(parentAgent.getCompatibilityMode() == CompatibilityMode.GTALK)
+        {
+            /* add Mapped address */
+            Attribute mappedAddressAttribute =
+                AttributeFactory.createMappedAddressAttribute(
+                        evt.getRemoteAddress());
+            response.addAttribute(mappedAddressAttribute);
+            response.removeAttribute(Attribute.XOR_MAPPED_ADDRESS);
+        }
+        else
+        {
+            Attribute messageIntegrityAttribute =
+                AttributeFactory.createMessageIntegrityAttribute(
+                        new String(uname.getUsername()));
+            response.addAttribute(messageIntegrityAttribute);
+        }
 
         try
         {
@@ -186,7 +220,7 @@ class ConnectivityCheckServer
             if(logger.isLoggable(Level.FINE))
             {
                 logger.log(Level.FINE, "Received a connectivity ckeck with"
-                            +"no PRIORITY attribute. Discarting.");
+                            + "no PRIORITY attribute. Discarding.");
             }
 
             throw new IllegalArgumentException("Missing PRIORITY attribtue!");
@@ -326,18 +360,33 @@ class ConnectivityCheckServer
      */
     public boolean checkLocalUserName(String username)
     {
-        int colon = username.indexOf(":");
-        String ufrag;
+        String ufrag = null;
 
-        if (colon < 0)
+        if(parentAgent.getCompatibilityMode() == CompatibilityMode.GTALK)
         {
-            //caller gave us a ufrag
-            ufrag = username;
+            if(username.length() == 32)
+            {
+                ufrag = username.substring(0, 16);
+            }
+            else
+            {
+                ufrag = username;
+            }
         }
         else
         {
-            //caller gave us the entire username.
-            ufrag = username.substring(0, colon);
+            int colon = username.indexOf(":");
+
+            if (colon < 0)
+            {
+                //caller gave us a ufrag
+                ufrag = username;
+            }
+            else
+            {
+                //caller gave us the entire username.
+                ufrag = username.substring(0, colon);
+            }
         }
         return ufrag.equals(parentAgent.getLocalUfrag());
     }

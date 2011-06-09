@@ -130,4 +130,28 @@ public class StunDatagramPacketFilter
             return false;
         }
     }
+
+    /**
+     * Indicates whether some other DatagramPacketFilter is "equal to" this one.
+     *
+     * @param obj the reference object with which to compare.
+     * @return <code>true</code> if this <tt>StunDatagramPacketFilter</tt> is
+     * equal to the obj argument; <code>false</code> otherwise.
+     *
+     * @throws java.lang.NullPointerException if <tt>obj</tt> is null;
+     */
+    @Override
+    public boolean equals(Object obj)
+        throws NullPointerException
+    {
+        if(obj == this)
+            return true;
+
+        if(obj.getClass().equals(getClass()))
+        {
+            return true;
+        }
+
+        return false;
+    }
 }

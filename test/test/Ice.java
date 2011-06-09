@@ -308,7 +308,7 @@ public class Ice
      * @param streamName the name of the stream to create
      * @param agent the <tt>Agent</tt> that should create the stream.
      *
-     *@return the newly created <tt>IceMediaStream</tt>.
+     * @return the newly created <tt>IceMediaStream</tt>.
      * @throws Throwable if anything goes wrong.
      */
     private static IceMediaStream createStream(int    rtpPort,

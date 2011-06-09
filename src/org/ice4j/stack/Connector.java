@@ -252,7 +252,7 @@ class Connector
 
         sock.send(datagramPacket);
 
-        // no exception packet is successfully sent, log it 
+        // no exception packet is successfully sent, log it
         if(StunStack.isPacketLoggerEnabled())
         {
             StunStack.getPacketLogger().logPacket(

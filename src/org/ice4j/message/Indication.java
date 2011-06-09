@@ -36,7 +36,11 @@ public class Indication
     public void setMessageType(char indicationType)
         throws IllegalArgumentException
     {
-        if(!isIndicationType(indicationType))
+        /* old TURN DATA indication type is an indication despite
+         * 0x0115 & 0x0110 indicates STUN error response type
+         */
+        if(!isIndicationType(indicationType) &&
+                indicationType != OLD_DATA_INDICATION)
             throw new IllegalArgumentException(
                     (int)(indicationType)
                     + " - is not a valid indication type.");
