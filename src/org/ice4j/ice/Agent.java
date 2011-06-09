@@ -1117,6 +1117,38 @@ public class Agent
     }
 
     /**
+     * Returns the {@link CandidatePair} with the specified remote and local
+     * addresses or <tt>null</tt> if neither of the {@link CheckList}s in this
+     * {@link Agent}'s streams contain such a pair.
+     *
+     * @param localUFrag local user fragment
+     * @param remoteUFrag remote user fragment
+     * @return the {@link CandidatePair} with the specified remote and local
+     * addresses or <tt>null</tt> if neither of the {@link CheckList}s in this
+     * {@link Agent}'s streams contain such a pair.
+     */
+    public CandidatePair findCandidatePair(String localUFrag,
+                                           String remoteUFrag)
+    {
+        synchronized(mediaStreams)
+        {
+            Collection<IceMediaStream> streamsCollection
+                = mediaStreams.values();
+
+            for (IceMediaStream stream : streamsCollection)
+            {
+                CandidatePair pair
+                    = stream.findCandidatePair(localUFrag, remoteUFrag);
+
+                if( pair != null )
+                    return pair;
+            }
+        }
+
+        return null;
+    }
+
+    /**
      * Notifies the implementation that the {@link ConnectivityCheckServer} has
      * just received a message on <tt>localAddress</tt> originating at
      * <tt>remoteAddress</tt> carrying the specified <tt>priority</tt>. This
@@ -1130,6 +1162,7 @@ public class Agent
      * @param priority the priority that the remote party assigned to
      * @param remoteUFrag the user fragment that we should be using when and if
      * we decide to send a check to <tt>remoteAddress</tt>.
+     * @param localUFrag local user fragment
      * @param useCandidate indicates whether the incoming check
      * {@link org.ice4j.message.Request} contained the USE-CANDIDATE ICE
      * attribute.
@@ -1138,6 +1171,7 @@ public class Agent
                                          TransportAddress localAddress,
                                          long             priority,
                                          String           remoteUFrag,
+                                         String           localUFrag,
                                          boolean          useCandidate)
     {
         LocalCandidate localCandidate = findLocalCandidate(localAddress);
@@ -1156,9 +1190,10 @@ public class Agent
         // we need to find the username for the couple
         if(compatibilityMode == CompatibilityMode.GTALK)
         {
-            CandidatePair pair = findCandidatePair(localAddress, remoteAddress);
+            CandidatePair pair = findCandidatePair(localUFrag, remoteUFrag);
             if(pair == null)
             {
+                logger.info("No GTalk CandidatePair that match Lufrag/Rufrag");
                 return;
             }
 

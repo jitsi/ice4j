@@ -539,6 +539,38 @@ public class IceMediaStream
     }
 
     /**
+     * Returns the {@link CandidatePair} with the specified remote and local
+     * addresses or <tt>null</tt> if neither of the {@link CheckList}s in this
+     * stream contain such a pair.
+     *
+     * @param localUFrag local user fragment
+     * @param remoteUFrag remote user fragment
+     * @return the {@link CandidatePair} with the specified remote and local
+     * addresses or <tt>null</tt> if neither of the {@link CheckList}s in this
+     * stream contain such a pair.
+     */
+    public CandidatePair findCandidatePair(String localUFrag,
+                                           String remoteUFrag)
+    {
+        synchronized(checkList)
+        {
+            for( CandidatePair pair : checkList)
+            {
+                LocalCandidate local = pair.getLocalCandidate();
+                RemoteCandidate remote =
+                    (RemoteCandidate)pair.getRemoteCandidate();
+
+                if(local.getUfrag().equals(remoteUFrag) &&
+                    remote.getUfrag().equals(localUFrag))
+                {
+                    return pair;
+                }
+            }
+        }
+        return null;
+    }
+
+    /**
      * Returns the number of host {@link Candidate}s in this stream.
      *
      * @return the number of host {@link Candidate}s in this stream.
