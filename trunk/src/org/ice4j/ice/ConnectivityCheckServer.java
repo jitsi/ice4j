@@ -114,6 +114,7 @@ class ConnectivityCheckServer
         String username = new String(uname.getUsername());
         //caller gave us the entire username.
         String remoteUfrag = null;
+        String localUFrag = null;
 
         if(parentAgent.getCompatibilityMode() == CompatibilityMode.GTALK)
         {
@@ -132,6 +133,7 @@ class ConnectivityCheckServer
 
             /* Google Talk uses username of length 16 for local and remote */
             remoteUfrag = username.substring(0, 16);
+            localUFrag = username.substring(16, 32);
         }
         else
         {
@@ -142,7 +144,8 @@ class ConnectivityCheckServer
 
         //tell our address handler we saw a new remote address;
         parentAgent.incomingCheckReceived(evt.getRemoteAddress(),
-                evt.getLocalAddress(), priority, remoteUfrag, useCandidate);
+                evt.getLocalAddress(), priority, remoteUfrag, localUFrag,
+                useCandidate);
 
         Response response = MessageFactory.createBindingResponse(
                         request, evt.getRemoteAddress());
