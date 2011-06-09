@@ -61,16 +61,15 @@ public class NetworkUtils
     public static final String IN_ADDR_ANY = determineAnyAddress();
 
     /**
-     * The maximum int value that could correspond to a port nubmer.
+     * The maximum int value that could correspond to a port number.
      */
     public static final int    MAX_PORT_NUMBER = 65535;
 
     /**
-     * The minimum int value that could correspond to a port nubmer bindable
-     * by the SIP Communicator.
+     * The minimum int value that could correspond to a port number bindable
+     * by ice4j.
      */
     public static final int    MIN_PORT_NUMBER = 1024;
-
 
     /**
      * The random port number generator that we use in getRandomPortNumer()

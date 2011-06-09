@@ -105,6 +105,7 @@ public class TurnDatagramPacketFilter
             case Message.TURN_METHOD_DATA:
             case Message.TURN_METHOD_REFRESH:
             case Message.TURN_METHOD_SEND:
+            case 0x0005: /* old TURN DATA indication */
                 return true;
             default:
                 return false;

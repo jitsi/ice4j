@@ -110,67 +110,86 @@ class ConnectivityCheckClient
      * check client transaction or <tt>null</tt> if sending the check has
      * failed for some reason.
      */
-    private TransactionID startCheckForPair(CandidatePair candidatePair)
+    protected TransactionID startCheckForPair(CandidatePair candidatePair)
     {
         LocalCandidate localCandidate = candidatePair.getLocalCandidate();
         //we don't need to do a canReach() verification here as it has been
         //already verified during the gathering process.
-        DatagramSocket stunSocket = localCandidate.getStunSocket(null);
 
         Request request = MessageFactory.createBindingRequest();
 
-        //the priority we'd like the remote party to use for a peer reflexive
-        //candidate if one is discovered as a consequence of this check.
-        PriorityAttribute priority = AttributeFactory.createPriorityAttribute(
-            localCandidate.computePriorityForType(
-                            CandidateType.PEER_REFLEXIVE_CANDIDATE));
-
-        request.addAttribute(priority);
-
-        //controlling controlled
-        if (parentAgent.isControlling())
+        if(parentAgent.getCompatibilityMode() == CompatibilityMode.GTALK)
         {
-            request.addAttribute(AttributeFactory
-                            .createIceControllingAttribute(parentAgent
-                                            .getTieBreaker()));
+            /* Google Talk ICE dialect just need the username */
+            String localUserName = parentAgent.generateLocalUserName(
+                    (RemoteCandidate)candidatePair.getRemoteCandidate(),
+                    candidatePair.getLocalCandidate());
 
-            //if we are the controlling agent then we need to indicate our
-            //nominated pairs.
-            if(candidatePair.isNominated())
-            {
-                logger.fine("Add USE-CANDIDATE in check for: " +
-                        candidatePair.toShortString());
-                request.addAttribute(AttributeFactory
-                                .createUseCandidateAttribute());
-            }
+            UsernameAttribute unameAttr =
+                AttributeFactory.createUsernameAttribute(localUserName);
+
+            request.addAttribute(unameAttr);
         }
         else
         {
-            request.addAttribute(AttributeFactory
-                            .createIceControlledAttribute(parentAgent
-                                            .getTieBreaker()));
+            //the priority we'd like the remote party to use for a peer
+            //reflexive candidate if one is discovered as a consequence of this
+            //check.
+            PriorityAttribute priority =
+                AttributeFactory.createPriorityAttribute(
+                        localCandidate.computePriorityForType(
+                                CandidateType.PEER_REFLEXIVE_CANDIDATE));
+
+            request.addAttribute(priority);
+
+            //controlling controlled
+            if (parentAgent.isControlling())
+            {
+                request.addAttribute(AttributeFactory
+                                .createIceControllingAttribute(parentAgent
+                                                .getTieBreaker()));
+
+                //if we are the controlling agent then we need to indicate our
+                //nominated pairs.
+                if(candidatePair.isNominated())
+                {
+                    logger.fine("Add USE-CANDIDATE in check for: " +
+                            candidatePair.toShortString());
+                    request.addAttribute(AttributeFactory
+                                    .createUseCandidateAttribute());
+                }
+            }
+            else
+            {
+                request.addAttribute(AttributeFactory
+                                .createIceControlledAttribute(parentAgent
+                                                .getTieBreaker()));
+            }
+
+            //credentials
+            String localUserName = parentAgent.generateLocalUserName(
+                    candidatePair.getParentComponent().getParentStream().
+                        getName());
+
+            UsernameAttribute unameAttr =
+                AttributeFactory.createUsernameAttribute(localUserName);
+
+            request.addAttribute(unameAttr);
+
+            // TODO Also implement SASL prepare
+            MessageIntegrityAttribute msgIntegrity = AttributeFactory
+                .createMessageIntegrityAttribute(localUserName);
+
+            // when we will encode the MESSAGE-INTEGRITY attribute (thus
+            // generate the HMAC-SHA1 authentication), we need to know the
+            // remote key of the current stream, that why we pass the media
+            // name.
+            msgIntegrity.setMedia(
+                    candidatePair.getParentComponent().getParentStream().
+                        getName());
+
+            request.addAttribute(msgIntegrity);
         }
-
-        //credentials
-        String localUserName = parentAgent.generateLocalUserName(
-                candidatePair.getParentComponent().getParentStream().getName());
-
-        UsernameAttribute unameAttr = AttributeFactory.createUsernameAttribute(
-                        localUserName);
-
-        request.addAttribute(unameAttr);
-
-        // TODO Also implement SASL prepare
-        MessageIntegrityAttribute msgIntegrity = AttributeFactory
-            .createMessageIntegrityAttribute(localUserName);
-
-        // when we will encode the MESSAGE-INTEGRITY attribute (thus generate
-        // the HMAC-SHA1 authentication), we need to know the remote key of the
-        // current stream, that why we pass the media name.
-        msgIntegrity.setMedia(
-                candidatePair.getParentComponent().getParentStream().getName());
-
-        request.addAttribute(msgIntegrity);
 
         TransactionID tran = TransactionID.createNewTransactionID();
         tran.setApplicationData(candidatePair);
@@ -197,13 +216,16 @@ class ConnectivityCheckClient
         }
         catch (Exception ex)
         {
+            DatagramSocket stunSocket = localCandidate.getStunSocket(null);
             logger.log(
                     Level.INFO,
                     "Failed to send " + request
                         + " through " + stunSocket.getLocalSocketAddress(),
                     ex);
+            stunSocket = null;
             tran = null;
         }
+
         return tran;
     }
 
@@ -334,21 +356,44 @@ class ConnectivityCheckClient
         CandidatePair checkedPair
             = (CandidatePair) evt.getTransactionID().getApplicationData();
 
-        if(! response.containsAttribute(Attribute.XOR_MAPPED_ADDRESS))
+        TransportAddress mappedAddress = null;
+        if(this.parentAgent.getCompatibilityMode() == CompatibilityMode.GTALK)
         {
-            logger.fine("Received a success response with no "
-                            + "XOR_MAPPED_ADDRESS attribute.");
-            logger.info("Pair failed: "  + checkedPair.toShortString());
-            checkedPair.setStateFailed();
-            return; //malformed error response
+            if(!response.containsAttribute(Attribute.MAPPED_ADDRESS))
+            {
+                   logger.fine("Received a success response with no "
+                           + "MAPPED_ADDRESS attribute.");
+                   logger.info("Pair failed (no MAPPED-ADDRESS): "
+                           + checkedPair.toShortString());
+                   checkedPair.setStateFailed();
+                   return; //malformed error response
+            }
+
+            MappedAddressAttribute mappedAddressAttr
+                = (MappedAddressAttribute)response
+                    .getAttribute(Attribute.MAPPED_ADDRESS);
+
+            mappedAddress = mappedAddressAttr.getAddress();
         }
+        else
+        {
+            if(! response.containsAttribute(Attribute.XOR_MAPPED_ADDRESS))
+            {
+                logger.fine("Received a success response with no "
+                        + "XOR_MAPPED_ADDRESS attribute.");
+                logger.info("Pair failed (no XOR-MAPPED-ADDRESS): "
+                        + checkedPair.toShortString());
+                checkedPair.setStateFailed();
+                return; //malformed error response
+            }
 
-        XorMappedAddressAttribute mappedAddressAttr
-            = (XorMappedAddressAttribute)response
-                .getAttribute(Attribute.XOR_MAPPED_ADDRESS);
+            XorMappedAddressAttribute mappedAddressAttr
+                = (XorMappedAddressAttribute)response
+                    .getAttribute(Attribute.XOR_MAPPED_ADDRESS);
 
-        TransportAddress mappedAddress = mappedAddressAttr
-            .getAddress(response.getTransactionID());
+            mappedAddress = mappedAddressAttr
+                .getAddress(response.getTransactionID());
+        }
 
         LocalCandidate validLocalCandidate = parentAgent
                                        .findLocalCandidate(mappedAddress);
@@ -367,13 +412,22 @@ class ConnectivityCheckClient
             //  pair from which the STUN check was sent.
             //o Its priority is set equal to the value of the PRIORITY attribute
             //  in the Binding request.
-            PriorityAttribute prioAttr = (PriorityAttribute)request
-                .getAttribute(Attribute.PRIORITY);
+            long priority = 0;
+            if(parentAgent.getCompatibilityMode() == CompatibilityMode.GTALK)
+            {
+                priority = 900;
+            }
+            else
+            {
+                PriorityAttribute prioAttr = (PriorityAttribute)request
+                    .getAttribute(Attribute.PRIORITY);
+                priority = prioAttr.getPriority();
+            }
 
             LocalCandidate peerReflexiveCandidate = new PeerReflexiveCandidate(
                             mappedAddress, checkedPair.getParentComponent(),
                             checkedPair.getLocalCandidate(),
-                            prioAttr.getPriority());
+                            priority);
 
             peerReflexiveCandidate.setBase(checkedPair.getLocalCandidate());
 
@@ -480,8 +534,10 @@ class ConnectivityCheckClient
         //If the agent was a controlling agent, and it had included a USE-
         //CANDIDATE attribute in the Binding request, the valid pair generated
         //from that check has its nominated flag set to true.
-        if(parentAgent.isControlling()
-                && request.containsAttribute(Attribute.USE_CANDIDATE))
+        if((parentAgent.isControlling()
+                && (request.containsAttribute(Attribute.USE_CANDIDATE)) ||
+                parentAgent.getCompatibilityMode() ==
+                            CompatibilityMode.GTALK))
         {
             logger.info("Nomination confirmed for pair: " +
                     validPair.toShortString());

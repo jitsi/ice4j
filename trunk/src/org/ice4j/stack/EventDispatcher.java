@@ -49,7 +49,7 @@ public class EventDispatcher
     /**
      * Registers a specific <tt>MessageEventHandler</tt> for notifications about
      * STUN indications received at a specific local <tt>TransportAddress</tt>.
-     * 
+     *
      * @param localAddr the local <tt>TransportAddress</tt> STUN indications
      * received at which are to be reported to the specified
      * <tt>indicationListener</tt>
@@ -64,6 +64,26 @@ public class EventDispatcher
         addMessageListener(
                 localAddr,
                 new IndicationEventHandler(indicationListener));
+    }
+
+    /**
+     * Registers a specific <tt>MessageEventHandler</tt> for notifications about
+     * old indications received at a specific local <tt>TransportAddress</tt>.
+     *
+     * @param localAddr the local <tt>TransportAddress</tt> STUN indications
+     * received at which are to be reported to the specified
+     * <tt>indicationListener</tt>
+     * @param indicationListener the <tt>MessageEventHandler</tt> which is to be
+     * registered for notifications about old indications received at the
+     * specified local <tt>TransportAddress</tt>
+     */
+    public void addOldIndicationListener(
+            TransportAddress localAddr,
+            MessageEventHandler indicationListener)
+    {
+        addMessageListener(
+                localAddr,
+                new OldIndicationEventHandler(indicationListener));
     }
 
     /**
@@ -326,12 +346,51 @@ public class EventDispatcher
     }
 
     /**
+     * Implements <tt>MessageEventHandler</tt> for a
+     * <tt>MessageEventHandler</tt> which handles old DATA indications (0x0115).
+     *
+     * @author Lubomir Marinov
+     * @author Sebastien Vincent
+     */
+    private static class OldIndicationEventHandler
+        extends MessageTypeEventHandler<MessageEventHandler>
+    {
+
+        /**
+         * Initializes a new <tt>IndicationEventHandler</tt> which is to
+         * implement <tt>MessageEventHandler</tt> for a specific
+         * <tt>MessageEventHandler</tt> which handles old DATA indications
+         * (0x0115).
+         *
+         * @param indicationListener the <tt>RequestListener</tt> for which the
+         * new instance is to implement <tt>MessageEventHandler</tt>
+         */
+        public OldIndicationEventHandler(MessageEventHandler indicationListener)
+        {
+            super((char)0x0110, indicationListener);
+        }
+
+        /**
+         * Notifies this <tt>MessageEventHandler</tt> that a STUN message has
+         * been received, parsed and is ready for delivery.
+         *
+         * @param e a <tt>StunMessageEvent</tt> which encapsulates the STUN
+         * message to be handled
+         * @see MessageEventHandler#handleMessageEvent(StunMessageEvent)
+         */
+        public void handleMessageEvent(StunMessageEvent e)
+        {
+            delegate.handleMessageEvent(e);
+        }
+    }
+
+    /**
      * Represents the base for providers of <tt>MessageEventHandler</tt>
      * implementations to specific <tt>Object</tt>s.
      *
      * @author Lubomir Marinov
      * @param <T> the type of the delegate to which the notifications are to be
-     * forwarded 
+     * forwarded
      */
     private static abstract class MessageTypeEventHandler<T>
         implements MessageEventHandler
@@ -345,7 +404,7 @@ public class EventDispatcher
 
         /**
          * The type of the STUN messages that this <tt>MessageEventHandler</tt>
-         * is interested in. 
+         * is interested in.
          */
         public final char messageType;
 

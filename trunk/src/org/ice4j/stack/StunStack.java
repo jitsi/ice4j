@@ -16,6 +16,7 @@ import javax.crypto.*;
 
 import org.ice4j.*;
 import org.ice4j.attribute.*;
+import org.ice4j.ice.*;
 import org.ice4j.message.*;
 import org.ice4j.security.*;
 
@@ -87,6 +88,11 @@ public class StunStack
      * The packet logger instance.
      */
     private static PacketLogger packetLogger;
+
+    /**
+     * Compatibility mode.
+     */
+    private final CompatibilityMode mode;
 
     /**
      * Sets the number of Message processors running in the same time.
@@ -252,6 +258,16 @@ public class StunStack
      */
     public StunStack()
     {
+        this(CompatibilityMode.RFC5245);
+    }
+
+    /**
+     * Initializes a new <tt>StunStack</tt> instance.
+     *
+     * @param mode compatibility mode
+     */
+    public StunStack(CompatibilityMode mode)
+    {
         /*
          * The Mac instantiation used in MessageIntegrityAttribute could take
          * several hundred milliseconds so we don't want it instantiated only
@@ -274,6 +290,7 @@ public class StunStack
                 }
             }
         }
+        this.mode = mode;
         netAccessManager = new NetAccessManager(this);
     }
 
@@ -500,6 +517,24 @@ public class StunStack
             MessageEventHandler indicationListener)
     {
         eventDispatcher.addIndicationListener(localAddr, indicationListener);
+    }
+
+    /**
+     * Adds a new <tt>MessageEventHandler</tt> which is to be notified about
+     * old indications received at a specific local <tt>TransportAddress</tt>.
+     *
+     * @param localAddr the <tt>TransportAddress</tt> of the local socket for
+     * which received STUN indications are to be reported to the specified
+     * <tt>MessageEventHandler</tt>
+     * @param indicationListener the <tt>MessageEventHandler</tt> which is to be
+     * registered for notifications about old indications received at the
+     * specified local <tt>TransportAddress</tt>
+     */
+    public void addOldIndicationListener(
+            TransportAddress localAddr,
+            MessageEventHandler indicationListener)
+    {
+        eventDispatcher.addOldIndicationListener(localAddr, indicationListener);
     }
 
     /**
@@ -762,6 +797,11 @@ public class StunStack
     private void validateRequestAttributes(StunMessageEvent evt)
         throws IllegalArgumentException, StunException, IOException
     {
+        if(mode != CompatibilityMode.RFC5245)
+        {
+            return;
+        }
+
         Message request = evt.getMessage();
 
         //assert valid username
@@ -863,7 +903,7 @@ public class StunStack
                             evt.getRemoteAddress());
 
             throw new IllegalArgumentException(
-                "Missing MESSAGE-INTEGRITY.");
+                "Unknown attribute(s).");
         }
     }
 
@@ -1062,5 +1102,15 @@ public class StunStack
     static boolean isPacketLoggerEnabled()
     {
         return packetLogger != null && packetLogger.isEnabled();
+    }
+
+    /**
+     * Returns compatibility mode.
+     *
+     * @return compatibility mode
+     */
+    public CompatibilityMode getCompatibilityMode()
+    {
+        return mode;
     }
 }

@@ -11,6 +11,7 @@ import java.util.logging.*;
 
 import org.ice4j.*;
 import org.ice4j.attribute.*;
+import org.ice4j.ice.*;
 import org.ice4j.stack.*;
 
 /**
@@ -34,59 +35,190 @@ public abstract class Message
         = Logger.getLogger(Message.class.getName());
 
     /* general declaration */
+    /**
+     * STUN request code.
+     */
     public static final char STUN_REQUEST         = 0x0000;
+
+    /**
+     * STUN indication code.
+     */
     public static final char STUN_INDICATION      = 0x0010;
+
+    /**
+     * STUN success response code.
+     */
     public static final char STUN_SUCCESS_RESP    = 0x0100;
+
+    /**
+     * STUN error response code.
+     */
     public static final char STUN_ERROR_RESP      = 0x0110;
 
     /* STUN methods */
+    /**
+     * STUN binding method.
+     */
     public static final char STUN_METHOD_BINDING = 0x0001;
+
+    /**
+     * STUN binding request code.
+     */
     public static final char BINDING_REQUEST               =
         (STUN_METHOD_BINDING | STUN_REQUEST);
+
+    /**
+     * STUN binding success response code.
+     */
     public static final char BINDING_SUCCESS_RESPONSE      =
         (STUN_METHOD_BINDING | STUN_SUCCESS_RESP);
+
+    /**
+     * STUN binding error response code.
+     */
     public static final char BINDING_ERROR_RESPONSE        =
         (STUN_METHOD_BINDING | STUN_ERROR_RESP);
+
+    /**
+     * STUN shared secret request.
+     */
     public static final char SHARED_SECRET_REQUEST         = 0x0002;
+
+    /**
+     * STUN shared secret response.
+     */
     public static final char SHARED_SECRET_RESPONSE        = 0x0102;
+
+    /**
+     * STUN shared secret error response.
+     */
     public static final char SHARED_SECRET_ERROR_RESPONSE  = 0x0112;
 
     /* TURN methods */
+    /**
+     * TURN allocate method code.
+     */
     public static final char TURN_METHOD_ALLOCATE  = 0x0003;
+
+    /**
+     * TURN refresh method code.
+     */
     public static final char TURN_METHOD_REFRESH  = 0x0004;
+
+    /**
+     * TURN send method code.
+     */
     public static final char TURN_METHOD_SEND  = 0x0006;
+
+    /**
+     * TURN data method code.
+     */
     public static final char TURN_METHOD_DATA  = 0x0007;
+
+    /**
+     * TURN CreatePermission method code.
+     */
     public static final char TURN_METHOD_CREATEPERMISSION = 0x0008;
+
+    /**
+     * TURN ChannelBind method code.
+     */
     public static final char TURN_METHOD_CHANNELBIND  = 0x0009;
 
+    /**
+     * TURN allocate request code.
+     */
     public static final char ALLOCATE_REQUEST =
         (TURN_METHOD_ALLOCATE | STUN_REQUEST);
+
+    /**
+     * TURN allocate response code.
+     */
     public static final char ALLOCATE_RESPONSE =
         (TURN_METHOD_ALLOCATE | STUN_SUCCESS_RESP);
+
+    /**
+     * TURN allocate error response code.
+     */
     public static final char ALLOCATE_ERROR_RESPONSE =
         (TURN_METHOD_ALLOCATE | STUN_ERROR_RESP);
+
+    /**
+     * TURN refresh request code.
+     */
     public static final char REFRESH_REQUEST =
         (TURN_METHOD_REFRESH | STUN_REQUEST);
+
+    /**
+     * TURN refresh response code.
+     */
     public static final char REFRESH_RESPONSE =
         (TURN_METHOD_REFRESH | STUN_SUCCESS_RESP);
+
+    /**
+     * TURN refresh error response code.
+     */
     public static final char REFRESH_ERROR_RESPONSE =
         (TURN_METHOD_REFRESH | STUN_ERROR_RESP);
+
+    /**
+     * TURN ChannelBind request code.
+     */
     public static final char CHANNELBIND_REQUEST =
         (TURN_METHOD_CHANNELBIND | STUN_REQUEST);
+
+    /**
+     * TURN ChannelBind response code.
+     */
     public static final char CHANNELBIND_RESPONSE =
         (TURN_METHOD_CHANNELBIND | STUN_SUCCESS_RESP);
+
+    /**
+     * TURN ChannelBind error response code.
+     */
     public static final char CHANNELBIND_ERROR_RESPONSE =
         (TURN_METHOD_CHANNELBIND | STUN_ERROR_RESP);
+
+    /**
+     * TURN CreatePermission request code.
+     */
     public static final char CREATEPERMISSION_REQUEST =
         (TURN_METHOD_CREATEPERMISSION | STUN_REQUEST);
+
+    /**
+     * TURN CreatePermission response code.
+     */
     public static final char CREATEPERMISSION_RESPONSE =
         (TURN_METHOD_CREATEPERMISSION | STUN_SUCCESS_RESP);
+
+    /**
+     * TURN CreatePermission error response code.
+     */
     public static final char CREATEPERMISSION_ERROR_RESPONSE =
         (TURN_METHOD_CREATEPERMISSION | STUN_ERROR_RESP);
+
+    /**
+     * TURN send indication code.
+     */
     public static final char SEND_INDICATION =
         (TURN_METHOD_SEND | STUN_INDICATION);
+
+    /**
+     * TURN data indication code.
+     */
     public static final char DATA_INDICATION =
         (TURN_METHOD_DATA | STUN_INDICATION);
+
+    /* Old TURN method */
+    /**
+     * TURN Send request.
+     */
+    public static final char SEND_REQUEST = 0x0004;
+
+    /**
+     * TURN Send request.
+     */
+    public static final char OLD_DATA_INDICATION = 0x0115;
 
     //Message fields
     /**
@@ -116,6 +248,11 @@ public abstract class Message
      * The length of the transaction id (in bytes).
      */
     public static final byte TRANSACTION_ID_LENGTH = 12;
+
+    /**
+     * The length of the RFC3489 transaction id (in bytes).
+     */
+    public static final byte RFC3489_TRANSACTION_ID_LENGTH = 16;
 
     /**
      * The list of attributes contained by the message. We are using a Map
@@ -167,8 +304,25 @@ public abstract class Message
      *
      */
     public static final byte N_A = 0;
+
+    /**
+     * C means it's conditional based on some other aspect of the message.
+     */
     public static final byte C   = 1;
+
+    /**
+     * O means the parameter is optional.
+     *
+     * @see Message#N_A
+     */
     public static final byte O   = 2;
+
+    /**
+     * M indicates that inclusion of the attribute in the message is
+     * mandatory.
+     *
+     * @see Message#N_A
+     */
     public static final byte M   = 3;
 
     //Message indices
@@ -227,6 +381,9 @@ public abstract class Message
     protected static final byte ICE_CONTROLLED_PRESENTITY_INDEX            = 30;
     protected static final byte USE_CANDIDATE_PRESENTITY_INDEX             = 31;
 
+    /* Old TURN attributes */
+    protected static final byte DESTINATION_ADDRESS_PRESENTITY_INDEX       = 29;
+
     protected final static byte attributePresentities[][] = new byte[][]{
     //                                            Binding   Shared   Shared   Shared  Alloc   Alloc   Rfrsh   Rfrsh   ChnlBnd  ChnlBnd Send    Data
     //                        Binding   Binding   Error     Secret   Secret   Secret  Req.    Resp.   Req.    Resp.   Req.     Resp.   Indic.  Indic.
@@ -236,7 +393,7 @@ public abstract class Message
       /*MAPPED-ADDRESS*/    { N_A,      M,        N_A,      N_A,     N_A,     N_A,    N_A,    N_A,    N_A,    N_A,    N_A,     N_A,    N_A,   N_A},
       /*RESPONSE-ADDRESS*/  { O,        N_A,      N_A,      N_A,     N_A,     N_A,    N_A,    N_A,    N_A,    N_A,    N_A,     N_A,    N_A,   N_A},
       /*CHANGE-REQUEST*/    { O,        N_A,      N_A,      N_A,     N_A,     N_A,    N_A,    N_A,    N_A,    N_A,    N_A,     N_A,    N_A,   N_A},
-      /*SOURCE-ADDRESS*/    { N_A,      M,        N_A,      N_A,     N_A,     N_A,    N_A,    N_A,    N_A,    N_A,    N_A,     N_A,    N_A,   N_A},
+      /*SOURCE-ADDRESS*/    { N_A,      M,        N_A,      N_A,     N_A,     N_A,    N_A,    N_A,    N_A,    N_A,    N_A,     N_A,    N_A,   M},
       /*CHANGED-ADDRESS*/   { N_A,      M,        N_A,      N_A,     N_A,     N_A,    N_A,    N_A,    N_A,    N_A,    N_A,     N_A,    N_A,   N_A},
       /*USERNAME*/          { O,        N_A,      N_A,      N_A,     M,       N_A,    O,      N_A,    O,      N_A,    O,       N_A,    N_A,   N_A},
       /*PASSWORD*/          { N_A,      N_A,      N_A,      N_A,     M,       N_A,    N_A,    N_A,    N_A,    N_A,    N_A,     N_A,    N_A,   N_A},
@@ -244,7 +401,7 @@ public abstract class Message
       /*ERROR-CODE*/        { N_A,      N_A,      M,        N_A,     N_A,     M,      N_A,    M,      N_A,    M,      N_A,     M,      N_A,   N_A},
       /*UNKNOWN-ATTRIBUTES*/{ N_A,      N_A,      C,        N_A,     N_A,     C,      N_A,    C,      N_A,    C,      N_A,     C,      N_A,   N_A},
       /*REFLECTED-FROM*/    { N_A,      C,        N_A,      N_A,     N_A,     N_A,    N_A,    N_A,    N_A,    N_A,    N_A,     N_A,    N_A,   N_A},
-      /*XOR-MAPPED-ADDRESS*/{ N_A,      M,        N_A,      N_A,     N_A,     N_A,    N_A,    M,      N_A,    N_A,    N_A,     N_A,    N_A,   N_A},
+      /*XOR-MAPPED-ADDRESS*/{ N_A,      C,        N_A,      N_A,     N_A,     N_A,    N_A,    M,      N_A,    N_A,    N_A,     N_A,    N_A,   N_A},
       /*XOR-ONLY*/          { O,        N_A,      N_A,      N_A,     N_A,     N_A,    N_A,    N_A,    N_A,    N_A,    N_A,     N_A,    N_A,   N_A},
       /*SOFTWARE*/          { N_A,      O,        O,        N_A,     O,       O,      O,      O,      O,      O,      O,       O,      O,     N_A},
       /*UNKNOWN_OPTIONAL*/  { O,        O,        O,        O,       O,       O,      O,      O,      O,      O,      O,       O,      N_A,   N_A},
@@ -253,9 +410,9 @@ public abstract class Message
       /*NONCE*/             { O,        N_A,      N_A,      N_A,     M,       N_A,    O,      O,      O,      O,      O,       O,      N_A,   N_A},
       /*FINGERPRINT*/       { O,        O,        O,        O,       O,       O,      O,      O,      O,      O,      O,       O,      N_A,   N_A},
       /*CHANNEL-NUMBER*/    { N_A,      N_A,      N_A,      N_A,     N_A,     N_A,    N_A,    N_A,    N_A,    N_A,    M,       N_A,    N_A,   N_A},
-      /*LIFETIME*/          { N_A,      N_A,      N_A,      N_A,     N_A,     N_A,    O,      N_A,    M,      N_A,    N_A,     N_A,    N_A,   N_A},
+      /*LIFETIME*/          { N_A,      N_A,      N_A,      N_A,     N_A,     N_A,    O,      N_A,    O,      N_A,    N_A,     N_A,    N_A,   N_A},
       /*XOR-PEER-ADDRESS*/  { N_A,      N_A,      N_A,      N_A,     N_A,     N_A,    N_A,    N_A,    N_A,    N_A,    M,       N_A,    M,     M},
-      /*DATA*/              { N_A,      N_A,      N_A,      N_A,     N_A,     N_A,    N_A,    N_A,    N_A,    N_A,    N_A,     N_A,    O,     M},
+      /*DATA*/              { N_A,      N_A,      N_A,      N_A,     N_A,     N_A,    N_A,    N_A,    O,      N_A,    N_A,     N_A,    O,     M},
       /*XOR-RELAYED-ADDRESS*/{N_A,      N_A,      N_A,      N_A,     N_A,     N_A,    N_A,    M,      N_A,    N_A,    N_A,     N_A,    N_A,   N_A},
       /*EVEN-PORT*/         { N_A,      N_A,      N_A,      N_A,     N_A,     N_A,    O,      N_A,    N_A,    N_A,    N_A,     N_A,    N_A,   N_A},
       /*REQUESTED-TRANSPORT*/{N_A,      N_A,      N_A,      N_A,     N_A,     N_A,    M,      N_A,    N_A,    N_A,    N_A,     N_A,    N_A,   N_A},
@@ -265,6 +422,7 @@ public abstract class Message
       /*ICE-CONTROLLING*/   { O,        N_A,      N_A,      N_A,     N_A,     N_A,    N_A,    N_A,    N_A,    N_A,    N_A,     N_A,    N_A,   N_A},
       /*ICE-CONTROLLED*/    { O,        N_A,      N_A,      N_A,     N_A,     N_A,    N_A,    N_A,    N_A,    N_A,    N_A,     N_A,    N_A,   N_A},
       /*USE-CANDIDATE*/     { O,        N_A,      N_A,      N_A,     N_A,     N_A,    N_A,    N_A,    N_A,    N_A,    N_A,     N_A,    N_A,   N_A},
+      /*DESTINATION-ADDRESS*/{N_A,      N_A,      N_A,      N_A,     N_A,     N_A,    N_A,    N_A,    O,      N_A,    N_A,     N_A,    M,     N_A},
     };
 
     /**
@@ -377,8 +535,6 @@ public abstract class Message
         return  attributes.size();
     }
 
-
-
     /**
      * Sets this message's type to be messageType. Method is package access
      * as it should not permit changing the type of message once it has been
@@ -414,13 +570,16 @@ public abstract class Message
         throws StunException
     {
         if(tranID == null
-           || tranID.length != TRANSACTION_ID_LENGTH)
+           || (tranID.length != TRANSACTION_ID_LENGTH &&
+                   tranID.length != RFC3489_TRANSACTION_ID_LENGTH))
             throw new StunException(StunException.ILLEGAL_ARGUMENT,
-                                    "Invalid transaction id");
+                                    "Invalid transaction id length");
 
-        this.transactionID = new byte[TRANSACTION_ID_LENGTH];
+        int tranIDLength = tranID.length;
+
+        this.transactionID = new byte[tranIDLength];
         System.arraycopy(tranID, 0,
-                         this.transactionID, 0, TRANSACTION_ID_LENGTH);
+                         this.transactionID, 0, tranIDLength);
     }
 
     /**
@@ -635,6 +794,18 @@ public abstract class Message
         //make sure we have everything necessary to encode a proper message
         validateAttributePresentity();
 
+        if(stunStack.getCompatibilityMode() == CompatibilityMode.GTALK)
+        {
+            /* Google Talk will return error response if it sees unknown
+             * attributes (typically attributes introduced in RFC5349 and
+             */
+            if(getAttribute(Attribute.SOFTWARE) != null)
+                removeAttribute(Attribute.SOFTWARE);
+
+            if(getAttribute(Attribute.FINGERPRINT) != null)
+                removeAttribute(Attribute.FINGERPRINT);
+        }
+
         final char dataLength = getDataLength();
         byte binMsg[] = new byte[HEADER_LENGTH + dataLength];
         int offset    = 0;
@@ -648,11 +819,24 @@ public abstract class Message
 
         offset += 2;
 
-        System.arraycopy(MAGIC_COOKIE, 0, binMsg, offset, 4);
-        offset+=4;
-        System.arraycopy(getTransactionID(), 0, binMsg, offset,
-                            TRANSACTION_ID_LENGTH);
-        offset+=TRANSACTION_ID_LENGTH;
+        byte tranID[] = getTransactionID();
+
+        if(tranID.length == 12)
+        {
+            System.arraycopy(MAGIC_COOKIE, 0, binMsg, offset, 4);
+            offset += 4;
+            System.arraycopy(tranID, 0, binMsg, offset,
+                    TRANSACTION_ID_LENGTH);
+            offset += TRANSACTION_ID_LENGTH;
+        }
+        else
+        {
+            /* RFC3489 behavior */
+            System.arraycopy(tranID, 0, binMsg, offset,
+                    RFC3489_TRANSACTION_ID_LENGTH);
+            offset += RFC3489_TRANSACTION_ID_LENGTH;
+
+        }
 
         Iterator<Map.Entry<Character, Attribute>> iter
             = attributes.entrySet().iterator();
@@ -675,7 +859,7 @@ public abstract class Message
             {
                 /*
                  * The "Message Length" seen by a ContentDependentAttribute is
-                 * upto and including the very Attribute but without any other
+                 * up to and including the very Attribute but without any other
                  * Attribute instances after it.
                  */
                 binMsg[messageLengthOffset]
@@ -716,14 +900,14 @@ public abstract class Message
         //remove MESSAGE-INTEGRITY and FINGERPRINT attributes so that we can
         //make sure they are added at the end.
         Attribute msgIntAttr = removeAttribute(Attribute.MESSAGE_INTEGRITY);
-        Attribute fingerprint  = removeAttribute(Attribute.FINGERPRINT);
+        Attribute fingerprint = removeAttribute(Attribute.FINGERPRINT);
 
         //add a SOFTWARE attribute if the user said so, and unless they did it
         //themselves.
         String software = System.getProperty(StackProperties.SOFTWARE);
 
         if (getAttribute(Attribute.SOFTWARE) == null
-            && software != null)
+            && software != null && software.length() > 0)
         {
             addAttribute(AttributeFactory
                             .createSoftwareAttribute(software.getBytes()));
@@ -771,10 +955,13 @@ public abstract class Message
                          "The given binary array is not a valid StunMessage");
         }
 
-        char messageType = (char)((binMessage[offset++]<<8)
-                               | (binMessage[offset++]&0xFF));
+        char messageType = (char)((binMessage[offset++] << 8)
+                               | (binMessage[offset++] & 0xFF));
+
         Message message;
-        if (Message.isResponseType(messageType))
+        /* 0x0115 is a old TURN DATA indication message type */
+        if (Message.isResponseType(messageType) &&
+                messageType != OLD_DATA_INDICATION)
             message = new Response();
         else if(Message.isRequestType(messageType))
             message = new Request();
@@ -789,7 +976,14 @@ public abstract class Message
         /* copy the cookie */
         byte cookie[] = new byte[4];
         System.arraycopy(binMessage, offset, cookie, 0, 4);
-        offset+=4;
+        offset += 4;
+
+        boolean rfc3489Compat = false;
+
+        if(!Arrays.equals(MAGIC_COOKIE, cookie))
+        {
+            rfc3489Compat = true;
+        }
 
         if(arrayLen - offset - TRANSACTION_ID_LENGTH < length)
         {
@@ -809,7 +1003,18 @@ public abstract class Message
         System.arraycopy(binMessage, offset, tranID, 0, TRANSACTION_ID_LENGTH);
         try
         {
-            message.setTransactionID(tranID);
+            if(rfc3489Compat)
+            {
+                byte rfc3489TranID[] = new byte[TRANSACTION_ID_LENGTH + 4];
+                System.arraycopy(cookie, 0, rfc3489TranID, 0, 4);
+                System.arraycopy(tranID, 0, rfc3489TranID, 4,
+                        TRANSACTION_ID_LENGTH);
+                message.setTransactionID(rfc3489TranID);
+            }
+            else
+            {
+                message.setTransactionID(tranID);
+            }
         }
         catch (StunException exc)
         {
@@ -818,7 +1023,7 @@ public abstract class Message
                             + "contain a whole StunMessage", exc);
         }
 
-        offset+=TRANSACTION_ID_LENGTH;
+        offset += TRANSACTION_ID_LENGTH;
 
         while(offset - Message.HEADER_LENGTH < length)
         {
@@ -936,7 +1141,7 @@ public abstract class Message
         for(char i = Attribute.MAPPED_ADDRESS; i < Attribute.REFLECTED_FROM;i++)
             if(getAttributePresentity(i) == M && getAttribute(i) == null)
                 throw new IllegalStateException(
-                    "A mandatory attribute (type=" +(int)i + ") is missing!");
+                    "A mandatory attribute (type=" + (int)i + ") is missing!");
     }
 
     /**

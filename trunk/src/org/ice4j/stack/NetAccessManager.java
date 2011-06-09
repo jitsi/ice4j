@@ -99,7 +99,7 @@ class NetAccessManager
     /**
      * Gets the <tt>MessageQueue</tt> of this <tt>NetAccessManager</tt> in which
      * incoming messages are stocked for processing.
-     * 
+     *
      * @return the <tt>MessageQueue</tt> of this <tt>NetAccessManager</tt> in
      * which incoming messages are stocked for processing
      */

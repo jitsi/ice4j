@@ -36,6 +36,7 @@ import org.ice4j.stack.*;
  *
  * @author Emil Ivov
  * @author Lyubomir Marinov
+ * @author Sebastien Vincent
  */
 public class Agent
 {
@@ -102,6 +103,11 @@ public class Agent
     private final DefaultNominator nominator;
 
     /**
+     * ICE compatibility mode for this agent.
+     */
+    private CompatibilityMode compatibilityMode = CompatibilityMode.RFC5245;
+
+    /**
      * The name of the {@link PropertyChangeEvent} that we use to deliver
      * events on changes in the state of ICE processing in this agent.
      */
@@ -156,14 +162,12 @@ public class Agent
     /**
      * The entity that will be taking care of outgoing connectivity checks.
      */
-    private final ConnectivityCheckClient connCheckClient
-                                = new ConnectivityCheckClient(this);
+    private final ConnectivityCheckClient connCheckClient;
 
     /**
      * The entity that will be taking care of incoming connectivity checks.
      */
-    private final ConnectivityCheckServer connCheckServer
-                                = new ConnectivityCheckServer(this);
+    private final ConnectivityCheckServer connCheckServer;
 
     /**
      * Indicates the state of ICE processing in this <tt>Agent</tt>. An
@@ -196,6 +200,11 @@ public class Agent
     private TerminationThread terminationThread;
 
     /**
+     * The thread that we use for STUN keep-alive.
+     */
+    private StunKeepAliveThread stunKeepAliveThread;
+
+    /**
      * Some protocols, such as XMPP, need to be able to distinguish the separate
      * ICE sessions that occur as a result of ICE restarts, which is why we need
      * to keep track of generations. A generation is an index, starting at 0,
@@ -205,24 +214,53 @@ public class Agent
     private int generation = 0;
 
     /**
-     * Creates an empty <tt>Agent</tt> with no streams, and no address
+     * Creates an empty <tt>Agent</tt> with no streams, and no address.
      */
     public Agent()
     {
+        this(CompatibilityMode.RFC5245);
+    }
+
+    /**
+     * Creates an empty <tt>Agent</tt> with no streams, and no address.
+     *
+     * @param compatibilityMode ICE compatibility mode
+     */
+    public Agent(CompatibilityMode compatibilityMode)
+    {
         SecureRandom random = new SecureRandom();
 
-        ufrag = new BigInteger(24, random).toString(32);
-        password = new BigInteger(128, random).toString(32);
+        this.compatibilityMode = compatibilityMode;
 
-        tieBreaker = Math.abs(random.nextLong());
+        connCheckServer = new ConnectivityCheckServer(this);
+        connCheckClient = new ConnectivityCheckClient(this);
+
+        //add the FINGERPRINT attribute to all messages.
+        System.setProperty(StackProperties.ALWAYS_SIGN, "true");
 
         //add the software attribute to all messages
         if (StackProperties.getString(StackProperties.SOFTWARE) == null)
             System.setProperty(StackProperties.SOFTWARE, "ice4j.org");
 
-        //add the FINGERPRINT attribute to all messages.
-        System.setProperty(StackProperties.ALWAYS_SIGN, "true");
+        if(compatibilityMode == CompatibilityMode.GTALK)
+        {
+            /* username is 16 byte in Google Talk dialect but it is set
+             * for each candidate and not globally
+             */
+            ufrag = null;
 
+            /* no password in Google Talk dialect (at least libnice does not use
+             * one)
+             */
+            password = "";
+        }
+        else
+        {
+            ufrag = new BigInteger(24, random).toString(32);
+            password = new BigInteger(128, random).toString(32);
+        }
+
+        tieBreaker = Math.abs(random.nextLong());
         nominator = new DefaultNominator(this);
     }
 
@@ -278,6 +316,8 @@ public class Agent
                IOException,
                BindException
     {
+        SecureRandom random = new SecureRandom();
+
         if(transport != Transport.UDP)
         {
             throw new IllegalArgumentException(
@@ -295,6 +335,29 @@ public class Agent
         {
             logger.info("\t" + candidate.getTransportAddress() + " (" +
                     candidate.getType() + ")");
+
+            if(compatibilityMode == CompatibilityMode.GTALK)
+            {
+                /* assign a local ufrag of 16 bytes for each candidate */
+                LocalCandidate localCand = (LocalCandidate)candidate;
+
+                /* Google relayed candidate should have already set their
+                 * ufrag since it must be the same as username present in
+                 * HTTP response
+                 */
+                if(localCand.getUfrag() != null)
+                {
+                    continue;
+                }
+
+                String s = null;
+                while(s == null || s.length() != 16)
+                {
+                    s = new BigInteger(80, random).toString(32);
+                }
+
+                localCand.setUfrag(s);
+            }
         }
 
         /*
@@ -628,13 +691,15 @@ public class Agent
     public String generateLocalUserName(String media)
     {
         IceMediaStream stream = getStream(media);
+        String ret = null;
 
         if(stream == null || stream.getRemoteUfrag() == null)
         {
             return null;
         }
 
-        return stream.getRemoteUfrag() + ":" + getLocalUfrag();
+        ret = stream.getRemoteUfrag() + ":" + getLocalUfrag();
+        return ret;
     }
 
     /**
@@ -661,13 +726,83 @@ public class Agent
     public String generateRemoteUserName(String media)
     {
         IceMediaStream stream = getStream(media);
+        String ret = null;
 
         if(stream == null)
         {
             return null;
         }
 
-        return getLocalUfrag() + ":" + stream.getRemoteUfrag();
+        if(compatibilityMode == CompatibilityMode.RFC5245)
+        {
+            ret = getLocalUfrag() + ":" + stream.getRemoteUfrag();
+        }
+        else if(compatibilityMode == CompatibilityMode.GTALK)
+        {
+            ret = getLocalUfrag() + stream.getRemoteUfrag();
+        }
+
+        return ret;
+    }
+
+    /**
+     * Returns the user name that this <tt>Agent</tt> should use in connectivity
+     * checks for outgoing Binding Requests in a Google Talk session.
+     *
+     * @param remoteCandidate remote candidate
+     * @param localCandidate local candidate
+     * @return a user name that this <tt>Agent</tt> can use in connectivity
+     * check for outgoing Binding Requests.
+     */
+    public String generateLocalUserName(RemoteCandidate remoteCandidate,
+            LocalCandidate localCandidate)
+    {
+        String ret = null;
+        String remoteUfrag = remoteCandidate.getUfrag();
+        String localUfrag = localCandidate.getUfrag();
+
+        /* Google Talk specific
+         * each candidate has its own username/password
+         */
+        if(localUfrag == null || remoteUfrag == null ||
+                compatibilityMode != CompatibilityMode.GTALK)
+        {
+            return null;
+        }
+
+        ret = remoteUfrag + localUfrag;
+        return ret;
+    }
+
+    /**
+     * Returns the user name that we should expect a peer <tt>Agent</tt> to use
+     * in connectivity checks for Binding Requests its sending our way in a
+     * Google Talk session.
+     *
+     * @param remoteCandidate remote candidate
+     * @param localCandidate local candidate
+     * @return a user name that a peer <tt>Agent</tt> would use in connectivity
+     * check for outgoing Binding Requests.
+     */
+    public String generateRemoteUserName(RemoteCandidate remoteCandidate,
+            LocalCandidate localCandidate)
+    {
+        String ret = null;
+        String remoteUfrag = remoteCandidate.getUfrag();
+        String localUfrag = localCandidate.getUfrag();
+
+        /* Google Talk specific
+         * each candidate has its own username/password
+         */
+        if(remoteUfrag == null || localUfrag == null ||
+                compatibilityMode != CompatibilityMode.GTALK)
+        {
+            return null;
+        }
+
+        ret = localUfrag + remoteUfrag;
+
+        return ret;
     }
 
     /**
@@ -750,7 +885,6 @@ public class Agent
      */
     List<IceMediaStream> getStreamsWithPendingConnectivityEstablishment()
     {
-
         /*
          * Lyubomir: We want to support establishing connectivity for streams
          * which have been created after connectivity has been established for
@@ -782,7 +916,7 @@ public class Agent
     public synchronized StunStack getStunStack()
     {
         if (stunStack == null)
-            stunStack = new StunStack();
+            stunStack = new StunStack(compatibilityMode);
         return stunStack;
     }
 
@@ -1017,11 +1151,34 @@ public class Agent
 
         Component parentComponent = localCandidate.getParentComponent();
 
-        RemoteCandidate remoteCandidate = new RemoteCandidate(
-            remoteAddress, parentComponent,
-            CandidateType.PEER_REFLEXIVE_CANDIDATE,
-            foundationsRegistry.obtainFoundationForPeerReflexiveCandidate(),
-            priority);
+        RemoteCandidate remoteCandidate = null;
+
+        // we need to find the username for the couple
+        if(compatibilityMode == CompatibilityMode.GTALK)
+        {
+            CandidatePair pair = findCandidatePair(localAddress, remoteAddress);
+            if(pair == null)
+            {
+                return;
+            }
+
+            remoteCandidate = new RemoteCandidate(
+                    remoteAddress, parentComponent,
+                    CandidateType.PEER_REFLEXIVE_CANDIDATE,
+                    foundationsRegistry.
+                        obtainFoundationForPeerReflexiveCandidate(),
+                    priority,
+                    ((RemoteCandidate)pair.getRemoteCandidate()).getUfrag());
+        }
+        else
+        {
+            remoteCandidate = new RemoteCandidate(
+                    remoteAddress, parentComponent,
+                    CandidateType.PEER_REFLEXIVE_CANDIDATE,
+                    foundationsRegistry.
+                        obtainFoundationForPeerReflexiveCandidate(),
+                    priority);
+        }
 
         CandidatePair triggeredPair
             = new CandidatePair(localCandidate, remoteCandidate);
@@ -1072,7 +1229,8 @@ public class Agent
         {
             //if the incoming request contained a USE-CANDIDATE attribute then
             //make sure we don't lose this piece of info.
-            if (triggerPair.useCandidateReceived())
+            if (triggerPair.useCandidateReceived() ||
+                    compatibilityMode == CompatibilityMode.GTALK)
                 knownPair.setUseCandidateReceived();
 
             triggerPair = knownPair;
@@ -1193,6 +1351,7 @@ public class Agent
               && !parentStream.validListContainsNomineeForComponent(
                       parentComponent))
         {
+            logger.info("verify if nominated pair answer again");
             pair.nominate();
             pair.getParentComponent().getParentStream()
                 .getCheckList().scheduleTriggeredCheck(pair);
@@ -1252,6 +1411,9 @@ public class Agent
         boolean allListsEnded = true;
         boolean atLeastOneListSucceeded = false;
 
+        if(state == IceProcessingState.COMPLETED)
+            return;
+
         List<IceMediaStream> streams = getStreams();
 
         for(IceMediaStream stream : streams)
@@ -1280,8 +1442,20 @@ public class Agent
                 if(getState() == IceProcessingState.RUNNING)
                 {
                     logger.info("ICE state is COMPLETED");
+
                     setState(IceProcessingState.COMPLETED);
-                    scheduleTermination();
+
+                    // keep ICE running (answer binding request)
+                    if(compatibilityMode == CompatibilityMode.GTALK
+                            && stunKeepAliveThread == null)
+                    {
+                        // schedule STUN checks for selected candidates
+                        scheduleSTUNKeepAlive();
+                    }
+                    else
+                    {
+                        scheduleTermination();
+                    }
 
                     List<IceMediaStream> strms = getStreams();
 
@@ -1480,6 +1654,18 @@ public class Agent
     }
 
     /**
+     * Initializes and starts the {@link STUNKeepAliveThread}
+     */
+    private void scheduleSTUNKeepAlive()
+    {
+        if (stunKeepAliveThread == null)
+        {
+            stunKeepAliveThread = new StunKeepAliveThread();
+            stunKeepAliveThread.start();
+        }
+    }
+
+    /**
      * RFC 5245 says: Once ICE processing has reached the Completed state for
      * all peers for media streams using those candidates, the agent SHOULD
      * wait an additional three seconds, and then it MAY cease responding to
@@ -1620,5 +1806,77 @@ public class Agent
     public void setGeneration(int generation)
     {
         this.generation = generation;
+    }
+
+    /**
+     * Returns the compatibility mode used by this agent.
+     *
+     * @return compatibility mode
+     */
+    public CompatibilityMode getCompatibilityMode()
+    {
+        return compatibilityMode;
+    }
+
+    /**
+     * Thread that performs STUN keep-alive once ICE has COMPLETED.
+     */
+    private class StunKeepAliveThread
+        extends Thread
+    {
+        /**
+         * Creates a new termination timer.
+         */
+        private StunKeepAliveThread()
+        {
+            super("StunKeepAliveThread");
+        }
+
+        /**
+         * Thread entry to point.
+         */
+        @Override
+        public synchronized void run()
+        {
+            runInStunKeepAliveThread();
+        }
+    }
+
+    /**
+     * Schedule STUN checks for selected pair.
+     */
+    public void runInStunKeepAliveThread()
+    {
+        while(state == IceProcessingState.COMPLETED)
+        {
+            List<IceMediaStream> streams = getStreams();
+
+            for(IceMediaStream stream : streams)
+            {
+                List<Component> cmps = stream.getComponents();
+                for(Component cmp : cmps)
+                {
+                    CandidatePair pair = cmp.getSelectedPair();
+
+                    if(pair != null)
+                    {
+                        connCheckClient.startCheckForPair(pair);
+                        pair = null;
+                    }
+                }
+                stream = null;
+            }
+
+            streams = null;
+
+            try
+            {
+                Thread.sleep(5000);
+                Thread.yield();
+            }
+            catch(InterruptedException e)
+            {
+            }
+        }
     }
 }

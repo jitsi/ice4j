@@ -29,11 +29,12 @@ class MessageQueue
     //sync all methods ... review later
     private Vector<RawMessage> queue = new Vector<RawMessage>();
 
-    //keep a copy of the fifo size and make it accessible for concurrent queries.
+    //keep a copy of the fifo size and make it accessible for concurrent
+    // queries.
     private int    size  = 0;
 
     /**
-     * Create an empty MessaeFIFO
+     * Create an empty MessageFIFO
      */
     MessageQueue()
     {

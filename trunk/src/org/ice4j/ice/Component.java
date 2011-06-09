@@ -253,7 +253,8 @@ public class Component
                 {
                     if(localCnd.canReach(remoteCnd))
                     {
-                        CandidatePair pair = new CandidatePair(localCnd, remoteCnd);
+                        CandidatePair pair = new CandidatePair(localCnd,
+                                remoteCnd);
 
                         checkList.add(pair);
                     }
@@ -458,13 +459,24 @@ public class Component
     {
         synchronized(localCandidates)
         {
+            CompatibilityMode compat = getParentStream().getParentAgent().
+                getCompatibilityMode();
             LocalCandidate[] candidates
                 = new LocalCandidate[localCandidates.size()];
             localCandidates.toArray(candidates);
 
             //first compute the actual priorities
             for (Candidate cand : candidates)
-                cand.computePriority();
+            {
+                if(compat == CompatibilityMode.GTALK)
+                {
+                    cand.computeGTalkPriority();
+                }
+                else
+                {
+                    cand.computePriority();
+                }
+            }
 
             //sort
             Arrays.sort(candidates, candidatePrioritizer);

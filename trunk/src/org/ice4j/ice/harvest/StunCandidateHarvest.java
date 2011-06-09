@@ -439,6 +439,17 @@ public class StunCandidateHarvest
                 ((XorMappedAddressAttribute) attribute)
                     .getAddress(response.getTransactionID());
         }
+
+        // old STUN servers (RFC3489) send MAPPED-ADDRESS address
+        attribute
+            = response.getAttribute(Attribute.MAPPED_ADDRESS);
+
+        if(attribute instanceof MappedAddressAttribute)
+        {
+            return
+                ((MappedAddressAttribute) attribute)
+                    .getAddress();
+        }
         else
             return null;
     }
@@ -991,7 +1002,7 @@ public class StunCandidateHarvest
     /**
      * Runs in {@link #sendKeepAliveMessageThread} and sends STUN
      * keep-alive <tt>Message</tt>s to the STUN server associated with the
-     * <tt>StunCandidateHarvester</tt> of this instance 
+     * <tt>StunCandidateHarvester</tt> of this instance
      */
     private void runInSendKeepAliveMessageThread()
     {
@@ -1074,11 +1085,11 @@ public class StunCandidateHarvest
                  * Well, if the currentThread is finishing and this instance is
                  * still to send keep-alive messages, we'd better start another
                  * Thread for the purpose to continue the work that the
-                 * currentThread was supposed to carry out. 
+                 * currentThread was supposed to carry out.
                  */
                 if ((sendKeepAliveMessageThread == null)
                         && (sendKeepAliveMessageInterval
-                                != SEND_KEEP_ALIVE_MESSAGE_INTERVAL_NOT_SPECIFIED))
+                             != SEND_KEEP_ALIVE_MESSAGE_INTERVAL_NOT_SPECIFIED))
                     createSendKeepAliveMessageThread();
             }
         }
