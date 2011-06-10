@@ -1193,7 +1193,8 @@ public class Agent
             CandidatePair pair = findCandidatePair(localUFrag, remoteUFrag);
             if(pair == null)
             {
-                logger.info("No GTalk CandidatePair that match Lufrag/Rufrag");
+                logger.info("No GTalk CandidatePair that match Lufrag/Rufrag" +
+                    " " + localUFrag + " " + remoteUFrag);
                 return;
             }
 

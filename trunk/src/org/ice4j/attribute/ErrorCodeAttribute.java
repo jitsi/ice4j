@@ -210,14 +210,15 @@ public class ErrorCodeAttribute extends Attribute
     /**
      * Sets this error's error class.
      * @param errorClass this error's error class.
-     * @throws IllegalArgumentException if errorClass is not a valid error class.
+     * @throws IllegalArgumentException if errorClass is not a valid error
+     * class.
      */
     public void setErrorClass(byte errorClass)
         throws IllegalArgumentException
     {
         if(errorClass < 0 || errorClass > 99)
             throw new IllegalArgumentException(
-                                    errorClass + " is not a valid error number!");
+                errorClass + " is not a valid error number!");
         this.errorClass = errorClass;
     }
 
