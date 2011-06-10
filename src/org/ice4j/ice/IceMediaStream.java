@@ -410,19 +410,22 @@ public class IceMediaStream
                 continue;
             }
 
-            //replace local server reflexive candidates with their base.
-            LocalCandidate localCnd = pair.getLocalCandidate();
-            if( localCnd.getType()
-                            == CandidateType.SERVER_REFLEXIVE_CANDIDATE)
+            if(parentAgent.getCompatibilityMode() == CompatibilityMode.RFC5245)
             {
-                pair.setLocalCandidate(localCnd.getBase());
-
-                //if the new pair corresponds to another one with a higher
-                //priority, then remove it.
-                if(tmpCheckList.contains(pair))
+                //replace local server reflexive candidates with their base.
+                LocalCandidate localCnd = pair.getLocalCandidate();
+                if( localCnd.getType()
+                            == CandidateType.SERVER_REFLEXIVE_CANDIDATE)
                 {
-                    ckListIter.remove();
-                    continue;
+                    pair.setLocalCandidate(localCnd.getBase());
+
+                    //if the new pair corresponds to another one with a higher
+                    //priority, then remove it.
+                    if(tmpCheckList.contains(pair))
+                    {
+                        ckListIter.remove();
+                        continue;
+                    }
                 }
             }
 

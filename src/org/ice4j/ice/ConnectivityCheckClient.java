@@ -603,9 +603,14 @@ class ConnectivityCheckClient
         Response response = evt.getResponse();
         Request originalRequest = evt.getRequest();
 
-        char errorCode
-            = ((ErrorCodeAttribute) response.getAttribute(Attribute.ERROR_CODE))
-                .getErrorCode();
+        ErrorCodeAttribute errorAttr = (ErrorCodeAttribute)response.
+            getAttribute(Attribute.ERROR_CODE);
+        // GTalk error code is not RFC3489/RFC5389 compliant
+        // example: 400 becomes 0x01 0x90 with GTalk
+        // RFC3489/RFC5389 gives 0x04 0x00
+        int cl = errorAttr.getErrorClass();
+        int co = errorAttr.getErrorNumber() & 0xff;
+        char errorCode = errorAttr.getErrorCode();
 
         CandidatePair pair = ((CandidatePair)evt.getTransactionID()
                         .getApplicationData());
@@ -623,6 +628,19 @@ class ConnectivityCheckClient
 
             pair.getParentComponent().getParentStream().getCheckList()
                 .scheduleTriggeredCheck(pair);
+        }
+        else if(parentAgent.getCompatibilityMode() == CompatibilityMode.GTALK &&
+            cl == 1 && co == 0xae) // STALE_CREDENTIALS (430)
+        {
+            // it may be an error due to remote peer that does not processed
+            // our candidates IQ and we start connectivity checks too quickly
+            //(that's why we get a STALE CREDENTIALS because remote peer doesn't
+            // know the candidate ufrag). So let's send another check for that
+            // pair
+            logger.info("stale credentials for GTalk check for " +
+                pair.toShortString());
+            startCheckForPair(pair);
+            return;
         }
         else
         {
