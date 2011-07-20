@@ -7,12 +7,12 @@
 package org.ice4j.stack;
 
 import java.io.*;
-import java.net.*;
 import java.util.*;
 import java.util.logging.*;
 
 import org.ice4j.*;
 import org.ice4j.message.*;
+import org.ice4j.socket.*;
 
 /**
  * Manages <tt>Connector</tt>s and <tt>MessageProcessor</tt> pooling. This class
@@ -33,10 +33,27 @@ class NetAccessManager
         = Logger.getLogger(NetAccessManager.class.getName());
 
     /**
-     * All access points currently in use. The table maps
-     * <tt>TransportAddress</tt>es to <tt>Connector</tt>s
+     * All access points currently in use with UDP. The table maps
+     * <tt>TransportAddress</tt>es to <tt>Connector</tt>s.
+     *
+     * Due to the final hashCode() method of InetSocketAddress, TransportAddress
+     * cannot override and it causes problem to store both UDP and TCP address
+     * (i.e. 192.168.0.3:5000/tcp has the same hashcode as 192.168.0.3:5000/udp
+     * because InetSocketAddress does not take into account transport).
      */
-    private Hashtable<TransportAddress, Connector> netAccessPoints
+    private Map<TransportAddress, Connector> netUDPAccessPoints
+            = new Hashtable<TransportAddress, Connector>();
+
+    /**
+     * All access points currently in use with TCP. The table maps
+     * <tt>TransportAddress</tt>es to <tt>Connector</tt>s.
+     *
+     * Due to the final hashCode() method of InetSocketAddress, TransportAddress
+     * cannot override and it causes problem to store both UDP and TCP address
+     * (i.e. 192.168.0.3:5000/tcp has the same hashcode as 192.168.0.3:5000/udp
+     * because InetSocketAddress does not take into account transport).
+     */
+    private Map<TransportAddress, Connector> netTCPAccessPoints
             = new Hashtable<TransportAddress, Connector>();
 
     /**
@@ -153,13 +170,13 @@ class NetAccessManager
 
             //make sure nothing's left and notify user
             removeSocket(ap.getListenAddress());
-            logger.log(Level.WARNING, "Removing connector:"+ ap, error);
+            logger.log(Level.WARNING, "Removing connector:" + ap, error);
         }
         else if( callingThread instanceof MessageProcessor )
         {
             MessageProcessor mp = (MessageProcessor)callingThread;
             logger.log( Level.WARNING, "A message processor has unexpectedly "
-                    +"stopped. AP:" + mp, error);
+                    + "stopped. AP:" + mp, error);
 
             //make sure the guy's dead.
             mp.stop();
@@ -179,20 +196,31 @@ class NetAccessManager
      *
      * @param  socket   the socket that the access point should use.
      */
-    protected void addSocket(DatagramSocket socket)
+    protected void addSocket(IceSocketWrapper socket)
     {
         //no null check - let it through as a NullPointerException
         TransportAddress localAddr
             = new TransportAddress(
                     socket.getLocalAddress(),
                     socket.getLocalPort(),
-                    Transport.UDP);
+                    socket.getUDPSocket() != null ? Transport.UDP :
+                        Transport.TCP);
 
-        if (!netAccessPoints.containsKey(localAddr))
+        if (socket.getUDPSocket() != null &&
+            !netUDPAccessPoints.containsKey(localAddr))
         {
             Connector ap = new Connector(socket, messageQueue, this);
 
-            netAccessPoints.put(localAddr, ap);
+            netUDPAccessPoints.put(localAddr, ap);
+            ap.start();
+        }
+
+        if (socket.getTCPSocket() != null &&
+            !netTCPAccessPoints.containsKey(localAddr))
+        {
+            Connector ap = new Connector(socket, messageQueue, this);
+
+            netTCPAccessPoints.put(localAddr, ap);
             ap.start();
         }
     }
@@ -204,7 +232,16 @@ class NetAccessManager
      */
     protected void removeSocket(TransportAddress address)
     {
-        Connector ap = netAccessPoints.remove(address);
+        Connector ap = null;
+
+        if(address.getTransport() == Transport.UDP)
+        {
+            ap = netUDPAccessPoints.remove(address);
+        }
+        else if(address.getTransport() == Transport.TCP)
+        {
+            ap = netTCPAccessPoints.remove(address);
+        }
 
         if(ap != null)
             ap.stop();
@@ -306,7 +343,16 @@ class NetAccessManager
         throws IOException, IllegalArgumentException
     {
         byte[] bytes = stunMessage.encode(stunStack);
-        Connector ap = netAccessPoints.get(srcAddr);
+        Connector ap = null;
+
+        if(srcAddr.getTransport() == Transport.UDP)
+        {
+            ap = netUDPAccessPoints.get(srcAddr);
+        }
+        else if(srcAddr.getTransport() == Transport.TCP)
+        {
+            ap = netTCPAccessPoints.get(srcAddr);
+        }
 
         if (ap == null)
         {

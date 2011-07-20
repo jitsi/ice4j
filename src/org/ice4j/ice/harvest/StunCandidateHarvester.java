@@ -7,12 +7,14 @@
  */
 package org.ice4j.ice.harvest;
 
+import java.net.*;
 import java.util.*;
 import java.util.logging.*;
 
 import org.ice4j.*;
 import org.ice4j.ice.*;
 import org.ice4j.security.*;
+import org.ice4j.socket.*;
 import org.ice4j.stack.*;
 
 /**
@@ -217,7 +219,8 @@ public class StunCandidateHarvester
         stunStack = component.getParentStream().getParentAgent().getStunStack();
 
         for (Candidate cand : component.getLocalCandidates())
-            if (cand instanceof HostCandidate)
+            if (cand instanceof HostCandidate &&
+                cand.getTransport() == stunServer.getTransport())
                 startResolvingCandidate((HostCandidate) cand);
 
         waitForResolutionEnd();
@@ -260,7 +263,12 @@ public class StunCandidateHarvester
         if (!hostCand.getTransportAddress().canReach(stunServer))
             return;
 
-        StunCandidateHarvest harvest = createHarvest(hostCand);
+        HostCandidate cand = getHostCandidate(hostCand);
+
+        if(cand == null)
+            return;
+
+        StunCandidateHarvest harvest = createHarvest(cand);
 
         if (harvest == null)
             return;
@@ -334,5 +342,48 @@ public class StunCandidateHarvester
                                 ? "TURN"
                                 : "STUN";
         return proto + " harvester for srvr: " + this.stunServer;
+    }
+
+    /**
+     * Returns the host candidate.
+     * For UDP it simply returns the candidate passed as paramter
+     *
+     * However for TCP, we cannot return the same hostCandidate because in Java
+     * a  "server" socket cannot connect to a destination with the same local
+     * address/port (i.e. a Java Socket cannot act as both server/client).
+     *
+     * @param hostCand HostCandidate
+     * @return HostCandidate
+     */
+    protected HostCandidate getHostCandidate(HostCandidate hostCand)
+    {
+        HostCandidate cand = null;
+
+        // create a new TCP HostCandidate
+        if(hostCand.getTransport() == Transport.TCP)
+        {
+            try
+            {
+                Socket sock = new Socket(stunServer.getAddress(),
+                    stunServer.getPort());
+                cand = new HostCandidate(new IceTcpSocketWrapper(
+                    new MultiplexingSocket(sock)),
+                    hostCand.getParentComponent(), Transport.TCP);
+                hostCand.getParentComponent().getParentStream().
+                    getParentAgent().getStunStack().addSocket(
+                        cand.getStunSocket(null));
+            }
+            catch(Exception io)
+            {
+                logger.info("Exception TCP client connect: " + io);
+                return null;
+            }
+        }
+        else
+        {
+            cand = hostCand;
+        }
+
+        return cand;
     }
 }

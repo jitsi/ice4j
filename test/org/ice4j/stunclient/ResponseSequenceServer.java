@@ -7,7 +7,6 @@
 package org.ice4j.stunclient;
 
 import java.io.*;
-import java.net.*;
 import java.util.*;
 import java.util.logging.*;
 
@@ -45,7 +44,7 @@ public class ResponseSequenceServer
     private final StunStack stunStack;
 
     private TransportAddress serverAddress = null;
-    private DatagramSocket localSocket = null;
+    private IceSocketWrapper localSocket = null;
 
     /**
      * Initializes a new <tt>ResponseSequenceServer</tt> instance with a
@@ -72,7 +71,8 @@ public class ResponseSequenceServer
     public void start()
         throws IOException, StunException
     {
-        localSocket = new SafeCloseDatagramSocket(serverAddress);
+        localSocket = new IceUdpSocketWrapper(
+            new SafeCloseDatagramSocket(serverAddress));
 
         stunStack.addSocket(localSocket);
         stunStack.addRequestListener(serverAddress, this);

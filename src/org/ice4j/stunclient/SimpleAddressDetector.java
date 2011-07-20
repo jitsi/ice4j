@@ -13,6 +13,7 @@ import java.util.logging.*;
 import org.ice4j.*;
 import org.ice4j.attribute.*;
 import org.ice4j.message.*;
+import org.ice4j.socket.*;
 import org.ice4j.stack.*;
 
 /**
@@ -86,7 +87,6 @@ public class SimpleAddressDetector
         stunStack = new StunStack();
     }
 
-
     /**
      * Creates a listening point for the specified socket and attempts to
      * discover how its local address is NAT mapped.
@@ -97,7 +97,7 @@ public class SimpleAddressDetector
      * @throws IOException if something fails along the way.
      * @throws BindException if we cannot bind the socket.
      */
-    public TransportAddress getMappingFor(DatagramSocket socket)
+    public TransportAddress getMappingFor(IceSocketWrapper socket)
        throws IOException, BindException
     {
          TransportAddress localAddress = new TransportAddress(

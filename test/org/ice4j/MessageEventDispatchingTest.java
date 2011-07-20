@@ -48,17 +48,17 @@ public class MessageEventDispatchingTest extends TestCase
     /**
      * The socket that the client is using.
      */
-    DatagramSocket  clientSock = null;
+    IceSocketWrapper  clientSock = null;
 
     /**
      * The socket that the server is using
      */
-    DatagramSocket  serverSock = null;
+    IceSocketWrapper  serverSock = null;
 
     /**
      * The second server socket.
      */
-    DatagramSocket serverSock2 = null;
+    IceSocketWrapper serverSock2 = null;
 
     /**
      * The request that we will be sending in this test.
@@ -91,9 +91,12 @@ public class MessageEventDispatchingTest extends TestCase
 
         stunStack = new StunStack();
 
-        clientSock = new SafeCloseDatagramSocket(clientAddress);
-        serverSock = new SafeCloseDatagramSocket(serverAddress);
-        serverSock2 = new SafeCloseDatagramSocket(serverAddress2);
+        clientSock = new IceUdpSocketWrapper(
+            new SafeCloseDatagramSocket(clientAddress));
+        serverSock = new IceUdpSocketWrapper(
+            new SafeCloseDatagramSocket(serverAddress));
+        serverSock2 = new IceUdpSocketWrapper(
+            new SafeCloseDatagramSocket(serverAddress2));
 
         stunStack.addSocket(clientSock);
         stunStack.addSocket(serverSock);

@@ -11,6 +11,7 @@ import java.net.*;
 import java.util.logging.*;
 
 import org.ice4j.*;
+import org.ice4j.socket.*;
 
 /**
  * The Network Access Point is the most outward part of the stack. It is
@@ -37,7 +38,7 @@ class Connector
     /**
      * The socket object that used by this access point to access the network.
      */
-    private DatagramSocket sock;
+    private IceSocketWrapper sock;
 
     /**
      * The object that we use to lock socket operations (since the socket itself
@@ -68,7 +69,7 @@ class Connector
      * @param messageQueue the FIFO list where incoming messages should be queued
      * @param errorHandler the instance to notify when errors occur.
      */
-    protected Connector(DatagramSocket socket,
+    protected Connector(IceSocketWrapper socket,
                         MessageQueue   messageQueue,
                         ErrorHandler   errorHandler)
     {
@@ -76,7 +77,8 @@ class Connector
         this.messageQueue = messageQueue;
         this.errorHandler = errorHandler;
         this.listenAddress = new TransportAddress(socket.getLocalAddress(),
-                        socket.getLocalPort(), Transport.UDP);
+                        socket.getLocalPort(), socket.getUDPSocket() != null ?
+                            Transport.UDP : Transport.TCP);
     }
 
     /**
@@ -96,7 +98,7 @@ class Connector
      *
      * @return the <tt>DatagramSocket</tt> associated with this AP.
      */
-    protected DatagramSocket getSocket()
+    protected IceSocketWrapper getSocket()
     {
         return sock;
     }
@@ -112,7 +114,7 @@ class Connector
         {
             try
             {
-                DatagramSocket localSock;
+                IceSocketWrapper localSock;
 
                 synchronized (sockLock)
                 {
@@ -126,7 +128,17 @@ class Connector
                  * Make sure localSock's receiveBufferSize is taken into
                  * account including after it gets changed.
                  */
-                int receiveBufferSize = localSock.getReceiveBufferSize();
+                int receiveBufferSize = 1500;
+                if(localSock.getTCPSocket() != null)
+                {
+                    receiveBufferSize = localSock.getTCPSocket().
+                        getReceiveBufferSize();
+                }
+                else if(localSock.getUDPSocket() != null)
+                {
+                    receiveBufferSize = localSock.getUDPSocket().
+                        getReceiveBufferSize();
+                }
 
                 if (packet == null)
                 {
@@ -173,7 +185,7 @@ class Connector
                             new TransportAddress(
                                     packet.getAddress(),
                                     packet.getPort(),
-                                    Transport.UDP),
+                                    listenAddress.getTransport()),
                             listenAddress);
 
                 messageQueue.add(rawMessage);

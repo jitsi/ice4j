@@ -200,7 +200,8 @@ public class RelayedCandidateDatagramSocket
                                 this);
 
         DatagramSocket hostSocket
-            = this.turnCandidateHarvest.hostCandidate.getSocket();
+            = this.turnCandidateHarvest.hostCandidate.getIceSocketWrapper().
+                getUDPSocket();
 
         if (hostSocket instanceof MultiplexingDatagramSocket)
         {

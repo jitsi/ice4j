@@ -7,7 +7,6 @@
 package org.ice4j.stunclient;
 
 import java.io.*;
-import java.net.*;
 import java.util.logging.*;
 
 import org.ice4j.*;
@@ -113,7 +112,7 @@ public class NetworkConfigurationDiscoveryProcess
      * The <tt>DatagramSocket</tt> that we are going to be running the
      * discovery process through.
      */
-    private DatagramSocket sock = null;
+    private IceSocketWrapper sock = null;
 
     /**
      * The <tt>StunStack</tt> used by this instance for the purposes of STUN
@@ -165,7 +164,8 @@ public class NetworkConfigurationDiscoveryProcess
     public void start()
         throws IOException, StunException
     {
-        sock = new SafeCloseDatagramSocket(localAddress);
+        sock = new IceUdpSocketWrapper(
+            new SafeCloseDatagramSocket(localAddress));
 
         stunStack.addSocket(sock);
 

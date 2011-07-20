@@ -38,7 +38,12 @@ public enum Transport
     /**
      * Represents an SCTP transport.
      */
-    SCTP("sctp");
+    SCTP("sctp"),
+
+    /**
+     * Represents an Google's SSL TCP transport.
+     */
+    SSLTCP("ssltcp");
 
     /**
      * The name of this <tt>Transport</tt>.

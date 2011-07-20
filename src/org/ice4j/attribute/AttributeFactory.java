@@ -498,6 +498,20 @@ public class AttributeFactory
     }
 
     /**
+     * Create a DataAtttribute.
+     *
+     * @param data the data
+     * @return newly created DataAttribute
+     */
+    public static DataAttribute createDataAttributeWithoutPadding(byte data[])
+    {
+        DataAttribute attribute = new DataAttribute(false);
+
+        attribute.setData(data);
+        return attribute;
+    }
+
+    /**
      * Creates an IceControlledAttribute object with the specified tie-breaker
      * value
      *

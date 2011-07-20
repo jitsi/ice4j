@@ -6,7 +6,6 @@
  */
 package org.ice4j;
 
-import java.net.*;
 import java.util.*;
 
 import junit.framework.*;
@@ -39,12 +38,12 @@ public class TransactionSupportTests extends TestCase
     /**
      * The socket the client uses in this test.
      */
-    DatagramSocket clientSock = null;
+    IceSocketWrapper clientSock = null;
 
     /**
      * The socket the server uses in this test.
      */
-    DatagramSocket serverSock = null;
+    IceSocketWrapper serverSock = null;
 
     /**
      * The <tt>StunStack</tt> used by this <tt>TransactionSupportTests</tt>.
@@ -81,8 +80,10 @@ public class TransactionSupportTests extends TestCase
     {
         super.setUp();
 
-        clientSock = new SafeCloseDatagramSocket(clientAddress);
-        serverSock = new SafeCloseDatagramSocket(serverAddress);
+        clientSock = new IceUdpSocketWrapper(
+            new SafeCloseDatagramSocket(clientAddress));
+        serverSock = new IceUdpSocketWrapper(
+            new SafeCloseDatagramSocket(serverAddress));
 
         stunStack = new StunStack();
         stunStack.addSocket(clientSock);

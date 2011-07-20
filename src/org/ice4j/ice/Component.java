@@ -7,10 +7,13 @@
  */
 package org.ice4j.ice;
 
+import java.io.*;
+import java.net.*;
 import java.util.*;
 import java.util.logging.*;
 
 import org.ice4j.*;
+import org.ice4j.socket.*;
 
 /**
  * A component is a piece of a media stream requiring a single transport
@@ -226,6 +229,68 @@ public class Component
         logger.info("Update remote candidate for " + toShortString() + ": " +
                 candidate.getTransportAddress());
 
+        if(candidate.getTransport() == Transport.TCP &&
+            parentStream.getParentAgent().getCompatibilityMode()
+                == CompatibilityMode.GTALK)
+        {
+            /* for TCP, create a new Candidate to each of remote
+             * TCP candidates
+             */
+            try
+            {
+                for(LocalCandidate l : getLocalCandidates())
+                {
+                    if(l.getTransport() != Transport.TCP ||
+                        (l.getType() != CandidateType.LOCAL_CANDIDATE &&
+                            l.getType() != CandidateType.HOST_CANDIDATE) ||
+                       !(l.getIceSocketWrapper() instanceof
+                           IceTcpServerSocketWrapper) ||
+                       !l.getTransportAddress().canReach(
+                            candidate.getTransportAddress()))
+                    {
+                        continue;
+                    }
+
+                    Socket sock = new MultiplexingSocket();
+                    try
+                    {
+                        // if we use proxy (socks5, ...), the connect() timeout
+                        // may not be respected
+                        int timeout = sock.getSoTimeout();
+                        sock.setSoTimeout(1000);
+                        sock.connect(new InetSocketAddress(
+                            candidate.getTransportAddress().getAddress(),
+                            candidate.getTransportAddress().getPort()), 1000);
+                        sock.setSoTimeout(timeout);
+                    }
+                    catch(Exception e)
+                    {
+                        logger.info("Failed to connect to " +
+                            candidate.getTransportAddress());
+                        sock.close();
+                        sock = null;
+                        continue;
+                    }
+
+                    LocalCandidate tmp =
+                        new HostCandidate(new IceTcpSocketWrapper(sock),
+                            this, Transport.TCP);
+                    parentStream.getParentAgent().getStunStack().addSocket(
+                        tmp.getStunSocket(null));
+                    tmp.setUfrag(l.getUfrag());
+
+                    synchronized(localCandidates)
+                    {
+                        localCandidates.add(tmp);
+                    }
+                }
+            }
+            catch (IOException e)
+            {
+                logger.info("Create TCP client socket error: " + e);
+            }
+        }
+
         synchronized(remoteUpdateCandidates)
         {
             remoteUpdateCandidates.add(candidate);
@@ -249,13 +314,21 @@ public class Component
 
             for(LocalCandidate localCnd : localCnds)
             {
+                if(parentStream.getParentAgent().
+                    getCompatibilityMode() == CompatibilityMode.GTALK &&
+                    localCnd.getIceSocketWrapper() instanceof
+                    IceTcpServerSocketWrapper)
+                {
+                    continue;
+                }
+
                 for(Candidate remoteCnd : remoteUpdateCandidates)
                 {
                     if(localCnd.canReach(remoteCnd))
                     {
                         CandidatePair pair = new CandidatePair(localCnd,
                                 remoteCnd);
-
+                        logger.info("new Pair added: " + pair.toShortString());
                         checkList.add(pair);
                     }
                 }
@@ -444,7 +517,7 @@ public class Component
     public String toShortString()
     {
         StringBuffer buff
-        = new StringBuffer(parentStream.getName());
+            = new StringBuffer(parentStream.getName());
         buff.append(".");
         buff.append(componentID);
 
@@ -794,7 +867,6 @@ public class Component
      */
     public Candidate findRemoteCandidate(TransportAddress remoteAddress)
     {
-
         for( Candidate remoteCnd : localCandidates)
         {
             if(remoteCnd.getTransportAddress().equals(remoteAddress))

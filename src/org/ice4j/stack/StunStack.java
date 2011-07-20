@@ -19,6 +19,7 @@ import org.ice4j.attribute.*;
 import org.ice4j.ice.*;
 import org.ice4j.message.*;
 import org.ice4j.security.*;
+import org.ice4j.socket.*;
 
 /**
  * The entry point to the Stun4J stack. The class is used to start, stop and
@@ -112,7 +113,7 @@ public class StunStack
      *
      * @param sock The socket that the new access point should represent.
      */
-    public void addSocket(DatagramSocket sock)
+    public void addSocket(IceSocketWrapper sock)
     {
         netAccessManager.addSocket(sock);
     }

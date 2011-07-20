@@ -6,13 +6,13 @@
  */
 package org.ice4j.ice;
 
-import java.net.*;
 import java.util.*;
 import java.util.logging.*;
 
 import org.ice4j.*;
 import org.ice4j.attribute.*;
 import org.ice4j.message.*;
+import org.ice4j.socket.*;
 import org.ice4j.stack.*;
 
 /**
@@ -46,6 +46,12 @@ class ConnectivityCheckClient
      * The {@link PaceMaker}s that are currently running checks in this client.
      */
     private final List<PaceMaker> paceMakers = new LinkedList<PaceMaker>();
+
+    /**
+     * Timer that is used to let some seconds before a CheckList is considered
+     * as FAILED.
+     */
+    private Map<String, Timer> timers = new HashMap<String, Timer>();
 
     /**
      * Creates a new <tt>ConnectivityCheckHandler</tt> setting
@@ -216,8 +222,9 @@ class ConnectivityCheckClient
         }
         catch (Exception ex)
         {
-            DatagramSocket stunSocket = localCandidate.getStunSocket(null);
-            logger.log(
+            IceSocketWrapper stunSocket = localCandidate.getStunSocket(null);
+            if(stunSocket != null)
+                logger.log(
                     Level.INFO,
                     "Failed to send " + request
                         + " through " + stunSocket.getLocalSocketAddress(),
@@ -288,7 +295,7 @@ class ConnectivityCheckClient
     {
         IceMediaStream stream
             = checkedPair.getParentComponent().getParentStream();
-        CheckList checkList = stream.getCheckList();
+        final CheckList checkList = stream.getCheckList();
 
         //If all of the pairs in the check list are now either in the Failed or
         //Succeeded state:
@@ -315,9 +322,33 @@ class ConnectivityCheckClient
             //media stream, the state of the check list is set to Failed.
             if ( !stream.validListContainsAllComponents())
             {
-                logger.info("CheckList for stream " + stream.getName() +
-                        " FAILED");
-                checkList.setState(CheckListState.FAILED);
+                final String streamName = stream.getName();
+                Timer timer = timers.get(streamName);
+
+                if(timer == null)
+                {
+                    logger.info("CheckList will failed in a few seconds if no" +
+                            "succeeded checks come");
+
+                    TimerTask task = new TimerTask()
+                    {
+                        @Override
+                        public void run()
+                        {
+                            if(checkList.getState() != CheckListState.COMPLETED)
+                            {
+                                logger.info("CheckList for stream " +
+                                    streamName + " FAILED");
+
+                                checkList.setState(CheckListState.FAILED);
+                                parentAgent.checkListStatesUpdated();
+                            }
+                        }
+                    };
+                    timer = new Timer();
+                    timers.put(streamName, timer);
+                    timer.schedule(task, 5000);
+                }
             }
 
             //For each frozen check list, the agent groups together all of the
@@ -393,6 +424,15 @@ class ConnectivityCheckClient
 
             mappedAddress = mappedAddressAttr
                 .getAddress(response.getTransactionID());
+        }
+
+        // XXX AddressAttribute always returns UDP based TransportAddress
+        if(checkedPair.getLocalCandidate().getTransport() == Transport.TCP)
+        {
+            mappedAddress = new TransportAddress(
+                mappedAddress.getAddress(),
+                mappedAddress.getPort(),
+                Transport.TCP);
         }
 
         LocalCandidate validLocalCandidate = parentAgent
@@ -483,12 +523,16 @@ class ConnectivityCheckClient
         //same media stream and same foundation to Waiting.
         IceMediaStream parentStream = checkedPair.getParentComponent()
             .getParentStream();
-        CheckList parentCheckList = parentStream.getCheckList();
 
-        for(CandidatePair pair : parentCheckList)
-            if ((pair.getState() == CandidatePairState.FROZEN) &&
+        synchronized(this)
+        {
+            CheckList parentCheckList = parentStream.getCheckList();
+
+            for(CandidatePair pair : parentCheckList)
+                if ((pair.getState() == CandidatePairState.FROZEN) &&
                     (checkedPair.getFoundation().equals(pair.getFoundation())))
-                pair.setStateWaiting();
+                    pair.setStateWaiting();
+        }
 
         // The agent examines the check list for all other streams in turn
         // If the check list is active, the agent changes the state of

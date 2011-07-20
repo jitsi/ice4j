@@ -453,6 +453,24 @@ public abstract class Message
     }
 
     /**
+     * Returns the length of this message's body without padding.
+     * Some STUN/ICE dialect does not take into account padding (GTalk).
+     *
+     * @return the length of the data in this message.
+     */
+    public char getDataLengthWithoutPadding()
+    {
+        char length = 0;
+
+        for (Attribute att : attributes.values())
+        {
+            int attLen = att.getDataLength() + Attribute.HEADER_LENGTH;
+            length += attLen;
+        }
+        return length;
+    }
+
+    /**
      * Adds the specified attribute to this message. If an attribute with that
      * name was already added, it would be replaced.
      *
@@ -794,6 +812,7 @@ public abstract class Message
         //make sure we have everything necessary to encode a proper message
         validateAttributePresentity();
 
+        final char dataLength;
         if(stunStack.getCompatibilityMode() == CompatibilityMode.GTALK)
         {
             /* Google Talk will return error response if it sees unknown
@@ -804,15 +823,20 @@ public abstract class Message
 
             if(getAttribute(Attribute.FINGERPRINT) != null)
                 removeAttribute(Attribute.FINGERPRINT);
+
+            dataLength = getDataLengthWithoutPadding();
+        }
+        else
+        {
+            dataLength = getDataLength();
         }
 
-        final char dataLength = getDataLength();
         byte binMsg[] = new byte[HEADER_LENGTH + dataLength];
         int offset    = 0;
 
         // STUN Message Type
-        binMsg[offset++] = (byte)(getMessageType()>>8);
-        binMsg[offset++] = (byte)(getMessageType()&0xFF);
+        binMsg[offset++] = (byte)(getMessageType() >> 8);
+        binMsg[offset++] = (byte)(getMessageType() & 0xFF);
 
         // Message Length
         final int messageLengthOffset = offset;
@@ -825,17 +849,15 @@ public abstract class Message
         {
             System.arraycopy(MAGIC_COOKIE, 0, binMsg, offset, 4);
             offset += 4;
-            System.arraycopy(tranID, 0, binMsg, offset,
-                    TRANSACTION_ID_LENGTH);
+            System.arraycopy(tranID, 0, binMsg, offset, TRANSACTION_ID_LENGTH);
             offset += TRANSACTION_ID_LENGTH;
         }
         else
         {
             /* RFC3489 behavior */
             System.arraycopy(tranID, 0, binMsg, offset,
-                    RFC3489_TRANSACTION_ID_LENGTH);
+                RFC3489_TRANSACTION_ID_LENGTH);
             offset += RFC3489_TRANSACTION_ID_LENGTH;
-
         }
 
         Iterator<Map.Entry<Character, Attribute>> iter

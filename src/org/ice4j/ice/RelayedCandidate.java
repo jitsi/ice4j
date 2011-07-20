@@ -36,7 +36,7 @@ public class RelayedCandidate
      * The application-purposed <tt>DatagramSocket</tt> associated with this
      * <tt>Candidate</tt>.
      */
-    private DatagramSocket socket;
+    private IceSocketWrapper socket;
 
     /**
      * The <tt>TurnCandidateHarvest</tt> which has harvested this
@@ -114,17 +114,17 @@ public class RelayedCandidate
      *
      * @return the <tt>DatagramSocket</tt> associated with this
      * <tt>Candidate</tt>
-     * @see LocalCandidate#getSocket()
+     * @see LocalCandidate#getIceSocketWrapper()
      */
-    public synchronized DatagramSocket getSocket()
+    public synchronized IceSocketWrapper getIceSocketWrapper()
     {
         if (socket == null)
         {
             try
             {
                 socket
-                    = new MultiplexingDatagramSocket(
-                            getRelayedCandidateDatagramSocket());
+                    = new IceUdpSocketWrapper(new MultiplexingDatagramSocket(
+                            getRelayedCandidateDatagramSocket()));
             }
             catch (SocketException sex)
             {

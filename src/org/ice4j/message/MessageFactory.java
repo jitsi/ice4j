@@ -658,7 +658,7 @@ public class MessageFactory
             if (data != null && data.length > 0)
             {
                 DataAttribute dataAttribute = AttributeFactory
-                                .createDataAttribute(data);
+                                .createDataAttributeWithoutPadding(data);
                 sendRequest.addAttribute(dataAttribute);
             }
         }

@@ -7,9 +7,8 @@
  */
 package org.ice4j.ice;
 
-import java.net.*;
-
 import org.ice4j.*;
+import org.ice4j.socket.*;
 
 import org.bitlet.weupnp.*;
 
@@ -67,7 +66,7 @@ public class UPNPCandidate
         {
         }
 
-        DatagramSocket socket = getSocket();
+        IceSocketWrapper socket = getIceSocketWrapper();
         if(socket != null)
         {
             socket.close();
@@ -83,8 +82,8 @@ public class UPNPCandidate
      * <tt>Candidate</tt>
      */
     @Override
-    public DatagramSocket getSocket()
+    public IceSocketWrapper getIceSocketWrapper()
     {
-        return getBase().getSocket();
+        return getBase().getIceSocketWrapper();
     }
 }

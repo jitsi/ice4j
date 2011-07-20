@@ -380,11 +380,13 @@ public abstract class Candidate
          */
         if(candidateType == CandidateType.HOST_CANDIDATE)
         {
-           priority += 1 * 1000;
+           priority += 1 * 1000 -
+               (this.getBase().getTransport() == Transport.TCP ? 200 : 0);
         }
         else if(candidateType == CandidateType.PEER_REFLEXIVE_CANDIDATE)
         {
-            priority += (long)(0.9 * 1000);
+            priority += (long)(0.9 * 1000) -
+                (this.getBase().getTransport() == Transport.TCP ? 200 : 0);
         }
         else if(candidateType == CandidateType.SERVER_REFLEXIVE_CANDIDATE)
         {
