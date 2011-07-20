@@ -316,8 +316,6 @@ public class Agent
                IOException,
                BindException
     {
-        SecureRandom random = new SecureRandom();
-
         if(transport != Transport.UDP)
         {
             throw new IllegalArgumentException(
@@ -350,13 +348,7 @@ public class Agent
                     continue;
                 }
 
-                String s = null;
-                while(s == null || s.length() != 16)
-                {
-                    s = new BigInteger(80, random).toString(32);
-                }
-
-                localCand.setUfrag(s);
+                localCand.setUfrag(generateGTalkUfrag());
             }
         }
 
@@ -373,6 +365,23 @@ public class Agent
         connCheckServer.start();
 
         return component;
+    }
+
+    /**
+     * Generates Ufrag for GTalk mode.
+     *
+     * @return 16 bytes Ufrag
+     */
+    public String generateGTalkUfrag()
+    {
+        SecureRandom random = new SecureRandom();
+        String s = null;
+
+        while(s == null || s.length() != 16)
+        {
+            s = new BigInteger(80, random).toString(32);
+        }
+        return s;
     }
 
     /**
@@ -410,7 +419,14 @@ public class Agent
 
         hostCandidateHarvester.harvest(
                 component,
-                preferredPort, minPort, maxPort);
+                preferredPort, minPort, maxPort, Transport.UDP);
+
+        if(compatibilityMode == CompatibilityMode.GTALK)
+        {
+            hostCandidateHarvester.harvest(
+                component,
+                preferredPort, minPort, maxPort, Transport.TCP);
+        }
 
         //apply other harvesters here
         harvesters.harvest(component);
@@ -1815,9 +1831,20 @@ public class Agent
                 && !IceProcessingState.TERMINATED.equals(state))
             terminate(IceProcessingState.TERMINATED);
 
+        logger.info("remove streams");
         // Free its IceMediaStreams, Components and Candidates.
         for(IceMediaStream stream : getStreams())
-            removeStream(stream);
+        {
+            try
+            {
+                removeStream(stream);
+            }
+            catch(Throwable t)
+            {
+                logger.info("remove stream failed: " + t);
+            }
+            logger.info("remove stream " + stream.getName());
+        }
     }
 
     /**
@@ -1907,12 +1934,13 @@ public class Agent
 
             try
             {
-                Thread.sleep(5000);
+                Thread.sleep(3000);
                 Thread.yield();
             }
             catch(InterruptedException e)
             {
             }
         }
+        logger.info("KeepAliveThread ends");
     }
 }

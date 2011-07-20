@@ -33,10 +33,16 @@ public class GoogleRelayedCandidate
     private GoogleRelayedCandidateDatagramSocket relayedCandidateDatagramSocket;
 
     /**
+     * The <tt>RelayedCandidateSocket</tt> of this
+     * <tt>GoogleRelayedCandidate</tt>.
+     */
+    private GoogleRelayedCandidateSocket relayedCandidateSocket = null;
+
+    /**
      * The application-purposed <tt>DatagramSocket</tt> associated with this
      * <tt>Candidate</tt>.
      */
-    private DatagramSocket socket;
+    private IceSocketWrapper socket;
 
     /**
      * The <tt>GoogleTurnCandidateHarvest</tt> which has harvested this
@@ -97,7 +103,7 @@ public class GoogleRelayedCandidate
      * @return the <tt>RelayedCandidateDatagramSocket</tt> of this
      * <tt>RelayedCandidate</tt>
      */
-    public synchronized GoogleRelayedCandidateDatagramSocket
+    private synchronized GoogleRelayedCandidateDatagramSocket
         getRelayedCandidateDatagramSocket()
     {
         if (relayedCandidateDatagramSocket == null)
@@ -119,24 +125,65 @@ public class GoogleRelayedCandidate
     }
 
     /**
+     * Gets the <tt>RelayedCandidateDatagramSocket</tt> of this
+     * <tt>RelayedCandidate</tt>.
+     * <p>
+     * <b>Note</b>: The method is part of the internal API of
+     * <tt>RelayedCandidate</tt> and <tt>TurnCandidateHarvest</tt> and is not
+     * intended for public use.
+     * </p>
+     *
+     * @return the <tt>RelayedCandidateDatagramSocket</tt> of this
+     * <tt>RelayedCandidate</tt>
+     */
+    private synchronized GoogleRelayedCandidateSocket
+        getRelayedCandidateSocket()
+    {
+        if (relayedCandidateSocket == null)
+        {
+            try
+            {
+                relayedCandidateSocket
+                    = new GoogleRelayedCandidateSocket(
+                        this,
+                        turnCandidateHarvest,
+                        username);
+            }
+            catch (SocketException sex)
+            {
+                throw new UndeclaredThrowableException(sex);
+            }
+        }
+        return relayedCandidateSocket;
+    }
+
+    /**
      * Gets the application-purposed <tt>DatagramSocket</tt> associated with
      * this <tt>Candidate</tt>.
      *
      * @return the <tt>DatagramSocket</tt> associated with this
      * <tt>Candidate</tt>
-     * @see LocalCandidate#getSocket()
+     * @see LocalCandidate#getIceSocketWrapper()
      */
-    public synchronized DatagramSocket getSocket()
+    public synchronized IceSocketWrapper getIceSocketWrapper()
     {
         if (socket == null)
         {
             try
             {
-                socket
-                    = new MultiplexingDatagramSocket(
-                            getRelayedCandidateDatagramSocket());
+                if(getTransport() == Transport.UDP)
+                {
+                    socket
+                       = new IceUdpSocketWrapper(new MultiplexingDatagramSocket(
+                            getRelayedCandidateDatagramSocket()));
+                }
+                else if(getTransport() == Transport.TCP)
+                {
+                    final Socket s = getRelayedCandidateSocket();
+                    socket = new IceTcpSocketWrapper(new MultiplexingSocket(s));
+                }
             }
-            catch (SocketException sex)
+            catch (Exception sex)
             {
                 throw new UndeclaredThrowableException(sex);
             }

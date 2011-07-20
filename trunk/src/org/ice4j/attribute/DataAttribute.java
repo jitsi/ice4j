@@ -34,11 +34,27 @@ public class DataAttribute
     private byte data[] = null;
 
     /**
+     * Add padding.
+     *
+     * Some dialect does not add (and support) padding (GTalk).
+     */
+    private boolean padding = true;
+
+    /**
      * Constructor.
      */
     protected DataAttribute ()
     {
+        this(true);
+    }
+
+    /**
+     * Constructor.
+     */
+    protected DataAttribute (boolean padding)
+    {
         super(DATA);
+        this.padding = padding;
     }
 
     /**
@@ -66,10 +82,10 @@ public class DataAttribute
     {
         char type = getAttributeType();
         byte binValue[] = new byte[HEADER_LENGTH + getDataLength() +
-                                   (getDataLength() % 4)];
+                                   (padding ? (getDataLength() % 4) : 0)];
 
         //Type
-        binValue[0] = (byte)(type>>8);
+        binValue[0] = (byte)(type >> 8);
         binValue[1] = (byte)(type & 0x00FF);
 
         //Length

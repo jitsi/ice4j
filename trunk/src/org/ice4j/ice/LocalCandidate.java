@@ -7,6 +7,7 @@
  */
 package org.ice4j.ice;
 
+import java.io.*;
 import java.net.*;
 import java.util.logging.*;
 
@@ -54,12 +55,37 @@ public abstract class LocalCandidate
     }
 
     /**
-     * Gets the <tt>DatagramSocket</tt> associated with this <tt>Candidate</tt>.
+     * Gets the <tt>DatagramSocket</tt> associated with this
+     * <tt>Candidate</tt>.
      *
      * @return the <tt>DatagramSocket</tt> associated with this
      * <tt>Candidate</tt>
      */
-    public abstract DatagramSocket getSocket();
+    public DatagramSocket getDatagramSocket()
+    {
+        return getIceSocketWrapper().getUDPSocket();
+    }
+
+    /**
+     * Gets the <tt>Socket</tt> associated with this
+     * <tt>Candidate</tt>.
+     *
+     * @return the <tt>Socket</tt> associated with this
+     * <tt>Candidate</tt>
+     */
+    public Socket getSocket()
+    {
+        return getIceSocketWrapper().getTCPSocket();
+    }
+
+    /**
+     * Gets the <tt>IceSocketWrapper</tt> associated with this
+     * <tt>Candidate</tt>.
+     *
+     * @return the <tt>IceSocketWrapper</tt> associated with this
+     * <tt>Candidate</tt>
+     */
+    protected abstract IceSocketWrapper getIceSocketWrapper();
 
     /**
      * Creates if necessary and returns a <tt>DatagramSocket</tt> that would
@@ -74,49 +100,113 @@ public abstract class LocalCandidate
      * and receiving STUN packets, while harvesting STUN candidates or
      * performing connectivity checks.
      */
-    public DatagramSocket getStunSocket(TransportAddress serverAddress)
+    public IceSocketWrapper getStunSocket(TransportAddress serverAddress)
     {
-        DatagramSocket hostSocket = getSocket();
-        DatagramSocket stunSocket = null;
+        IceSocketWrapper hostSocket = getIceSocketWrapper();
 
-        if (hostSocket instanceof MultiplexingDatagramSocket)
+        if(hostSocket.getTCPSocket() != null)
         {
-            DatagramPacketFilter stunDatagramPacketFilter
-                = createStunDatagramPacketFilter(serverAddress);
-            Throwable exception = null;
+            Socket tcpSocket = hostSocket.getTCPSocket();
+            Socket tcpStunSocket = null;
 
-            try
+            if (tcpSocket instanceof MultiplexingSocket)
             {
-                stunSocket
-                    = ((MultiplexingDatagramSocket) hostSocket)
-                        .getSocket(stunDatagramPacketFilter);
+                DatagramPacketFilter stunDatagramPacketFilter
+                    = createStunDatagramPacketFilter(serverAddress);
+                Throwable exception = null;
+
+                try
+                {
+                    tcpStunSocket
+                        = ((MultiplexingSocket) tcpSocket)
+                            .getSocket(stunDatagramPacketFilter);
+                }
+                catch (SocketException sex) //don't u just luv da name? ;)
+                {
+                    logger.log(Level.SEVERE,
+                               "Failed to acquire Socket"
+                                   + " specific to STUN communication.",
+                               sex);
+                    exception = sex;
+                }
+                if (tcpStunSocket == null)
+                {
+                    throw
+                        new IllegalStateException(
+                                "Failed to acquire Socket"
+                                    + " specific to STUN communication",
+                                exception);
+                }
             }
-            catch (SocketException sex) //don't u just luv da name? ;)
-            {
-                logger.log(Level.SEVERE,
-                           "Failed to acquire DatagramSocket"
-                               + " specific to STUN communication.",
-                           sex);
-                exception = sex;
-            }
-            if (stunSocket == null)
+            else
             {
                 throw
                     new IllegalStateException(
-                            "Failed to acquire DatagramSocket"
-                                + " specific to STUN communication",
-                            exception);
+                            "The socket of "
+                                + getClass().getSimpleName()
+                                + " must be a MultiplexingSocket " +
+                                        "instance");
             }
+
+            IceTcpSocketWrapper stunSocket = null;
+            try
+            {
+                stunSocket = new IceTcpSocketWrapper(tcpStunSocket);
+            }
+            catch(IOException e)
+            {
+                logger.info("Failed to create IceTcpSocketWrapper " + e);
+            }
+
+            return stunSocket;
         }
-        else
+        else if(hostSocket.getUDPSocket() != null)
         {
-            throw
-                new IllegalStateException(
-                        "The socket of "
-                            + getClass().getSimpleName()
-                            + " must be a MultiplexingDatagramSocket instance");
+            DatagramSocket udpSocket = hostSocket.getUDPSocket();
+            DatagramSocket udpStunSocket = null;
+
+            if (udpSocket instanceof MultiplexingDatagramSocket)
+            {
+                DatagramPacketFilter stunDatagramPacketFilter
+                    = createStunDatagramPacketFilter(serverAddress);
+                Throwable exception = null;
+
+                try
+                {
+                    udpStunSocket
+                        = ((MultiplexingDatagramSocket) udpSocket)
+                            .getSocket(stunDatagramPacketFilter);
+                }
+                catch (SocketException sex) //don't u just luv da name? ;)
+                {
+                    logger.log(Level.SEVERE,
+                               "Failed to acquire DatagramSocket"
+                                   + " specific to STUN communication.",
+                               sex);
+                    exception = sex;
+                }
+                if (udpStunSocket == null)
+                {
+                    throw
+                        new IllegalStateException(
+                                "Failed to acquire DatagramSocket"
+                                    + " specific to STUN communication",
+                                exception);
+                }
+            }
+            else
+            {
+                throw
+                    new IllegalStateException(
+                            "The socket of "
+                                + getClass().getSimpleName()
+                                + " must be a MultiplexingDatagramSocket " +
+                                        "instance");
+            }
+            return new IceUdpSocketWrapper(udpStunSocket);
         }
-        return stunSocket;
+
+        return null;
     }
 
     /**
@@ -159,7 +249,7 @@ public abstract class LocalCandidate
     protected void free()
     {
         // Close the socket associated with this LocalCandidate.
-        DatagramSocket socket = getSocket();
+        IceSocketWrapper socket = getIceSocketWrapper();
 
         if (socket != null)
         {
@@ -167,7 +257,7 @@ public abstract class LocalCandidate
 
             if ((base == null)
                     || (base == this)
-                    || (base.getSocket() != socket))
+                    || (base.getIceSocketWrapper() != socket))
             {
                 //remove our socket from the stack.
                 getStunStack().removeSocket(getTransportAddress());

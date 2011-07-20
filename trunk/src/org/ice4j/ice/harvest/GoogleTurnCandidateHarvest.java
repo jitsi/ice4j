@@ -90,6 +90,15 @@ public class GoogleTurnCandidateHarvest
         {
             TransportAddress relayedAddress
                 = ((MappedAddressAttribute) attribute).getAddress();
+
+            if(harvester.stunServer.getTransport() == Transport.TCP)
+            {
+                relayedAddress = new TransportAddress(
+                    relayedAddress.getAddress(),
+                    harvester.stunServer.getPort(),
+                    //relayedAddress.getPort() - 1,
+                    Transport.TCP);
+            }
             GoogleRelayedCandidate relayedCandidate
                 = createRelayedCandidate(
                         relayedAddress,
@@ -257,34 +266,6 @@ public class GoogleTurnCandidateHarvest
     }
 
     /**
-     * Sends a specific <tt>Request</tt> on behalf of a specific
-     * <tt>RelayedCandidateDatagramSocket</tt> to the TURN server associated
-     * with this <tt>GoogleTurnCandidateHarvest</tt>.
-     *
-     * @param relayedCandidateDatagramSocket the
-     * <tt>RelayedCandidateDatagramSocket</tt> which sends the specified
-     * <tt>Request</tt> and which is to be notified of the result
-     * @param request the <tt>Request</tt> to be sent to the TURN server
-     * associated with this <tt>TurnCandidateHarvest</tt>
-     * @return an array of <tt>byte</tt>s which represents the ID of the
-     * transaction with which the specified <tt>Request</tt> has been sent to
-     * the TURN server
-     * @throws StunException if anything goes wrong while sending the specified
-     * <tt>Request</tt>
-     */
-    public byte[] sendRequest(
-            RelayedCandidateDatagramSocket relayedCandidateDatagramSocket,
-            Request request)
-        throws StunException
-    {
-        TransactionID transactionID = TransactionID.createNewTransactionID();
-
-        transactionID.setApplicationData(relayedCandidateDatagramSocket);
-        transactionID = sendRequest(request, false, transactionID);
-        return (transactionID == null) ? null : transactionID.getBytes();
-    }
-
-    /**
      * Notifies this <tt>StunCandidateHarvest</tt> that a specific
      * <tt>Request</tt> has either received an error <tt>Response</tt> or has
      * failed to receive any <tt>Response</tt>.
@@ -317,10 +298,15 @@ public class GoogleTurnCandidateHarvest
          */
         Object applicationData = transactionID.getApplicationData();
 
-        if ((applicationData instanceof RelayedCandidateDatagramSocket)
+        if ((applicationData instanceof GoogleRelayedCandidateDatagramSocket)
                 && ((RelayedCandidateDatagramSocket) applicationData)
                         .processErrorOrFailure(response, request))
             return true;
+        else if ((applicationData instanceof
+            GoogleRelayedCandidateDatagramSocket)
+            && ((RelayedCandidateDatagramSocket) applicationData)
+                    .processErrorOrFailure(response, request))
+        return true;
 
         return super.processErrorOrFailure(response, request, transactionID);
     }
@@ -381,9 +367,14 @@ public class GoogleTurnCandidateHarvest
          */
         Object applicationData = transactionID.getApplicationData();
 
-        if (applicationData instanceof RelayedCandidateDatagramSocket)
+        if (applicationData instanceof GoogleRelayedCandidateDatagramSocket)
         {
-            ((RelayedCandidateDatagramSocket) applicationData)
+            ((GoogleRelayedCandidateDatagramSocket) applicationData)
+                .processSuccess(response, request);
+        }
+        else if (applicationData instanceof GoogleRelayedCandidateSocket)
+        {
+            ((GoogleRelayedCandidateSocket) applicationData)
                 .processSuccess(response, request);
         }
     }

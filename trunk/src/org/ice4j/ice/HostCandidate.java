@@ -33,7 +33,7 @@ public class HostCandidate extends LocalCandidate
      * If this is a local candidate the field contains the socket that is
      * actually associated with the candidate.
      */
-    private final DatagramSocket socket;
+    private final IceSocketWrapper socket;
 
     /**
      * Creates a HostCandidate for the specified transport address.
@@ -43,11 +43,33 @@ public class HostCandidate extends LocalCandidate
      * @param parentComponent the <tt>Component</tt> that this candidate
      * belongs to.
      */
-    public HostCandidate(DatagramSocket socket,
-                         Component      parentComponent)
+    public HostCandidate(IceSocketWrapper socket,
+                         Component        parentComponent)
     {
         super(new TransportAddress(socket.getLocalAddress(),
                         socket.getLocalPort(), Transport.UDP),
+              parentComponent,
+              CandidateType.HOST_CANDIDATE);
+
+        this.socket = socket;
+        setBase(this);
+    }
+
+    /**
+     * Creates a HostCandidate for the specified transport address.
+     *
+     * @param socket the {@link DatagramSocket} that communication associated
+     * with this <tt>Candidate</tt> will be going through.
+     * @param parentComponent the <tt>Component</tt> that this candidate
+     * belongs to.
+     * @param transport transport protocol used
+     */
+    public HostCandidate(IceSocketWrapper socket,
+                         Component        parentComponent,
+                         Transport        transport)
+    {
+        super(new TransportAddress(socket.getLocalAddress(),
+                        socket.getLocalPort(), transport),
               parentComponent,
               CandidateType.HOST_CANDIDATE);
 
@@ -83,9 +105,9 @@ public class HostCandidate extends LocalCandidate
      *
      * @return the <tt>DatagramSocket</tt> associated with this
      * <tt>Candidate</tt>
-     * @see LocalCandidate#getSocket()
+     * @see LocalCandidate#getIceSocketWrapper()
      */
-    public DatagramSocket getSocket()
+    public IceSocketWrapper getIceSocketWrapper()
     {
         return socket;
     }

@@ -8,10 +8,13 @@
 package org.ice4j.ice;
 
 import java.beans.*;
+import java.io.*;
+import java.net.*;
 import java.util.*;
 import java.util.logging.*;
 
 import org.ice4j.*;
+import org.ice4j.socket.*;
 
 /**
  * The class represents a media stream from the ICE perspective, i.e. a
@@ -356,6 +359,30 @@ public class IceMediaStream
             {
                 if(localCnd.canReach(remoteCnd))
                 {
+                    if(localCnd.getTransport() == Transport.TCP &&
+                        parentAgent.getCompatibilityMode() ==
+                            CompatibilityMode.GTALK)
+                    {
+                        /* for TCP, create a new Candidate (a new connection)
+                         * to each of remote TCP candidates
+                         */
+                        try
+                        {
+                            Socket sock = new MultiplexingSocket();
+                            sock.connect(new InetSocketAddress(
+                                remoteCnd.getTransportAddress().getAddress(),
+                                remoteCnd.getTransportAddress().getPort()));
+                            LocalCandidate tmp =
+                                new HostCandidate(new IceTcpSocketWrapper(sock),
+                                    component);
+                            tmp.setUfrag(localCnd.getUfrag());
+                            localCnd = tmp;
+                        }
+                        catch (IOException e)
+                        {
+                            continue;
+                        }
+                    }
                     CandidatePair pair = new CandidatePair(localCnd, remoteCnd);
 
                     checkList.add(pair);

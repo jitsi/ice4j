@@ -41,7 +41,7 @@ public class ShallowStackTest extends TestCase
 
     private DatagramCollector dgramCollector = new DatagramCollector();
 
-    private DatagramSocket   localSock = null;
+    private IceSocketWrapper   localSock = null;
 
     private DatagramSocket dummyServerSocket = null;
 
@@ -77,7 +77,8 @@ public class ShallowStackTest extends TestCase
         stunStack = new StunStack();
 
         //access point
-        localSock = new SafeCloseDatagramSocket(localAddress);
+        localSock = new IceUdpSocketWrapper(
+            new SafeCloseDatagramSocket(localAddress));
         stunStack.addSocket(localSock);
 
         //init the dummy server

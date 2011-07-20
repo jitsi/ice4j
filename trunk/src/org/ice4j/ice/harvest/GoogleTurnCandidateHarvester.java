@@ -21,7 +21,7 @@ public class GoogleTurnCandidateHarvester
 {
     /**
      * Initializes a new <tt>GoogleTurnCandidateHarvester</tt> instance which
-     * is to work with a specific GoogleTURN server.
+     * is to work with a specific Google TURN server.
      *
      * @param turnServer the <tt>TransportAddress</tt> of the TURN server the
      * new instance is to work with

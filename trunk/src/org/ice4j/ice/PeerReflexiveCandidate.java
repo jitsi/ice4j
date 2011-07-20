@@ -6,9 +6,8 @@
  */
 package org.ice4j.ice;
 
-import java.net.*;
-
 import org.ice4j.*;
+import org.ice4j.socket.*;
 
 /**
  * Peer Reflexive Candidates are candidates whose IP address and port are a
@@ -55,10 +54,10 @@ public class PeerReflexiveCandidate
      *
      * @return the <tt>DatagramSocket</tt> associated with this
      * <tt>Candidate</tt>
-     * @see LocalCandidate#getSocket()
+     * @see LocalCandidate#getIceSocketWrapper()
      */
-    public DatagramSocket getSocket()
+    public IceSocketWrapper getIceSocketWrapper()
     {
-        return getBase().getSocket();
+        return getBase().getIceSocketWrapper();
     }
 }

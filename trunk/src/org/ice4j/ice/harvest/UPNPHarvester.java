@@ -130,8 +130,8 @@ public class UPNPHarvester
             String externalIPAddress = device.getExternalIPAddress();
             PortMappingEntry portMapping = new PortMappingEntry();
 
-            MultiplexingDatagramSocket socket =
-                new MultiplexingDatagramSocket(0, localAddress);
+            IceSocketWrapper socket = new IceUdpSocketWrapper(
+                new MultiplexingDatagramSocket(0, localAddress));
             int port = socket.getLocalPort();
             int externalPort = socket.getLocalPort();
 
@@ -199,7 +199,7 @@ public class UPNPHarvester
      * represents the specified <tt>TransportAddress</tt>
      * @throws Exception if something goes wrong during candidate creation
      */
-    public List<LocalCandidate> createUPNPCandidate(DatagramSocket socket,
+    public List<LocalCandidate> createUPNPCandidate(IceSocketWrapper socket,
             InetAddress localAddr, String externalIP, int port, Component cmp,
             GatewayDevice device)
         throws Exception
@@ -211,7 +211,7 @@ public class UPNPHarvester
         HostCandidate base = new HostCandidate(socket, cmp);
 
         UPNPCandidate candidate = new UPNPCandidate(addr, base, cmp, device);
-        DatagramSocket stunSocket = candidate.getStunSocket(null);
+        IceSocketWrapper stunSocket = candidate.getStunSocket(null);
         candidate.getStunStack().addSocket(stunSocket);
 
         ret.add(candidate);

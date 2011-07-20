@@ -47,23 +47,31 @@ public class HostCandidateHarvester
      * @param minPort the port number where we should first try to bind before
      * moving to the next one (i.e. <tt>minPort + 1</tt>)
      * @param maxPort the maximum port number where we should try binding
-     * before giving up and throwinG an exception.
+     * before giving up and throwing an exception.
+     * @param transport transport protocol used
      *
      * @throws IllegalArgumentException if either <tt>minPort</tt> or
-     * <tt>maxPort</tt> is not a valid port number or if <tt>minPort >
-     * maxPort</tt>.
+     * <tt>maxPort</tt> is not a valid port number, <tt>minPort >
+     * maxPort</tt> or if transport is not supported.
      * @throws IOException if an error occurs while the underlying resolver lib
      * is using sockets.
      */
     public void harvest(Component component,
                         int       preferredPort,
                         int       minPort,
-                        int       maxPort)
+                        int       maxPort,
+                        Transport transport)
         throws IllegalArgumentException,
                IOException
     {
         Enumeration<NetworkInterface> interfaces
                         = NetworkInterface.getNetworkInterfaces();
+
+        if(transport != Transport.UDP && transport != Transport.TCP)
+        {
+            throw new IllegalArgumentException(
+                "Transport protocol not supported: " + transport);
+        }
 
         boolean boundAtLeastOneSocket = false;
         while (interfaces.hasMoreElements())
@@ -83,12 +91,23 @@ public class HostCandidateHarvester
             {
                 InetAddress addr = addresses.nextElement();
 
-                DatagramSocket sock;
+                IceSocketWrapper sock = null;
                 try
                 {
-                    sock = createDatagramSocket(
-                                addr, preferredPort, minPort, maxPort);
-                    boundAtLeastOneSocket = true;
+                    if(transport == Transport.UDP)
+                    {
+                        sock = createDatagramSocket(
+                            addr, preferredPort, minPort, maxPort);
+                        boundAtLeastOneSocket = true;
+                    }
+                    else if(transport == Transport.TCP)
+                    {
+                        if(addr instanceof Inet6Address)
+                            continue;
+                        sock = createServerSocket(addr, preferredPort, minPort,
+                            maxPort, component);
+                        boundAtLeastOneSocket = true;
+                    }
                 }
                 catch(IOException exc)
                 {
@@ -102,14 +121,24 @@ public class HostCandidateHarvester
                                     +"\npreferredPort:" + preferredPort
                                     +"\nminPort:" + minPort
                                     +"\nmaxPort:" + maxPort
+                                    +"\nprotocol:" + transport
                                     +"\nContinuing with next address");
                     }
                     continue;
                 }
 
-                HostCandidate candidate = new HostCandidate(sock, component);
+                HostCandidate candidate = new HostCandidate(sock, component,
+                    transport);
                 candidate.setVirtual(NetworkUtils.isInterfaceVirtual(iface));
                 component.addLocalCandidate(candidate);
+
+                if(transport == Transport.TCP)
+                {
+                    /* have to wait a client connection to add a STUN socket
+                     * to the StunStack
+                     */
+                    continue;
+                }
 
                 //We are most certainly going to use all local host candidates
                 //for sending and receiving STUN connectivity checks. In case
@@ -128,6 +157,105 @@ public class HostCandidateHarvester
                             + " minPort=" + minPort
                             + " maxPort=" + maxPort);
         }
+    }
+
+    /**
+     * Creates a <tt>ServerSocket</tt> and binds it to the specified
+     * <tt>localAddress</tt> and a port in the range specified by the
+     * <tt>minPort</tt> and <tt>maxPort</tt> parameters.
+     *
+     * @param laddr the address that we'd like to bind the socket on.
+     * @param preferredPort the port number that we should try to bind to first.
+     * @param minPort the port number where we should first try to bind before
+     * moving to the next one (i.e. <tt>minPort + 1</tt>)
+     * @param maxPort the maximum port number where we should try binding
+     * before giving up and throwinG an exception.
+     *
+     * @return the newly created <tt>DatagramSocket</tt>.
+     *
+     * @throws IllegalArgumentException if either <tt>minPort</tt> or
+     * <tt>maxPort</tt> is not a valid port number or if <tt>minPort >
+     * maxPort</tt>.
+     * @throws IOException if an error occurs while the underlying resolver lib
+     * is using sockets.
+     * @throws BindException if we couldn't find a free port between
+     * <tt>minPort</tt> and <tt>maxPort</tt> before reaching the maximum allowed
+     * number of retries.
+     */
+    private IceSocketWrapper createServerSocket(InetAddress laddr,
+        int preferredPort, int minPort, int maxPort,
+        Component component)
+        throws IllegalArgumentException,
+               IOException,
+               BindException
+    {
+        // make sure port numbers are valid
+        if (!NetworkUtils.isValidPortNumber(minPort)
+                        || !NetworkUtils.isValidPortNumber(maxPort))
+        {
+            throw new IllegalArgumentException("minPort (" + minPort
+                            + ") and maxPort (" + maxPort + ") "
+                            + "should be integers between 1024 and 65535.");
+        }
+
+        // make sure minPort comes before maxPort.
+        if (minPort > maxPort)
+        {
+            throw new IllegalArgumentException("minPort (" + minPort
+                            + ") should be less than or "
+                            + "equal to maxPort (" + maxPort + ")");
+        }
+
+        // if preferredPort is not  in the allowed range, place it at min.
+        if (minPort > preferredPort || preferredPort > maxPort)
+        {
+            throw new IllegalArgumentException("preferredPort ("+preferredPort
+                            +") must be between minPort (" + minPort
+                            + ") and maxPort (" + maxPort + ")");
+        }
+
+        int bindRetries = StackProperties.getInt(
+                        StackProperties.BIND_RETRIES,
+                        StackProperties.BIND_RETRIES_DEFAULT_VALUE);
+
+        int port = preferredPort;
+        for (int i = 0; i < bindRetries; i++)
+        {
+            try
+            {
+                ServerSocket sock = new ServerSocket();
+                sock.setReuseAddress(true);
+                sock.bind(new InetSocketAddress(laddr, port));
+                IceSocketWrapper socket
+                                = new IceTcpServerSocketWrapper(sock,
+                                    component);
+
+                if(logger.isLoggable(Level.FINEST))
+                {
+                    logger.log(
+                            Level.FINEST,
+                            "just bound to: " + sock.getLocalSocketAddress());
+                }
+                return socket;
+            }
+            catch (SocketException se)
+            {
+                logger.log(
+                        Level.INFO,
+                        "Retrying a bind because of a failure to bind to"
+                            + " address " + laddr
+                            + " and port " + port
+                            + " (" + se.getMessage() +")");
+                logger.log(Level.INFO, "", se);
+            }
+
+            port ++;
+
+            if (port > maxPort)
+                port = minPort;
+        }
+
+        throw new BindException("Not implemented");
     }
 
     /**
@@ -160,7 +288,7 @@ public class HostCandidateHarvester
      * <tt>minPort</tt> and <tt>maxPort</tt> before reaching the maximum allowed
      * number of retries.
      */
-    private DatagramSocket createDatagramSocket(InetAddress laddr,
+    private IceSocketWrapper createDatagramSocket(InetAddress laddr,
                                                 int preferredPort,
                                                 int minPort,
                                                 int maxPort)
@@ -202,8 +330,9 @@ public class HostCandidateHarvester
         {
             try
             {
-                DatagramSocket sock
-                                = new MultiplexingDatagramSocket(port, laddr);
+                IceSocketWrapper sock
+                                = new IceUdpSocketWrapper(new
+                                    MultiplexingDatagramSocket(port, laddr));
 
                 if(logger.isLoggable(Level.FINEST))
                 {
@@ -231,7 +360,7 @@ public class HostCandidateHarvester
         }
 
         throw new BindException("Could not bind to any port between "
-                        + minPort + " and " + (port -1));
+                        + minPort + " and " + (port - 1));
     }
 
     /**
@@ -246,7 +375,7 @@ public class HostCandidateHarvester
      */
     private void createAndRegisterStunSocket(HostCandidate candidate)
     {
-        DatagramSocket stunSocket = candidate.getStunSocket(null);
+        IceSocketWrapper stunSocket = candidate.getStunSocket(null);
 
         candidate.getStunStack().addSocket(stunSocket);
     }
