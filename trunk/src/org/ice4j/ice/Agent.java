@@ -1504,7 +1504,7 @@ public class Agent
                         // schedule STUN checks for selected candidates
                         scheduleSTUNKeepAlive();
                     }
-                    else
+                    else if(compatibilityMode == CompatibilityMode.RFC5245)
                     {
                         scheduleTermination();
                     }
