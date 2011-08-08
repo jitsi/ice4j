@@ -399,7 +399,7 @@ public class Agent
      * @param minPort the port number where we should first try to bind before
      * moving to the next one (i.e. <tt>minPort + 1</tt>)
      * @param maxPort the maximum port number where we should try binding
-     * before giving up and throwinG an exception.
+     * before giving up and throwing an exception.
      *
      * @throws IllegalArgumentException if either <tt>minPort</tt> or
      * <tt>maxPort</tt> is not a valid port number or if <tt>minPort &gt;
@@ -1072,6 +1072,37 @@ public class Agent
     }
 
     /**
+     * Returns the local <tt>LocalCandidate</tt> with the specified
+     * <tt>localAddress</tt> if it belongs to any of this {@link Agent}'s
+     * streams or <tt>null</tt> if it doesn't.
+     *
+     * @param localAddress the {@link TransportAddress} we are looking for.
+     * @param ufrag local ufrag
+     * @return the local <tt>LocalCandidate</tt> with the specified
+     * <tt>localAddress</tt> if it belongs to any of this {@link Agent}'s
+     * streams or <tt>null</tt> if it doesn't.
+     */
+    public LocalCandidate findLocalCandidate(TransportAddress localAddress,
+        String ufrag)
+    {
+        Collection<IceMediaStream> streamsCollection = mediaStreams.values();
+
+        for(IceMediaStream stream : streamsCollection)
+        {
+            for(Component c : stream.getComponents())
+            {
+                for(LocalCandidate cnd : c.getLocalCandidates())
+                {
+                    if(cnd != null && cnd.getUfrag().equals(ufrag))
+                        return cnd;
+                }
+            }
+        }
+
+        return null;
+    }
+
+    /**
      * Returns the remote <tt>Candidate</tt> with the specified
      * <tt>remoteAddress</tt> if it belongs to any of this {@link Agent}'s
      * streams or <tt>null</tt> if it doesn't.
@@ -1190,7 +1221,17 @@ public class Agent
                                          String           localUFrag,
                                          boolean          useCandidate)
     {
-        LocalCandidate localCandidate = findLocalCandidate(localAddress);
+        LocalCandidate localCandidate = null;
+
+        if(compatibilityMode == CompatibilityMode.GTALK)
+        {
+            localCandidate = findLocalCandidate(localAddress,
+                remoteUFrag);
+        }
+        else
+        {
+            localCandidate = findLocalCandidate(localAddress);
+        }
 
         if(localCandidate == null)
         {

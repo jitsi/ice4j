@@ -129,6 +129,7 @@ class Connector
                  * account including after it gets changed.
                  */
                 int receiveBufferSize = 1500;
+                /*
                 if(localSock.getTCPSocket() != null)
                 {
                     receiveBufferSize = localSock.getTCPSocket().
@@ -139,6 +140,7 @@ class Connector
                     receiveBufferSize = localSock.getUDPSocket().
                         getReceiveBufferSize();
                 }
+                */
 
                 if (packet == null)
                 {

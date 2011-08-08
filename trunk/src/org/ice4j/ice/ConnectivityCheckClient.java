@@ -437,6 +437,7 @@ class ConnectivityCheckClient
 
         LocalCandidate validLocalCandidate = parentAgent
                                        .findLocalCandidate(mappedAddress);
+        // XXX GTALK, find local candidate with ufrag rather than mapped address
         Candidate validRemoteCandidate = checkedPair.getRemoteCandidate();
 
         // RFC 5245: The agent checks the mapped address from the STUN
