@@ -297,6 +297,10 @@ class ConnectivityCheckClient
             = checkedPair.getParentComponent().getParentStream();
         final CheckList checkList = stream.getCheckList();
 
+        if(stream.getParentAgent().getState().equals(
+            IceProcessingState.COMPLETED))
+            return;
+
         //If all of the pairs in the check list are now either in the Failed or
         //Succeeded state:
         boolean allPairsDone = true;

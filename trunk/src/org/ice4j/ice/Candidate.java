@@ -285,7 +285,8 @@ public abstract class Candidate
         }
 
         //compare other properties
-        if(getBase().equals(targetCandidate.getBase())
+        if(((getBase() == this && targetCandidate.getBase() == targetCandidate)
+            || getBase().equals(targetCandidate.getBase()))
             && getPriority() == targetCandidate.getPriority()
             && getType() == targetCandidate.getType()
             && getFoundation().equals(targetCandidate.getFoundation()))
