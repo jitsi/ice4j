@@ -174,7 +174,7 @@ public class DefaultNominator
      * @param evt the {@link PropertyChangeEvent} containing the pair which
      * has been validated.
      */
-    private void strategyNominateFirstHostOrReflexiveValid(
+    private synchronized void strategyNominateFirstHostOrReflexiveValid(
             PropertyChangeEvent evt)
     {
         if(IceMediaStream.PROPERTY_PAIR_VALIDATED.equals(evt.getPropertyName()))
@@ -184,7 +184,9 @@ public class DefaultNominator
             TimerTask task = validatedCandidates.get(
                     validPair.getParentComponent().toShortString());
             boolean isRelayed =
-                validPair.getLocalCandidate() instanceof RelayedCandidate;
+                validPair.getLocalCandidate() instanceof RelayedCandidate ||
+                validPair.getRemoteCandidate().getType().equals(
+                    CandidateType.RELAYED_CANDIDATE);
 
             if(isRelayed && task == null)
             {
