@@ -400,6 +400,12 @@ public abstract class Candidate
 
         priority -= getParentComponent().getComponentID() - 1;
 
+        InetAddress addr = getTransportAddress().getAddress();
+
+        // IPv6 has better priority than IPv4
+        if(addr instanceof Inet6Address)
+            priority += 10;
+
         return priority;
     }
 

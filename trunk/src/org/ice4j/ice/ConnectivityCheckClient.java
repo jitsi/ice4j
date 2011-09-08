@@ -394,7 +394,24 @@ class ConnectivityCheckClient
         TransportAddress mappedAddress = null;
         if(this.parentAgent.getCompatibilityMode() == CompatibilityMode.GTALK)
         {
-            if(!response.containsAttribute(Attribute.MAPPED_ADDRESS))
+            if(response.containsAttribute(Attribute.XOR_MAPPED_ADDRESS))
+            {
+                XorMappedAddressAttribute mappedAddressAttr
+                    = (XorMappedAddressAttribute)response
+                        .getAttribute(Attribute.XOR_MAPPED_ADDRESS);
+                mappedAddress = mappedAddressAttr.getAddress(
+                    response.getTransactionID());
+            }
+            else if(response.containsAttribute(Attribute.MAPPED_ADDRESS))
+            {
+
+                MappedAddressAttribute mappedAddressAttr
+                    = (MappedAddressAttribute)response
+                        .getAttribute(Attribute.MAPPED_ADDRESS);
+
+                mappedAddress = mappedAddressAttr.getAddress();
+            }
+            else
             {
                    logger.fine("Received a success response with no "
                            + "MAPPED_ADDRESS attribute.");
@@ -403,12 +420,6 @@ class ConnectivityCheckClient
                    checkedPair.setStateFailed();
                    return; //malformed error response
             }
-
-            MappedAddressAttribute mappedAddressAttr
-                = (MappedAddressAttribute)response
-                    .getAttribute(Attribute.MAPPED_ADDRESS);
-
-            mappedAddress = mappedAddressAttr.getAddress();
         }
         else
         {
@@ -586,7 +597,7 @@ class ConnectivityCheckClient
         if((parentAgent.isControlling()
                 && (request.containsAttribute(Attribute.USE_CANDIDATE)) ||
                 parentAgent.getCompatibilityMode() ==
-                            CompatibilityMode.GTALK))
+                            CompatibilityMode.GTALK) && validPair.isNominated())
         {
             logger.info("Nomination confirmed for pair: " +
                     validPair.toShortString());

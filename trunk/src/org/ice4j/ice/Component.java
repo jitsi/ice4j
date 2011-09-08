@@ -310,6 +310,20 @@ public class Component
                 return;
 
             List<LocalCandidate> localCnds = getLocalCandidates();
+
+            // remove UPnP base from local candidate
+            LocalCandidate upnpBase = null;
+            for(LocalCandidate lc : localCnds)
+            {
+                if(lc instanceof UPNPCandidate)
+                {
+                    upnpBase = lc.getBase();
+                }
+            }
+            if(upnpBase != null)
+            {
+                localCnds.remove(upnpBase);
+            }
             checkList = new Vector<CandidatePair>();
 
             for(LocalCandidate localCnd : localCnds)

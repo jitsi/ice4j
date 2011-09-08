@@ -353,6 +353,20 @@ public class IceMediaStream
         List<LocalCandidate> localCnds = component.getLocalCandidates();
         List<Candidate> remoteCnds = component.getRemoteCandidates();
 
+        // remove UPnP base from local candidate
+        LocalCandidate upnpBase = null;
+        for(LocalCandidate lc : localCnds)
+        {
+            if(lc instanceof UPNPCandidate)
+            {
+                upnpBase = lc.getBase();
+            }
+        }
+        if(upnpBase != null)
+        {
+            localCnds.remove(upnpBase);
+        }
+
         for(LocalCandidate localCnd : localCnds)
         {
             for(Candidate remoteCnd : remoteCnds)
