@@ -80,6 +80,12 @@ public abstract class Message
         (STUN_METHOD_BINDING | STUN_ERROR_RESP);
 
     /**
+     * STUN binding request code.
+     */
+    public static final char BINDING_INDICATION            =
+        (STUN_METHOD_BINDING | STUN_INDICATION);
+
+    /**
      * STUN shared secret request.
      */
     public static final char SHARED_SECRET_REQUEST         = 0x0002;

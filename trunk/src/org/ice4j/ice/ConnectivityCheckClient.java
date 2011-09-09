@@ -104,6 +104,53 @@ class ConnectivityCheckClient
     }
 
     /**
+     * Creates a STUN Binding {@link Indication} to a candidate pair. It is used
+     * as a keep-alive.
+     *
+     * @param candidatePair that {@link CandidatePair} that we'd like to send
+     * an indication
+     */
+    protected void sendBindingIndicationForPair(
+        CandidatePair candidatePair)
+    {
+        LocalCandidate localCandidate = candidatePair.getLocalCandidate();
+
+        Indication indication = MessageFactory.createBindingIndication();
+
+        TransactionID tran = TransactionID.createNewTransactionID();
+        tran.setApplicationData(candidatePair);
+
+        try
+        {
+            TransportAddress localAddr = localCandidate.getBase().
+                getTransportAddress();
+
+            stunStack.sendIndication(
+                        indication,
+                        candidatePair
+                            .getRemoteCandidate().getTransportAddress(),
+                        localAddr);
+            if(logger.isLoggable(Level.FINEST))
+            {
+                logger.finest(
+                        "sending binding indication to pair " + candidatePair);
+            }
+        }
+        catch (Exception ex)
+        {
+            IceSocketWrapper stunSocket = localCandidate.getStunSocket(null);
+            if(stunSocket != null)
+                logger.log(
+                    Level.INFO,
+                    "Failed to send " + indication
+                        + " through " + stunSocket.getLocalSocketAddress(),
+                    ex);
+            stunSocket = null;
+            tran = null;
+        }
+    }
+
+    /**
      * Creates a STUN {@link Request} containing the necessary PRIORITY and
      * CONTROLLING/CONTROLLED attributes. Also stores a reference to
      * <tt>candidatePair</tt> in the newly created transactionID so that we

@@ -1539,13 +1539,13 @@ public class Agent
                     setState(IceProcessingState.COMPLETED);
 
                     // keep ICE running (answer binding request)
-                    if(compatibilityMode == CompatibilityMode.GTALK
-                            && stunKeepAliveThread == null)
+                    if(stunKeepAliveThread == null)
                     {
                         // schedule STUN checks for selected candidates
                         scheduleSTUNKeepAlive();
                     }
-                    else if(compatibilityMode == CompatibilityMode.RFC5245)
+
+                    if(compatibilityMode == CompatibilityMode.RFC5245)
                     {
                         scheduleTermination();
                     }
@@ -1951,7 +1951,8 @@ public class Agent
      */
     public void runInStunKeepAliveThread()
     {
-        while(state == IceProcessingState.COMPLETED)
+        while(state == IceProcessingState.COMPLETED || state ==
+            IceProcessingState.TERMINATED)
         {
             List<IceMediaStream> streams = getStreams();
 
@@ -1964,7 +1965,14 @@ public class Agent
 
                     if(pair != null)
                     {
-                        connCheckClient.startCheckForPair(pair);
+                        if(compatibilityMode == CompatibilityMode.GTALK)
+                        {
+                            connCheckClient.startCheckForPair(pair);
+                        }
+                        else if(compatibilityMode == CompatibilityMode.RFC5245)
+                        {
+                            connCheckClient.sendBindingIndicationForPair(pair);
+                        }
                         pair = null;
                     }
                 }
