@@ -320,6 +320,19 @@ public class MessageFactory
     }
 
     /**
+     * Creates a default binding indication.
+     *
+     * @return a default binding indication.
+     */
+    public static Indication createBindingIndication()
+    {
+        Indication bindingIndication = new Indication();
+
+        bindingIndication.setMessageType(Message.BINDING_INDICATION);
+        return bindingIndication;
+    }
+
+    /**
      * Create an allocate request without attribute.
      *
      * @return an allocate request
