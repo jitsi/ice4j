@@ -383,9 +383,15 @@ public class IceMediaStream
                         try
                         {
                             Socket sock = new MultiplexingSocket();
+                            int timeout = sock.getSoTimeout();
+                            sock.setSoTimeout(1000);
+
                             sock.connect(new InetSocketAddress(
                                 remoteCnd.getTransportAddress().getAddress(),
-                                remoteCnd.getTransportAddress().getPort()));
+                                remoteCnd.getTransportAddress().getPort()),
+                                1000);
+
+                            sock.setSoTimeout(timeout);
                             LocalCandidate tmp =
                                 new HostCandidate(new IceTcpSocketWrapper(sock),
                                     component);
@@ -394,6 +400,8 @@ public class IceMediaStream
                         }
                         catch (IOException e)
                         {
+                            logger.info("Failed to TCP connect to " +
+                                remoteCnd.getTransportAddress());
                             continue;
                         }
                     }
