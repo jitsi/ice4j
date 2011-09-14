@@ -638,13 +638,17 @@ class ConnectivityCheckClient
             }
         }
 
+        logger.info("IsControlling: "  + parentAgent.isControlling() +
+            " USE-CANDIDATE:" +
+            request.containsAttribute(Attribute.USE_CANDIDATE));
+
         //If the agent was a controlling agent, and it had included a USE-
         //CANDIDATE attribute in the Binding request, the valid pair generated
         //from that check has its nominated flag set to true.
         if((parentAgent.isControlling()
-                && (request.containsAttribute(Attribute.USE_CANDIDATE)) ||
-                parentAgent.getCompatibilityMode() ==
-                            CompatibilityMode.GTALK) && validPair.isNominated())
+                && request.containsAttribute(Attribute.USE_CANDIDATE)) ||
+                ((parentAgent.getCompatibilityMode() ==
+                           CompatibilityMode.GTALK) && validPair.isNominated()))
         {
             logger.info("Nomination confirmed for pair: " +
                     validPair.toShortString());
