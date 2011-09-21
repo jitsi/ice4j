@@ -1093,7 +1093,8 @@ public class Agent
             {
                 for(LocalCandidate cnd : c.getLocalCandidates())
                 {
-                    if(cnd != null && cnd.getUfrag().equals(ufrag))
+                    if(cnd != null && cnd.getUfrag() != null &&
+                        cnd.getUfrag().equals(ufrag))
                         return cnd;
                 }
             }
