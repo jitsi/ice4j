@@ -489,7 +489,7 @@ public class StunStack
         }
         else if( sTran.isRetransmitting())
         {
-            throw new StunException(StunException.TRANSACTION_DOES_NOT_EXIST,
+            throw new StunException(StunException.TRANSACTION_ALREADY_ANSWERED,
                                     "The transaction specified in the response "
                                     + "(tid="+ tid.toString() +") "
                                     + "has already seen a previous response. "
@@ -690,6 +690,19 @@ public class StunStack
                 Response error;
 
                 logger.log(Level.INFO, "Received an invalid request.", t);
+                Throwable cause = t.getCause();
+
+                if(((t instanceof StunException) &&
+                    ((StunException)t).getID() ==
+                        StunException.TRANSACTION_ALREADY_ANSWERED) ||
+                    (cause != null && (cause instanceof StunException) &&
+                    ((StunException)cause).getID() ==
+                        StunException.TRANSACTION_ALREADY_ANSWERED))
+                {
+                    // do not try to send an error response since we will
+                    // get another TRANSACTION_ALREADY_ANSWERED
+                    return;
+                }
 
                 if(t instanceof IllegalArgumentException)
                 {
