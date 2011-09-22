@@ -53,6 +53,11 @@ public class StunException extends Exception
      */
     public static final int NETWORK_ERROR = 4;
 
+    /**
+     * Thrown when trying to send responses through a transaction that have
+     * already sent a response.
+     */
+    public static final int TRANSACTION_ALREADY_ANSWERED = 5;
 
     /**
      * Identifies the exception.
