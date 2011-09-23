@@ -446,7 +446,8 @@ public abstract class Message
     {
         char length = 0;
 
-        for (Attribute att : attributes.values())
+        List<Attribute> attrs = getAttributes();
+        for (Attribute att : attrs)
         {
             int attLen = att.getDataLength() + Attribute.HEADER_LENGTH;
 
@@ -468,7 +469,9 @@ public abstract class Message
     {
         char length = 0;
 
-        for (Attribute att : attributes.values())
+        List<Attribute> attrs = getAttributes();
+
+        for (Attribute att : attrs)
         {
             int attLen = att.getDataLength() + Attribute.HEADER_LENGTH;
             length += attLen;
@@ -497,7 +500,10 @@ public abstract class Message
                                     + getName());
         }
 
-        attributes.put(attribute.getAttributeType(), attribute);
+        synchronized(attributes)
+        {
+            attributes.put(attribute.getAttributeType(), attribute);
+        }
     }
 
     /**
@@ -524,7 +530,10 @@ public abstract class Message
      */
     public Attribute getAttribute(char attributeType)
     {
-        return attributes.get(attributeType);
+        synchronized(attributes)
+        {
+            return attributes.get(attributeType);
+        }
     }
 
     /**
@@ -534,7 +543,10 @@ public abstract class Message
      */
     public List<Attribute> getAttributes()
     {
-        return new LinkedList<Attribute>(attributes.values());
+        synchronized(attributes)
+        {
+            return new LinkedList<Attribute>(attributes.values());
+        }
     }
 
     /**
@@ -546,7 +558,10 @@ public abstract class Message
      */
     public Attribute removeAttribute(char attributeType)
     {
-        return attributes.remove(attributeType);
+        synchronized(attributes)
+        {
+            return attributes.remove(attributeType);
+        }
     }
 
     /**
