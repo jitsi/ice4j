@@ -86,6 +86,21 @@ public class DefaultNominator
             return;
         }
 
+        if(evt.getSource() instanceof CandidatePair)
+        {
+            CandidatePair validPair = (CandidatePair)evt.getSource();
+
+
+            // do not nominate pair if there is currently a selected pair for
+            // the component
+            if(validPair.getParentComponent().getSelectedPair() != null)
+            {
+                logger.info("Keep-alive for pair: " +
+                    validPair.toShortString());
+                return;
+            }
+        }
+
         if(strategy == NominationStrategy.NOMINATE_FIRST_VALID)
             strategyNominateFirstValid(evt);
         else if (strategy == NominationStrategy.NOMINATE_HIGHEST_PRIO)
@@ -184,7 +199,9 @@ public class DefaultNominator
             TimerTask task = validatedCandidates.get(
                     validPair.getParentComponent().toShortString());
             boolean isRelayed =
-                validPair.getLocalCandidate() instanceof RelayedCandidate ||
+                (validPair.getLocalCandidate() instanceof RelayedCandidate) ||
+                validPair.getLocalCandidate().getType().equals(
+                    CandidateType.RELAYED_CANDIDATE) ||
                 validPair.getRemoteCandidate().getType().equals(
                     CandidateType.RELAYED_CANDIDATE);
 
@@ -235,7 +252,7 @@ public class DefaultNominator
         /**
          * Wait time in milliseconds.
          */
-        private static final int WAIT_TIME = 1000;
+        private static final int WAIT_TIME = 800;
 
         /**
          * The relayed candidate pair.

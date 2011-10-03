@@ -650,9 +650,17 @@ class ConnectivityCheckClient
                 ((parentAgent.getCompatibilityMode() ==
                            CompatibilityMode.GTALK) && validPair.isNominated()))
         {
-            logger.info("Nomination confirmed for pair: " +
+            if(validPair.getParentComponent().getSelectedPair() == null)
+            {
+                logger.info("Nomination confirmed for pair: " +
+                        validPair.toShortString());
+                parentAgent.nominationConfirmed( validPair );
+            }
+            else
+            {
+                logger.info("Keep alive for pair: " +
                     validPair.toShortString());
-            parentAgent.nominationConfirmed( validPair );
+            }
         }
         //If the agent is the controlled agent, the response may be the result
         //of a triggered check that was sent in response to a request that
@@ -662,9 +670,17 @@ class ConnectivityCheckClient
         else if(checkedPair.useCandidateReceived()
                  && ! checkedPair.isNominated())
         {
-            logger.info("Nomination confirmed for pair: " +
+            if(checkedPair.getParentComponent().getSelectedPair() == null)
+            {
+                logger.info("Nomination confirmed for pair: " +
+                        validPair.toShortString());
+                parentAgent.nominationConfirmed( checkedPair );
+            }
+            else
+            {
+                logger.info("Keep alive for pair: " +
                     validPair.toShortString());
-            parentAgent.nominationConfirmed( checkedPair );
+            }
         }
     }
 
