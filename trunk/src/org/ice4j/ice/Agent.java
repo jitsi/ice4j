@@ -462,6 +462,8 @@ public class Agent
             //trigger a check for those candidate pairs.
             if(this.preDiscoveredPairsQueue.size() > 0)
             {
+                logger.info("Trigger checks for pairs that were received " +
+                        "before running state");
                 Iterator<CandidatePair> it = preDiscoveredPairsQueue.iterator();
 
                 while(it.hasNext())
@@ -1256,6 +1258,8 @@ public class Agent
                 return;
             }
 
+            useCandidate = pair.useCandidateReceived();
+
             remoteCandidate = new RemoteCandidate(
                     remoteAddress, parentComponent,
                     CandidateType.PEER_REFLEXIVE_CANDIDATE,
@@ -1277,6 +1281,9 @@ public class Agent
         CandidatePair triggeredPair
             = new CandidatePair(localCandidate, remoteCandidate);
 
+
+        logger.info("set use-candidate " + useCandidate + " for pair " +
+            triggeredPair.toShortString());
         if(useCandidate)
         {
             triggeredPair.setUseCandidateReceived();
@@ -1288,6 +1295,9 @@ public class Agent
             {
                 //we are started, which means we have the remote candidates
                 //so it's now safe to go and see whether this is a new PR cand.
+                logger.info("Receive check from " +
+                    triggeredPair.toShortString() +
+                    "triggered a check");
                 triggerCheck(triggeredPair);
             }
             else
@@ -1323,8 +1333,7 @@ public class Agent
         {
             //if the incoming request contained a USE-CANDIDATE attribute then
             //make sure we don't lose this piece of info.
-            if (triggerPair.useCandidateReceived() ||
-                    compatibilityMode == CompatibilityMode.GTALK)
+            if (triggerPair.useCandidateReceived())
                 knownPair.setUseCandidateReceived();
 
             triggerPair = knownPair;
@@ -1337,6 +1346,7 @@ public class Agent
                 //7.2.1.5. Updating the Nominated Flag
                 if (!isControlling() && triggerPair.useCandidateReceived())
                 {
+                    logger.info("update nominated flag");
                     // If the Binding request received by the agent had the
                     // USE-CANDIDATE attribute set, and the agent is in the
                     // controlled role, the agent looks at the state of the
@@ -1353,6 +1363,12 @@ public class Agent
                     //make the call below in order to make sure that we update
                     //ICE processing state.
                     checkListStatesUpdated();
+                }
+                else if(!isControlling())
+                {
+                    //next time we will see a request it will be considered as
+                    // having USE-CANDIDATE
+                    triggerPair.setUseCandidateReceived();
                 }
 
                 return;

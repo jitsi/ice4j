@@ -121,7 +121,8 @@ class ConnectivityCheckServer
             /* Google Talk ICE dialect considers every request to have
              * USE-CANDIDATE behavior.
              */
-            useCandidate = true;
+            // it will be set in Agent.incomingCheckReceived
+            useCandidate = false; //true;
 
             /* Google Talk STUN request does not contains PRIORITY attribute
              * set it to the peer reflexive value (0.9 * 1000);
@@ -140,6 +141,15 @@ class ConnectivityCheckServer
             priority = extractPriority(request);
             int colon = username.indexOf(":");
             remoteUfrag = username.substring(0, colon);
+        }
+
+        if(parentAgent.getCompatibilityMode() == CompatibilityMode.GTALK &&
+            parentAgent.findCandidatePair(localUFrag, remoteUfrag) == null)
+        {
+            logger.info("No candidate pair that match local and remote ufrag");
+            // no candidate pair for the moment so do not send response
+            // XXX maybe sent an error
+            return;
         }
 
         //tell our address handler we saw a new remote address;

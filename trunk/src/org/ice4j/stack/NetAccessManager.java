@@ -310,7 +310,7 @@ class NetAccessManager
     }
 
     /**
-     * Starts all message processors
+     * Stops message processors until processors count equals newSize.
      *
      * @param newSize the new thread pool size
      */

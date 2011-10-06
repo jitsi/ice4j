@@ -189,53 +189,62 @@ public class DefaultNominator
      * @param evt the {@link PropertyChangeEvent} containing the pair which
      * has been validated.
      */
-    private synchronized void strategyNominateFirstHostOrReflexiveValid(
+    private void strategyNominateFirstHostOrReflexiveValid(
             PropertyChangeEvent evt)
     {
         if(IceMediaStream.PROPERTY_PAIR_VALIDATED.equals(evt.getPropertyName()))
         {
             CandidatePair validPair = (CandidatePair)evt.getSource();
 
-            TimerTask task = validatedCandidates.get(
-                    validPair.getParentComponent().toShortString());
+            TimerTask task = null;
             boolean isRelayed =
                 (validPair.getLocalCandidate() instanceof RelayedCandidate) ||
                 validPair.getLocalCandidate().getType().equals(
                     CandidateType.RELAYED_CANDIDATE) ||
                 validPair.getRemoteCandidate().getType().equals(
                     CandidateType.RELAYED_CANDIDATE);
+            boolean nominate = false;
 
-            if(isRelayed && task == null)
+            synchronized(validatedCandidates)
             {
-                /* armed a timer and see if a host or server reflexive pair
-                 * gets nominated. Otherwise nominate the relayed candidate pair
-                 */
-                Timer timer = new Timer();
-                task = new RelayedCandidateTask(validPair);
+                task = validatedCandidates.get(
+                    validPair.getParentComponent().toShortString());
 
-                logger.info("Wait timeout to nominate relayed candidate");
-                timer.schedule(task, 0);
-                synchronized(validatedCandidates)
+                if(isRelayed && task == null)
                 {
+                    /* armed a timer and see if a host or server reflexive pair
+                     * gets nominated. Otherwise nominate the relayed candidate
+                     * pair
+                     */
+                    Timer timer = new Timer();
+                    task = new RelayedCandidateTask(validPair);
+
+                    logger.info("Wait timeout to nominate relayed candidate");
+                    timer.schedule(task, 0);
                     validatedCandidates.put(
-                            validPair.getParentComponent().toShortString(),
+                             validPair.getParentComponent().toShortString(),
                             task);
                 }
-            }
-            else if(!isRelayed)
-            {
-                // host or server reflexive candidate pair
-                if(task != null)
+                else if(!isRelayed)
                 {
-                    task.cancel();
-                    logger.info("Found a better candidate pair to nominate for "
-                            + validPair.getParentComponent().toShortString());
-                }
+                    // host or server reflexive candidate pair
+                    if(task != null)
+                    {
+                        task.cancel();
+                        logger.info(
+                            "Found a better candidate pair to nominate for "
+                                    + validPair.getParentComponent().
+                                        toShortString());
+                    }
 
-                logger.info("Nominate (first highest valid): " +
-                        validPair.toShortString());
-                parentAgent.nominate(validPair);
+                    logger.info("Nominate (first highest valid): " +
+                            validPair.toShortString());
+                    nominate = true;
+                }
             }
+
+            if(nominate)
+                parentAgent.nominate(validPair);
         }
     }
 

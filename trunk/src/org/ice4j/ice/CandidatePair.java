@@ -46,6 +46,13 @@ public class CandidatePair
     private boolean useCandidate = false;
 
     /**
+     * A flag indicating whether we have sent a check request that
+     * contained the USE-CANDIDATE attribute for this pair. It is used in
+     * GTalk compatibility mode as it lacks USE-CANDIDATE.
+     */
+    private boolean useCandidateSent = false;
+
+    /**
      * Indicates whether this <tt>CandidatePair</tt> is on any of this agent's
      *  valid pair lists.
      */
@@ -509,6 +516,26 @@ public class CandidatePair
     public TransactionID getConnectivityCheckTransaction()
     {
         return connCheckTranID;
+    }
+
+    /**
+     * Raises the <tt>useCandidateSent</tt> flag for this pair.
+     */
+    public void setUseCandidateSent()
+    {
+        this.useCandidateSent = true;
+    }
+
+    /**
+     * Returns <tt>true</tt> if someone has previously raised this pair's
+     * <tt>useCandidateSent</tt> flag and <tt>false</tt> otherwise.
+     *
+     * @return <tt>true</tt> if someone has previously raised this pair's
+     * <tt>useCandidate</tt> flag and <tt>false</tt> otherwise.
+     */
+    public boolean useCandidateSent()
+    {
+        return useCandidateSent;
     }
 
     /**

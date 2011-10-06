@@ -182,6 +182,16 @@ class ConnectivityCheckClient
                 AttributeFactory.createUsernameAttribute(localUserName);
 
             request.addAttribute(unameAttr);
+
+            if (parentAgent.isControlling())
+            {
+                //if we are the controlling agent then we need to indicate our
+                //nominated pairs.
+                if(candidatePair.isNominated())
+                {
+                    candidatePair.setUseCandidateSent();
+                }
+            }
         }
         else
         {
@@ -497,9 +507,24 @@ class ConnectivityCheckClient
                 Transport.TCP);
         }
 
-        LocalCandidate validLocalCandidate = parentAgent
-                                       .findLocalCandidate(mappedAddress);
-        // XXX GTALK, find local candidate with ufrag rather than mapped address
+        LocalCandidate validLocalCandidate = null;
+
+        if(parentAgent.getCompatibilityMode() == CompatibilityMode.GTALK)
+        {
+            // find local candidate with ufrag rather than mapped address
+            UsernameAttribute uname = (UsernameAttribute)request
+                .getAttribute(Attribute.USERNAME);
+            String username = new String(uname.getUsername());
+            String ufrag = username.substring(16, 32);
+            validLocalCandidate = parentAgent.findLocalCandidate(mappedAddress,
+                ufrag);
+        }
+        else if(parentAgent.getCompatibilityMode() == CompatibilityMode.RFC5245)
+        {
+            validLocalCandidate = parentAgent
+                .findLocalCandidate(mappedAddress);
+        }
+
         Candidate validRemoteCandidate = checkedPair.getRemoteCandidate();
 
         // RFC 5245: The agent checks the mapped address from the STUN
@@ -648,7 +673,8 @@ class ConnectivityCheckClient
         if((parentAgent.isControlling()
                 && request.containsAttribute(Attribute.USE_CANDIDATE)) ||
                 ((parentAgent.getCompatibilityMode() ==
-                           CompatibilityMode.GTALK) && validPair.isNominated()))
+                           CompatibilityMode.GTALK) && //validPair.isNominated()))
+                           checkedPair.useCandidateSent()))
         {
             if(validPair.getParentComponent().getSelectedPair() == null)
             {
@@ -667,8 +693,9 @@ class ConnectivityCheckClient
         //itself had the USE-CANDIDATE attribute.  This case is described in
         //Section 7.2.1.5, and may now result in setting the nominated flag for
         //the pair learned from the original request.
-        else if(checkedPair.useCandidateReceived()
-                 && ! checkedPair.isNominated())
+        else if(!parentAgent.isControlling() &&
+            checkedPair.useCandidateReceived() &&
+            !checkedPair.isNominated())
         {
             if(checkedPair.getParentComponent().getSelectedPair() == null)
             {
@@ -939,7 +966,10 @@ class ConnectivityCheckClient
             {
                 synchronized (paceMakers)
                 {
-                    paceMakers.remove(this);
+                    synchronized(this)
+                    {
+                        paceMakers.remove(this);
+                    }
                 }
             }
         }

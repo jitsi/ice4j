@@ -381,7 +381,7 @@ public abstract class Candidate
          */
         if(candidateType == CandidateType.HOST_CANDIDATE)
         {
-           priority += 1 * 1000 -
+           priority += 0.95 * 1000 -
                (this.getBase().getTransport() == Transport.TCP ? 200 : 0);
         }
         else if(candidateType == CandidateType.PEER_REFLEXIVE_CANDIDATE)
@@ -404,7 +404,7 @@ public abstract class Candidate
 
         // IPv6 has better priority than IPv4
         if(addr instanceof Inet6Address)
-            priority += 10;
+            priority += 50;
 
         return priority;
     }
