@@ -347,8 +347,8 @@ public class IceMediaStream
      * pair and extract.
      * @param checkList the list that we need to update with the new pairs.
      */
-    private void createCheckList(Component           component,
-                                 List<CandidatePair> checkList)
+    private void createCheckList(final Component           component,
+                                 final List<CandidatePair> checkList)
     {
         List<LocalCandidate> localCnds = component.getLocalCandidates();
         List<Candidate> remoteCnds = component.getRemoteCandidates();
@@ -377,36 +377,53 @@ public class IceMediaStream
                         parentAgent.getCompatibilityMode() ==
                             CompatibilityMode.GTALK)
                     {
-                        /* for TCP, create a new Candidate (a new connection)
-                         * to each of remote TCP candidates
-                         */
-                        try
-                        {
-                            Socket sock = new MultiplexingSocket();
-                            int timeout = sock.getSoTimeout();
-                            sock.setSoTimeout(1000);
+                        final LocalCandidate loc = localCnd;
+                        final Candidate remot = remoteCnd;
 
-                            sock.connect(new InetSocketAddress(
-                                remoteCnd.getTransportAddress().getAddress(),
-                                remoteCnd.getTransportAddress().getPort()),
-                                1000);
-
-                            sock.setSoTimeout(timeout);
-                            LocalCandidate tmp =
-                                new HostCandidate(new IceTcpSocketWrapper(sock),
-                                    component);
-                            tmp.setUfrag(localCnd.getUfrag());
-                            localCnd = tmp;
-                        }
-                        catch (IOException e)
+                        new Thread()
                         {
-                            logger.info("Failed to TCP connect to " +
-                                remoteCnd.getTransportAddress());
-                            continue;
-                        }
+                            public void run()
+                            {
+                                /* for TCP, create a new Candidate (a new
+                                 * connection) to each of remote TCP candidates
+                                 */
+                                try
+                                {
+                                    Socket sock = new MultiplexingSocket();
+                                    int timeout = sock.getSoTimeout();
+                                    sock.setSoTimeout(1000);
+
+                                    sock.connect(new InetSocketAddress(
+                                        remot.getTransportAddress().
+                                            getAddress(),
+                                        remot.getTransportAddress().
+                                            getPort()),
+                                        1000);
+
+                                    sock.setSoTimeout(timeout);
+                                    LocalCandidate tmp =
+                                        new HostCandidate(
+                                            new IceTcpSocketWrapper(sock),
+                                            component);
+                                    tmp.setUfrag(loc.getUfrag());
+
+                                    CandidatePair pair = new CandidatePair(tmp,
+                                        remot);
+                                    checkList.add(pair);
+                                }
+                                catch (IOException e)
+                                {
+                                    logger.info("Failed to TCP connect to " +
+                                        remot.getTransportAddress());
+                                    return;
+                                }
+                            }
+                        }.start();
+                        return;
                     }
-                    CandidatePair pair = new CandidatePair(localCnd, remoteCnd);
 
+                    CandidatePair pair = new CandidatePair(localCnd,
+                        remoteCnd);
                     checkList.add(pair);
                 }
             }
