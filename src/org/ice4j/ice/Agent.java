@@ -1244,7 +1244,6 @@ public class Agent
         }
 
         Component parentComponent = localCandidate.getParentComponent();
-
         RemoteCandidate remoteCandidate = null;
 
         // we need to find the username for the couple
@@ -1280,7 +1279,6 @@ public class Agent
 
         CandidatePair triggeredPair
             = new CandidatePair(localCandidate, remoteCandidate);
-
 
         logger.info("set use-candidate " + useCandidate + " for pair " +
             triggeredPair.toShortString());
@@ -1322,9 +1320,17 @@ public class Agent
     {
         //first check whether we already know about the remote address in case
         //we've just discovered a peer-reflexive candidate.
-        CandidatePair knownPair =  this.findCandidatePair(
+        CandidatePair knownPair = null;
+
+        if(compatibilityMode == CompatibilityMode.RFC5245)
+            knownPair = this.findCandidatePair(
                     triggerPair.getLocalCandidate().getTransportAddress(),
                     triggerPair.getRemoteCandidate().getTransportAddress());
+        else
+            knownPair = findCandidatePair(
+                            ((RemoteCandidate)triggerPair.getRemoteCandidate()).
+                                getUfrag(),
+                                triggerPair.getLocalCandidate().getUfrag());
 
         IceMediaStream parentStream = triggerPair.getLocalCandidate()
             .getParentComponent().getParentStream();
@@ -1364,7 +1370,8 @@ public class Agent
                     //ICE processing state.
                     checkListStatesUpdated();
                 }
-                else if(!isControlling())
+                else if(compatibilityMode != CompatibilityMode.RFC5245 &&
+                    !isControlling())
                 {
                     //next time we will see a request it will be considered as
                     // having USE-CANDIDATE
