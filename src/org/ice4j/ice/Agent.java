@@ -1217,7 +1217,8 @@ public class Agent
      * {@link org.ice4j.message.Request} contained the USE-CANDIDATE ICE
      * attribute.
      */
-    protected void incomingCheckReceived(TransportAddress remoteAddress,
+    protected void incomingCheckReceived(
+                                         TransportAddress remoteAddress,
                                          TransportAddress localAddress,
                                          long             priority,
                                          String           remoteUFrag,
@@ -1337,6 +1338,10 @@ public class Agent
 
         if (knownPair != null)
         {
+            boolean useCand = false;
+
+            useCand = triggerPair.useCandidateReceived();
+
             //if the incoming request contained a USE-CANDIDATE attribute then
             //make sure we don't lose this piece of info.
             if (triggerPair.useCandidateReceived())
@@ -1347,10 +1352,20 @@ public class Agent
             //we already know about the remote address so we only need to
             //trigger a check for the existing pair
 
+            if(compatibilityMode != CompatibilityMode.RFC5245 &&
+                !isControlling())
+            {
+                logger.info("set useCandidateReceived for " +
+                    triggerPair.toShortString());
+                //next time we will see a request it will be considered as
+                // having USE-CANDIDATE
+                triggerPair.setUseCandidateReceived();
+            }
+
             if (knownPair.getState() == CandidatePairState.SUCCEEDED )
             {
                 //7.2.1.5. Updating the Nominated Flag
-                if (!isControlling() && triggerPair.useCandidateReceived())
+                if (!isControlling() && useCand)
                 {
                     logger.info("update nominated flag");
                     // If the Binding request received by the agent had the
@@ -1369,13 +1384,6 @@ public class Agent
                     //make the call below in order to make sure that we update
                     //ICE processing state.
                     checkListStatesUpdated();
-                }
-                else if(compatibilityMode != CompatibilityMode.RFC5245 &&
-                    !isControlling())
-                {
-                    //next time we will see a request it will be considered as
-                    // having USE-CANDIDATE
-                    triggerPair.setUseCandidateReceived();
                 }
 
                 return;
