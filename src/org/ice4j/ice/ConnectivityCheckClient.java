@@ -189,6 +189,8 @@ class ConnectivityCheckClient
                 //nominated pairs.
                 if(candidatePair.isNominated())
                 {
+                    logger.info("set useCandidateSent for " +
+                        candidatePair.toShortString());
                     candidatePair.setUseCandidateSent();
                 }
             }
@@ -517,8 +519,13 @@ class ConnectivityCheckClient
                 .getAttribute(Attribute.USERNAME);
             String username = new String(uname.getUsername());
             String ufrag = username.substring(16, 32);
-            validLocalCandidate = parentAgent.findLocalCandidate(mappedAddress,
-                ufrag);
+
+            if(mappedAddress.getTransport() == Transport.TCP)
+                validLocalCandidate = parentAgent.findLocalCandidate(
+                    mappedAddress);
+            else
+                validLocalCandidate = parentAgent.findLocalCandidate(
+                    mappedAddress, ufrag);
         }
         else if(parentAgent.getCompatibilityMode() == CompatibilityMode.RFC5245)
         {
@@ -666,7 +673,8 @@ class ConnectivityCheckClient
 
         logger.info("IsControlling: "  + parentAgent.isControlling() +
             " USE-CANDIDATE:" +
-            request.containsAttribute(Attribute.USE_CANDIDATE));
+            (request.containsAttribute(Attribute.USE_CANDIDATE) ||
+            checkedPair.useCandidateSent()));
 
         //If the agent was a controlling agent, and it had included a USE-
         //CANDIDATE attribute in the Binding request, the valid pair generated
