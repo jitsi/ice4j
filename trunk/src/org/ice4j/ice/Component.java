@@ -340,6 +340,18 @@ public class Component
                 {
                     if(localCnd.canReach(remoteCnd))
                     {
+                        if(localCnd.getTransport() == Transport.TCP &&
+                            localCnd.getIceSocketWrapper().getTCPSocket().
+                                isConnected())
+                        {
+                            if(!localCnd.getIceSocketWrapper().getTCPSocket().
+                                getRemoteSocketAddress().equals(
+                                    remoteCnd.getTransportAddress()))
+                            {
+                                continue;
+                            }
+                        }
+
                         CandidatePair pair = new CandidatePair(localCnd,
                                 remoteCnd);
                         logger.info("new Pair added: " + pair.toShortString());
