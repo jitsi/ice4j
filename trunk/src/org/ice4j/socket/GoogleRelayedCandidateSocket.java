@@ -264,7 +264,7 @@ public class GoogleRelayedCandidateSocket
      *
      * @author Sebastien Vincent
      */
-    private class TCPOutputStream
+    protected class TCPOutputStream
         extends OutputStream
     {
         /**

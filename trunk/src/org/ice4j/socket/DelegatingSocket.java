@@ -795,9 +795,13 @@ public class DelegatingSocket
             inputStream = this.getInputStream();
         }
 
-        short desiredLength = (short)
-            (((inputStream.read() << 8) & 0xff) | (inputStream.read() & 0xff));
+        int fb = inputStream.read();
+        int sb = inputStream.read();
 
+        if(fb == -1 || sb == -1)
+            throw new SocketException("failed to read first two bytes");
+
+        int desiredLength = (((fb & 0xff) << 8) | (sb & 0xff));
         int readLen = 0;
         int offset = 0;
 

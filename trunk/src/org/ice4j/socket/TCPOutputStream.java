@@ -40,6 +40,7 @@ public class TCPOutputStream
     public void close()
         throws IOException
     {
+        outputStream.close();
     }
 
     /**
@@ -49,6 +50,7 @@ public class TCPOutputStream
     public void flush()
         throws IOException
     {
+        outputStream.flush();
     }
 
     /**
@@ -68,6 +70,14 @@ public class TCPOutputStream
     public void write(byte[] b, int off, int len)
         throws IOException
     {
+        // GoogleRelayedCandidateSocket will encapsulate data in TURN message
+        // so do not add framing here
+        if(outputStream instanceof GoogleRelayedCandidateSocket.TCPOutputStream)
+        {
+            outputStream.write(b, off, len);
+            return;
+        }
+
         byte data[] = new byte[len + 2];
         data[0] = (byte)((len >> 8) & 0xff);
         data[1] = (byte)(len & 0xff);
