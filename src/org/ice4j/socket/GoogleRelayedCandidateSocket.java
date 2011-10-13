@@ -319,8 +319,8 @@ public class GoogleRelayedCandidateSocket
         {
             DatagramPacket p = new DatagramPacket(
                 b,
-                off + 2,
-                len - 2,
+                off,
+                len,
                 target);
 
             send(p);
