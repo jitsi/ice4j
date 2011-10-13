@@ -1284,7 +1284,7 @@ public class Agent
         CandidatePair triggeredPair
             = new CandidatePair(localCandidate, remoteCandidate);
 
-        logger.info("set use-candidate " + useCandidate + " for pair " +
+        logger.fine("set use-candidate " + useCandidate + " for pair " +
             triggeredPair.toShortString());
         if(useCandidate)
         {
@@ -1297,7 +1297,7 @@ public class Agent
             {
                 //we are started, which means we have the remote candidates
                 //so it's now safe to go and see whether this is a new PR cand.
-                logger.info("Receive check from " +
+                logger.fine("Receive check from " +
                     triggeredPair.toShortString() +
                     "triggered a check");
                 triggerCheck(triggeredPair);
@@ -1369,7 +1369,7 @@ public class Agent
             if(compatibilityMode != CompatibilityMode.RFC5245 &&
                 !isControlling())
             {
-                logger.info("set useCandidateReceived for " +
+                logger.fine("set useCandidateReceived for " +
                     triggerPair.toShortString());
                 //next time we will see a request it will be considered as
                 // having USE-CANDIDATE
@@ -1381,7 +1381,7 @@ public class Agent
                 //7.2.1.5. Updating the Nominated Flag
                 if (!isControlling() && useCand)
                 {
-                    logger.info("update nominated flag");
+                    logger.fine("update nominated flag");
                     // If the Binding request received by the agent had the
                     // USE-CANDIDATE attribute set, and the agent is in the
                     // controlled role, the agent looks at the state of the
