@@ -95,7 +95,7 @@ public class DefaultNominator
             // the component
             if(validPair.getParentComponent().getSelectedPair() != null)
             {
-                logger.info("Keep-alive for pair: " +
+                logger.fine("Keep-alive for pair: " +
                     validPair.toShortString());
                 return;
             }

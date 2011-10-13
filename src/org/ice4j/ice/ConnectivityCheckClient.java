@@ -189,7 +189,7 @@ class ConnectivityCheckClient
                 //nominated pairs.
                 if(candidatePair.isNominated())
                 {
-                    logger.info("set useCandidateSent for " +
+                    logger.fine("set useCandidateSent for " +
                         candidatePair.toShortString());
                     candidatePair.setUseCandidateSent();
                 }
@@ -700,7 +700,7 @@ class ConnectivityCheckClient
             }
             else
             {
-                logger.info("Keep alive for pair: " +
+                logger.fine("Keep alive for pair: " +
                     validPair.toShortString());
             }
         }
@@ -722,7 +722,7 @@ class ConnectivityCheckClient
             }
             else
             {
-                logger.info("Keep alive for pair: " +
+                logger.fine("Keep alive for pair: " +
                     validPair.toShortString());
             }
         }
