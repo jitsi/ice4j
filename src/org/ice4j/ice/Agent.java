@@ -1229,8 +1229,11 @@ public class Agent
 
         if(compatibilityMode == CompatibilityMode.GTALK)
         {
-            localCandidate = findLocalCandidate(localAddress,
-                remoteUFrag);
+            if(localAddress.getTransport() == Transport.TCP)
+                localCandidate = findLocalCandidate(localAddress);
+            else
+                localCandidate = findLocalCandidate(localAddress,
+                    remoteUFrag);
         }
         else
         {
@@ -1328,10 +1331,21 @@ public class Agent
                     triggerPair.getLocalCandidate().getTransportAddress(),
                     triggerPair.getRemoteCandidate().getTransportAddress());
         else
-            knownPair = findCandidatePair(
+        {
+            if(triggerPair.getLocalCandidate().getTransport() == Transport.TCP)
+            {
+                knownPair = findCandidatePair(
+                    triggerPair.getLocalCandidate().getTransportAddress(),
+                    triggerPair.getRemoteCandidate().getTransportAddress());
+            }
+            else
+            {
+                knownPair = findCandidatePair(
                             ((RemoteCandidate)triggerPair.getRemoteCandidate()).
                                 getUfrag(),
                                 triggerPair.getLocalCandidate().getUfrag());
+            }
+        }
 
         IceMediaStream parentStream = triggerPair.getLocalCandidate()
             .getParentComponent().getParentStream();
@@ -1407,6 +1421,8 @@ public class Agent
             // Its state is set to Waiting [and it] is enqueued into the
             // triggered check queue.
             //
+            logger.info("Add peer CandidatePair with new reflexive address to" +
+                    " checkList");
             parentStream.addToCheckList(triggerPair);
         }
 
