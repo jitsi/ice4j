@@ -181,10 +181,12 @@ public class TCPInputStream
     public int read()
         throws IOException
     {
-        //getNextPacket();
+        getNextPacket();
+        int ret = currentPacket[currentPacketOffset];
+        currentPacketOffset++;
+        currentPacketLength--;
 
-        // TODO Auto-generated method stub
-        return 0;
+        return ret;
     }
 
     /**

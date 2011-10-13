@@ -756,14 +756,7 @@ public class DelegatingSocket
             outputStream = getOutputStream();
         }
 
-        int len = p.getLength();
-        int off = p.getOffset();
-        byte data[] = new byte[len + 2];
-        data[0] = (byte) ((len >> 8) & 0xff);
-        data[1] = (byte) (len & 0xff);
-        System.arraycopy(p.getData(), off, data, 2, len);
-        outputStream.write(data, 0, len + 2);
-        data = null;
+        outputStream.write(p.getData(), p.getOffset(), p.getLength());
     }
 
     /**
@@ -802,9 +795,22 @@ public class DelegatingSocket
             inputStream = this.getInputStream();
         }
 
-        inputStream.skip(2);
-        len = inputStream.read(data);
-        if (len > 0)
+        short desiredLength = (short)
+            (((inputStream.read() << 8) & 0xff) | (inputStream.read() & 0xff));
+
+        int readLen = 0;
+        int offset = 0;
+
+        while(readLen < desiredLength)
+        {
+            len = inputStream.read(data, offset, desiredLength - offset);
+            if(len == -1)
+                throw new SocketException("read failed");
+            offset += len;
+            readLen += len;
+        }
+
+        if (readLen == desiredLength)
         {
             p.setData(data);
             p.setLength(len);

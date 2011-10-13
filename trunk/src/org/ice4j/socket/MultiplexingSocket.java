@@ -62,6 +62,11 @@ public class MultiplexingSocket
     private final TCPInputStream inputStream = new TCPInputStream();
 
     /**
+     * Custom <tt>OutputStream</tt> for this <tt>Socket</tt>.
+     */
+    private TCPOutputStream outputStream = null;
+
+    /**
      * The <tt>Object</tt> which synchronizes the access to {@link #inReceive}.
      */
     private final Object receiveSyncRoot = new Object();
@@ -511,5 +516,19 @@ public class MultiplexingSocket
         throws IOException
     {
         return inputStream;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    public OutputStream getOutputStream()
+        throws IOException
+    {
+        if(outputStream == null)
+        {
+            outputStream = new TCPOutputStream(super.getOutputStream());
+        }
+
+        return outputStream;
     }
 }
