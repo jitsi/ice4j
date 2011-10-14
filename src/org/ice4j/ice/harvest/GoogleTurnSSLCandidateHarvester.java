@@ -127,16 +127,9 @@ public class GoogleTurnSSLCandidateHarvester
                 stunServer.getPort());
 
             OutputStream outputStream = sock.getOutputStream();
-            outputStream.write(SSL_CLIENT_HANDSHAKE);
-
             InputStream inputStream = sock.getInputStream();
-            byte data[] = new byte[SSL_SERVER_HANDSHAKE.length];
-            inputStream.read(data);
 
-            outputStream = null;
-            inputStream = null;
-
-            if(Arrays.equals(data, SSL_SERVER_HANDSHAKE))
+            if(sslHandshake(inputStream, outputStream))
             {
                 cand = new HostCandidate(new IceTcpSocketWrapper(
                     new MultiplexingSocket(sock)),
@@ -154,5 +147,35 @@ public class GoogleTurnSSLCandidateHarvester
         }
 
         return cand;
+    }
+
+    /**
+     * Do the SSL handshake (send client certificate and wait for receive server
+     * certificate). We explicitely need <tt>InputStream</tt> and
+     * <tt>OutputStream</tt> because some <tt>Socket</tt> may redefine
+     * getInputStream()/getOutputStream() and we need the original stream.
+     *
+     * @param inputStream <tt>InputStream</tt> of the socket
+     * @param outputStream <tt>OuputStream</tt> of the socket
+     * @return true if the SSL handshake is done
+     * @throws IOException if something goes wrong
+     */
+    public static boolean sslHandshake(InputStream inputStream, OutputStream
+        outputStream) throws IOException
+    {
+        byte data[] = new byte[SSL_SERVER_HANDSHAKE.length];
+
+        outputStream.write(SSL_CLIENT_HANDSHAKE);
+        inputStream.read(data);
+
+        outputStream = null;
+        inputStream = null;
+
+        if(Arrays.equals(data, SSL_SERVER_HANDSHAKE))
+        {
+            return true;
+        }
+
+        return false;
     }
 }

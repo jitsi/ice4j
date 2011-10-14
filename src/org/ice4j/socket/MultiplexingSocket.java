@@ -531,4 +531,28 @@ public class MultiplexingSocket
 
         return outputStream;
     }
+
+    /**
+     * Get original <tt>InputStream</tt>.
+     *
+     * @return original <tt>InputStream</tt>
+     * @throws IOException if something goes wrong
+     */
+    public InputStream getOriginalInputStream()
+        throws IOException
+    {
+        return super.getInputStream();
+    }
+
+    /**
+     * Get original <tt>OutputStream</tt>.
+     *
+     * @return original <tt>OutputStream</tt>
+     * @throws IOException if something goes wrong
+     */
+    public OutputStream getOriginalOutputStream()
+        throws IOException
+    {
+        return super.getOutputStream();
+    }
 }
