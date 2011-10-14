@@ -13,6 +13,7 @@ import java.util.*;
 import java.util.logging.*;
 
 import org.ice4j.*;
+import org.ice4j.ice.harvest.*;
 import org.ice4j.socket.*;
 
 /**
@@ -251,7 +252,7 @@ public class Component
                         continue;
                     }
 
-                    Socket sock = new MultiplexingSocket();
+                    MultiplexingSocket sock = new MultiplexingSocket();
                     try
                     {
                         // if we use proxy (socks5, ...), the connect() timeout
@@ -270,6 +271,25 @@ public class Component
                         sock.close();
                         sock = null;
                         continue;
+                    }
+
+                    if(candidate.getTransportAddress().getPort() == 443)
+                    {
+                        //SSLTCP handshake
+                        OutputStream outputStream =
+                            sock.getOriginalOutputStream();
+                        InputStream inputStream = sock.getOriginalInputStream();
+
+                        if(!GoogleTurnSSLCandidateHarvester.sslHandshake(
+                            inputStream, outputStream))
+                        {
+                            logger.info("Failed to connect to SSLTCP relay");
+                            outputStream = null;
+                            inputStream = null;
+                            continue;
+                        }
+                        outputStream = null;
+                        inputStream = null;
                     }
 
                     LocalCandidate tmp =
