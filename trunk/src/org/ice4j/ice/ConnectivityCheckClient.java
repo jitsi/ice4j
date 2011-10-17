@@ -169,6 +169,7 @@ class ConnectivityCheckClient
         //we don't need to do a canReach() verification here as it has been
         //already verified during the gathering process.
 
+        logger.fine("start check for " + candidatePair.toShortString());
         Request request = MessageFactory.createBindingRequest();
 
         if(parentAgent.getCompatibilityMode() == CompatibilityMode.GTALK)
@@ -689,8 +690,8 @@ class ConnectivityCheckClient
                 && request.containsAttribute(Attribute.USE_CANDIDATE)) ||
                 ((parentAgent.getCompatibilityMode() ==
                            CompatibilityMode.GTALK) &&
-                           //validPair.isNominated()))
-                           checkedPair.useCandidateSent()))
+                           validPair.isNominated()))
+                           //checkedPair.useCandidateSent()))
         {
             if(validPair.getParentComponent().getSelectedPair() == null)
             {
