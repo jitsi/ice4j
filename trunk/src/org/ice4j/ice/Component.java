@@ -340,14 +340,14 @@ public class Component
                     upnpBase = lc.getBase();
                 }
             }
-            if(upnpBase != null)
-            {
-                localCnds.remove(upnpBase);
-            }
+
             checkList = new Vector<CandidatePair>();
 
             for(LocalCandidate localCnd : localCnds)
             {
+                if(localCnd == upnpBase)
+                    continue;
+
                 if(parentStream.getParentAgent().
                     getCompatibilityMode() == CompatibilityMode.GTALK &&
                     localCnd.getIceSocketWrapper() instanceof
