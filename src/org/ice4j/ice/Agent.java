@@ -1261,7 +1261,17 @@ public class Agent
                 return;
             }
 
-            useCandidate = pair.useCandidateReceived();
+            CandidatePair pair2 = findCandidatePair(
+                localCandidate.getTransportAddress(),
+                remoteAddress);
+            if(pair2 == null)
+            {
+                useCandidate = false;
+            }
+            else
+            {
+                useCandidate = pair2.useCandidateReceived();
+            }
 
             remoteCandidate = new RemoteCandidate(
                     remoteAddress, parentComponent,
@@ -1326,26 +1336,9 @@ public class Agent
         //we've just discovered a peer-reflexive candidate.
         CandidatePair knownPair = null;
 
-        if(compatibilityMode == CompatibilityMode.RFC5245)
-            knownPair = this.findCandidatePair(
-                    triggerPair.getLocalCandidate().getTransportAddress(),
-                    triggerPair.getRemoteCandidate().getTransportAddress());
-        else
-        {
-            if(triggerPair.getLocalCandidate().getTransport() == Transport.TCP)
-            {
-                knownPair = findCandidatePair(
-                    triggerPair.getLocalCandidate().getTransportAddress(),
-                    triggerPair.getRemoteCandidate().getTransportAddress());
-            }
-            else
-            {
-                knownPair = findCandidatePair(
-                            ((RemoteCandidate)triggerPair.getRemoteCandidate()).
-                                getUfrag(),
-                                triggerPair.getLocalCandidate().getUfrag());
-            }
-        }
+        knownPair = this.findCandidatePair(
+                triggerPair.getLocalCandidate().getTransportAddress(),
+                triggerPair.getRemoteCandidate().getTransportAddress());
 
         IceMediaStream parentStream = triggerPair.getLocalCandidate()
             .getParentComponent().getParentStream();
@@ -1423,6 +1416,7 @@ public class Agent
             //
             logger.info("Add peer CandidatePair with new reflexive address to" +
                     " checkList");
+            triggerPair.setUseCandidateReceived();
             parentStream.addToCheckList(triggerPair);
         }
 

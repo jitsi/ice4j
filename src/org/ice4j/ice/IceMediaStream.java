@@ -352,9 +352,8 @@ public class IceMediaStream
     {
         List<LocalCandidate> localCnds = component.getLocalCandidates();
         List<Candidate> remoteCnds = component.getRemoteCandidates();
-
-        // remove UPnP base from local candidate
         LocalCandidate upnpBase = null;
+
         for(LocalCandidate lc : localCnds)
         {
             if(lc instanceof UPNPCandidate)
@@ -362,13 +361,13 @@ public class IceMediaStream
                 upnpBase = lc.getBase();
             }
         }
-        if(upnpBase != null)
-        {
-            localCnds.remove(upnpBase);
-        }
 
         for(LocalCandidate localCnd : localCnds)
         {
+            // Don't take into consideration UPnP base candidate
+            if(localCnd == upnpBase)
+                continue;
+
             for(Candidate remoteCnd : remoteCnds)
             {
                 if(localCnd.canReach(remoteCnd))
@@ -419,7 +418,7 @@ public class IceMediaStream
                                 }
                             }
                         }.start();
-                        return;
+                        continue;
                     }
 
                     CandidatePair pair = new CandidatePair(localCnd,
