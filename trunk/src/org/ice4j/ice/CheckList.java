@@ -390,7 +390,11 @@ public class CheckList
                      || (pair.getState() == CandidatePairState.IN_PROGRESS
                          && pair.getPriority() < nominatedPair.getPriority())))
             {
-                pairsIter.remove();
+                if(parentStream.getParentAgent().getCompatibilityMode() ==
+                    CompatibilityMode.RFC5245)
+                {
+                    pairsIter.remove();
+                }
             }
         }
 
