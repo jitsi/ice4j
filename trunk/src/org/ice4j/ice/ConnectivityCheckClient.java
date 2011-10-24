@@ -6,6 +6,7 @@
  */
 package org.ice4j.ice;
 
+import java.net.*;
 import java.util.*;
 import java.util.logging.*;
 
@@ -284,11 +285,21 @@ class ConnectivityCheckClient
         {
             IceSocketWrapper stunSocket = localCandidate.getStunSocket(null);
             if(stunSocket != null)
-                logger.log(
-                    Level.INFO,
-                    "Failed to send " + request
-                        + " through " + stunSocket.getLocalSocketAddress(),
-                    ex);
+            {
+                String msg = "Failed to send " + request
+                    + " through " + stunSocket.getLocalSocketAddress();
+
+                if((ex instanceof NoRouteToHostException) ||
+                    (ex.getMessage() != null &&
+                        ex.getMessage().equals("No route to host")))
+                {
+                    msg += " No route to host";
+                    ex = null;
+                }
+
+                logger.log(Level.INFO, msg, ex);
+
+            }
             stunSocket = null;
             tran = null;
         }
@@ -678,10 +689,13 @@ class ConnectivityCheckClient
             }
         }
 
-        logger.info("IsControlling: "  + parentAgent.isControlling() +
-            " USE-CANDIDATE:" +
-            (request.containsAttribute(Attribute.USE_CANDIDATE) ||
-            checkedPair.useCandidateSent()));
+        if(validPair.getParentComponent().getSelectedPair() == null)
+        {
+            logger.info("IsControlling: "  + parentAgent.isControlling() +
+                " USE-CANDIDATE:" +
+                    (request.containsAttribute(Attribute.USE_CANDIDATE) ||
+                        checkedPair.useCandidateSent()));
+        }
 
         //If the agent was a controlling agent, and it had included a USE-
         //CANDIDATE attribute in the Binding request, the valid pair generated
