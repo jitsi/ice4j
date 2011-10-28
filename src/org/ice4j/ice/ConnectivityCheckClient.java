@@ -596,7 +596,8 @@ class ConnectivityCheckClient
                     checkedPair.getLocalCandidate().getUfrag());
             }
 
-            logger.info("Receive a peer-reflexive candidate: " +
+            if(checkedPair.getParentComponent().getSelectedPair() == null)
+                logger.info("Receive a peer-reflexive candidate: " +
                     peerReflexiveCandidate.getTransportAddress());
         }
 
@@ -624,12 +625,14 @@ class ConnectivityCheckClient
         //The agent sets the state of the pair that *generated* the check to
         //Succeeded.  Note that, the pair which *generated* the check may be
         //different than the valid pair constructed above
-        logger.info("Pair succeeded: " + checkedPair.toShortString());
+        if(checkedPair.getParentComponent().getSelectedPair() == null)
+            logger.info("Pair succeeded: " + checkedPair.toShortString());
         checkedPair.setStateSucceeded();
 
         if(! validPair.isValid())
         {
-            logger.info("Pair validated: " + validPair.toShortString());
+            if(validPair.getParentComponent().getSelectedPair() == null)
+                logger.info("Pair validated: " + validPair.toShortString());
             parentAgent.validatePair(validPair);
         }
 

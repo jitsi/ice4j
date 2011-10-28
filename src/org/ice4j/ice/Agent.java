@@ -1414,8 +1414,9 @@ public class Agent
             // Its state is set to Waiting [and it] is enqueued into the
             // triggered check queue.
             //
-            logger.info("Add peer CandidatePair with new reflexive address to" +
-                    " checkList");
+            if(triggerPair.getParentComponent().getSelectedPair() == null)
+                logger.info("Add peer CandidatePair with new reflexive " +
+                        "address to checkList");
             triggerPair.setUseCandidateReceived();
             parentStream.addToCheckList(triggerPair);
         }
