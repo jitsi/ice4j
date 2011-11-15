@@ -727,8 +727,7 @@ class ConnectivityCheckClient
         //itself had the USE-CANDIDATE attribute.  This case is described in
         //Section 7.2.1.5, and may now result in setting the nominated flag for
         //the pair learned from the original request.
-        else if(parentAgent.getCompatibilityMode() ==
-            CompatibilityMode.RFC5245 && !parentAgent.isControlling() &&
+        else if(!parentAgent.isControlling() &&
             checkedPair.useCandidateReceived() &&
             !checkedPair.isNominated())
         {
