@@ -1307,9 +1307,11 @@ public class Agent
             {
                 //we are started, which means we have the remote candidates
                 //so it's now safe to go and see whether this is a new PR cand.
-                logger.fine("Receive check from " +
-                    triggeredPair.toShortString() +
-                    "triggered a check");
+                if(triggeredPair.getParentComponent().getSelectedPair() == null)
+                {
+                    logger.info("Receive check from " +
+                        triggeredPair.toShortString() + "triggered a check");
+                }
                 triggerCheck(triggeredPair);
             }
             else
@@ -1364,9 +1366,23 @@ public class Agent
             {
                 logger.fine("set useCandidateReceived for " +
                     triggerPair.toShortString());
-                //next time we will see a request it will be considered as
-                // having USE-CANDIDATE
-                triggerPair.setUseCandidateReceived();
+
+                // we synchronize here because the same pair object can be
+                // processed (in another thread) in ConnectivityCheckClient's
+                // processSuccessResponse. A controlled agent select its
+                // pair here if the pair state is succeeded (set in
+                // processSuccessResponse) or in processSuccessResponse if
+                // the pair has useCandidateReceived as true (set here). So be
+                // sure that if a binding response and a binding request (for
+                // the same check) from other peer come at the very same time,
+                // that we will trigger the nominationConfirmed (that will
+                // pass the pair as selected if it is the first time).
+                synchronized(triggerPair)
+                {
+                    //next time we will see a request it will be considered as
+                    //having USE-CANDIDATE
+                    triggerPair.setUseCandidateReceived();
+                }
             }
 
             if (knownPair.getState() == CandidatePairState.SUCCEEDED )

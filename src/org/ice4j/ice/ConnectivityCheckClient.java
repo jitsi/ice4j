@@ -622,12 +622,24 @@ class ConnectivityCheckClient
                         validRemoteCandidate);
         }
 
-        //The agent sets the state of the pair that *generated* the check to
-        //Succeeded.  Note that, the pair which *generated* the check may be
-        //different than the valid pair constructed above
-        if(checkedPair.getParentComponent().getSelectedPair() == null)
-            logger.info("Pair succeeded: " + checkedPair.toShortString());
-        checkedPair.setStateSucceeded();
+        // we synchronize here because the same pair object can be
+        // processed (in another thread) in Agent's triggerCheck.
+        // A controlled agent select its pair here if the pair has
+        // useCandidateReceived as true (set in triggerCheck)  or in t
+        // triggerCheck if the pair state is succeeded (set here). So be
+        // sure that if a binding response and a binding request (for
+        // the same check) from other peer come at the very same time,
+        // that we will trigger the nominationConfirmed (that will
+        // pass the pair as selected if it is the first time).
+        synchronized(checkedPair)
+        {
+            //The agent sets the state of the pair that *generated* the check to
+            //Succeeded.  Note that, the pair which *generated* the check may be
+            //different than the valid pair constructed above
+            if(checkedPair.getParentComponent().getSelectedPair() == null)
+                logger.info("Pair succeeded: " + checkedPair.toShortString());
+            checkedPair.setStateSucceeded();
+        }
 
         if(! validPair.isValid())
         {
