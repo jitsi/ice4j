@@ -147,9 +147,32 @@ class ConnectivityCheckServer
             parentAgent.findCandidatePair(localUFrag, remoteUfrag) == null)
         {
             logger.info("No candidate pair that match local and remote ufrag");
+
             // no candidate pair for the moment so do not send response
-            // XXX maybe sent an error
-            return;
+            // trigger an error so that other peer try again after some time
+            Response response = MessageFactory.createBindingErrorResponse(
+                ErrorCodeAttribute.STALE_CREDENTIALS);
+            ErrorCodeAttribute err = (ErrorCodeAttribute)response.getAttribute(
+                Attribute.ERROR_CODE);
+            // Gtalk error code is not RFC5389 compliant
+            err.setErrorClass((byte)0x01);
+            err.setErrorNumber((byte)0xae);
+
+            try
+            {
+                stunStack.sendResponse(
+                        evt.getTransactionID().getBytes(),
+                        response,
+                        evt.getLocalAddress(),
+                        evt.getRemoteAddress());
+
+                return;
+            }
+            catch(Exception exc)
+            {
+                //rethrow so that we would send a 500 response instead.
+                throw new RuntimeException("Failed to send a 430", exc);
+            }
         }
 
         //tell our address handler we saw a new remote address;
