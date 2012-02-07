@@ -1315,4 +1315,14 @@ public class StunCandidateHarvest
         else
             return false;
     }
+
+    /**
+     * Close the harvest.
+     */
+    public void close()
+    {
+        // stop keep alive thread
+        setSendKeepAliveMessageInterval(
+            SEND_KEEP_ALIVE_MESSAGE_INTERVAL_NOT_SPECIFIED);
+    }
 }

@@ -214,6 +214,11 @@ public class Agent
     private int generation = 0;
 
     /**
+     * Indicates that ICE will be shutdown.
+     */
+    private boolean shutdown = false;
+
+    /**
      * Creates an empty <tt>Agent</tt> with no streams, and no address.
      */
     public Agent()
@@ -451,6 +456,7 @@ public class Agent
         synchronized(startLock)
         {
             logger.info("Start ICE connectivity establishment");
+            shutdown = false;
             pruneNonMatchedStreams();
             initCheckLists();
 
@@ -1921,6 +1927,11 @@ public class Agent
     {
         logger.info("Free ICE agent");
 
+        shutdown = true;
+
+        if(stunKeepAliveThread != null)
+            stunKeepAliveThread.interrupt();
+
         /*
          * Set the IceProcessingState#TERMINATED state on this Agent unless it
          * is in a termination state already.
@@ -1945,6 +1956,10 @@ public class Agent
             }
             logger.info("remove stream " + stream.getName());
         }
+
+        getStunStack().shutDown();
+
+        logger.info("ICE agent freed");
     }
 
     /**
@@ -2013,6 +2028,9 @@ public class Agent
         while(state == IceProcessingState.COMPLETED || state ==
             IceProcessingState.TERMINATED)
         {
+            if(shutdown)
+                break;
+
             List<IceMediaStream> streams = getStreams();
 
             for(IceMediaStream stream : streams)
@@ -2039,6 +2057,9 @@ public class Agent
             }
 
             streams = null;
+
+            if(shutdown)
+                break;
 
             try
             {

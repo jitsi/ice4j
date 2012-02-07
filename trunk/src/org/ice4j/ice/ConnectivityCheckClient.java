@@ -152,6 +152,31 @@ class ConnectivityCheckClient
     }
 
     /**
+     * Start check for pair after some delay seconds
+     *
+     * @param candidatePair
+     * @param delay delay in millisecond
+     */
+    private void startDelayedCheckForPair(final CandidatePair candidatePair,
+        final int delay)
+    {
+        new Thread()
+        {
+            public void run()
+            {
+                try
+                {
+                    Thread.sleep(delay);
+                }
+                catch(Exception e)
+                {
+                }
+                startCheckForPair(candidatePair);
+            }
+        }.start();
+    }
+
+    /**
      * Creates a STUN {@link Request} containing the necessary PRIORITY and
      * CONTROLLING/CONTROLLED attributes. Also stores a reference to
      * <tt>candidatePair</tt> in the newly created transactionID so that we
@@ -834,12 +859,14 @@ class ConnectivityCheckClient
         {
             // it may be an error due to remote peer that does not processed
             // our candidates IQ and we start connectivity checks too quickly
-            //(that's why we get a STALE CREDENTIALS because remote peer doesn't
-            // know the candidate ufrag). So let's send another check for that
-            // pair
+            // (that's why we get a STALE CREDENTIALS because remote peer does
+            // not know the candidate ufrag). So let's send another check for
+            // that pair
             logger.info("stale credentials for GTalk check for " +
                 pair.toShortString());
-            startCheckForPair(pair);
+
+            // try again after some delay
+            startDelayedCheckForPair(pair, 50);
             return;
         }
         else
