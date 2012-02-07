@@ -247,6 +247,17 @@ class NetAccessManager
             ap.stop();
     }
 
+    /**
+     * Stops <tt>NetAccessManager</tt> and all of its <tt>MessageProcessor</tt>.
+     */
+    public void stop()
+    {
+        for(MessageProcessor mp : messageProcessors)
+        {
+            mp.stop();
+        }
+    }
+
     //---------------thread pool implementation --------------------------------
     /**
      * Adjusts the number of concurrently running MessageProcessors.

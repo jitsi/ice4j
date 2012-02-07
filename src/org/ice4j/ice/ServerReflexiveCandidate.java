@@ -8,6 +8,7 @@
 package org.ice4j.ice;
 
 import org.ice4j.*;
+import org.ice4j.ice.harvest.*;
 import org.ice4j.socket.*;
 
 /**
@@ -26,6 +27,10 @@ import org.ice4j.socket.*;
 public class ServerReflexiveCandidate
     extends LocalCandidate
 {
+    /**
+     * The STUN candidate harvest.
+     */
+    private final StunCandidateHarvest stunHarvest;
 
     /**
      * Creates a <tt>ServerReflexiveCandidate</tt> for the specified transport
@@ -43,11 +48,38 @@ public class ServerReflexiveCandidate
                                     TransportAddress stunSrvrAddr)
     {
         super(address,
+            base.getParentComponent(),
+            CandidateType.SERVER_REFLEXIVE_CANDIDATE);
+
+        setBase(base);
+        setStunServerAddress(stunSrvrAddr);
+        stunHarvest = null;
+    }
+
+    /**
+     * Creates a <tt>ServerReflexiveCandidate</tt> for the specified transport
+     * address, and base.
+     *
+     * @param address the {@link TransportAddress} that this <tt>Candidate</tt>
+     * is representing.
+     * @param base the {@link HostCandidate} that this server reflexive
+     * candidate was obtained through.
+     * @param stunSrvrAddr the {@link TransportAddress} of the stun server that
+     * reflected this candidate.
+     * @param stunHarvest the {@link StunCandidateHarvest}
+     */
+    public ServerReflexiveCandidate(TransportAddress address,
+                                    HostCandidate    base,
+                                    TransportAddress stunSrvrAddr,
+                                    StunCandidateHarvest stunHarvest)
+    {
+        super(address,
               base.getParentComponent(),
               CandidateType.SERVER_REFLEXIVE_CANDIDATE);
 
         setBase(base);
         setStunServerAddress(stunSrvrAddr);
+        this.stunHarvest = stunHarvest;
     }
 
     /**
@@ -60,5 +92,21 @@ public class ServerReflexiveCandidate
     public IceSocketWrapper getIceSocketWrapper()
     {
         return getBase().getIceSocketWrapper();
+    }
+
+    /**
+     * Frees resources allocated by this candidate such as its
+     * <tt>DatagramSocket</tt>, for example. The <tt>socket</tt> of this
+     * <tt>LocalCandidate</tt> is closed only if it is not the <tt>socket</tt>
+     * of the <tt>base</tt> of this <tt>LocalCandidate</tt>.
+     */
+    protected void free()
+    {
+        super.free();
+
+        if(stunHarvest != null)
+        {
+            stunHarvest.close();
+        }
     }
 }

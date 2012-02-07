@@ -792,6 +792,8 @@ public class StunStack
             if(tran != null)
                 tran.expire();
         }
+
+        netAccessManager.stop();
     }
 
     /**
