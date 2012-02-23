@@ -263,6 +263,9 @@ class ConnectivityCheckClient
                     candidatePair.getParentComponent().getParentStream().
                         getName());
 
+            if(localUserName == null)
+                return null;
+
             UsernameAttribute unameAttr =
                 AttributeFactory.createUsernameAttribute(localUserName);
 
@@ -866,7 +869,8 @@ class ConnectivityCheckClient
                 pair.toShortString());
 
             // try again after some delay
-            startDelayedCheckForPair(pair, 50);
+            //startDelayedCheckForPair(pair, 100);
+            startCheckForPair(pair);
             return;
         }
         else

@@ -404,7 +404,14 @@ public abstract class Candidate
 
         // IPv6 has better priority than IPv4
         if(addr instanceof Inet6Address)
-            priority += 50;
+        {
+            if(addr.isLinkLocalAddress())
+            {
+                priority += 40;
+            }
+            else
+                priority += 50;
+        }
 
         return priority;
     }
@@ -485,7 +492,7 @@ public abstract class Candidate
 
         InetAddress addr = getTransportAddress().getAddress();
 
-        //the following tries to reusse precedence from RFC 3484 but that's a
+        //the following tries to reuse precedence from RFC 3484 but that's a
         //bit tricky since it is not meant to be used exactly the way that
         //Johnnie seems to think.
 
