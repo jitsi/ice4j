@@ -1623,16 +1623,24 @@ public class Agent
                     {
                         for(Component c : stream.getComponents())
                         {
+                            StringBuffer buf = new StringBuffer(
+                                "Harvester selected for ");
+                            buf.append(c.toShortString());
+                            buf.append(" ");
+                            if(c.getSelectedPair() == null)
+                            {
+                                buf.append("none ");
+                                buf.append("(it means that conncheck failed)");
+                                logger.info(buf.toString());
+                                continue;
+                            }
+
                             TransportAddress serverAddr = c.getSelectedPair().
                                 getLocalCandidate().getStunServerAddress();
                             TransportAddress relayAddr =
                                 c.getSelectedPair().getLocalCandidate().
                                 getRelayServerAddress();
 
-                            StringBuffer buf = new StringBuffer(
-                                    "Harvester selected for ");
-                            buf.append(c.toShortString());
-                            buf.append(" ");
                             buf.append(c.getSelectedPair().getLocalCandidate().
                                     getType());
 

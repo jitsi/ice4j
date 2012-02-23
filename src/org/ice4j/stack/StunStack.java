@@ -293,6 +293,11 @@ public class StunStack
         }
         this.mode = mode;
         netAccessManager = new NetAccessManager(this);
+
+        if(mode == CompatibilityMode.GTALK)
+        {
+            netAccessManager.setThreadPoolSize(1);
+        }
     }
 
     /**
@@ -665,8 +670,20 @@ public class StunStack
                 sTran = new StunServerTransaction(this, serverTid,
                              event.getLocalAddress(), event.getRemoteAddress());
 
+                // if there is an OOM error here, it will lead to
+                // NetAccessManager.handleFatalError that will stop the
+                // MessageProcessor thread and restart it that will lead again
+                // to an OOM error and so on... So stop here right now
+                try
+                {
+                    sTran.start();
+                }
+                catch(OutOfMemoryError t)
+                {
+                    logger.info("STUN transaction thread start failed:" + t);
+                    return;
+                }
                 serverTransactions.put(serverTid, sTran);
-                sTran.start();
             }
 
             //validate attributes that need validation.
