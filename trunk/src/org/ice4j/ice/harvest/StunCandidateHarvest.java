@@ -391,7 +391,8 @@ public class StunCandidateHarvest
             new ServerReflexiveCandidate(
                     transportAddress,
                     hostCandidate,
-                    harvester.stunServer);
+                    harvester.stunServer,
+                    CandidateExtendedType.STUN_SERVER_REFLEXIVE_CANDIDATE);
     }
 
     /**

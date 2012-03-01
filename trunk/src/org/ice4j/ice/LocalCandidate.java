@@ -26,6 +26,13 @@ public abstract class LocalCandidate
     extends Candidate
 {
     /**
+     * The type of method used to discover this candidate ("host", "upnp", "stun
+     * peer reflexive", "stun server reflexive", "turn relayed", "google turn
+     * relayed", "google tcp turn relayed" or "jingle node").
+     */
+    private CandidateExtendedType extendedType = null;
+
+    /**
      * Ufrag for the local candidat
      */
     private String ufrag = null;
@@ -46,12 +53,18 @@ public abstract class LocalCandidate
      * @param parentComponent the <tt>Component</tt> that this candidate
      * belongs to.
      * @param type the <tt>CandidateType</tt> for this <tt>Candidate</tt>.
+     * @param extendedType The type of method used to discover this candidate
+     * ("host", "upnp", "stun peer reflexive", "stun server reflexive", "turn
+     * relayed", "google turn relayed", "google tcp turn relayed" or "jingle
+     * node").
      */
     public LocalCandidate(TransportAddress transportAddress,
                           Component        parentComponent,
-                          CandidateType    type)
+                          CandidateType    type,
+                          CandidateExtendedType extendedType)
     {
         super(transportAddress, parentComponent, type);
+        this.extendedType = extendedType;
     }
 
     /**
@@ -305,5 +318,34 @@ public abstract class LocalCandidate
     public String getUfrag()
     {
         return ufrag;
+    }
+
+    /**
+     * Returns the type of method used to discover this candidate ("host",
+     * "upnp", "stun peer reflexive", "stun server reflexive", "turn relayed",
+     * "google turn relayed", "google tcp turn relayed" or "jingle node").
+     *
+     * @return The type of method used to discover this candidate ("host",
+     * "upnp", "stun peer reflexive", "stun server reflexive", "turn relayed",
+     * "google turn relayed", "google tcp turn relayed" or "jingle node").
+     */
+    public CandidateExtendedType getExtendedType()
+    {
+        return this.extendedType;
+    }
+
+    /**
+     * Sets the type of method used to discover this candidate ("host", "upnp",
+     * "stun peer reflexive", "stun server reflexive", "turn relayed", "google
+     * turn relayed", "google tcp turn relayed" or "jingle node").
+     *
+     * @param extendedType The type of method used to discover this candidate
+     * ("host", "upnp", "stun peer reflexive", "stun server reflexive", "turn
+     * relayed", "google turn relayed", "google tcp turn relayed" or "jingle
+     * node").
+     */
+    public void setExtendedType(CandidateExtendedType extendedType)
+    {
+        this.extendedType = extendedType;
     }
 }

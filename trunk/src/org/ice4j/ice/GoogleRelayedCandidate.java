@@ -80,7 +80,14 @@ public class GoogleRelayedCandidate
         super(
             transportAddress,
             turnCandidateHarvest.hostCandidate.getParentComponent(),
-            CandidateType.RELAYED_CANDIDATE);
+            CandidateType.RELAYED_CANDIDATE,
+            CandidateExtendedType.GOOGLE_TURN_RELAYED_CANDIDATE);
+
+        if(transportAddress.getTransport() == Transport.TCP)
+        {
+            super.setExtendedType(
+                    CandidateExtendedType.GOOGLE_TCP_TURN_RELAYED_CANDIDATE);
+        }
 
         this.turnCandidateHarvest = turnCandidateHarvest;
         this.username = username;

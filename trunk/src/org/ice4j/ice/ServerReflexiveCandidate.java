@@ -42,14 +42,20 @@ public class ServerReflexiveCandidate
      * candidate was obtained through.
      * @param stunSrvrAddr the {@link TransportAddress} of the stun server that
      * reflected this candidate.
+     * @param extendedType The type of method used to discover this candidate
+     * ("host", "upnp", "stun peer reflexive", "stun server reflexive", "turn
+     * relayed", "google turn relayed", "google tcp turn relayed" or "jingle
+     * node").
      */
     public ServerReflexiveCandidate(TransportAddress address,
                                     HostCandidate    base,
-                                    TransportAddress stunSrvrAddr)
+                                    TransportAddress stunSrvrAddr,
+                                    CandidateExtendedType extendedType)
     {
         super(address,
             base.getParentComponent(),
-            CandidateType.SERVER_REFLEXIVE_CANDIDATE);
+            CandidateType.SERVER_REFLEXIVE_CANDIDATE,
+            extendedType);
 
         setBase(base);
         setStunServerAddress(stunSrvrAddr);
@@ -67,15 +73,21 @@ public class ServerReflexiveCandidate
      * @param stunSrvrAddr the {@link TransportAddress} of the stun server that
      * reflected this candidate.
      * @param stunHarvest the {@link StunCandidateHarvest}
+     * @param extendedType The type of method used to discover this candidate
+     * ("host", "upnp", "stun peer reflexive", "stun server reflexive", "turn
+     * relayed", "google turn relayed", "google tcp turn relayed" or "jingle
+     * node").
      */
     public ServerReflexiveCandidate(TransportAddress address,
                                     HostCandidate    base,
                                     TransportAddress stunSrvrAddr,
-                                    StunCandidateHarvest stunHarvest)
+                                    StunCandidateHarvest stunHarvest,
+                                    CandidateExtendedType extendedType)
     {
         super(address,
               base.getParentComponent(),
-              CandidateType.SERVER_REFLEXIVE_CANDIDATE);
+              CandidateType.SERVER_REFLEXIVE_CANDIDATE,
+              extendedType);
 
         setBase(base);
         setStunServerAddress(stunSrvrAddr);
