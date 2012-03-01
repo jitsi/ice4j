@@ -42,8 +42,11 @@ public class PeerReflexiveCandidate
                                   LocalCandidate   base,
                                   long             priority)
     {
-        super(transportAddress, parentComponent,
-                            CandidateType.PEER_REFLEXIVE_CANDIDATE);
+        super(
+                transportAddress,
+                parentComponent,
+                CandidateType.PEER_REFLEXIVE_CANDIDATE,
+                CandidateExtendedType.STUN_PEER_REFLEXIVE_CANDIDATE);
         super.setBase(base);
         super.priority = priority;
     }

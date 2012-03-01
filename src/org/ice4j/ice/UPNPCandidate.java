@@ -40,8 +40,11 @@ public class UPNPCandidate
             LocalCandidate base, Component parentComponent,
             GatewayDevice device)
     {
-        super(transportAddress, parentComponent,
-                CandidateType.SERVER_REFLEXIVE_CANDIDATE);
+        super(
+                transportAddress,
+                parentComponent,
+                CandidateType.SERVER_REFLEXIVE_CANDIDATE,
+                CandidateExtendedType.UPNP_CANDIDATE);
 
         this.setBase(base);
         this.device = device;

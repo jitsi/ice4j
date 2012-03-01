@@ -66,7 +66,8 @@ public class RelayedCandidate
         super(
             transportAddress,
             turnCandidateHarvest.hostCandidate.getParentComponent(),
-            CandidateType.RELAYED_CANDIDATE);
+            CandidateType.RELAYED_CANDIDATE,
+            CandidateExtendedType.TURN_RELAYED_CANDIDATE);
 
         this.turnCandidateHarvest = turnCandidateHarvest;
 

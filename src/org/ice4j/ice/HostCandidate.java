@@ -49,7 +49,8 @@ public class HostCandidate extends LocalCandidate
         super(new TransportAddress(socket.getLocalAddress(),
                         socket.getLocalPort(), Transport.UDP),
               parentComponent,
-              CandidateType.HOST_CANDIDATE);
+              CandidateType.HOST_CANDIDATE,
+              CandidateExtendedType.HOST_CANDIDATE);
 
         this.socket = socket;
         setBase(this);
@@ -71,7 +72,8 @@ public class HostCandidate extends LocalCandidate
         super(new TransportAddress(socket.getLocalAddress(),
                         socket.getLocalPort(), transport),
               parentComponent,
-              CandidateType.HOST_CANDIDATE);
+              CandidateType.HOST_CANDIDATE,
+              CandidateExtendedType.HOST_CANDIDATE);
 
         this.socket = socket;
         setBase(this);
