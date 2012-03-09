@@ -9,6 +9,7 @@ package org.ice4j.ice.harvest;
 
 import java.util.*;
 import java.util.concurrent.*;
+import java.util.logging.*;
 
 import org.ice4j.ice.*;
 
@@ -21,6 +22,13 @@ import org.ice4j.ice.*;
 public class CandidateHarvesterSet
     extends AbstractSet<CandidateHarvester>
 {
+    /**
+     * The <tt>Logger</tt> used by the <tt>Agent</tt> class and its instances
+     * for logging output.
+     */
+    private static final Logger logger
+        = Logger.getLogger(CandidateHarvesterSet.class.getName());
+
     /**
      * The <tt>CandidateHarvester</tt>s which are the elements of this
      * <tt>Set</tt>.
@@ -152,6 +160,9 @@ public class CandidateHarvesterSet
                         }
                         catch (Throwable t)
                         {
+                            logger.info(
+                                "disabling harvester due to exception: " +
+                                    t.getLocalizedMessage());
                             harvester.setEnabled(false);
 
                             if (t instanceof ThreadDeath)
@@ -232,6 +243,7 @@ public class CandidateHarvesterSet
                 }
                 catch (CancellationException ce)
                 {
+                    logger.info("harvester cancelled");
                     /*
                      * It got cancelled so we cannot say that the fault is with
                      * its current harvester.
@@ -246,6 +258,10 @@ public class CandidateHarvesterSet
                      * for the purpose of determining whether the problem has
                      * appeared while working with a harvester.
                      */
+                    logger.info(
+                        "disabling harvester due to ExecutionException: " +
+                            ee.getLocalizedMessage());
+
                     CandidateHarvesterSetElement harvester
                         = task.getKey().getHarvester();
 
@@ -442,6 +458,7 @@ public class CandidateHarvesterSet
          */
         public void setEnabled(boolean enabled)
         {
+            logger.info("disabling harvester: " + harvester);
             this.enabled = enabled;
         }
     }

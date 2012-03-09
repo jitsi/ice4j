@@ -230,6 +230,8 @@ class StunClientTransaction
 
                 try
                 {
+                    logger.fine("retrying transmission of STUN test to " +
+                            requestDestination.getHostAddress());
                     sendRequest0();
                 }
                 catch (Exception ex)
