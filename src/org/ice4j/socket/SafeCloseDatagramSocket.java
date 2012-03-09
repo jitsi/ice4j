@@ -133,6 +133,9 @@ public class SafeCloseDatagramSocket
     {
         super.close();
 
+        if(inReceiveSyncRoot == null)
+            return;
+
         synchronized (inReceiveSyncRoot)
         {
             boolean interrupted = false;

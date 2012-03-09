@@ -688,7 +688,7 @@ public abstract class Candidate
     {
         StringBuilder buff = new StringBuilder("candidate: ");
 
-        buff.append(" ").append(getFoundation());
+        buff.append(getFoundation());
         buff.append(" ").append(getParentComponent().getComponentID());
         buff.append(" ").append(getTransport());
         buff.append(" ").append(getPriority());

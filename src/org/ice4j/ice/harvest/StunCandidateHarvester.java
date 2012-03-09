@@ -101,8 +101,10 @@ public class StunCandidateHarvester
         this.shortTermCredentialUsername = shortTermCredentialUsername;
 
         //these should be configurable.
-        System.setProperty(StackProperties.MAX_CTRAN_RETRANS_TIMER, "400");
-        System.setProperty(StackProperties.MAX_CTRAN_RETRANSMISSIONS, "3");
+        if(System.getProperty(StackProperties.MAX_CTRAN_RETRANS_TIMER) == null)
+            System.setProperty(StackProperties.MAX_CTRAN_RETRANS_TIMER, "400");
+        if(System.getProperty(StackProperties.MAX_CTRAN_RETRANSMISSIONS) == null)
+            System.setProperty(StackProperties.MAX_CTRAN_RETRANSMISSIONS, "3");
     }
 
     /**
@@ -116,6 +118,8 @@ public class StunCandidateHarvester
      */
     void completedResolvingCandidate(StunCandidateHarvest harvest)
     {
+        boolean doNotify = false;
+
         synchronized (startedHarvests)
         {
             startedHarvests.remove(harvest);
@@ -123,7 +127,7 @@ public class StunCandidateHarvester
             //if this was the last candidate, we are done with the STUN
             //resolution and need to notify the waiters.
             if (startedHarvests.isEmpty())
-                startedHarvests.notify();
+                doNotify = true;
         }
 
         synchronized (completedHarvests)
@@ -132,6 +136,12 @@ public class StunCandidateHarvester
                 completedHarvests.remove(harvest);
             else if (!completedHarvests.contains(harvest))
                 completedHarvests.add(harvest);
+        }
+
+        synchronized(startedHarvests)
+        {
+            if(doNotify)
+                startedHarvests.notify();
         }
     }
 
@@ -216,6 +226,9 @@ public class StunCandidateHarvester
      */
     public Collection<LocalCandidate> harvest(Component component)
     {
+        logger.fine("invoked harvest / stream.component: " + toString() + " / "
+                + component.getParentStream().getName() + " / " +
+                component.getComponentID());
         stunStack = component.getParentStream().getParentAgent().getStunStack();
 
         for (Candidate cand : component.getLocalCandidates())
@@ -238,14 +251,31 @@ public class StunCandidateHarvester
                 LocalCandidate[] completedHarvestCandidates
                     = completedHarvest.getCandidates();
 
-                if ((completedHarvestCandidates != null)
-                        && (completedHarvestCandidates.length != 0))
+                if (completedHarvestCandidates != null)
                 {
-                    candidates.addAll(
+                    logger.fine("harvest / stream.component: " + toString() +
+                        " / " + component.getParentStream().getName() + " / " +
+                        component.getComponentID() +
+                        ": completedHarvestCandidates element count: " +
+                        completedHarvests.size());
+
+                    if(completedHarvestCandidates.length != 0)
+                    {
+                        candidates.addAll(
                             Arrays.asList(completedHarvestCandidates));
+                    }
                 }
+                else
+                    logger.fine("harvest / stream.component: " + toString() +
+                        " / " + component.getParentStream().getName() + " / " +
+                        component.getComponentID() +
+                        ": completedHarvestCandidates == null");
             }
         }
+        logger.info("harvest / stream.component: " + toString() + " / "
+                + component.getParentStream().getName() + " / " +
+                component.getComponentID() +
+                "found " + candidates.size() + " candidates.");
         return candidates;
     }
 
@@ -266,12 +296,20 @@ public class StunCandidateHarvester
         HostCandidate cand = getHostCandidate(hostCand);
 
         if(cand == null)
+        {
+            logger.info("server/candidate address type mismatch, skipping " +
+                    "candidate in this harvester");
             return;
+        }
 
         StunCandidateHarvest harvest = createHarvest(cand);
 
         if (harvest == null)
+        {
+            logger.warning("failed to create harvest");
             return;
+        }
+
         synchronized (startedHarvests)
         {
             startedHarvests.add(harvest);
@@ -297,7 +335,11 @@ public class StunCandidateHarvester
             finally
             {
                 if (!started)
+                {
                     startedHarvests.remove(harvest);
+                    logger.warning("harvest did not start, removed: " +
+                        harvest);
+                }
             }
         }
     }
@@ -320,6 +362,9 @@ public class StunCandidateHarvester
                 }
                 catch (InterruptedException iex)
                 {
+                    logger.info(
+                        "interrupted waiting for harvests to complete, no. " +
+                        "startedHarvests = " + startedHarvests.size());
                     interrupted = true;
                 }
             // Restore the interrupted status.

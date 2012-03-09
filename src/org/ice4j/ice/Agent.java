@@ -433,8 +433,14 @@ public class Agent
                 preferredPort, minPort, maxPort, Transport.TCP);
         }
 
+        logger.fine("host candidate count: " +
+            component.getLocalCandidateCount());
+
         //apply other harvesters here
         harvesters.harvest(component);
+
+        logger.fine("host+harvested candidate count: " +
+            component.getLocalCandidateCount());
 
         computeFoundations(component);
 
@@ -443,6 +449,9 @@ public class Agent
 
         //eliminate redundant candidates
         component.eliminateRedundantCandidates();
+
+        logger.fine("host+harvested candidate count (after elimination): " +
+            component.getLocalCandidateCount());
 
         //select the candidate to put in the media line.
         component.selectDefaultCandidate();
@@ -458,7 +467,16 @@ public class Agent
             logger.info("Start ICE connectivity establishment");
             shutdown = false;
             pruneNonMatchedStreams();
-            initCheckLists();
+
+            try
+            {
+                initCheckLists();
+            }
+            catch(ArithmeticException e)
+            {
+                setState(IceProcessingState.FAILED);
+                return;
+            }
 
             //change state before we actually send checks so that we don't
             //miss responses and hence the possibility to nominate a pair.
@@ -2044,6 +2062,7 @@ public class Agent
             for(IceMediaStream stream : streams)
             {
                 List<Component> cmps = stream.getComponents();
+
                 for(Component cmp : cmps)
                 {
                     CandidatePair pair = cmp.getSelectedPair();

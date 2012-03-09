@@ -881,9 +881,17 @@ public abstract class Message
             offset += RFC3489_TRANSACTION_ID_LENGTH;
         }
 
-        Iterator<Map.Entry<Character, Attribute>> iter
-            = attributes.entrySet().iterator();
+        Vector<Map.Entry<Character, Attribute>> v =
+            new Vector<Map.Entry<Character, Attribute>>();
+        Iterator<Map.Entry<Character, Attribute>> iter = null;
         char dataLengthForContentDependentAttribute = 0;
+
+        synchronized (attributes)
+        {
+            v.addAll(attributes.entrySet());
+        }
+
+        iter = v.iterator();
 
         while (iter.hasNext())
         {

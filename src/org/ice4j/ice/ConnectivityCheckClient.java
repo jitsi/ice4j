@@ -152,31 +152,6 @@ class ConnectivityCheckClient
     }
 
     /**
-     * Start check for pair after some delay seconds
-     *
-     * @param candidatePair
-     * @param delay delay in millisecond
-     */
-    private void startDelayedCheckForPair(final CandidatePair candidatePair,
-        final int delay)
-    {
-        new Thread()
-        {
-            public void run()
-            {
-                try
-                {
-                    Thread.sleep(delay);
-                }
-                catch(Exception e)
-                {
-                }
-                startCheckForPair(candidatePair);
-            }
-        }.start();
-    }
-
-    /**
      * Creates a STUN {@link Request} containing the necessary PRIORITY and
      * CONTROLLING/CONTROLLED attributes. Also stores a reference to
      * <tt>candidatePair</tt> in the newly created transactionID so that we
