@@ -1040,9 +1040,9 @@ class ConnectivityCheckClient
             {
                 PaceMaker paceMaker = paceMakersIter.next();
 
-                paceMaker.running = false;
                 synchronized(paceMaker)
                 {
+                    paceMaker.running = false;
                     paceMaker.notify();
                 }
 
