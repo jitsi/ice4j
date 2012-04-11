@@ -65,45 +65,6 @@ public class UPNPHarvester
     private int finishThreads = 0;
 
     /**
-     * Constructor.
-     */
-    public UPNPHarvester()
-    {
-        try
-        {
-            logger.info("Begin UPnP harvesting");
-
-            UPNPThread wanIPThread = new UPNPThread(stIP);
-            UPNPThread wanPPPThread = new UPNPThread(stPPP);
-
-            wanIPThread.start();
-            wanPPPThread.start();
-
-            while(finishThreads != 2)
-            {
-                synchronized(rootSync)
-                {
-                    rootSync.wait();
-                }
-            }
-
-            if(wanIPThread.getDevice() != null)
-            {
-                device = wanIPThread.getDevice();
-            }
-            else if(wanPPPThread.getDevice() != null)
-            {
-                device = wanPPPThread.getDevice();
-            }
-
-        }
-        catch(Exception e)
-        {
-            logger.info("UPnP discovery failed: " + e);
-        }
-    }
-
-    /**
      * Gathers UPnP candidates for all host <tt>Candidate</tt>s that are
      * already present in the specified <tt>component</tt>. This method relies
      * on the specified <tt>component</tt> to already contain all its host
@@ -119,11 +80,48 @@ public class UPNPHarvester
         Collection<LocalCandidate> candidates = new HashSet<LocalCandidate>();
         int retries = 0;
 
+        logger.info("Begin UPnP harvesting");
         try
         {
             if(device == null)
             {
-                return candidates;
+                // do it only once
+                if(finishThreads == 0)
+                {
+                    try
+                    {
+                        UPNPThread wanIPThread = new UPNPThread(stIP);
+                        UPNPThread wanPPPThread = new UPNPThread(stPPP);
+
+                        wanIPThread.start();
+                        wanPPPThread.start();
+
+                        while(finishThreads != 2)
+                        {
+                            synchronized(rootSync)
+                            {
+                                rootSync.wait();
+                            }
+                        }
+
+                        if(wanIPThread.getDevice() != null)
+                        {
+                            device = wanIPThread.getDevice();
+                        }
+                        else if(wanPPPThread.getDevice() != null)
+                        {
+                            device = wanPPPThread.getDevice();
+                        }
+
+                    }
+                    catch(Throwable e)
+                    {
+                        logger.info("UPnP discovery failed: " + e);
+                    }
+                }
+
+                if(device == null)
+                    return candidates;
             }
 
             InetAddress localAddress = device.getLocalAddress();
