@@ -11,6 +11,8 @@ import java.io.*;
 import java.net.*;
 import java.nio.channels.*;
 
+import org.ice4j.stack.*;
+
 /**
  * Implements a <tt>DatagramSocket</tt> which delegates its calls to a specific
  * <tt>DatagramSocket</tt>.
@@ -558,10 +560,28 @@ public class DelegatingDatagramSocket
     public void send(DatagramPacket p)
         throws IOException
     {
+        // Sends the packet to the final DatagramSocket
         if (delegate == null)
+        {
             super.send(p);
+
+            // no exception packet is successfully sent, log it
+            if(StunStack.isPacketLoggerEnabled())
+            {
+                StunStack.getPacketLogger().logPacket(
+                    super.getLocalAddress().getAddress(),
+                    super.getLocalPort(),
+                    p.getAddress().getAddress(),
+                    p.getPort(),
+                    p.getData(),
+                    true);
+            }
+        }
+        // Else, the delegate socket will encapsulate the packet.
         else
+        {
             delegate.send(p);
+        }
     }
 
     /**
