@@ -1113,7 +1113,7 @@ public class StunStack
      * Returns the currently set packet logger.
      * @return the currently available packet logger.
      */
-    static PacketLogger getPacketLogger()
+    public static PacketLogger getPacketLogger()
     {
         return packetLogger;
     }
@@ -1132,7 +1132,7 @@ public class StunStack
      * @return <tt>true</tt> if we have a packet logger instance and
      *  it is enabled.
      */
-    static boolean isPacketLoggerEnabled()
+    public static boolean isPacketLoggerEnabled()
     {
         return packetLogger != null && packetLogger.isEnabled();
     }

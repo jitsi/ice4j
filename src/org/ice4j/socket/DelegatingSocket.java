@@ -10,6 +10,8 @@ import java.io.*;
 import java.nio.channels.*;
 import java.net.*;
 
+import org.ice4j.stack.*;
+
 /**
  * Implements a <tt>Socket</tt> which delegates its calls to a specific
  * <tt>Socket</tt>.
@@ -745,6 +747,7 @@ public class DelegatingSocket
      */
     public void send(DatagramPacket p) throws IOException
     {
+        // The delegate socket will encapsulate the packet.
         if (delegate != null && delegate instanceof DelegatingSocket)
         {
             ((DelegatingSocket) delegate).send(p);
@@ -756,7 +759,22 @@ public class DelegatingSocket
             outputStream = getOutputStream();
         }
 
+        // Else, sends the packet to the final socket (outputStream).
         outputStream.write(p.getData(), p.getOffset(), p.getLength());
+
+        // no exception packet is successfully sent, log it
+        if(StunStack.isPacketLoggerEnabled())
+        {
+            InetSocketAddress localAddress
+                = (InetSocketAddress) super.getLocalSocketAddress();
+            StunStack.getPacketLogger().logPacket(
+                localAddress.getAddress().getAddress(),
+                localAddress.getPort(),
+                p.getAddress().getAddress(),
+                p.getPort(),
+                p.getData(),
+                true);
+        }
     }
 
     /**
