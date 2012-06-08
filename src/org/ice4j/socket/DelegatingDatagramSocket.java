@@ -530,9 +530,25 @@ public class DelegatingDatagramSocket
         throws IOException
     {
         if (delegate == null)
+        {
             super.receive(p);
+
+            // no exception packet is successfully received, log it
+            if(StunStack.isPacketLoggerEnabled())
+            {
+                StunStack.getPacketLogger().logPacket(
+                    p.getAddress().getAddress(),
+                    p.getPort(),
+                    super.getLocalAddress().getAddress(),
+                    super.getLocalPort(),
+                    p.getData(),
+                    false);
+            }
+        }
         else
+        {
             delegate.receive(p);
+        }
     }
 
     /**

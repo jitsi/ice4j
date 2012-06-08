@@ -152,27 +152,11 @@ class MessageProcessor
 
                 logger.finest("Dispatching a StunMessageEvent.");
 
-                try
-                {
-                    StunMessageEvent stunMessageEvent
-                        = new StunMessageEvent(stunStack, rawMessage,
-                                stunMessage);
+                StunMessageEvent stunMessageEvent
+                    = new StunMessageEvent(stunStack, rawMessage,
+                            stunMessage);
 
-                    messageEventHandler.handleMessageEvent(stunMessageEvent);
-                }
-                finally // make sure we log the packet in case of exception
-                {
-                    if(StunStack.isPacketLoggerEnabled())
-                    {
-                        StunStack.getPacketLogger().logPacket(
-                            rawMessage.getRemoteAddress().getAddressBytes(),
-                            rawMessage.getRemoteAddress().getPort(),
-                            rawMessage.getLocalAddress().getAddressBytes(),
-                            rawMessage.getLocalAddress().getPort(),
-                            rawMessage.getBytes(),
-                            false);
-                    }
-                }
+                messageEventHandler.handleMessageEvent(stunMessageEvent);
             }
         }
         catch(Throwable err)
