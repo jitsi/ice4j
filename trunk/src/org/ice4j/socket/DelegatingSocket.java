@@ -37,6 +37,31 @@ public class DelegatingSocket
     private OutputStream outputStream = null;
 
     /**
+     * The number of RTP packets received for this socket.
+     */
+    private long nbReceivedRtpPackets = 0;
+
+    /**
+     * The number of RTP packets sent for this socket.
+     */
+    private long nbSentRtpPackets = 0;
+
+    /**
+     * The number of RTP packets lost (not received) for this socket.
+     */
+    private long nbLostRtpPackets = 0;
+
+    /**
+     * The last RTP sequence number received for this socket.
+     */
+    private long lastRtpSequenceNumber = -1;
+
+    /**
+     * The last time an information about packet lost has been logged.
+     */
+    private long lastLostPacketLogTime = 0;
+
+    /**
      * Initializes a new <tt>DelegatingSocket</tt>.
      */
     public DelegatingSocket()
@@ -762,19 +787,16 @@ public class DelegatingSocket
         // Else, sends the packet to the final socket (outputStream).
         outputStream.write(p.getData(), p.getOffset(), p.getLength());
 
-        // no exception packet is successfully sent, log it
-        if(StunStack.isPacketLoggerEnabled())
-        {
-            InetSocketAddress localAddress
-                = (InetSocketAddress) super.getLocalSocketAddress();
-            StunStack.getPacketLogger().logPacket(
-                localAddress.getAddress().getAddress(),
-                localAddress.getPort(),
-                p.getAddress().getAddress(),
-                p.getPort(),
-                p.getData(),
-                true);
-        }
+        // no exception packet is successfully sent, log it.
+        ++nbSentRtpPackets;
+        InetSocketAddress localAddress
+            = (InetSocketAddress) super.getLocalSocketAddress();
+        DelegatingDatagramSocket.logPacketToPcap(
+                p,
+                this.nbSentRtpPackets,
+                true,
+                localAddress.getAddress(),
+                localAddress.getPort());
     }
 
     /**
@@ -843,6 +865,19 @@ public class DelegatingSocket
         {
             throw new SocketException("Failed to receive data from socket");
         }
+
+        // no exception packet is successfully received, log it.
+        ++nbReceivedRtpPackets;
+        InetSocketAddress localAddress
+            = (InetSocketAddress) super.getLocalSocketAddress();
+        DelegatingDatagramSocket.logPacketToPcap(
+                p,
+                this.nbReceivedRtpPackets,
+                false,
+                localAddress.getAddress(),
+                localAddress.getPort());
+        // Log RTP losses if > 5%.
+        updateRtpLosses(p);
     }
 
     /**
@@ -854,5 +889,31 @@ public class DelegatingSocket
     {
         if(this.inputStream == null && inputStream != null)
             this.inputStream = inputStream;
+    }
+
+    /**
+     * Updates and Logs information about RTP losses if there is more then 5% of
+     * RTP packet lost (at most every 5 seconds).
+     *
+     * @param p The last packet received.
+     */
+    public void updateRtpLosses(DatagramPacket p)
+    {
+        // If this is not a STUN/TURN packet, then this is a RTP packet.
+        if(!StunDatagramPacketFilter.isStunPacket(p))
+        {
+            long newSeq = DelegatingDatagramSocket.getRtpSequenceNumber(p);
+            if(this.lastRtpSequenceNumber != -1)
+            {
+                nbLostRtpPackets += DelegatingDatagramSocket
+                    .getNbLost(this.lastRtpSequenceNumber, newSeq);
+            }
+            this.lastRtpSequenceNumber = newSeq;
+
+            this.lastLostPacketLogTime = DelegatingDatagramSocket.logRtpLosses(
+                    this.nbLostRtpPackets,
+                    this.nbReceivedRtpPackets,
+                    this.lastLostPacketLogTime);
+        }
     }
 }
