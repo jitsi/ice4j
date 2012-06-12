@@ -154,4 +154,30 @@ public class StunDatagramPacketFilter
 
         return false;
     }
+
+    /**
+     * Determines whether a specific <tt>DatagramPacket</tt> represents a STUN
+     * (or TURN) packet.
+     *
+     * @param p the <tt>DatagramPacket</tt> which is to be checked whether it is
+     * a STUN message which is part of the communicator with the STUN server
+     * associated with this instance
+     *
+     * @return True if the <tt>DatagramPacket</tt> represents a STUN
+     * (or TURN) packet. False, otherwise.
+     */
+    public static boolean isStunPacket(DatagramPacket p)
+    {
+        /*
+         * The most significant 2 bits of every STUN message MUST be
+         * zeroes. This can be used to differentiate STUN packets from
+         * other protocols when STUN is multiplexed with other protocols
+         * on the same port.
+         */
+        byte[] data = p.getData();
+        int offset = p.getOffset();
+        byte b0 = data[offset];
+
+        return ((b0 & 0xC0) == 0);
+    }
 }
