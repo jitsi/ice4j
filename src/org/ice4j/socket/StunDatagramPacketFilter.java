@@ -174,10 +174,15 @@ public class StunDatagramPacketFilter
          * other protocols when STUN is multiplexed with other protocols
          * on the same port.
          */
+        boolean isStunPacket = false;
         byte[] data = p.getData();
         int offset = p.getOffset();
-        byte b0 = data[offset];
 
-        return ((b0 & 0xC0) == 0);
+        if(data.length - offset > 0)
+        {
+            byte b0 = data[offset];
+            isStunPacket = ((b0 & 0xC0) == 0);
+        }
+        return isStunPacket;
     }
 }
