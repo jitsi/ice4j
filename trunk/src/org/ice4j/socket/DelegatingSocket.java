@@ -838,8 +838,10 @@ public class DelegatingSocket
         int fb = inputStream.read();
         int sb = inputStream.read();
 
+        // If we do not achieve to read the first bytes, then it was just an
+        // hole punch packet.
         if(fb == -1 || sb == -1)
-            throw new SocketException("failed to read first two bytes");
+            return;
 
         int desiredLength = (((fb & 0xff) << 8) | (sb & 0xff));
         int readLen = 0;
