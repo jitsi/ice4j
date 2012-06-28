@@ -819,21 +819,69 @@ public class DelegatingSocket
      * @throws IOException if an I/O error occurs
      * @see #receive(DatagramPacket)
      */
-    public void receive(DatagramPacket p) throws IOException
+    public void receive(DatagramPacket p)
+        throws IOException
     {
         if (delegate != null && delegate instanceof DelegatingSocket)
         {
             ((DelegatingSocket) delegate).receive(p);
-            return;
+        }
+        else
+        {
+            if (inputStream == null)
+            {
+                inputStream = this.getInputStream();
+            }
+
+            DelegatingSocket.receiveFromNetwork(
+                    p,
+                    inputStream,
+                    this.getInetAddress(),
+                    this.getPort());
+
+            // no exception packet is successfully received, log it.
+            // If this is not a STUN/TURN packet, then this is a RTP packet.
+            if(!StunDatagramPacketFilter.isStunPacket(p))
+            {
+                ++nbReceivedRtpPackets;
+            }
+            InetSocketAddress localAddress
+                = (InetSocketAddress) super.getLocalSocketAddress();
+            DelegatingDatagramSocket.logPacketToPcap(
+                    p,
+                    this.nbReceivedRtpPackets,
+                    false,
+                    localAddress.getAddress(),
+                    localAddress.getPort());
+            // Log RTP losses if > 5%.
+            updateRtpLosses(p);
         }
 
+    }
+
+    /**
+     * Reads TCP stream and fit corresponding bytes to the datagram given in
+     * parameter.
+     *
+     * @param p the <tt>DatagramPacket</tt> into which to place the incoming
+     * data.
+     * @param inputStream The TCP stream to be read.
+     * @param inetAddress The receiver address (local address) to set to the
+     * datagram packet.
+     * @param port The receiver port (local port) to set to the datagram packet.
+     *
+     * @throws IOException if an I/O error occurs
+     * @see #receive(DatagramPacket)
+     */
+    public static void receiveFromNetwork(
+            DatagramPacket p,
+            InputStream inputStream,
+            InetAddress inetAddress,
+            int port)
+        throws IOException
+    {
         byte data[] = p.getData();
         int len = 0;
-
-        if (inputStream == null)
-        {
-            inputStream = this.getInputStream();
-        }
 
         int fb = inputStream.read();
         int sb = inputStream.read();
@@ -841,7 +889,10 @@ public class DelegatingSocket
         // If we do not achieve to read the first bytes, then it was just an
         // hole punch packet.
         if(fb == -1 || sb == -1)
+        {
+            p.setLength(-1);
             return;
+        }
 
         int desiredLength = (((fb & 0xff) << 8) | (sb & 0xff));
         int readLen = 0;
@@ -860,26 +911,15 @@ public class DelegatingSocket
         {
             p.setData(data);
             p.setLength(len);
-            p.setAddress(this.getInetAddress());
-            p.setPort(this.getPort());
+            p.setAddress(inetAddress);
+            p.setPort(port);
         }
         else
         {
             throw new SocketException("Failed to receive data from socket");
         }
 
-        // no exception packet is successfully received, log it.
-        ++nbReceivedRtpPackets;
-        InetSocketAddress localAddress
-            = (InetSocketAddress) super.getLocalSocketAddress();
-        DelegatingDatagramSocket.logPacketToPcap(
-                p,
-                this.nbReceivedRtpPackets,
-                false,
-                localAddress.getAddress(),
-                localAddress.getPort());
-        // Log RTP losses if > 5%.
-        updateRtpLosses(p);
+        data = null;
     }
 
     /**

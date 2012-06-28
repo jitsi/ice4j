@@ -568,7 +568,11 @@ public class DelegatingDatagramSocket
             super.receive(p);
 
             // no exception packet is successfully received, log it.
-            ++nbReceivedRtpPackets;
+            // If this is not a STUN/TURN packet, then this is a RTP packet.
+            if(!StunDatagramPacketFilter.isStunPacket(p))
+            {
+                ++nbReceivedRtpPackets;
+            }
             logPacketToPcap(
                     p,
                     this.nbReceivedRtpPackets,
