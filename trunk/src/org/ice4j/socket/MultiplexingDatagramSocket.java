@@ -253,7 +253,7 @@ public class MultiplexingDatagramSocket
                     int destLength = destData.length - destOffset;
                     int srcLength = src.getLength();
 
-                    if (destLength > srcLength)
+                    if (destLength >= srcLength)
                         destLength = srcLength;
                     else if (logger.isLoggable(Level.WARNING))
                     {

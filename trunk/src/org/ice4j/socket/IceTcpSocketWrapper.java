@@ -85,35 +85,11 @@ public class IceTcpSocketWrapper
             return;
         }
 
-        byte data[] = p.getData();
-        int len = 0;
-        int desiredLength =
-            (((inputStream.read() & 0xff) << 8) | (inputStream.read() & 0xff));
-        int readLen = 0;
-        int offset = 0;
-
-        while(readLen < desiredLength)
-        {
-            len = inputStream.read(data, offset, desiredLength - offset);
-            if(len == -1)
-                throw new SocketException("read failed");
-            offset += len;
-            readLen += len;
-        }
-
-        if (readLen == desiredLength)
-        {
-            p.setData(data);
-            p.setLength(len);
-            p.setAddress(this.getLocalAddress());
-            p.setPort(this.getLocalPort());
-        }
-        else
-        {
-            throw new SocketException("Failed to receive data from socket");
-        }
-
-        data = null;
+        DelegatingSocket.receiveFromNetwork(
+                p,
+                inputStream,
+                this.getLocalAddress(),
+                this.getLocalPort());
     }
 
     /**
