@@ -616,7 +616,36 @@ public class DelegatingDatagramSocket
         // Sends the packet to the final DatagramSocket
         if (delegate == null)
         {
-            super.send(p);
+            try{
+                super.send(p);
+            }
+            // DIRTY, DIRTY, DIRTY!!!
+            // Here we correct a java under MAC OSX bug when dealing with
+            // ipv6 local interface: the destination address (as well as the
+            // source address) under java / MAC OSX must have a scope ID,
+            // i.e.  "fe80::1%en1".  This correction (the whole "catch") is to
+            // be removed as soon as java under MAC OSX implements a real ipv6
+            // network stack.
+            catch(Exception ex)
+            {
+                InetAddress tmpAddr = p.getAddress();
+                if(((ex instanceof NoRouteToHostException)
+                            || (ex.getMessage() != null
+                                && ex.getMessage().equals("No route to host")))
+                        && (tmpAddr instanceof Inet6Address)
+                        && (tmpAddr.isLinkLocalAddress()))
+                {
+                    Inet6Address newAddr = Inet6Address.getByAddress(
+                            "",
+                            tmpAddr.getAddress(),
+                            ((Inet6Address) super.getLocalAddress())
+                            .getScopeId());
+                    p.setAddress(newAddr);
+
+                    super.send(p);
+
+                }
+            }
 
             // no exception packet is successfully sent, log it.
             ++nbSentRtpPackets;
