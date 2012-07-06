@@ -283,6 +283,15 @@ public class Agent
             = new IceMediaStream(Agent.this, mediaStreamName);
 
         mediaStreams.put(mediaStreamName, mediaStream);
+
+        // Since we add a new stream, we must wait to add the component and the
+        // remote candidates before starting to "RUN" this Agent.
+        // This is usefull if this Agent is already in COMPLETED state
+        // (isStarted() == true) due to a previous successful ICE preocedure:
+        // this way incoming connectivity checks are registered in the
+        // preDiscoveredPairsQueue until this Agent is in RUNNING state.
+        this.setState(IceProcessingState.WAITING);
+
         return mediaStream;
     }
 
