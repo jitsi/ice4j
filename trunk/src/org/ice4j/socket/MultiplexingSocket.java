@@ -379,7 +379,7 @@ public class MultiplexingSocket
                     synchronized (receiveSyncRoot)
                     {
                         inReceive = false;
-                        receiveSyncRoot.notifyAll();
+                        receiveSyncRoot.notify();
                     }
                 }
             }

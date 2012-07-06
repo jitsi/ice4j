@@ -126,6 +126,11 @@ public class StackProperties
                                     = "org.ice4j.NOMINATION_TIMER";
 
     /**
+     * The name of the property used to disabled IPv6 support.
+     */
+    public static final String ENABLE_IPv6 = "org.ice4j.ipv6.DISABLED";
+
+    /**
      * Returns the String value of the specified property (minus all
      * encompassing whitespaces)and null in case no property value was mapped
      * against the specified propertyName, or in case the returned property
@@ -190,4 +195,34 @@ public class StackProperties
         }
         return intValue;
     }
+
+    /**
+     * Gets the value of a specific property as a boolean. If the specified
+     * property name is associated with a value in this
+     * <code>ConfigurationService</code>, the string representation of the value
+     * is parsed into a boolean according to the rules of
+     * {@link Boolean#parseBoolean(String)} . Otherwise,
+     * <code>defaultValue</code> is returned.
+     *
+     * @param propertyName
+     *            the name of the property to get the value of as a boolean
+     * @param defaultValue
+     *            the value to be returned if the specified property name is not
+     *            associated with a value in this
+     *            <code>ConfigurationService</code>
+     * @return the value of the property with the specified name in this
+     *         <code>ConfigurationService</code> as a boolean;
+     *         <code>defaultValue</code> if the property with the specified name
+     *         is not associated with a value in this
+     *         <code>ConfigurationService</code>
+     */
+    public static boolean getBoolean(String propertyName, boolean defaultValue)
+    {
+        String stringValue = getString(propertyName);
+
+        return (stringValue == null)
+            ? defaultValue
+            : Boolean.parseBoolean(stringValue);
+    }
+
 }
