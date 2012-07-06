@@ -439,7 +439,7 @@ public class MultiplexingDatagramSocket
                     synchronized (receiveSyncRoot)
                     {
                         inReceive = false;
-                        receiveSyncRoot.notifyAll();
+                        receiveSyncRoot.notify();
                     }
                 }
             }

@@ -850,11 +850,14 @@ class ConnectivityCheckClient
         }
         else
         {
-            logger.fine("Received an unrecoverable error response for pair "
-                            + pair.toShortString() +
-                            " will mark the pair as FAILED.");
-            logger.info("Error response for pair: " + pair.toShortString() +
-                            ", failing.");
+            int code = cl * 100 + co;
+            logger.fine(
+                    "Received an unrecoverable error response (code = " + code
+                    + ") for pair " + pair.toShortString() +
+                    " will mark the pair as FAILED.");
+            logger.info(
+                    "Error response for pair: " + pair.toShortString() +
+                    ", failing.  Code = " + code);
             pair.setStateFailed();
         }
     }

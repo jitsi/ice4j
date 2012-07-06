@@ -67,6 +67,10 @@ public class HostCandidateHarvester
         Enumeration<NetworkInterface> interfaces
                         = NetworkInterface.getNetworkInterfaces();
 
+        boolean isIPv6Disabled = StackProperties.getBoolean(
+                "org.ice4j.ipv6.DISABLED",
+                false);
+
         if(transport != Transport.UDP && transport != Transport.TCP)
         {
             throw new IllegalArgumentException(
@@ -91,60 +95,68 @@ public class HostCandidateHarvester
             {
                 InetAddress addr = addresses.nextElement();
 
-                IceSocketWrapper sock = null;
-                try
+                if((addr instanceof Inet4Address) || !isIPv6Disabled)
                 {
-                    if(transport == Transport.UDP)
+                    IceSocketWrapper sock = null;
+                    try
                     {
-                        sock = createDatagramSocket(
-                            addr, preferredPort, minPort, maxPort);
-                        boundAtLeastOneSocket = true;
+                        if(transport == Transport.UDP)
+                        {
+                            sock = createDatagramSocket(
+                                addr, preferredPort, minPort, maxPort);
+                            boundAtLeastOneSocket = true;
+                        }
+                        else if(transport == Transport.TCP)
+                        {
+                            if(addr instanceof Inet6Address)
+                                continue;
+                            sock = createServerSocket(
+                                    addr,
+                                    preferredPort,
+                                    minPort,
+                                    maxPort,
+                                    component);
+                            boundAtLeastOneSocket = true;
+                        }
                     }
-                    else if(transport == Transport.TCP)
+                    catch(IOException exc)
                     {
-                        if(addr instanceof Inet6Address)
-                            continue;
-                        sock = createServerSocket(addr, preferredPort, minPort,
-                            maxPort, component);
-                        boundAtLeastOneSocket = true;
+                        // There seems to be a problem with this particular
+                        // address let's just move on for now and hope we will
+                        // find better
+                        if (logger.isLoggable(Level.WARNING))
+                        {
+                            logger.warning(
+                                    "Failed to create a socket for:"
+                                        +"\naddr:" + addr
+                                        +"\npreferredPort:" + preferredPort
+                                        +"\nminPort:" + minPort
+                                        +"\nmaxPort:" + maxPort
+                                        +"\nprotocol:" + transport
+                                        +"\nContinuing with next address");
+                        }
+                        continue;
                     }
-                }
-                catch(IOException exc)
-                {
-                    //there seems to be a problem with this particular address
-                    //let's just move on for now and hope we will find better
-                    if (logger.isLoggable(Level.WARNING))
+
+                    HostCandidate candidate
+                        = new HostCandidate(sock, component, transport);
+                    candidate.setVirtual(
+                            NetworkUtils.isInterfaceVirtual(iface));
+                    component.addLocalCandidate(candidate);
+
+                    if(transport == Transport.TCP)
                     {
-                        logger.warning(
-                                "Failed to create a socket for:"
-                                    +"\naddr:" + addr
-                                    +"\npreferredPort:" + preferredPort
-                                    +"\nminPort:" + minPort
-                                    +"\nmaxPort:" + maxPort
-                                    +"\nprotocol:" + transport
-                                    +"\nContinuing with next address");
+                        // have to wait a client connection to add a STUN socket
+                        // to the StunStack
+                        continue;
                     }
-                    continue;
+
+                    // We are most certainly going to use all local host
+                    // candidates for sending and receiving STUN connectivity
+                    // checks. In case we have enabled STUN, we are going to use
+                    // them as well while harvesting reflexive candidates.
+                    createAndRegisterStunSocket(candidate);
                 }
-
-                HostCandidate candidate = new HostCandidate(sock, component,
-                    transport);
-                candidate.setVirtual(NetworkUtils.isInterfaceVirtual(iface));
-                component.addLocalCandidate(candidate);
-
-                if(transport == Transport.TCP)
-                {
-                    /* have to wait a client connection to add a STUN socket
-                     * to the StunStack
-                     */
-                    continue;
-                }
-
-                //We are most certainly going to use all local host candidates
-                //for sending and receiving STUN connectivity checks. In case
-                //we have enabled STUN, we are going to use them as well while
-                //harvesting reflexive candidates.
-                createAndRegisterStunSocket(candidate);
             }
         }
 

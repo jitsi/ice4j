@@ -686,7 +686,7 @@ public abstract class Candidate
     @Override
     public String toString()
     {
-        StringBuilder buff = new StringBuilder("candidate: ");
+        StringBuilder buff = new StringBuilder("candidate:");
 
         buff.append(getFoundation());
         buff.append(" ").append(getParentComponent().getComponentID());
