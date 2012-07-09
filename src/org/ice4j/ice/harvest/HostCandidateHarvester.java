@@ -68,7 +68,7 @@ public class HostCandidateHarvester
                         = NetworkInterface.getNetworkInterfaces();
 
         boolean isIPv6Disabled = StackProperties.getBoolean(
-                "org.ice4j.ipv6.DISABLED",
+                StackProperties.DISABLE_IPv6,
                 false);
 
         if(transport != Transport.UDP && transport != Transport.TCP)

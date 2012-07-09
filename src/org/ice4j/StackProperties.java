@@ -128,7 +128,7 @@ public class StackProperties
     /**
      * The name of the property used to disabled IPv6 support.
      */
-    public static final String ENABLE_IPv6 = "org.ice4j.ipv6.DISABLED";
+    public static final String DISABLE_IPv6 = "org.ice4j.ipv6.DISABLED";
 
     /**
      * Returns the String value of the specified property (minus all
