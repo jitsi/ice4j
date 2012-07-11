@@ -105,6 +105,7 @@ public class CandidateHarvesterSet
             final Component component,
             ExecutorService executorService)
     {
+        long startCandidateHarvestTime = System.currentTimeMillis();
 
         /**
          * Represents a task to be executed by the specified executorService and
@@ -276,6 +277,15 @@ public class CandidateHarvesterSet
             }
             taskIter.remove();
         }
+
+        long stopCandidateHarvestTime = System.currentTimeMillis();
+        long  candidateHarvestTime
+            = stopCandidateHarvestTime - startCandidateHarvestTime;
+        logger.info(
+                "End candidate harvest for all harvesters within "
+                + candidateHarvestTime + " ms"
+                + ", component:\n\t"
+                + component);
     }
 
     /**
@@ -405,8 +415,21 @@ public class CandidateHarvesterSet
         {
             if (isEnabled())
             {
+                long startCandidateHarvestTime = System.currentTimeMillis();
+
                 Collection<LocalCandidate> candidates
                     = harvester.harvest(component);
+
+                long stopCandidateHarvestTime = System.currentTimeMillis();
+                long  candidateHarvestTime
+                    = stopCandidateHarvestTime - startCandidateHarvestTime;
+                logger.info(
+                        "End candidate harvest within "
+                        + candidateHarvestTime
+                        + " ms, for "
+                        + harvester.getClass().getName()
+                        + ", component:\n\t"
+                        + component);
 
                 /*
                  * If the CandidateHarvester has not gathered any candidates, it
