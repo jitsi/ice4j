@@ -64,6 +64,23 @@ public class DelegatingDatagramSocket
     private long lastLostPacketLogTime = 0;
 
     /**
+     * Assigns a factory to generate custom DatagramSocket to remplace classical
+     * "java" DatamgramSocket. This way external applications can define the
+     * type of DatagramSocket to use.
+     * If "null", then the classical "java" DatagramSocket is used. Otherwise
+     * the factory generates custom DatagramSockets.
+     */
+    private static DatagramSocketFactory delegateFactory = null;
+
+    /**
+     * The size to which to set the receive buffer size. This value must set by
+     * using the DelegatingDatagramSocket.setDefaultReceiveBufferSize(int)
+     * function before calling the DelegatingDatagramSocket constructor and must
+     * be greater than 0 to be effective.
+     */
+    private static int defaultReceiveBufferSize = -1;
+
+    /**
      * Initializes a new <tt>DelegatingDatagramSocket</tt> instance and binds it
      * to any available port on the local host machine.  The socket will be
      * bound to the wildcard address, an IP address chosen by the kernel.
@@ -75,9 +92,7 @@ public class DelegatingDatagramSocket
     public DelegatingDatagramSocket()
         throws SocketException
     {
-        super();
-
-        this.delegate = null;
+        this(null, new InetSocketAddress(0));
     }
 
     /**
@@ -93,9 +108,7 @@ public class DelegatingDatagramSocket
     public DelegatingDatagramSocket(DatagramSocket delegate)
         throws SocketException
     {
-        super(/* bindaddr */ (SocketAddress) null);
-
-        this.delegate = delegate;
+        this(delegate, null);
     }
 
     /**
@@ -111,9 +124,7 @@ public class DelegatingDatagramSocket
     public DelegatingDatagramSocket(int port)
         throws SocketException
     {
-        super(port);
-
-        this.delegate = null;
+        this(null, new InetSocketAddress(port));
     }
 
     /**
@@ -131,9 +142,7 @@ public class DelegatingDatagramSocket
     public DelegatingDatagramSocket(int port, InetAddress laddr)
         throws SocketException
     {
-        super(port, laddr);
-
-        this.delegate = null;
+        this(null, new InetSocketAddress(laddr, port));
     }
 
     /**
@@ -150,9 +159,54 @@ public class DelegatingDatagramSocket
     public DelegatingDatagramSocket(SocketAddress bindaddr)
         throws SocketException
     {
-        super(bindaddr);
+        this(null, bindaddr);
+    }
 
-        this.delegate = null;
+    /**
+     * Initializes a new <tt>DelegatingDatagramSocket</tt> instance which
+     * implements the <tt>DatagramSocket</tt> functionality. If delegate is not
+     * null, then the DatagramSocket functionality is delegated to a specific
+     * <tt>DatagramSocket</tt>.
+     *
+     * @param delegate the <tt>DatagramSocket</tt> to which the new instance is
+     * to delegate.
+     * @param address The local socket address to bind, or <tt>null</tt> for an
+     * unbound socket.
+     *
+     * @throws SocketException if the socket could not be opened, or the socket
+     * could not bind to the specified local port.
+     */
+    public DelegatingDatagramSocket(
+            DatagramSocket delegate,
+            SocketAddress address)
+        throws SocketException
+    {
+        super((SocketAddress) null);
+
+        // Delegates the DatagramSocket functionality to the DatagramSocket
+        // given in parameter.
+        if(delegate != null)
+        {
+            this.delegate = delegate;
+        }
+        else
+        {
+            // Creates a custom DatagramSocket to replace classical "java"
+            // DatagramSocket and set it as a delegate Socket
+            if(delegateFactory != null)
+            {
+                this.delegate = delegateFactory.createUnboundDatagramSocket();
+            }
+            // Creates a socket directly connected to the network stack.
+            else
+            {
+                this.delegate = null;
+                initReceiveBufferSize();
+            }
+            // If not null, binds the delegate socket to the given address.
+            // Otherwise bind the "super" socket to this address.
+            this.bind(address);
+        }
     }
 
     /**
@@ -995,5 +1049,61 @@ public class DelegatingDatagramSocket
             }
         }
         return 0;
+    }
+
+    /**
+     * If a factory is provided, then any new instances of
+     * DelegatingDatagramSocket will automatically use a socket from  the
+     * factory instead of the super class.
+     * 
+     * If this method is used, the factory class needs to ensure the socket
+     * objects are properly constructed and initialized - in particular, any
+     * default receive buffer size specified through
+     * DelegatingDatagramSocket#setDefaultReceiveBufferSize() won't
+     * automatically be applied to sockets obtain from the factory.
+     * 
+     * @param factory The factory asigned to generates the new DatagramSocket
+     * for each new DelegatingDatagramSocket which do not use a delegate socket.
+     */
+    public static void setDefaultDelegateFactory(DatagramSocketFactory factory)
+    {
+        delegateFactory = factory;
+    }
+
+    /**
+     * Specifies a default receive buffer size for the underlying sockets.
+     * This function must be called before using the DelegatingDatagramSocket
+     * constructor. The size must be greater than 0 to be effective.
+     *
+     * @see DatagramSocket#setReceiveBufferSize() for a discussion of the
+     * effect of changing this setting.
+     * 
+     * @param size the size to which to set the receive buffer size. This value
+     * must be greater than 0. 
+     */
+    public static void setDefaultReceiveBufferSize(int size)
+    {
+        defaultReceiveBufferSize = size;
+    }
+
+    /**
+     * A utility method used by the constructors to ensure the receive buffer
+     * size is set to the preferred default.
+     * 
+     * This implementation only has an impact of there is no delegate, in other
+     * words, if we really are using the superclass socket implementation as the
+     * raw socket.
+     * 
+     * @throws SocketException if there is an error in the underlying protocol,
+     * such as an UDP error.
+     */
+    private void initReceiveBufferSize()
+        throws SocketException
+    {
+        // Only change the buffer size on the real underlying DatagramSocket.
+        if(delegate == null && defaultReceiveBufferSize > 0)
+        {
+            super.setReceiveBufferSize(defaultReceiveBufferSize);
+        }
     }
 }
