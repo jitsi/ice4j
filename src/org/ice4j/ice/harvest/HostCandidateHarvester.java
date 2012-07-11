@@ -64,6 +64,8 @@ public class HostCandidateHarvester
         throws IllegalArgumentException,
                IOException
     {
+        long startCandidateHarvestTime = System.currentTimeMillis();
+
         Enumeration<NetworkInterface> interfaces
                         = NetworkInterface.getNetworkInterfaces();
 
@@ -169,6 +171,17 @@ public class HostCandidateHarvester
                             + " minPort=" + minPort
                             + " maxPort=" + maxPort);
         }
+
+        long stopCandidateHarvestTime = System.currentTimeMillis();
+        long  candidateHarvestTime
+            = stopCandidateHarvestTime - startCandidateHarvestTime;
+        logger.info(
+                "End candidate harvest within "
+                + candidateHarvestTime
+                + " ms, for "
+                + this.getClass().getName()
+                + ", component:\n\t"
+                + component);
     }
 
     /**
