@@ -215,29 +215,7 @@ public class HostCandidateHarvester
                BindException
     {
         // make sure port numbers are valid
-        if (!NetworkUtils.isValidPortNumber(minPort)
-                        || !NetworkUtils.isValidPortNumber(maxPort))
-        {
-            throw new IllegalArgumentException("minPort (" + minPort
-                            + ") and maxPort (" + maxPort + ") "
-                            + "should be integers between 1024 and 65535.");
-        }
-
-        // make sure minPort comes before maxPort.
-        if (minPort > maxPort)
-        {
-            throw new IllegalArgumentException("minPort (" + minPort
-                            + ") should be less than or "
-                            + "equal to maxPort (" + maxPort + ")");
-        }
-
-        // if preferredPort is not  in the allowed range, place it at min.
-        if (minPort > preferredPort || preferredPort > maxPort)
-        {
-            throw new IllegalArgumentException("preferredPort ("+preferredPort
-                            +") must be between minPort (" + minPort
-                            + ") and maxPort (" + maxPort + ")");
-        }
+        this.checkPorts(preferredPort, minPort, maxPort);
 
         int bindRetries = StackProperties.getInt(
                         StackProperties.BIND_RETRIES,
@@ -280,7 +258,8 @@ public class HostCandidateHarvester
                 port = minPort;
         }
 
-        throw new BindException("Not implemented");
+        throw new BindException("Could not bind to any port between "
+                        + minPort + " and " + (port - 1));
     }
 
     /**
@@ -321,30 +300,8 @@ public class HostCandidateHarvester
                IOException,
                BindException
     {
-        // make sure port numbers are valid
-        if (!NetworkUtils.isValidPortNumber(minPort)
-                        || !NetworkUtils.isValidPortNumber(maxPort))
-        {
-            throw new IllegalArgumentException("minPort (" + minPort
-                            + ") and maxPort (" + maxPort + ") "
-                            + "should be integers between 1024 and 65535.");
-        }
-
-        // make sure minPort comes before maxPort.
-        if (minPort > maxPort)
-        {
-            throw new IllegalArgumentException("minPort (" + minPort
-                            + ") should be less than or "
-                            + "equal to maxPort (" + maxPort + ")");
-        }
-
-        // if preferredPort is not  in the allowed range, place it at min.
-        if (minPort > preferredPort || preferredPort > maxPort)
-        {
-            throw new IllegalArgumentException("preferredPort ("+preferredPort
-                            +") must be between minPort (" + minPort
-                            + ") and maxPort (" + maxPort + ")");
-        }
+        // make sure port numbers are valid.
+        this.checkPorts(preferredPort, minPort, maxPort);
 
         int bindRetries = StackProperties.getInt(
                         StackProperties.BIND_RETRIES,
@@ -403,5 +360,48 @@ public class HostCandidateHarvester
         IceSocketWrapper stunSocket = candidate.getStunSocket(null);
 
         candidate.getStunStack().addSocket(stunSocket);
+    }
+
+    /**
+     * Checks if the different ports are correctly set. If not, throws an
+     * IllegalArgumentException.
+     *
+     * @param preferredPort the port number that we should try to bind to first.
+     * @param minPort the port number where we should first try to bind before
+     * moving to the next one (i.e. <tt>minPort + 1</tt>)
+     * @param maxPort the maximum port number where we should try binding
+     * before giving up and throwinG an exception.
+     *
+     * @throws IllegalArgumentException if either <tt>minPort</tt> or
+     * <tt>maxPort</tt> is not a valid port number or if <tt>minPort</tt> is
+     * greater than <tt>maxPort</tt>.
+     */
+    private void checkPorts(int preferredPort, int minPort, int maxPort)
+        throws IllegalArgumentException
+    {
+        // make sure port numbers are valid
+        if (!NetworkUtils.isValidPortNumber(minPort)
+                        || !NetworkUtils.isValidPortNumber(maxPort))
+        {
+            throw new IllegalArgumentException("minPort (" + minPort
+                            + ") and maxPort (" + maxPort + ") "
+                            + "should be integers between 1024 and 65535.");
+        }
+
+        // make sure minPort comes before maxPort.
+        if (minPort > maxPort)
+        {
+            throw new IllegalArgumentException("minPort (" + minPort
+                            + ") should be less than or "
+                            + "equal to maxPort (" + maxPort + ")");
+        }
+
+        // if preferredPort is not  in the allowed range, place it at min.
+        if (minPort > preferredPort || preferredPort > maxPort)
+        {
+            throw new IllegalArgumentException("preferredPort ("+preferredPort
+                            +") must be between minPort (" + minPort
+                            + ") and maxPort (" + maxPort + ")");
+        }
     }
 }
