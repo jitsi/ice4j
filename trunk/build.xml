@@ -145,10 +145,10 @@
         for a general build success while this might not be the case.-->
         <echo message="Generating HTML test reports ..."/>
         <java fork="true"
-            classname="org.apache.tools.ant.launch.Launcher"
-            classpath="${java.class.path}:${lib}/xalan-2.6.0.jar"
-            failonerror="true"
-            output="${junit.html.reports}/output.txt">
+              classname="org.apache.tools.ant.launch.Launcher"
+              classpath="${java.class.path}:${lib}/xalan-2.6.0.jar"
+              failonerror="true"
+              output="${junit.html.reports}/output.txt">
             <arg value="htmlreport"/>
         </java>
     </target>
@@ -156,36 +156,64 @@
     <!-- runs our sample distributed application -->
     <target name="run-sample">
         <java fork="true"
-            classname="test.Ice"
-            classpathref="project.class.path">
+              classname="test.Ice"
+              classpathref="project.class.path">
 
             <!-- Tell java.util.logging about our logging preferences -->
             <sysproperty key="java.util.logging.config.file"
-                value="lib/logging.properties"/>
+                         value="lib/logging.properties"/>
+        </java>
+    </target>
+    
+    <!-- Run pseudotcp sample application -->
+    <target name="run-pseudotcp" depends="compile">
+        <java fork="true"
+              classname="test.IcePseudoTcp"
+              classpathref="project.class.path">
+
+            <!-- Tell java.util.logging about our logging preferences -->
+            <sysproperty key="java.util.logging.config.file"
+                         value="lib/logging.properties"/>
+        </java>
+    </target>
+    <!-- Debug pseudotcp example with netbeans -->
+    <target name="nb-debug-pseudotcp" depends="compile">
+        <nbjpdastart addressproperty="jpda.address" name="ice4j" transport="dt_socket">
+            <classpath refid="project.class.path"/>
+        </nbjpdastart>
+        <java classname="test.IcePseudoTcp" fork="true">
+            <classpath refid="project.class.path"/>
+            <jvmarg value="-Xdebug"/>
+            <jvmarg value="-Xnoagent"/>
+            <jvmarg value="-Djava.compiler=none"/>
+            <jvmarg value="-Xrunjdwp:transport=dt_socket,address=${jpda.address}"/>
+            <!-- Tell java.util.logging about our logging preferences -->
+            <sysproperty key="java.util.logging.config.file"
+                         value="lib/logging.properties"/>
         </java>
     </target>
 
     <!-- runs our sample distributed application -->
     <target name="run-dist">
         <java fork="true"
-            classname="test.IceDistributed"
-            classpathref="project.class.path">
+              classname="test.IceDistributed"
+              classpathref="project.class.path">
 
             <!-- Tell java.util.logging about our logging preferences -->
             <sysproperty key="java.util.logging.config.file"
-                value="lib/logging.properties"/>
+                         value="lib/logging.properties"/>
         </java>
     </target>
 
     <!-- runs our sample lite application -->
     <target name="run-lite">
         <java fork="true"
-            classname="test.IceLite"
-            classpathref="project.class.path">
+              classname="test.IceLite"
+              classpathref="project.class.path">
 
             <!-- Tell java.util.logging about our logging preferences -->
             <sysproperty key="java.util.logging.config.file"
-                value="lib/logging.properties"/>
+                         value="lib/logging.properties"/>
         </java>
     </target>
 
