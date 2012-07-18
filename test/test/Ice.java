@@ -176,7 +176,7 @@ public class Ice
      * local
      * @param remotePeer a reference to what we'll pretend to be a remote agent.
      */
-    private static void transferRemoteCandidates(Agent localAgent,
+    static void transferRemoteCandidates(Agent localAgent,
                                                  Agent remotePeer)
     {
         List<IceMediaStream> streams = localAgent.getStreams();
