@@ -284,8 +284,7 @@ public class CandidateHarvesterSet
         logger.info(
                 "End candidate harvest for all harvesters within "
                 + candidateHarvestTime + " ms"
-                + ", component:\n\t"
-                + component);
+                + ", component: " + component.getComponentID());
     }
 
     /**
@@ -428,8 +427,7 @@ public class CandidateHarvesterSet
                         + candidateHarvestTime
                         + " ms, for "
                         + harvester.getClass().getName()
-                        + ", component:\n\t"
-                        + component);
+                        + ", component: " + component.getComponentID());
 
                 /*
                  * If the CandidateHarvester has not gathered any candidates, it

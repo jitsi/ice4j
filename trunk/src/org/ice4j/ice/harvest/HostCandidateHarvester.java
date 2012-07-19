@@ -180,8 +180,7 @@ public class HostCandidateHarvester
                 + candidateHarvestTime
                 + " ms, for "
                 + this.getClass().getName()
-                + ", component:\n\t"
-                + component);
+                + ", component: " + component.getComponentID());
     }
 
     /**
