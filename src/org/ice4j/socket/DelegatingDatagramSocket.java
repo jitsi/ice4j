@@ -912,7 +912,10 @@ public class DelegatingDatagramSocket
                     nbSentOrReceivedRtpPackets);
         }
 
-        if(isStunPacket || logThisRtpPacket)
+        // The interfaceAddress may be null if the socket is closed before this
+        // packet has been logged. In this cqse, this packet is not logged. 
+        if((isStunPacket || logThisRtpPacket)
+                && interfaceAddress != null)
         {
             InetAddress[] addr = {interfaceAddress, p.getAddress()};
             int[] port = {interfacePort, p.getPort()};
