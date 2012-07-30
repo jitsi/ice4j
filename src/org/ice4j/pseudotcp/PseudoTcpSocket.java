@@ -239,7 +239,6 @@ public class PseudoTcpSocket implements IPseudoTcpNotify
         pseudoTcp.NotifyClock(System.currentTimeMillis());
         receiveThread = new Thread(new Runnable()
         {
-            @Override
             public void run()
             {
                 ReceivePackets();
@@ -247,7 +246,6 @@ public class PseudoTcpSocket implements IPseudoTcpNotify
         }, "PseudoTcpReceiveThread");
         clockThread = new Thread(new Runnable()
         {
-            @Override
             public void run()
             {
                 RunClock();
@@ -298,7 +296,6 @@ public class PseudoTcpSocket implements IPseudoTcpNotify
      *
      * @param tcp
      */
-    @Override
     public void OnTcpOpen(PseudoTCPBase tcp)
     {
         logger.log(Level.FINE, "tcp opened");
@@ -316,7 +313,6 @@ public class PseudoTcpSocket implements IPseudoTcpNotify
      *
      * @param tcp
      */
-    @Override
     public void OnTcpReadable(PseudoTCPBase tcp)
     {
         //release all thread blocked at read_notify monitor
@@ -334,7 +330,6 @@ public class PseudoTcpSocket implements IPseudoTcpNotify
      *
      * @param tcp
      */
-    @Override
     public void OnTcpWriteable(PseudoTCPBase tcp)
     {
 
@@ -355,7 +350,6 @@ public class PseudoTcpSocket implements IPseudoTcpNotify
      * @param tcp
      * @param e
      */
-    @Override
     public void OnTcpClosed(PseudoTCPBase tcp, IOException e)
     {
         if (e != null)
@@ -415,7 +409,6 @@ public class PseudoTcpSocket implements IPseudoTcpNotify
      * @param len
      * @return
      */
-    @Override
     public WriteResult TcpWritePacket(PseudoTCPBase tcp, byte[] buffer, int len)
     {
         if (logger.isLoggable(Level.FINEST))
