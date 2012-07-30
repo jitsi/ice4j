@@ -18,7 +18,7 @@ import org.ice4j.message.*;
  * "Session Traversal Utilities for NAT (STUN)" i.e. with method Binding or the
  * reserved method 0x000 and 0x002/SharedSecret.
  *
- * @author Lubomir Marinov
+ * @author Lyubomir Marinov
  */
 public class StunDatagramPacketFilter
     implements DatagramPacketFilter
@@ -132,27 +132,38 @@ public class StunDatagramPacketFilter
     }
 
     /**
-     * Indicates whether some other DatagramPacketFilter is "equal to" this one.
+     * Indicates whether some other object is "equal to" this one.
      *
      * @param obj the reference object with which to compare.
-     * @return <code>true</code> if this <tt>StunDatagramPacketFilter</tt> is
-     * equal to the obj argument; <code>false</code> otherwise.
-     *
-     * @throws java.lang.NullPointerException if <tt>obj</tt> is null;
+     * @return <tt>true</tt> if this <tt>StunDatagramPacketFilter</tt> is equal
+     * to the <tt>obj</tt> argument; <tt>false</tt>, otherwise.
      */
     @Override
     public boolean equals(Object obj)
-        throws NullPointerException
     {
-        if(obj == this)
+        if (null == obj)
+            return false;
+        else if (this == obj)
             return true;
+        else
+            return getClass().equals(obj.getClass());
+    }
 
-        if(obj.getClass().equals(getClass()))
-        {
-            return true;
-        }
-
-        return false;
+    /**
+     * Returns a hash code value for this object for the benefit of hashtables
+     * such as those provided by <tt>Hashtable</tt>.
+     *
+     * @return a hash code value for this object
+     */
+    @Override
+    public int hashCode()
+    {
+        /*
+         * Overrides the super implementation in order to maintain the general
+         * contract of the hashCode method which states that equal objects must
+         * have equal hash codes.
+         */
+        return getClass().hashCode();
     }
 
     /**

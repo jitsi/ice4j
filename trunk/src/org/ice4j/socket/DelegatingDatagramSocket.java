@@ -14,13 +14,11 @@ import java.net.*;
 import java.nio.channels.*;
 import java.util.logging.*;
 
-import org.ice4j.stack.*;
-
 /**
  * Implements a <tt>DatagramSocket</tt> which delegates its calls to a specific
  * <tt>DatagramSocket</tt>.
  *
- * @author Lubomir Marinov
+ * @author Lyubomir Marinov
  */
 public class DelegatingDatagramSocket
     extends DatagramSocket

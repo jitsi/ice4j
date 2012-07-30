@@ -10,8 +10,6 @@ import java.io.*;
 import java.nio.channels.*;
 import java.net.*;
 
-import org.ice4j.stack.*;
-
 /**
  * Implements a <tt>Socket</tt> which delegates its calls to a specific
  * <tt>Socket</tt>.
