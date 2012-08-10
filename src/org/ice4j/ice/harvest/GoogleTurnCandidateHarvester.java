@@ -20,6 +20,11 @@ public class GoogleTurnCandidateHarvester
     extends StunCandidateHarvester
 {
     /**
+     * The gingle candidates password necessary to use the TURN server.
+     */
+    private String password = null;
+
+    /**
      * Initializes a new <tt>GoogleTurnCandidateHarvester</tt> instance which
      * is to work with a specific Google TURN server.
      *
@@ -28,7 +33,7 @@ public class GoogleTurnCandidateHarvester
      */
     public GoogleTurnCandidateHarvester(TransportAddress turnServer)
     {
-        this(turnServer, null);
+        this(turnServer, null, null);
     }
 
     /**
@@ -42,11 +47,15 @@ public class GoogleTurnCandidateHarvester
      * instance for the purposes of the STUN short-term credential mechanism or
      * <tt>null</tt> if the use of the STUN short-term credential mechanism is
      * not determined at the time of the construction of the new instance
+     * @param password The gingle candidates password necessary to use this TURN
+     * server.
      */
     public GoogleTurnCandidateHarvester(TransportAddress turnServer,
-            String shortTermCredentialUsername)
+            String shortTermCredentialUsername,
+            String password)
     {
         super(turnServer, shortTermCredentialUsername);
+        this.password = password;
     }
 
     /**
@@ -63,6 +72,18 @@ public class GoogleTurnCandidateHarvester
     protected GoogleTurnCandidateHarvest createHarvest(
             HostCandidate hostCandidate)
     {
-        return new GoogleTurnCandidateHarvest(this, hostCandidate);
+        return new GoogleTurnCandidateHarvest(
+                this,
+                hostCandidate,
+                this.password);
+    }
+
+    /**
+     * Returns the password for this candidate.
+     * @return the password for this candidate.
+     */
+    public String getPassword()
+    {
+        return this.password;
     }
 }

@@ -49,9 +49,12 @@ public class RemoteCandidate
                            String           foundation,
                            long             priority)
     {
-        super(transportAddress, parentComponent, type);
-        setFoundation(foundation);
-        setPriority(priority);
+        this(transportAddress,
+                parentComponent,
+                type,
+                foundation,
+                priority,
+                null);
     }
 
     /**
@@ -76,7 +79,9 @@ public class RemoteCandidate
                            long             priority,
                            String			ufrag)
     {
-        this(transportAddress, parentComponent, type, foundation, priority);
+        super(transportAddress, parentComponent, type);
+        setFoundation(foundation);
+        setPriority(priority);
         this.ufrag = ufrag;
     }
 

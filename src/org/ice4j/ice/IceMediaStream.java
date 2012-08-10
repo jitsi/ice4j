@@ -892,31 +892,6 @@ public class IceMediaStream
     }
 
     /**
-     * Returns the {@link CandidatePair} from <tt>component</tt> that's
-     * currently first in our valid list and that is therefore with the highest
-     * priority.
-     *
-     * @param component the {@link Component} whose highest priority valid
-     * {@link CandidatePair} we are looking for.
-     *
-     * @return the {@link CandidatePair} with the highest priority in our
-     * valid list or <tt>null</tt> if our valid list is still empty.
-     */
-    public CandidatePair getFirstValidPair(Component component)
-    {
-        synchronized(validList)
-        {
-            for(CandidatePair pair : validList)
-            {
-                if (pair.getParentComponent() == component)
-                    return pair;
-            }
-        }
-
-        return null;
-    }
-
-    /**
      * Specifies the user name that we received from the remote peer.
      *
      * @param remoteUfrag the user name that we received from the remote peer.
