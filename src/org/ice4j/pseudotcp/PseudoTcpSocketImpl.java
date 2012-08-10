@@ -9,9 +9,13 @@ package org.ice4j.pseudotcp;
 
 import java.io.*;
 import java.net.*;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.logging.*;
 
-public class PseudoTcpSocket implements IPseudoTcpNotify
+public class PseudoTcpSocketImpl 
+extends SocketImpl
+implements IPseudoTcpNotify
 {
     /**
      * The logger.
@@ -25,7 +29,7 @@ public class PseudoTcpSocket implements IPseudoTcpNotify
     /**
      * Datagram socket used to handle network operations
      */
-    private final DatagramSocket socket;
+    private DatagramSocket socket;
     /**
      * Current socket address of remote socket that we are connected to
      */
@@ -62,12 +66,23 @@ public class PseudoTcpSocket implements IPseudoTcpNotify
      */
     private IOException exception;
 
+    
+    /**
+     * 
+     */
+    private PseudoTcpInputStream inputStream;
+    
+    /**
+     * 
+     */
+    private PseudoTcpOutputStream outputstream;
+    
     /**
      *
      * @param conv_id conversation id, must be the same on both sides
      * @param sock datagram socket used for network operations
      */
-    public PseudoTcpSocket(long conv_id, DatagramSocket sock)
+    public PseudoTcpSocketImpl(long conv_id, DatagramSocket sock)
     {
         pseudoTcp = new PseudoTCPBase(this, conv_id);
         this.socket = sock;
@@ -80,7 +95,7 @@ public class PseudoTcpSocket implements IPseudoTcpNotify
      * @param conv_id conversation id, must be the same on both sides
      * @throws SocketException
      */
-    public PseudoTcpSocket(long conv_id)
+    public PseudoTcpSocketImpl(long conv_id)
         throws SocketException
     {
         this(conv_id, new DatagramSocket());
@@ -93,7 +108,7 @@ public class PseudoTcpSocket implements IPseudoTcpNotify
      * @param local_port
      * @throws SocketException
      */
-    public PseudoTcpSocket(long conv_id, int local_port)
+    public PseudoTcpSocketImpl(long conv_id, int local_port)
         throws SocketException
     {
         this(conv_id, new DatagramSocket(local_port));
@@ -108,14 +123,125 @@ public class PseudoTcpSocket implements IPseudoTcpNotify
      * @throws SocketException
      * @throws UnknownHostException
      */
-    public PseudoTcpSocket(long conv_id, String local_ip, int local_port)
+    public PseudoTcpSocketImpl(long conv_id, String local_ip, int local_port)
         throws SocketException,
                UnknownHostException
     {
         this(conv_id, new DatagramSocket(local_port,
                                          InetAddress.getByName(local_ip)));
     }
+    
+    /**
+     * Sets the MTU parameter for this socket
+     * @param mtu
+     */
+    public void setMTU(int mtu)
+    {
+    	this.pseudoTcp.NotifyMTU(mtu);
+    }
+    
+    /**
+     * Sets debug name that will be displayed in log messages for this socket
+     * @param debugName 
+     */
+    public void setDebugName(String debugName)
+    {
+    	this.pseudoTcp.debugName = debugName;
+    }
 
+    /**
+     * Creates either a stream or a datagram socket.
+     * @param stream if true, create a stream socket; otherwise, create a datagram socket.
+     * @throws IOException if an I/O error occurs while creating the socket.
+     */
+    protected void create(boolean stream) 
+        throws IOException
+    {
+        //no effect        
+    }
+
+    /**
+     * Connects this socket to the specified port on the named host.
+     * @param host the name of the remote host.
+     * @param port the port number.
+     * @throws IOException 
+     */
+    protected void connect(String host, int port) 
+        throws IOException
+    {
+        Connect(new InetSocketAddress(InetAddress.getByName(host), port), 0);
+    }
+
+    /**
+     * Connects this socket to the specified port number on the specified host.
+     * @param address the IP address of the remote host.
+     * @param port the port number.
+     * @throws IOException if an I/O error occurs when attempting a connection.
+     */
+    protected void connect(InetAddress address, int port) 
+        throws IOException
+    {
+        connect(address.getHostAddress(), port);
+    }
+
+    /**
+     * Connects this socket to the specified port number on the specified host. 
+     * A timeout of zero is interpreted as an infinite timeout. 
+     * The connection will then block until established or an error occurs.
+     * @param address the Socket address of the remote host.
+     * @param timeout the timeout value, in milliseconds, or zero for no timeout.
+     * @throws IOException if an I/O error occurs when attempting a connection.
+     */
+    protected void connect(SocketAddress address, int timeout) 
+        throws IOException
+    {
+        InetSocketAddress inetAddr = (InetSocketAddress) address;
+        Connect(inetAddr, timeout);
+    }
+
+    /**
+     * Binds this socket to the specified port number on the specified host.
+     * @param host the IP address of the remote host.
+     * @param port the port number.
+     * @throws IOException 
+     */
+    public void bind(InetAddress host, int port) 
+        throws IOException
+    {
+    	if(socket != null)
+    		socket.close();
+    	InetSocketAddress newAddr = new InetSocketAddress(host.getHostAddress(),port);
+    	this.socket = new DatagramSocket(newAddr);
+    }
+
+    /**
+     * Sets the maximum queue length for incoming connection 
+     * indications (a request to connect) to the count argument. 
+     * If a connection indication arrives when the queue is full,
+     * the connection is refused.
+     * @param backlog the maximum length of the queue.
+     * @throws IOException if an I/O error occurs when creating the queue.
+     */
+    protected void listen(int backlog) 
+        throws IOException
+    {
+        throw new UnsupportedOperationException("Not supported yet.");
+    }
+
+    private Map<Integer, Object> options = new HashMap<Integer,Object>();
+    public void setOption(int optID, Object value) 
+        throws SocketException
+    {
+        options.put(optID, value);
+    }
+
+    public Object getOption(int optID) 
+        throws SocketException
+    {
+        return options.get(optID);
+    }
+    
+    
     /**
      * Start connection procedure
      *
@@ -126,10 +252,12 @@ public class PseudoTcpSocket implements IPseudoTcpNotify
     public void Connect(InetSocketAddress remoteAddress, long timeout)
         throws IOException
     {
+    	logger.fine("Connecting to "+remoteAddress);
         this.remoteAddr = remoteAddress;
         StartThreads();
         pseudoTcp.Connect();
         UpdateClock();
+        boolean noTimeout = timeout <= 0;
         try
         {
             long elapsed = 0;
@@ -138,7 +266,7 @@ public class PseudoTcpSocket implements IPseudoTcpNotify
             synchronized (state_notify)
             {
                 while (pseudoTcp.getState() != PseudoTcpState.TCP_ESTABLISHED
-                    && elapsed < timeout)
+                    &&  (noTimeout ? true : (elapsed < timeout)) )
                 {
                     long start = System.currentTimeMillis();
                     state_notify.wait(timeout);
@@ -153,27 +281,11 @@ public class PseudoTcpSocket implements IPseudoTcpNotify
         }
         catch (InterruptedException ex)
         {
-            Close();
+            close();
             throw new IOException("Connect aborted");
         }
     }
-
-    /**
-     * Start connection procedure
-     *
-     * @param ip destination ip address
-     * @param port destination port
-     * @param timeout for this operation in ms
-     * @throws IOException
-     */
-    public void Connect(String ip, int port, long timeout)
-        throws IOException
-    {
-        //this.remoteAddr = InetAddress.getByName(ip);
-        //this.remotePort = port;
-        Connect(new InetSocketAddress(InetAddress.getByName(ip), port), timeout);
-    }
-
+    
     /**
      * Blocking method waits for connection.
      *
@@ -183,7 +295,7 @@ public class PseudoTcpSocket implements IPseudoTcpNotify
     public void Accept(int timeout)
         throws IOException
     {
-        try
+    	try
         {
             StartThreads();
             PseudoTcpState state = pseudoTcp.getState();
@@ -210,7 +322,20 @@ public class PseudoTcpSocket implements IPseudoTcpNotify
             throw e;
         }
     }
-
+    
+    /**
+     * Accepts a connection.
+     * @param s the accepted connection.
+     * @throws IOException if an I/O error occurs when accepting the connection.
+     */
+    protected void accept(SocketImpl s)
+                        throws IOException
+    {
+    	//TODO: not sure how this should work
+    	int timeout = 5000;
+        Accept(timeout);
+    }
+    
     /**
      *
      * @return current TCP state
@@ -239,6 +364,7 @@ public class PseudoTcpSocket implements IPseudoTcpNotify
         pseudoTcp.NotifyClock(System.currentTimeMillis());
         receiveThread = new Thread(new Runnable()
         {
+            @Override
             public void run()
             {
                 ReceivePackets();
@@ -246,6 +372,7 @@ public class PseudoTcpSocket implements IPseudoTcpNotify
         }, "PseudoTcpReceiveThread");
         clockThread = new Thread(new Runnable()
         {
+            @Override
             public void run()
             {
                 RunClock();
@@ -258,44 +385,12 @@ public class PseudoTcpSocket implements IPseudoTcpNotify
     }
 
     /**
-     * Shutdown the socket
-     *
-     * @throws IOException
-     */
-    public void Close() throws IOException
-    {
-        try
-        {
-            pseudoTcp.Close(true);
-            //System.out.println("ON CLOSE: in flight "+pseudoTcp.GetBytesInFlight());
-            //System.out.println("ON CLOSE: buff not sent "+pseudoTcp.GetBytesBufferedNotSent());
-            OnTcpClosed(pseudoTcp, null);
-            socket.close();
-            JoinAllThreads();
-            //UpdateClock();
-            //TODO: closing procedure
-            //Here the thread should be blocked until TCP
-            //reaches CLOSED state, but there's no closing procedure
-            /*
-             * synchronized(state_notify){ while(pseudoTcp.getState() !=
-             * PseudoTcpState.TCP_CLOSED){ try { state_notify.wait(); } catch
-             * (InterruptedException ex) { throw new IOException("Close
-             * connection aborted"); } } }
-             */
-        }
-        catch (InterruptedException ex)
-        {
-            throw new IOException("Closing socket interrupted", ex);
-        }
-
-    }
-
-    /**
      * Implements @link(IPseudoTcpNotify)
      * Called when TCP enters connected state.
      *
      * @param tcp
      */
+    @Override
     public void OnTcpOpen(PseudoTCPBase tcp)
     {
         logger.log(Level.FINE, "tcp opened");
@@ -313,6 +408,7 @@ public class PseudoTcpSocket implements IPseudoTcpNotify
      *
      * @param tcp
      */
+    @Override
     public void OnTcpReadable(PseudoTCPBase tcp)
     {
         //release all thread blocked at read_notify monitor
@@ -330,6 +426,7 @@ public class PseudoTcpSocket implements IPseudoTcpNotify
      *
      * @param tcp
      */
+    @Override
     public void OnTcpWriteable(PseudoTCPBase tcp)
     {
 
@@ -350,6 +447,7 @@ public class PseudoTcpSocket implements IPseudoTcpNotify
      * @param tcp
      * @param e
      */
+    @Override
     public void OnTcpClosed(PseudoTCPBase tcp, IOException e)
     {
         if (e != null)
@@ -409,6 +507,7 @@ public class PseudoTcpSocket implements IPseudoTcpNotify
      * @param len
      * @return
      */
+    @Override
     public WriteResult TcpWritePacket(PseudoTCPBase tcp, byte[] buffer, int len)
     {
         if (logger.isLoggable(Level.FINEST))
@@ -417,6 +516,7 @@ public class PseudoTcpSocket implements IPseudoTcpNotify
         }
         try
         {
+        	//TODO: in case the packet is too long it should return WR_TOO_LARGE
             DatagramPacket packet = new DatagramPacket(buffer, len, remoteAddr);
             socket.send(packet);
             return WriteResult.WR_SUCCESS;
@@ -479,7 +579,7 @@ public class PseudoTcpSocket implements IPseudoTcpNotify
                 if (runReceive)
                 {
                     logger.log(Level.SEVERE,
-                               "ReceivePackets exception: " + ex);
+                              "ReceivePackets exception: " + ex);
                     pseudoTcp.closedown(ex);
                 }
                 break;
@@ -536,14 +636,14 @@ public class PseudoTcpSocket implements IPseudoTcpNotify
 
         }
     }
-    private OutputStream outputstream;
-
+    
     /**
-     * Lazy initialization for socket class
-     *
-     * @return output socket object
+     * Returns an output stream for this socket.
+     * @return an output stream for writing to this socket.
+     * @throws IOException if an I/O error occurs when creating the output stream.
      */
     public OutputStream getOutputStream()
+        throws IOException
     {
         if (outputstream == null)
         {
@@ -551,14 +651,15 @@ public class PseudoTcpSocket implements IPseudoTcpNotify
         }
         return outputstream;
     }
-    private PseudoTcpInputStream inputStream;
+    
 
     /**
-     * Lazy initialization for socket class
-     *
-     * @return output socket object
+     * Returns an input stream for this socket.
+     * @return a stream for reading from this socket.
+     * @throws IOException 
      */
     public InputStream getInputStream()
+        throws IOException
     {
         if (inputStream == null)
         {
@@ -567,6 +668,62 @@ public class PseudoTcpSocket implements IPseudoTcpNotify
         return inputStream;
     }
 
+    /**
+     * Returns the number of bytes that can be read from this socket without blocking.
+     * @return the number of bytes that can be read from this socket without blocking.
+     * @throws IOException if an I/O error occurs when determining the number of bytes available.
+     */
+    protected int available()
+        throws IOException
+    {
+        return getInputStream().available();
+    }
+    
+    /**
+     * Closes this socket.
+     * @throws IOException 
+     */
+    public void close()
+        throws IOException
+    {
+        try
+        {
+            pseudoTcp.Close(true);
+            //System.out.println("ON CLOSE: in flight "+pseudoTcp.GetBytesInFlight());
+            //System.out.println("ON CLOSE: buff not sent "+pseudoTcp.GetBytesBufferedNotSent());
+            OnTcpClosed(pseudoTcp, null);
+            socket.close();
+            JoinAllThreads();
+            //UpdateClock();
+            //TODO: closing procedure
+            //Here the thread should be blocked until TCP
+            //reaches CLOSED state, but there's no closing procedure
+            /*
+             * synchronized(state_notify){ while(pseudoTcp.getState() !=
+             * PseudoTcpState.TCP_CLOSED){ try { state_notify.wait(); } catch
+             * (InterruptedException ex) { throw new IOException("Close
+             * connection aborted"); } } }
+             */
+        }
+        catch (InterruptedException ex)
+        {
+            throw new IOException("Closing socket interrupted", ex);
+        }
+    }
+    
+    /**
+     * Send one byte of urgent data on the socket. The byte to be sent is the low eight bits of the parameter
+     * @param data The byte of data to send
+     * @throws IOException if there is an error sending the data.
+     */
+    protected void sendUrgentData(int data)
+        throws IOException
+    {
+        throw new RuntimeException("Sending urgent data is not supported");
+    }
+
+    
+    
     /**
      * This class implements @link(InputStream)     *
      */
