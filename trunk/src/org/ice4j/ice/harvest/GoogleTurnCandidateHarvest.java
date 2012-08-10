@@ -41,6 +41,11 @@ public class GoogleTurnCandidateHarvest
     private Request requestToStartResolvingCandidate;
 
     /**
+     * The gingle candidates password necessary to use the TURN server.
+     */
+    private String password;
+
+    /**
      * Initializes a new <tt>TurnCandidateHarvest</tt> which is to represent the
      * harvesting of TURN <tt>Candidate</tt>s for a specific
      * <tt>HostCandidate</tt> performed by a specific
@@ -50,12 +55,16 @@ public class GoogleTurnCandidateHarvest
      * the TURN harvesting
      * @param hostCandidate the <tt>HostCandidate</tt> for which TURN
      * <tt>Candidate</tt>s are to be harvested
+     * @param password The gingle candidates password necessary to use this TURN
+     * server.
      */
     public GoogleTurnCandidateHarvest(
             GoogleTurnCandidateHarvester harvester,
-            HostCandidate hostCandidate)
+            HostCandidate hostCandidate,
+            String password)
     {
         super(harvester, hostCandidate);
+        this.password = password;
     }
 
     /**
@@ -144,7 +153,8 @@ public class GoogleTurnCandidateHarvest
                     transportAddress,
                     this,
                     mappedAddress,
-                    harvester.getShortTermCredentialUsername());
+                    harvester.getShortTermCredentialUsername(),
+                    this.password);
 
         candidate.setUfrag(harvester.getShortTermCredentialUsername());
         return candidate;

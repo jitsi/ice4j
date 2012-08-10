@@ -378,24 +378,7 @@ class ConnectivityCheckClient
 
         //If all of the pairs in the check list are now either in the Failed or
         //Succeeded state:
-        boolean allPairsDone = true;
-
-        synchronized(checkList)
-        {
-            for(CandidatePair pair : checkList)
-            {
-                CandidatePairState pairState = pair.getState();
-
-                if((pairState != CandidatePairState.FAILED)
-                        && (pairState != CandidatePairState.SUCCEEDED))
-                {
-                    allPairsDone = false;
-                    break;
-                }
-            }
-        }
-
-        if (allPairsDone)
+        if(checkList.allChecksCompleted())
         {
             //If there is not a pair in the valid list for each component of the
             //media stream, the state of the check list is set to Failed.

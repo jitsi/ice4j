@@ -56,6 +56,11 @@ public class GoogleRelayedCandidate
     private final String username;
 
     /**
+     * Password.
+     */
+    private final String password;
+
+    /**
      * Initializes a new <tt>RelayedCandidate</tt> which is to represent a
      * specific <tt>TransportAddress</tt> harvested through a specific
      * <tt>HostCandidate</tt> and a TURN server with a specific
@@ -69,13 +74,16 @@ public class GoogleRelayedCandidate
      * TURN server with the delivery of the replayed <tt>transportAddress</tt>
      * to be represented by the new instance
      * @param username username (Send request to the Google relay server need
-     * it
+     * it)
+     * @param password password (used with XMPP gingle candidates).
+     * it)
      */
     public GoogleRelayedCandidate(
             TransportAddress transportAddress,
             GoogleTurnCandidateHarvest turnCandidateHarvest,
             TransportAddress mappedAddress,
-            String username)
+            String username,
+            String password)
     {
         super(
             transportAddress,
@@ -91,6 +99,7 @@ public class GoogleRelayedCandidate
 
         this.turnCandidateHarvest = turnCandidateHarvest;
         this.username = username;
+        this.password = password;
 
         // RFC 5245: The base of a relayed candidate is that candidate itself.
         setBase(this);
@@ -196,5 +205,14 @@ public class GoogleRelayedCandidate
             }
         }
         return socket;
+    }
+
+    /**
+     * Returns the password for this candidate.
+     * @return the password for this candidate.
+     */
+    public String getPassword()
+    {
+        return this.password;
     }
 }

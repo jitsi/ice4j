@@ -766,4 +766,11 @@ public abstract class Candidate
      * Component yet.
      */
     public abstract boolean isDefault();
+
+    /**
+     * Get the local ufrag.
+     *
+     * @return local ufrag
+     */
+    public abstract String getUfrag();
 }

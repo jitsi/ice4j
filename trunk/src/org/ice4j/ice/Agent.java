@@ -808,21 +808,7 @@ public class Agent
     public String generateLocalUserName(RemoteCandidate remoteCandidate,
             LocalCandidate localCandidate)
     {
-        String ret = null;
-        String remoteUfrag = remoteCandidate.getUfrag();
-        String localUfrag = localCandidate.getUfrag();
-
-        /* Google Talk specific
-         * each candidate has its own username/password
-         */
-        if(localUfrag == null || remoteUfrag == null ||
-                compatibilityMode != CompatibilityMode.GTALK)
-        {
-            return null;
-        }
-
-        ret = remoteUfrag + localUfrag;
-        return ret;
+        return generateUserName(remoteCandidate, localCandidate);
     }
 
     /**
@@ -838,20 +824,36 @@ public class Agent
     public String generateRemoteUserName(RemoteCandidate remoteCandidate,
             LocalCandidate localCandidate)
     {
+        return generateUserName(localCandidate, remoteCandidate);
+    }
+
+    /**
+     * Returns the user name that we should expect a peer <tt>Agent</tt> to use
+     * in connectivity checks for Binding Requests its sending our way in a
+     * Google Talk session.
+     *
+     * @param candidate1 The first candidate of a candidatePair.
+     * @param candidate2 The second candidate of a candidatePair.
+     * @return a user name that a peer <tt>Agent</tt> would use in connectivity
+     * check for outgoing Binding Requests.
+     */
+    private String generateUserName(
+            Candidate candidate1,
+            Candidate candidate2)
+    {
         String ret = null;
-        String remoteUfrag = remoteCandidate.getUfrag();
-        String localUfrag = localCandidate.getUfrag();
+        String ufrag1 = candidate1.getUfrag();
+        String ufrag2 = candidate2.getUfrag();
 
         /* Google Talk specific
          * each candidate has its own username/password
          */
-        if(remoteUfrag == null || localUfrag == null ||
-                compatibilityMode != CompatibilityMode.GTALK)
+        if(ufrag1 != null
+                && ufrag2 != null
+                && compatibilityMode == CompatibilityMode.GTALK)
         {
-            return null;
+            ret = ufrag1 + ufrag2;
         }
-
-        ret = localUfrag + remoteUfrag;
 
         return ret;
     }
@@ -1258,15 +1260,13 @@ public class Agent
                                          String           localUFrag,
                                          boolean          useCandidate)
     {
+        String ufrag = null;
         LocalCandidate localCandidate = null;
 
-        if(compatibilityMode == CompatibilityMode.GTALK)
+        if(compatibilityMode == CompatibilityMode.GTALK
+                && localAddress.getTransport() != Transport.TCP)
         {
-            if(localAddress.getTransport() == Transport.TCP)
-                localCandidate = findLocalCandidate(localAddress);
-            else
-                localCandidate = findLocalCandidate(localAddress,
-                    remoteUFrag);
+            localCandidate = findLocalCandidate(localAddress, remoteUFrag);
         }
         else
         {
@@ -1306,23 +1306,15 @@ public class Agent
                 useCandidate = pair2.useCandidateReceived();
             }
 
-            remoteCandidate = new RemoteCandidate(
-                    remoteAddress, parentComponent,
-                    CandidateType.PEER_REFLEXIVE_CANDIDATE,
-                    foundationsRegistry.
-                        obtainFoundationForPeerReflexiveCandidate(),
-                    priority,
-                    ((RemoteCandidate)pair.getRemoteCandidate()).getUfrag());
+            ufrag = ((RemoteCandidate)pair.getRemoteCandidate()).getUfrag();
         }
-        else
-        {
-            remoteCandidate = new RemoteCandidate(
-                    remoteAddress, parentComponent,
-                    CandidateType.PEER_REFLEXIVE_CANDIDATE,
-                    foundationsRegistry.
-                        obtainFoundationForPeerReflexiveCandidate(),
-                    priority);
-        }
+        remoteCandidate = new RemoteCandidate(
+                remoteAddress,
+                parentComponent,
+                CandidateType.PEER_REFLEXIVE_CANDIDATE,
+                foundationsRegistry.obtainFoundationForPeerReflexiveCandidate(),
+                priority,
+                ufrag);
 
         CandidatePair triggeredPair
             = new CandidatePair(localCandidate, remoteCandidate);

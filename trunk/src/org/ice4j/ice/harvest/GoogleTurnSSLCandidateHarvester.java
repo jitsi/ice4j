@@ -67,7 +67,7 @@ public class GoogleTurnSSLCandidateHarvester
      */
     public GoogleTurnSSLCandidateHarvester(TransportAddress turnServer)
     {
-        this(turnServer, null);
+        this(turnServer, null, null);
     }
 
     /**
@@ -81,11 +81,14 @@ public class GoogleTurnSSLCandidateHarvester
      * instance for the purposes of the STUN short-term credential mechanism or
      * <tt>null</tt> if the use of the STUN short-term credential mechanism is
      * not determined at the time of the construction of the new instance
+     * @param password The gingle candidates password necessary to use this TURN
+     * server.
      */
     public GoogleTurnSSLCandidateHarvester(TransportAddress turnServer,
-            String shortTermCredentialUsername)
+            String shortTermCredentialUsername,
+            String password)
     {
-        super(turnServer, shortTermCredentialUsername);
+        super(turnServer, shortTermCredentialUsername, password);
     }
 
     /**
@@ -102,7 +105,10 @@ public class GoogleTurnSSLCandidateHarvester
     protected GoogleTurnCandidateHarvest createHarvest(
             HostCandidate hostCandidate)
     {
-        return new GoogleTurnCandidateHarvest(this, hostCandidate);
+        return new GoogleTurnCandidateHarvest(
+                this,
+                hostCandidate,
+                this.getPassword());
     }
 
     /**
