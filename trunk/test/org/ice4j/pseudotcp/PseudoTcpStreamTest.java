@@ -23,7 +23,7 @@ public class PseudoTcpStreamTest extends MultiThreadSupportTest
      * The logger.
      */
     private static final Logger logger =
-        Logger.getLogger(PseudoTCPBase.class.getName());
+        Logger.getLogger(PseudoTcpStreamTest.class.getName());
 
     public PseudoTcpStreamTest()
     {
@@ -41,16 +41,18 @@ public class PseudoTcpStreamTest extends MultiThreadSupportTest
         long conv_id = 0;
         final int size = 1000000;
         int transferTimeout = 5000;
-        final PseudoTcpSocket server = new PseudoTcpSocket(conv_id, server_port);
-        final PseudoTcpSocket client = new PseudoTcpSocket(conv_id);
+        final PseudoTcpSocketImpl server = new PseudoTcpSocketImpl(conv_id);
+        final PseudoTcpSocketImpl client = new PseudoTcpSocketImpl(conv_id);
+        
         Thread serverThread = new Thread(new Runnable()
         {
             @Override
             public void run()
             {
                 try
-                {
-                    server.Accept(300);
+                {                    
+                	server.bind(InetAddress.getLocalHost(), server_port);
+                    server.accept(null);
                     int rcvd = 0;
                     while (rcvd != size)
                     {
@@ -80,11 +82,11 @@ public class PseudoTcpStreamTest extends MultiThreadSupportTest
             {
                 try
                 {
-                    client.Connect("localhost", server_port, 30000);
+                    client.connect("localhost", server_port);
                     assertEquals(PseudoTcpState.TCP_ESTABLISHED, client.getState());
                     client.getOutputStream().write(new byte[size]);
                     client.getOutputStream().flush();
-                    client.Close();
+                    client.close();
                 }
                 catch (IOException ex)
                 {
@@ -127,7 +129,7 @@ public class PseudoTcpStreamTest extends MultiThreadSupportTest
     {
         try
         {
-            PseudoTcpSocket server = new PseudoTcpSocket(0);
+            PseudoTcpSocketImpl server = new PseudoTcpSocketImpl(0);
             server.Accept(10);
             fail("Should throw timeout exception");
         }

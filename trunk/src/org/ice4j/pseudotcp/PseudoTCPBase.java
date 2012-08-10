@@ -1089,6 +1089,7 @@ public class PseudoTCPBase
                 if (nFree < m_slist.get(0).len)
                 {
                     m_slist.get(0).len -= nFree;
+                    m_slist.get(0).seq += nFree;
                     nFree = 0;
                 }
                 else
@@ -1764,7 +1765,7 @@ public class PseudoTCPBase
         }
         m_mss = m_mtu_advise - PACKET_OVERHEAD;
         // !?! Should we reset m_largest here?        
-        logger.log(Level.INFO, "Adjusting mss to " + m_mss + " bytes");
+        logger.log(Level.FINE, "Adjusting mss to " + m_mss + " bytes");
 
         // Enforce minimums on ssthresh and cwnd
         m_ssthresh = Math.max(m_ssthresh, 2 * m_mss);

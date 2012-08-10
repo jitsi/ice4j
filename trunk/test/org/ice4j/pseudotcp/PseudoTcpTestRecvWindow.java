@@ -84,7 +84,6 @@ public class PseudoTcpTestRecvWindow extends PseudoTcpTestBase
         ScheduleWriteAction(0);
 
         long transferTout = MaxTransferTime(dummy.length, kMinTransferRate);
-        System.out.println("Timeout: " + transferTout);
         boolean transfferInTime = assert_Disconnected_wait(transferTout);
         elapsed = PseudoTCPBase.Now() - start;
         StopClocks();
