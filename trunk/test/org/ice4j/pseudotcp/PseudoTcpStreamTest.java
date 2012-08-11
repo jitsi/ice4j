@@ -82,7 +82,7 @@ public class PseudoTcpStreamTest extends MultiThreadSupportTest
             {
                 try
                 {
-                    client.connect("localhost", server_port);
+                    client.connect(InetAddress.getLocalHost(), server_port);
                     assertEquals(PseudoTcpState.TCP_ESTABLISHED, client.getState());
                     client.getOutputStream().write(new byte[size]);
                     client.getOutputStream().flush();
