@@ -9,13 +9,12 @@ package org.ice4j.pseudotcp;
 
 import java.io.*;
 import java.net.*;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.*;
 import java.util.logging.*;
 
 public class PseudoTcpSocketImpl 
-extends SocketImpl
-implements IPseudoTcpNotify
+    extends SocketImpl
+    implements IPseudoTcpNotify
 {
     /**
      * The logger.
@@ -137,7 +136,7 @@ implements IPseudoTcpNotify
      */
     public void setMTU(int mtu)
     {
-    	this.pseudoTcp.NotifyMTU(mtu);
+        this.pseudoTcp.NotifyMTU(mtu);
     }
     
     /**
@@ -146,7 +145,7 @@ implements IPseudoTcpNotify
      */
     public void setDebugName(String debugName)
     {
-    	this.pseudoTcp.debugName = debugName;
+        this.pseudoTcp.debugName = debugName;
     }
 
     /**
@@ -208,10 +207,10 @@ implements IPseudoTcpNotify
     public void bind(InetAddress host, int port) 
         throws IOException
     {
-    	if(socket != null)
-    		socket.close();
-    	InetSocketAddress newAddr = new InetSocketAddress(host.getHostAddress(),port);
-    	this.socket = new DatagramSocket(newAddr);
+        if(socket != null)
+            socket.close();
+        InetSocketAddress newAddr = new InetSocketAddress(host.getHostAddress(),port);
+        this.socket = new DatagramSocket(newAddr);
     }
 
     /**
@@ -252,7 +251,7 @@ implements IPseudoTcpNotify
     public void Connect(InetSocketAddress remoteAddress, long timeout)
         throws IOException
     {
-    	logger.fine("Connecting to "+remoteAddress);
+        logger.fine("Connecting to "+remoteAddress);
         this.remoteAddr = remoteAddress;
         StartThreads();
         pseudoTcp.Connect();
@@ -295,7 +294,7 @@ implements IPseudoTcpNotify
     public void Accept(int timeout)
         throws IOException
     {
-    	try
+        try
         {
             StartThreads();
             PseudoTcpState state = pseudoTcp.getState();
@@ -331,8 +330,8 @@ implements IPseudoTcpNotify
     protected void accept(SocketImpl s)
                         throws IOException
     {
-    	//TODO: not sure how this should work
-    	int timeout = 5000;
+        //TODO: not sure how this should work
+        int timeout = 5000;
         Accept(timeout);
     }
     
@@ -364,7 +363,6 @@ implements IPseudoTcpNotify
         pseudoTcp.NotifyClock(System.currentTimeMillis());
         receiveThread = new Thread(new Runnable()
         {
-            @Override
             public void run()
             {
                 ReceivePackets();
@@ -372,7 +370,6 @@ implements IPseudoTcpNotify
         }, "PseudoTcpReceiveThread");
         clockThread = new Thread(new Runnable()
         {
-            @Override
             public void run()
             {
                 RunClock();
@@ -390,7 +387,6 @@ implements IPseudoTcpNotify
      *
      * @param tcp
      */
-    @Override
     public void OnTcpOpen(PseudoTCPBase tcp)
     {
         logger.log(Level.FINE, "tcp opened");
@@ -408,7 +404,6 @@ implements IPseudoTcpNotify
      *
      * @param tcp
      */
-    @Override
     public void OnTcpReadable(PseudoTCPBase tcp)
     {
         //release all thread blocked at read_notify monitor
@@ -426,7 +421,6 @@ implements IPseudoTcpNotify
      *
      * @param tcp
      */
-    @Override
     public void OnTcpWriteable(PseudoTCPBase tcp)
     {
 
@@ -447,7 +441,6 @@ implements IPseudoTcpNotify
      * @param tcp
      * @param e
      */
-    @Override
     public void OnTcpClosed(PseudoTCPBase tcp, IOException e)
     {
         if (e != null)
@@ -507,7 +500,6 @@ implements IPseudoTcpNotify
      * @param len
      * @return
      */
-    @Override
     public WriteResult TcpWritePacket(PseudoTCPBase tcp, byte[] buffer, int len)
     {
         if (logger.isLoggable(Level.FINEST))
@@ -516,7 +508,7 @@ implements IPseudoTcpNotify
         }
         try
         {
-        	//TODO: in case the packet is too long it should return WR_TOO_LARGE
+            //TODO: in case the packet is too long it should return WR_TOO_LARGE
             DatagramPacket packet = new DatagramPacket(buffer, len, remoteAddr);
             socket.send(packet);
             return WriteResult.WR_SUCCESS;
