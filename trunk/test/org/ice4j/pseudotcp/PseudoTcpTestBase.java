@@ -87,7 +87,7 @@ public abstract class PseudoTcpTestBase extends MultiThreadSupportTest
      * @param size
      * @return
      */
-    static byte[] createDummyData(int size)
+    static public byte[] createDummyData(int size)
     {
         byte[] dummy = new byte[size];
         Random r = new Random();

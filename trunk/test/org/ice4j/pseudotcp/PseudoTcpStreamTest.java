@@ -1,8 +1,8 @@
 /*
  * ice4j, the OpenSource Java Solution for NAT and Firewall Traversal.
  * Maintained by the Jitsi community (https://jitsi.org).
- *
- * Distributable under LGPL license.
+ * 
+ * Distributable under LGPL license. 
  * See terms of license at gnu.org.
  */
 package org.ice4j.pseudotcp;
@@ -14,16 +14,17 @@ import static org.junit.Assert.*;
 import org.junit.*;
 
 /**
- *
+ * 
  * @author Pawel Domas
  */
-public class PseudoTcpStreamTest extends MultiThreadSupportTest
+public class PseudoTcpStreamTest
+    extends MultiThreadSupportTest
 {
     /**
      * The logger.
      */
-    private static final Logger logger =
-        Logger.getLogger(PseudoTcpStreamTest.class.getName());
+    private static final Logger logger = Logger
+        .getLogger(PseudoTcpStreamTest.class.getName());
 
     public PseudoTcpStreamTest()
     {
@@ -31,16 +32,25 @@ public class PseudoTcpStreamTest extends MultiThreadSupportTest
 
     /**
      * Test one-way transfer with @link(PseudoTcpStream)
-     *
+     * 
      * @throws SocketException
      */
     public void testConnectTransferClose() throws SocketException
     {
-        String ip = "";
+        Thread.setDefaultUncaughtExceptionHandler(this);
         final int server_port = 49999;
         long conv_id = 0;
-        final int size = 1000000;
         int transferTimeout = 5000;
+
+        // bytes that will be read as a single byte
+        final int singleStepCount = 34;
+        final byte[] bufferSingle =
+            PseudoTcpTestBase.createDummyData(singleStepCount);
+        final int sizeA = 138746;
+        final byte[] bufferA = PseudoTcpTestBase.createDummyData(sizeA);
+        final int sizeB = 483746;
+        final byte[] bufferB = PseudoTcpTestBase.createDummyData(sizeB);
+
         final PseudoTcpSocketImpl server = new PseudoTcpSocketImpl(conv_id);
         final PseudoTcpSocketImpl client = new PseudoTcpSocketImpl(conv_id);
         
@@ -50,24 +60,23 @@ public class PseudoTcpStreamTest extends MultiThreadSupportTest
             public void run()
             {
                 try
-                {                    
-                	server.bind(InetAddress.getLocalHost(), server_port);
+                {
+                    server.bind(InetAddress.getLocalHost(), server_port);
                     server.accept(null);
-                    int rcvd = 0;
-                    while (rcvd != size)
-                    {
-                        rcvd += server.getInputStream().read(new byte[size]);
-                        if (logger.isLoggable(Level.FINER))
-                        {
-                            logger.log(Level.FINER, "Received: " + rcvd);
-                        }
-                    }
-                    if (logger.isLoggable(Level.FINER))
-                    {
-                        logger.log(Level.FINER, "Total received: " + rcvd);
-                    }
-                    //server.Close();
-
+                    byte[] rcvdSingle = new byte[singleStepCount];
+                    // read by one byte
+                    for (int i = 0; i < singleStepCount; i++)
+                        rcvdSingle[i] = (byte) server.getInputStream().read();
+                    assertArrayEquals(bufferSingle, rcvdSingle);
+                    // receive buffer A
+                    byte[] recvdBufferA =
+                        receiveBuffer(server.getInputStream(), sizeA);
+                    assertArrayEquals(bufferA, recvdBufferA);
+                    // receive buffer B
+                    byte[] recvdBufferB =
+                        receiveBuffer(server.getInputStream(), sizeB);
+                    assertArrayEquals(bufferB, recvdBufferB);
+                    // server.Close();
                 }
                 catch (IOException ex)
                 {
@@ -75,6 +84,7 @@ public class PseudoTcpStreamTest extends MultiThreadSupportTest
                 }
             }
         });
+        
         Thread clientThread = new Thread(new Runnable()
         {
             @Override
@@ -83,8 +93,33 @@ public class PseudoTcpStreamTest extends MultiThreadSupportTest
                 try
                 {
                     client.connect(InetAddress.getLocalHost(), server_port);
-                    assertEquals(PseudoTcpState.TCP_ESTABLISHED, client.getState());
-                    client.getOutputStream().write(new byte[size]);
+                    assertEquals(PseudoTcpState.TCP_ESTABLISHED,
+                        client.getState());
+                    // write single array
+                    for (int i = 0; i < singleStepCount; i++)
+                        client.getOutputStream().write(bufferSingle[i]);
+                    // write whole array
+                    client.getOutputStream().write(bufferA);
+                    // write by parts
+                    int partCount = 7;
+                    boolean notExact = sizeB % partCount != 0;
+                    int[] partsSize =
+                        notExact ? new int[partCount + 1] : new int[partCount];
+                    for (int i = 0; i < partsSize.length; i++)
+                    {
+                        if (notExact && i == partCount)
+                            partsSize[i] = sizeB % partCount;
+                        else
+                            partsSize[i] = sizeB / partCount;
+                    }
+                    int written = 0;
+                    for (int i = 0; i < partsSize.length; i++)
+                    {
+                        client.getOutputStream().write(bufferB, written,
+                            partsSize[i]);
+                        written += partsSize[i];
+                    }
+                    assertEquals(sizeB, written);
                     client.getOutputStream().flush();
                     client.close();
                 }
@@ -94,6 +129,7 @@ public class PseudoTcpStreamTest extends MultiThreadSupportTest
                 }
             }
         });
+
         serverThread.start();
         clientThread.start();
         try
@@ -122,6 +158,24 @@ public class PseudoTcpStreamTest extends MultiThreadSupportTest
         }
     }
 
+    private static byte[] receiveBuffer(InputStream input, int size)
+        throws IOException
+    {
+        int rcvd = 0;
+        byte[] buffer = new byte[size];
+        rcvd += input.read(buffer);
+        while (rcvd != size)
+        {
+            rcvd += input.read(buffer, rcvd, size - rcvd);
+            if (logger.isLoggable(Level.FINER))
+            {
+                logger.log(Level.FINER, "Received: " + rcvd);
+            }
+        }
+        
+        return buffer;
+    }
+
     /**
      * Test the timeout on accept method
      */
@@ -135,7 +189,7 @@ public class PseudoTcpStreamTest extends MultiThreadSupportTest
         }
         catch (IOException ex)
         {
-            //success            
+            // success
         }
     }
 }

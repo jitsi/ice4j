@@ -55,6 +55,7 @@ public class PseudoTcpTestRecvWindow extends PseudoTcpTestBase
 
     public void TestTransfer(int size)
     {
+        Thread.setDefaultUncaughtExceptionHandler(this);
         testDataSize = size;
         long start, end, elapsed;
         send_position = new ArrayList<Integer>();

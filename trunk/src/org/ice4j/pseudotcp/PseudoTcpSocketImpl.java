@@ -830,7 +830,7 @@ public class PseudoTcpSocketImpl
         {
             byte[] bytes = new byte[1];
             bytes[0] = (byte) b;
-            write(b);
+            write(bytes);
         }
 
         @Override
