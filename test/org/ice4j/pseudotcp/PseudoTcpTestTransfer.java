@@ -54,6 +54,7 @@ public class PseudoTcpTestTransfer extends PseudoTcpTestBase
      */
     public void TestTransfer(int size)
     {
+    	Thread.setDefaultUncaughtExceptionHandler(this);
         long start, elapsed;
         int received;
         // Create some dummy data to send

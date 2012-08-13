@@ -629,7 +629,7 @@ public class PseudoTCPBase
             throw new IOException("Socket not connected");
         }
 
-        int read = m_rbuf.Read(buffer, len);
+        int read = m_rbuf.Read(buffer, offset, len);
 
         // If there's no data in |m_rbuf|.
         if (read == 0)
@@ -773,7 +773,7 @@ public class PseudoTCPBase
             m_slist.add(sseg);
         }
 
-        int written = m_sbuf.Write(buffer, len);
+        int written = m_sbuf.Write(buffer, offset, len);
         return written;
     }
 

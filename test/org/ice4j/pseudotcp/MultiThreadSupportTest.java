@@ -1,6 +1,8 @@
 package org.ice4j.pseudotcp;
 
+
 import junit.framework.*;
+import java.lang.Thread.*;
 import static org.junit.Assert.*;
 
 /**
@@ -14,27 +16,28 @@ import static org.junit.Assert.*;
  * 
  * @author Pawel Domas
  */
-public class MultiThreadSupportTest extends TestCase
+public class MultiThreadSupportTest 
+	extends TestCase
+	implements UncaughtExceptionHandler
 {
     private volatile Throwable testError;
     private volatile Thread errorThread;
-    private final Object testLock = new Object();
-
+    private final Object testLock = new Object(); 
+    
     public MultiThreadSupportTest()
     {
-        Thread.setDefaultUncaughtExceptionHandler(new Thread.UncaughtExceptionHandler()
+    	
+    }
+    
+    @Override
+    public void uncaughtException(Thread t, Throwable e)
+    {
+        synchronized (testLock)
         {
-            @Override
-            public void uncaughtException(Thread t, Throwable e)
-            {
-                synchronized (testLock)
-                {
-                    testError = e;
-                    errorThread = t;
-                    testLock.notifyAll();
-                }
-            }
-        });
+            testError = e;
+            errorThread = t;
+            testLock.notifyAll();
+        }
     }
     
     private long assertWaitInterval = 100;

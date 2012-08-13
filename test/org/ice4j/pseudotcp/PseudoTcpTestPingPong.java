@@ -68,6 +68,7 @@ public class PseudoTcpTestPingPong extends PseudoTcpTestBase
      */
     public void TestPingPong(int size, int iterations)
     {
+        Thread.setDefaultUncaughtExceptionHandler(this);
         long start, end;
         iterationsRemaining = iterations;
         receiver = getRemoteTcp();

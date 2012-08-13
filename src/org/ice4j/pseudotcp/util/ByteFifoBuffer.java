@@ -62,10 +62,21 @@ public class ByteFifoBuffer
      */
     public int Read(byte[] out_buffer, int count)
     {
+        return Read(out_buffer, 0, count);
+    }
+    
+    /**
+     * Read with buffer offset
+     * @param out_buffer
+     * @param buff_offset
+     * @param len
+     * @return
+     */
+    public int Read(byte[] out_buffer, int buff_offset, int count) {
         count = readLimit(count);
         if (count > 0)
         {
-            readOp(out_buffer, 0, count, array, read_pos, array.length);
+            readOp(out_buffer, buff_offset, count, array, read_pos, array.length);
             read_pos = (read_pos + count) % array.length;
             buffered -= count;
         }
