@@ -79,6 +79,7 @@ public class StunTestSuite
          suite.addTestSuite(org.ice4j.pseudotcp.PseudoTcpTestPingPong.class);
          suite.addTestSuite(org.ice4j.pseudotcp.PseudoTcpTestRecvWindow.class);
          suite.addTestSuite(org.ice4j.pseudotcp.PseudoTcpStreamTest.class);
+         suite.addTestSuite(org.ice4j.pseudotcp.util.ByteFifoBufferTest.class);
 
         return suite;
     }
