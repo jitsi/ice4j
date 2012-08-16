@@ -793,7 +793,7 @@ public class PseudoTCPBase
 
         long now = Now();
 
-        byte[] buffer = new byte[MAX_PACKET];
+        byte[] buffer = new byte[HEADER_SIZE + (int)len];
         long_to_bytes(m_conv, buffer, 0);
         long_to_bytes(seq, buffer, 4);
         long_to_bytes(m_rcv_nxt, buffer, 8);
@@ -844,6 +844,39 @@ public class PseudoTCPBase
         return WriteResult.WR_SUCCESS;
     }
 
+    /**
+     * Method can be used in some debugging utilities
+     */
+    public static String parseSeg(byte[] buffer, int size)
+    {
+        if (size < 12)
+        {
+            return null;
+        }
+
+        Segment seg = new Segment();
+        seg.conv = bytes_to_long(buffer, 0);
+        seg.seq = bytes_to_long(buffer, 4);
+        seg.ack = bytes_to_long(buffer, 8);
+        seg.flags = buffer[13];
+        seg.wnd = bytes_to_short(buffer, 14);
+
+        seg.tsval = bytes_to_long(buffer, 16);
+        seg.tsecr = bytes_to_long(buffer, 20);
+
+        seg.data = copy_buffer(buffer, HEADER_SIZE, size - HEADER_SIZE);
+        seg.len = size - HEADER_SIZE;
+        String data="data: ";
+        for(byte b : seg.data)
+        {
+            data += b;
+        }
+        return "segment " + "<CONV=" + seg.conv + "><FLG=" + seg.flags
+                + "><SEQ=" + seg.seq + ":" + (seg.seq + seg.len) + "><ACK=" + seg.ack
+                + "><WND=" + seg.wnd + "><TS=" + seg.tsval
+                + "><TSR=" + seg.tsecr + "><LEN=" + seg.len + "> "+data;
+    }
+    
     /**
      * Creates new segment from the data in <tt>buffer</tt> which is processed
      * by the protocol.
@@ -952,9 +985,11 @@ public class PseudoTCPBase
             //if ((seg.flags & FLAG_RST) == 0) {
             //  packet(tcb, seg.ack, 0, FLAG_RST, 0, 0);
             //}
-            closedown(new IOException(
-                debugName + " wrong conversation number, this: " + m_conv
-                + " remote: " + seg.conv));
+            //closedown(new IOException(
+            //    debugName + " wrong conversation number, this: " + m_conv
+            //    + " remote: " + seg.conv));
+            logger.info(debugName + " wrong conversation number, this: " + m_conv
+            + " remote: " + seg.conv);
             return false;
         }
 
