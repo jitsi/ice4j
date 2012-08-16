@@ -20,7 +20,7 @@ public class PseudoTcpSocketImpl
      * The logger.
      */
     private static final java.util.logging.Logger logger =
-        java.util.logging.Logger.getLogger(PseudoTCPBase.class.getName());
+        java.util.logging.Logger.getLogger(PseudoTcpSocketImpl.class.getName());
     /**
      * Pseudotcp logic instance
      */
@@ -84,6 +84,8 @@ public class PseudoTcpSocketImpl
     public PseudoTcpSocketImpl(long conv_id, DatagramSocket sock)
     {
         pseudoTcp = new PseudoTCPBase(this, conv_id);
+        //Default MTU
+        setMTU(1450);
         this.socket = sock;
     }
 
@@ -411,7 +413,7 @@ public class PseudoTcpSocketImpl
         {
             logger.log(
                 Level.FINER,
-                "TCP READABLE data available for reading: ");
+                "TCP READABLE data available for reading: "+tcp.GetAvailable());
             read_notify.notifyAll();
         }
     }
@@ -768,19 +770,19 @@ public class PseudoTcpSocketImpl
             while (true)
             {
                 logger.log(Level.FINER, "Read Recv");
-                read = pseudoTcp.Recv(buffer, offset, length);
-                if (logger.isLoggable(Level.FINER))
-                {
-                    logger.log(Level.FINER, "Read Recv read count: " + read);
-                }
-                if (read > 0)
-                {
-                    return read;
-                }
                 try
                 {
                     synchronized (read_notify)
                     {
+                        read = pseudoTcp.Recv(buffer, offset, length);
+                        if (logger.isLoggable(Level.FINER))
+                        {
+                            logger.log(Level.FINER, "Read Recv read count: " + read);
+                        }
+                        if (read > 0)
+                        {
+                            return read;
+                        }
                         logger.log(Level.FINER, "Read wait for data available");
                         read_notify.wait();
                         if (logger.isLoggable(Level.FINER))
