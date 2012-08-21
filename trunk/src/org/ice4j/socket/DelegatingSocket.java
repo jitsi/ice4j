@@ -888,8 +888,8 @@ public class DelegatingSocket
         // hole punch packet.
         if(fb == -1 || sb == -1)
         {
-            p.setLength(-1);
-            return;
+            p.setLength(0);
+            throw new SocketException("read failed");
         }
 
         int desiredLength = (((fb & 0xff) << 8) | (sb & 0xff));
