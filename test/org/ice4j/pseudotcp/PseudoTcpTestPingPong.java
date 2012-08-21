@@ -66,7 +66,7 @@ public class PseudoTcpTestPingPong extends PseudoTcpTestBase
      * @param size
      * @param iterations
      */
-    public void TestPingPong(int size, int iterations)
+    public void doTestPingPong(int size, int iterations)
     {
         Thread.setDefaultUncaughtExceptionHandler(this);
         long start, end;
@@ -76,15 +76,15 @@ public class PseudoTcpTestPingPong extends PseudoTcpTestBase
         // Create some dummy data
         byte[] dummy = createDummyData(size);
         send_stream = new ByteFifoBuffer(size);
-        send_stream.Write(dummy, size);
+        send_stream.write(dummy, size);
         //Prepare the receive stream
         recv_stream = new ByteFifoBuffer(size);
         //Connect and wait until connected
-        start = PseudoTCPBase.Now();
-        StartClocks();
+        start = PseudoTCPBase.now();
+        startClocks();
         try
         {
-            Connect();
+            connect();
         }
         catch (IOException ex)
         {
@@ -96,8 +96,8 @@ public class PseudoTcpTestPingPong extends PseudoTcpTestBase
         // Sending will start from OnTcpWriteable and stop when the required
         // number of iterations have completed.
         assert_Disconnected_wait(kMinTransferRate);
-        long elapsed = PseudoTCPBase.Now() - start;
-        StopClocks();
+        long elapsed = PseudoTCPBase.now() - start;
+        stopClocks();
         logger.log(Level.INFO,
                    "Performed " + iterations + " pings in " + elapsed + " ms");
     }
@@ -108,13 +108,13 @@ public class PseudoTcpTestPingPong extends PseudoTcpTestBase
      * @param tcp
      */
     @Override
-    public void OnTcpReadable(PseudoTCPBase tcp)
+    public void onTcpReadable(PseudoTCPBase tcp)
     {
         assertEquals("Unexpected onTcpReadable", receiver, tcp);
         try
         {
             // Stream bytes to the recv stream as they arrive.
-            ReadData();
+            readData();
         }
         catch (IOException ex)
         {
@@ -123,8 +123,8 @@ public class PseudoTcpTestPingPong extends PseudoTcpTestBase
         }
         // If we've received the desired amount of data, rewind things
         // and send it back the other way!
-        int recvd = recv_stream.GetBuffered();
-        int required = send_stream.Length();
+        int recvd = recv_stream.getBuffered();
+        int required = send_stream.length();
         if (logger.isLoggable(Level.FINER))
         {
             logger.log(Level.FINER,
@@ -135,19 +135,19 @@ public class PseudoTcpTestPingPong extends PseudoTcpTestBase
         {
             if (receiver == getLocalTcp() && --iterationsRemaining == 0)
             {
-                Close();
+                close();
                 // TODO: Fake OnTcpClosed() on the receiver for now.
-                OnTcpClosed(getRemoteTcp(), null);
+                onTcpClosed(getRemoteTcp(), null);
                 return;
             }
             //switches receivier with sender and performs test the other way
             PseudoTCPBase tmp = receiver;
             receiver = sender;
             sender = tmp;
-            send_stream.ResetReadPosition();
-            send_stream.ConsumeWriteBuffer(send_stream.GetWriteRemaining());
-            recv_stream.ResetWritePosition();
-            OnTcpWriteable(sender);
+            send_stream.resetReadPosition();
+            send_stream.consumeWriteBuffer(send_stream.getWriteRemaining());
+            recv_stream.resetWritePosition();
+            onTcpWriteable(sender);
         }
 
     }
@@ -158,7 +158,7 @@ public class PseudoTcpTestPingPong extends PseudoTcpTestBase
      * @param tcp
      */
     @Override
-    public void OnTcpWriteable(PseudoTCPBase tcp)
+    public void onTcpWriteable(PseudoTCPBase tcp)
     {
         if (tcp != sender)
         {
@@ -169,7 +169,7 @@ public class PseudoTcpTestPingPong extends PseudoTcpTestBase
         logger.log(Level.FINER, "Flow Control Lifted");
         try
         {
-            WriteData();
+            writeData();
         }
         catch (IOException ex)
         {
@@ -183,20 +183,20 @@ public class PseudoTcpTestPingPong extends PseudoTcpTestBase
      *
      * @throws IOException
      */
-    private void ReadData() throws IOException
+    private void readData() throws IOException
     {
         byte[] block = new byte[kBlockSize];
         int rcvd = 0;
         do
         {
-            rcvd = receiver.Recv(block, block.length);
+            rcvd = receiver.recv(block, block.length);
             if (rcvd > 0)
             {
-                recv_stream.Write(block, rcvd);
+                recv_stream.write(block, rcvd);
                 if (logger.isLoggable(Level.FINE))
                 {
                     logger.log(Level.FINE,
-                               "Receivied: " + recv_stream.GetBuffered());
+                               "Receivied: " + recv_stream.getBuffered());
                 }
             }
         }
@@ -208,7 +208,7 @@ public class PseudoTcpTestPingPong extends PseudoTcpTestBase
      *
      * @throws IOException
      */
-    private void WriteData() throws IOException
+    private void writeData() throws IOException
     {
         int tosend;
         int sent = 0;
@@ -216,11 +216,11 @@ public class PseudoTcpTestPingPong extends PseudoTcpTestBase
         do
         {
             tosend = bytesPerSend != 0 ? bytesPerSend : block.length;
-            tosend = send_stream.Read(block, tosend);
+            tosend = send_stream.read(block, tosend);
             if (tosend > 0)
             {
-                sent = sender.Send(block, tosend);
-                UpdateLocalClock();
+                sent = sender.send(block, tosend);
+                updateLocalClock();
                 if (sent != -1)
                 {
                     if(logger.isLoggable(Level.FINE))
@@ -253,9 +253,9 @@ public class PseudoTcpTestPingPong extends PseudoTcpTestBase
     {
         //logger.log(Level.INFO, "Test ping - pong 1xMTU");
         PseudoTcpTestPingPong test = new PseudoTcpTestPingPong();
-        test.SetLocalMtu(1500);
-        test.SetRemoteMtu(1500);
-        test.TestPingPong(100, 100);
+        test.setLocalMtu(1500);
+        test.setRemoteMtu(1500);
+        test.doTestPingPong(100, 100);
     }
 
     /**
@@ -265,9 +265,9 @@ public class PseudoTcpTestPingPong extends PseudoTcpTestBase
     {
         //logger.log(Level.INFO, "Test ping - pong 3xMTU");
         PseudoTcpTestPingPong test = new PseudoTcpTestPingPong();
-        test.SetLocalMtu(1500);
-        test.SetRemoteMtu(1500);
-        test.TestPingPong(400, 100);
+        test.setLocalMtu(1500);
+        test.setRemoteMtu(1500);
+        test.doTestPingPong(400, 100);
     }
 
     /**
@@ -278,9 +278,9 @@ public class PseudoTcpTestPingPong extends PseudoTcpTestBase
     {
         //logger.log(Level.INFO, "Test ping - pong 2xMTU");
         PseudoTcpTestPingPong test = new PseudoTcpTestPingPong();
-        test.SetLocalMtu(1500);
-        test.SetRemoteMtu(1500);
-        test.TestPingPong(2000, 5);
+        test.setLocalMtu(1500);
+        test.setRemoteMtu(1500);
+        test.doTestPingPong(2000, 5);
     }
 
     /**
@@ -291,10 +291,10 @@ public class PseudoTcpTestPingPong extends PseudoTcpTestBase
     {
         //logger.log(Level.INFO, "Test ping - pong 2xMTU ack delay off");
         PseudoTcpTestPingPong test = new PseudoTcpTestPingPong();
-        test.SetLocalMtu(1500);
-        test.SetRemoteMtu(1500);
-        test.SetOptAckDelay(0);
-        test.TestPingPong(2000, 100);
+        test.setLocalMtu(1500);
+        test.setRemoteMtu(1500);
+        test.setOptAckDelay(0);
+        test.doTestPingPong(2000, 100);
     }
 
     /**
@@ -305,10 +305,10 @@ public class PseudoTcpTestPingPong extends PseudoTcpTestBase
     {
         //logger.log(Level.INFO, "Test ping - pong 2xMTU nagling off");
         PseudoTcpTestPingPong test = new PseudoTcpTestPingPong();
-        test.SetLocalMtu(1500);
-        test.SetRemoteMtu(1500);
-        test.SetOptNagling(false);
-        test.TestPingPong(2000, 5);
+        test.setLocalMtu(1500);
+        test.setRemoteMtu(1500);
+        test.setOptNagling(false);
+        test.doTestPingPong(2000, 5);
     }
 
     /**
@@ -319,11 +319,11 @@ public class PseudoTcpTestPingPong extends PseudoTcpTestBase
     {
         //logger.log(Level.INFO, "Test ping - pong short segments");
         PseudoTcpTestPingPong test = new PseudoTcpTestPingPong();
-        test.SetLocalMtu(1500);
-        test.SetRemoteMtu(1500);
-        test.SetOptAckDelay(5000);
+        test.setLocalMtu(1500);
+        test.setRemoteMtu(1500);
+        test.setOptAckDelay(5000);
         test.setBytesPerSend(50); // i.e. two Send calls per payload
-        test.TestPingPong(100, 5);
+        test.doTestPingPong(100, 5);
     }
 
     /**
@@ -334,11 +334,11 @@ public class PseudoTcpTestPingPong extends PseudoTcpTestBase
     {
         //logger.log(Level.INFO, "Test ping - pong short segments nagling off");
         PseudoTcpTestPingPong test = new PseudoTcpTestPingPong();
-        test.SetLocalMtu(1500);
-        test.SetRemoteMtu(1500);
-        test.SetOptNagling(false);
+        test.setLocalMtu(1500);
+        test.setRemoteMtu(1500);
+        test.setOptNagling(false);
         test.setBytesPerSend(50); // i.e. two Send calls per payload
-        test.TestPingPong(100, 5);
+        test.doTestPingPong(100, 5);
     }
 
     /**
@@ -349,10 +349,10 @@ public class PseudoTcpTestPingPong extends PseudoTcpTestBase
     {
         //logger.log(Level.INFO, "Test ping - pong short segments nagling off");
         PseudoTcpTestPingPong test = new PseudoTcpTestPingPong();
-        test.SetLocalMtu(1500);
-        test.SetRemoteMtu(1500);
+        test.setLocalMtu(1500);
+        test.setRemoteMtu(1500);
         test.setBytesPerSend(50); // i.e. two Send calls per payload
-        test.SetOptAckDelay(0);
-        test.TestPingPong(100, 5);
+        test.setOptAckDelay(0);
+        test.doTestPingPong(100, 5);
     }
 }

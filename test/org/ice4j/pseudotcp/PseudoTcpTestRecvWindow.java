@@ -53,7 +53,7 @@ public class PseudoTcpTestRecvWindow extends PseudoTcpTestBase
      */
     private int testDataSize;
 
-    public void TestTransfer(int size)
+    public void doTestTransfer(int size)
     {
         Thread.setDefaultUncaughtExceptionHandler(this);
         testDataSize = size;
@@ -63,15 +63,15 @@ public class PseudoTcpTestRecvWindow extends PseudoTcpTestBase
         // Create some dummy data
         byte[] dummy = createDummyData(size);
         send_stream = new ByteFifoBuffer(size);
-        send_stream.Write(dummy, size);
+        send_stream.write(dummy, size);
         //Prepare the receive stream
         recv_stream = new ByteFifoBuffer(size);
         //Connect and wait until connected
-        start = PseudoTCPBase.Now();
-        StartClocks();
+        start = PseudoTCPBase.now();
+        startClocks();
         try
         {
-            Connect();
+            connect();
         }
         catch (IOException ex)
         {
@@ -82,13 +82,13 @@ public class PseudoTcpTestRecvWindow extends PseudoTcpTestBase
         // Connect and wait until connected.
         assert_Connected_wait(kConnectTimeoutMs);
 
-        ScheduleWriteAction(0);
+        scheduleWriteAction(0);
 
-        long transferTout = MaxTransferTime(dummy.length, kMinTransferRate);
+        long transferTout = maxTransferTime(dummy.length, kMinTransferRate);
         boolean transfferInTime = assert_Disconnected_wait(transferTout);
-        elapsed = PseudoTCPBase.Now() - start;
-        StopClocks();
-        int received = recv_stream.GetBuffered();
+        elapsed = PseudoTCPBase.now() - start;
+        stopClocks();
+        int received = recv_stream.getBuffered();
         assertEquals("Transfer timeout, transferred: " + received
             + " required: " + dummy.length
             + " elapsed: "
@@ -98,7 +98,7 @@ public class PseudoTcpTestRecvWindow extends PseudoTcpTestBase
         assert 2 == send_position.size();
         assert 2 == recv_position.size();
 
-        int estimated_recv_window = EstimateReceiveWindowSize();
+        int estimated_recv_window = estimateReceiveWindowSize();
 
         // The difference in consecutive send positions should equal the
         // receive window size or match very closely. This verifies that receive
@@ -145,17 +145,17 @@ public class PseudoTcpTestRecvWindow extends PseudoTcpTestBase
      *
      * @throws IOException
      */
-    void ReadUntilIOPending() throws IOException
+    void readUntilIOPending() throws IOException
     {
         byte[] block = new byte[getRemoteTcp().getRecvBufferSize() * 2];
-        int position = recv_stream.GetBuffered();
+        int position = recv_stream.getBuffered();
         int rcvd, total = 0;
         do
         {
-            rcvd = RemoteRecv(block, block.length);
+            rcvd = remoteRecv(block, block.length);
             if (rcvd > 0)
             {
-                recv_stream.Write(block, rcvd);
+                recv_stream.write(block, rcvd);
                 total += rcvd;
                 position += rcvd;
             }
@@ -166,12 +166,12 @@ public class PseudoTcpTestRecvWindow extends PseudoTcpTestBase
         // Disconnect if we have done two transfers.
         if (recv_position.size() == 2)
         {
-            Close();
-            OnTcpClosed(getRemoteTcp(), null);
+            close();
+            onTcpClosed(getRemoteTcp(), null);
         }
         else
         {
-            WriteData();
+            writeData();
         }
     }
 
@@ -180,7 +180,7 @@ public class PseudoTcpTestRecvWindow extends PseudoTcpTestBase
      *
      * @param delay
      */
-    void ScheduleWriteAction(long delay)
+    void scheduleWriteAction(long delay)
     {
         writeTimer.schedule(new TimerTask()
         {
@@ -189,7 +189,7 @@ public class PseudoTcpTestRecvWindow extends PseudoTcpTestBase
             {
                 try
                 {
-                    WriteData();
+                    writeData();
                 }
                 catch (IOException ex)
                 {
@@ -206,27 +206,27 @@ public class PseudoTcpTestRecvWindow extends PseudoTcpTestBase
      *
      * @throws IOException
      */
-    void WriteData() throws IOException
+    void writeData() throws IOException
     {
         //writeOpCount++;
         int tosend;
         int sent;
         int totalSent = 0;
         byte[] block = new byte[getRemoteTcp().getRecvBufferSize() * 2];
-        int position = testDataSize - send_stream.GetBuffered();
+        int position = testDataSize - send_stream.getBuffered();
         synchronized (getLocalTcp())
         {
             do
             {
-                tosend = send_stream.ReadOffset(block, 0, block.length, 0);
+                tosend = send_stream.readOffset(block, 0, block.length, 0);
                 if (tosend > 0)
                 {
-                    sent = LocalSend(block, tosend);
-                    UpdateLocalClock();
+                    sent = localSend(block, tosend);
+                    updateLocalClock();
                     if (sent > 0)
                     {
                         totalSent += sent;
-                        send_stream.ConsumeReadData(sent);
+                        send_stream.consumeReadData(sent);
                         position += sent;
                     }
                     else
@@ -244,12 +244,12 @@ public class PseudoTcpTestRecvWindow extends PseudoTcpTestBase
 
         }
         // Measured with precision according to window scale option used
-        if (totalSent - getRemoteTcp().GetAvailable()
+        if (totalSent - getRemoteTcp().getAvailable()
             > getShadowedBytes(getRemoteScaleFactor()))
         {
             //send buffer was fully filled
             //waits until it will be received by remote peer
-            while (totalSent - getRemoteTcp().GetAvailable()
+            while (totalSent - getRemoteTcp().getAvailable()
                 > getShadowedBytes(getRemoteScaleFactor())
                 && !getRemoteTcp().isReceiveBufferFull())
             {
@@ -260,8 +260,8 @@ public class PseudoTcpTestRecvWindow extends PseudoTcpTestBase
                     {
                         logger.log(Level.FINER,
                                    "Waiting... sent: " + totalSent + " avail: "
-                            + getRemoteTcp().GetAvailable() + " buffered not sent: "
-                            + getLocalTcp().GetBytesBufferedNotSent()
+                            + getRemoteTcp().getAvailable() + " buffered not sent: "
+                            + getLocalTcp().getBytesBufferedNotSent()
                             + " isFull? " + getRemoteTcp().isReceiveBufferFull());
                     }
                 }
@@ -279,7 +279,7 @@ public class PseudoTcpTestRecvWindow extends PseudoTcpTestBase
             {
                 try
                 {
-                    ReadUntilIOPending();
+                    readUntilIOPending();
                 }
                 catch (IOException ex)
                 {
@@ -293,7 +293,7 @@ public class PseudoTcpTestRecvWindow extends PseudoTcpTestBase
      *
      * @return estimated receive window size
      */
-    int EstimateReceiveWindowSize()
+    int estimateReceiveWindowSize()
     {
         return recv_position.get(0);
     }
@@ -302,24 +302,24 @@ public class PseudoTcpTestRecvWindow extends PseudoTcpTestBase
      *
      * @return estimated send window size
      */
-    int EstimateSendWindowSize()
+    int estimateSendWindowSize()
     {
         return send_position.get(0);
     }
 
     @Override
-    public void OnTcpReadable(PseudoTCPBase tcp)
+    public void onTcpReadable(PseudoTCPBase tcp)
     {
     }
 
     @Override
-    public void OnTcpWriteable(PseudoTCPBase tcp)
+    public void onTcpWriteable(PseudoTCPBase tcp)
     {
     }
 
-    void SetLocalOptSndBuf(int len)
+    void setLocalOptSndBuf(int len)
     {
-        getLocalTcp().SetOption(Option.OPT_SNDBUF, len);
+        getLocalTcp().setOption(Option.OPT_SNDBUF, len);
     }
 
     int getRemoteScaleFactor()
@@ -345,11 +345,11 @@ public class PseudoTcpTestRecvWindow extends PseudoTcpTestBase
     {
         //logger.log(Level.INFO, "Test receive window");
         PseudoTcpTestRecvWindow test = new PseudoTcpTestRecvWindow();
-        test.SetLocalMtu(1500);
-        test.SetRemoteMtu(1500);
-        test.SetOptNagling(false);
-        test.SetOptAckDelay(0);
-        test.TestTransfer(1024 * 1000);
+        test.setLocalMtu(1500);
+        test.setRemoteMtu(1500);
+        test.setOptNagling(false);
+        test.setOptAckDelay(0);
+        test.doTestTransfer(1024 * 1000);
     }
 
     /**
@@ -360,13 +360,13 @@ public class PseudoTcpTestRecvWindow extends PseudoTcpTestBase
         //TODO: finish test
         logger.log(Level.INFO, "Test very small receive window");
         PseudoTcpTestRecvWindow test = new PseudoTcpTestRecvWindow();
-        test.SetLocalMtu(1500);
-        test.SetRemoteMtu(1500);
-        test.SetOptNagling(false);
-        test.SetOptAckDelay(0);
-        test.SetOptSndBuf(900);
-        test.TestTransfer(1024 * 1000);
-        assertEquals(900, test.EstimateSendWindowSize());
+        test.setLocalMtu(1500);
+        test.setRemoteMtu(1500);
+        test.setOptNagling(false);
+        test.setOptAckDelay(0);
+        test.setOptSndBuf(900);
+        test.doTestTransfer(1024 * 1000);
+        assertEquals(900, test.estimateSendWindowSize());
     }
 
     /**
@@ -376,21 +376,21 @@ public class PseudoTcpTestRecvWindow extends PseudoTcpTestBase
     {
         //logger.log(Level.INFO, "Test set receive window size");
         PseudoTcpTestRecvWindow test = new PseudoTcpTestRecvWindow();
-        test.SetLocalMtu(1500);
-        test.SetRemoteMtu(1500);
-        test.SetOptNagling(false);
-        test.SetOptAckDelay(0);
+        test.setLocalMtu(1500);
+        test.setRemoteMtu(1500);
+        test.setOptNagling(false);
+        test.setOptAckDelay(0);
         int wndSize = 300000;
-        test.SetRemoteOptRcvBuf(wndSize);
-        test.SetLocalOptSndBuf(wndSize);
+        test.setRemoteOptRcvBuf(wndSize);
+        test.setLocalOptSndBuf(wndSize);
         int wndScale = test.getRemoteScaleFactor();
         //logger.log(Level.INFO, "Using scale factor: {0}", wndScale);
-        test.TestTransfer(1024 * 3000);
+        test.doTestTransfer(1024 * 3000);
         //beacuse there may be situations 
         //when 1 byte may be waiting in send queue
         //before 
         //scaling factor == 1 not allows to determine exact window size (+-1)
-        assert (wndSize - test.EstimateReceiveWindowSize()
+        assert (wndSize - test.estimateReceiveWindowSize()
             <= PseudoTcpTestRecvWindow.getShadowedBytes(wndScale));
     }
 

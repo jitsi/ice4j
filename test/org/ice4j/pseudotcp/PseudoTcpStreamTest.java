@@ -34,12 +34,14 @@ public class PseudoTcpStreamTest
      * Test one-way transfer with @link(PseudoTcpStream)
      * 
      * @throws SocketException
+     * @throws UnknownHostException 
      */
-    public void testConnectTransferClose() throws SocketException
+    public void testConnectTransferClose() 
+        throws SocketException, 
+               UnknownHostException
     {
         Thread.setDefaultUncaughtExceptionHandler(this);
         final int server_port = 49999;
-        long conv_id = 0;
         int transferTimeout = 5000;
 
         // bytes that will be read as a single byte
@@ -48,12 +50,10 @@ public class PseudoTcpStreamTest
             PseudoTcpTestBase.createDummyData(singleStepCount);
         final int sizeA = 138746;
         final byte[] bufferA = PseudoTcpTestBase.createDummyData(sizeA);
-        final int sizeB = 483746;
+        final int sizeB = 4803746;
         final byte[] bufferB = PseudoTcpTestBase.createDummyData(sizeB);
-
-        final PseudoTcpSocketImpl server = new PseudoTcpSocketImpl(conv_id);
-        final PseudoTcpSocketImpl client = new PseudoTcpSocketImpl(conv_id);
-        
+        final InetSocketAddress serverAddress = 
+            new InetSocketAddress(InetAddress.getLocalHost(), server_port);
         Thread serverThread = new Thread(new Runnable()
         {
             @Override
@@ -61,8 +61,12 @@ public class PseudoTcpStreamTest
             {
                 try
                 {
-                    server.bind(InetAddress.getLocalHost(), server_port);
-                    server.accept(null);
+                    final PseudoTcpSocket server = 
+                        new PseudoTcpSocketFactory().
+                        createSocket();
+                    server.setDebugName("L");
+                    server.bind(serverAddress);
+                    server.accept(5000);
                     byte[] rcvdSingle = new byte[singleStepCount];
                     // read by one byte
                     for (int i = 0; i < singleStepCount; i++)
@@ -76,7 +80,7 @@ public class PseudoTcpStreamTest
                     byte[] recvdBufferB =
                         receiveBuffer(server.getInputStream(), sizeB);
                     assertArrayEquals(bufferB, recvdBufferB);
-                    // server.Close();
+                    // server.close();
                 }
                 catch (IOException ex)
                 {
@@ -85,16 +89,17 @@ public class PseudoTcpStreamTest
             }
         });
         
+        final PseudoTcpSocket client = 
+            new PseudoTcpSocketFactory().createSocket();
         Thread clientThread = new Thread(new Runnable()
         {
             @Override
             public void run()
             {
                 try
-                {
-                    client.connect(InetAddress.getLocalHost(), server_port);
-                    assertEquals(PseudoTcpState.TCP_ESTABLISHED,
-                        client.getState());
+                {                   
+                    client.setDebugName("R");
+                    client.connect(serverAddress, 5000);
                     // write single array
                     for (int i = 0; i < singleStepCount; i++)
                         client.getOutputStream().write(bufferSingle[i]);
@@ -134,7 +139,7 @@ public class PseudoTcpStreamTest
         clientThread.start();
         try
         {
-            boolean success = assert_wait_until(new IWaitUntilDone()
+            boolean success = assert_wait_until(new WaitUntilDone()
             {
                 @Override
                 public boolean isDone()
@@ -184,7 +189,7 @@ public class PseudoTcpStreamTest
         try
         {
             PseudoTcpSocketImpl server = new PseudoTcpSocketImpl(0);
-            server.Accept(10);
+            server.accept(10);
             fail("Should throw timeout exception");
         }
         catch (IOException ex)

@@ -12,9 +12,9 @@ import java.net.*;
 import java.util.*;
 import java.util.logging.*;
 
-public class PseudoTcpSocketImpl 
+class PseudoTcpSocketImpl 
     extends SocketImpl
-    implements IPseudoTcpNotify
+    implements PseudoTcpNotify
 {
     /**
      * The logger.
@@ -138,7 +138,26 @@ public class PseudoTcpSocketImpl
      */
     public void setMTU(int mtu)
     {
-        this.pseudoTcp.NotifyMTU(mtu);
+        this.pseudoTcp.notifyMTU(mtu);
+    }
+    
+    /**
+     * 
+     * @return current MTU set
+     */
+    public int getMTU()
+    {
+        return pseudoTcp.getMTU();
+    }
+    
+    long getConversationID()
+    {
+        return pseudoTcp.getConversationID();
+    }
+    
+    void setConversationID(long convID)
+    {
+        pseudoTcp.setConversationID(convID);
     }
     
     /**
@@ -170,7 +189,7 @@ public class PseudoTcpSocketImpl
     protected void connect(String host, int port) 
         throws IOException
     {
-        Connect(new InetSocketAddress(InetAddress.getByName(host), port), 0);
+        doConnect(new InetSocketAddress(InetAddress.getByName(host), port), 0);
     }
 
     /**
@@ -197,7 +216,7 @@ public class PseudoTcpSocketImpl
         throws IOException
     {
         InetSocketAddress inetAddr = (InetSocketAddress) address;
-        Connect(inetAddr, timeout);
+        doConnect(inetAddr, timeout);
     }
 
     /**
@@ -233,13 +252,25 @@ public class PseudoTcpSocketImpl
     public void setOption(int optID, Object value) 
         throws SocketException
     {
+        //TODO: map options to PTCP options/method calls
         options.put(optID, value);
     }
 
     public Object getOption(int optID) 
         throws SocketException
     {
+        //TODO: map options to PTCP options/method calls
         return options.get(optID);
+    }
+    
+    public long getPTCPOption(Option opt)
+    {
+        return pseudoTcp.getOption(opt);
+    }
+    
+    public void setPTCPOption(Option opt, long optValue)
+    {
+        pseudoTcp.setOption(opt, optValue);
     }
     
     
@@ -250,14 +281,14 @@ public class PseudoTcpSocketImpl
      * @param timeout for this operation in ms
      * @throws IOException
      */
-    public void Connect(InetSocketAddress remoteAddress, long timeout)
+    void doConnect(InetSocketAddress remoteAddress, long timeout)
         throws IOException
     {
         logger.fine("Connecting to "+remoteAddress);
         this.remoteAddr = remoteAddress;
-        StartThreads();
-        pseudoTcp.Connect();
-        UpdateClock();
+        startThreads();
+        pseudoTcp.connect();
+        updateClock();
         boolean noTimeout = timeout <= 0;
         try
         {
@@ -293,12 +324,12 @@ public class PseudoTcpSocketImpl
      * @param timeout for this operation in ms
      * @throws IOException If socket gets closed or timeout expires
      */
-    public void Accept(int timeout)
+    void accept(int timeout)
         throws IOException
     {
         try
         {
-            StartThreads();
+            startThreads();
             PseudoTcpState state = pseudoTcp.getState();
             if (state == PseudoTcpState.TCP_CLOSED)
             {
@@ -334,7 +365,7 @@ public class PseudoTcpSocketImpl
     {
         //TODO: not sure how this should work
         int timeout = 5000;
-        Accept(timeout);
+        accept(timeout);
     }
     
     /**
@@ -349,7 +380,7 @@ public class PseudoTcpSocketImpl
     /**
      * Interrupts clock thread's wait method to force time update
      */
-    private void UpdateClock()
+    private void updateClock()
     {
         synchronized (clock_notify)
         {
@@ -360,21 +391,21 @@ public class PseudoTcpSocketImpl
     /**
      * Starts all threads required by the socket
      */
-    private void StartThreads()
+    private void startThreads()
     {
-        pseudoTcp.NotifyClock(System.currentTimeMillis());
+        pseudoTcp.notifyClock(System.currentTimeMillis());
         receiveThread = new Thread(new Runnable()
         {
             public void run()
             {
-                ReceivePackets();
+                receivePackets();
             }
         }, "PseudoTcpReceiveThread");
         clockThread = new Thread(new Runnable()
         {
             public void run()
             {
-                RunClock();
+                runClock();
             }
         }, "PseudoTcpClockThread");
         runReceive = true;
@@ -384,12 +415,13 @@ public class PseudoTcpSocketImpl
     }
 
     /**
-     * Implements @link(IPseudoTcpNotify)
+     * Implements <tt>PseudoTcpNotify</tt>
      * Called when TCP enters connected state.
      *
      * @param tcp
+     * @see PseudoTcpNotify#onTcpOpen(PseudoTCPBase)
      */
-    public void OnTcpOpen(PseudoTCPBase tcp)
+    public void onTcpOpen(PseudoTCPBase tcp)
     {
         logger.log(Level.FINE, "tcp opened");
         //Release threads blocked at state_notify monitor object.
@@ -398,32 +430,34 @@ public class PseudoTcpSocketImpl
             state_notify.notifyAll();
         }
         //TCP is considered writeable at this point
-        OnTcpWriteable(tcp);
+        onTcpWriteable(tcp);
     }
 
     /**
-     * Implements @link(IPseudoTcpNotify)
+     * Implements <tt>PseudoTcpNotify</tt>
      *
      * @param tcp
+     * @see PseudoTcpNotify#onTcpReadable(PseudoTCPBase)
      */
-    public void OnTcpReadable(PseudoTCPBase tcp)
+    public void onTcpReadable(PseudoTCPBase tcp)
     {
         //release all thread blocked at read_notify monitor
         synchronized (read_notify)
         {
             logger.log(
                 Level.FINER,
-                "TCP READABLE data available for reading: "+tcp.GetAvailable());
+                "TCP READABLE data available for reading: "+tcp.getAvailable());
             read_notify.notifyAll();
         }
     }
 
     /**
-     * Implements @link(IPseudoTcpNotify)
+     * Implements <tt>PseudoTcpNotify</tt>
      *
      * @param tcp
+     * @see PseudoTcpNotify#onTcpWriteable(PseudoTCPBase)
      */
-    public void OnTcpWriteable(PseudoTCPBase tcp)
+    public void onTcpWriteable(PseudoTCPBase tcp)
     {
 
         logger.log(Level.FINER, "stream writeable");
@@ -438,12 +472,14 @@ public class PseudoTcpSocketImpl
     }
 
     /**
-     * Implements @link(IPseudoTcpNotify)
+     * Implements <tt>PseudoTcpNotify</tt>
      *
      * @param tcp
      * @param e
+     * 
+     * @see PseudoTcpNotify#onTcpClosed(PseudoTCPBase, IOException)
      */
-    public void OnTcpClosed(PseudoTCPBase tcp, IOException e)
+    public void onTcpClosed(PseudoTCPBase tcp, IOException e)
     {
         if (e != null)
         {
@@ -488,21 +524,23 @@ public class PseudoTcpSocketImpl
      *
      * @throws InterruptedException
      */
-    private void JoinAllThreads() throws InterruptedException
+    private void joinAllThreads() throws InterruptedException
     {
         clockThread.join();
         receiveThread.join();
     }
 
     /**
-     * Implements @link(IPseudoTcpNotify)
+     * Implements <tt>PseudoTcpNotify</tt>
      *
      * @param tcp
      * @param buffer
      * @param len
-     * @return
+     * @return operation result
+     * 
+     * @see PseudoTcpNotify#tcpWritePacket(PseudoTCPBase, byte[], int)
      */
-    public WriteResult TcpWritePacket(PseudoTCPBase tcp, byte[] buffer, int len)
+    public WriteResult tcpWritePacket(PseudoTCPBase tcp, byte[] buffer, int len)
     {
         if (logger.isLoggable(Level.FINEST))
         {
@@ -534,7 +572,7 @@ public class PseudoTcpSocketImpl
     /**
      * Receives packets from the network and passes them to TCP logic class
      */
-    private void ReceivePackets()
+    private void receivePackets()
     {
         byte[] buffer = new byte[DATAGRAM_RCV_BUFFER_SIZE];
         DatagramPacket packet = new DatagramPacket(buffer, DATAGRAM_RCV_BUFFER_SIZE);
@@ -560,9 +598,9 @@ public class PseudoTcpSocketImpl
                 }
                 synchronized (pseudoTcp)
                 {
-                    pseudoTcp.NotifyPacket(buffer, packet.getLength());
+                    pseudoTcp.notifyPacket(buffer, packet.getLength());
                     //we need to update the clock after new packet is receivied
-                    UpdateClock();
+                    updateClock();
                 }
             }
             catch (IOException ex)
@@ -590,15 +628,15 @@ public class PseudoTcpSocketImpl
      * Method runs cyclic notification about time progress for TCP logic class
      * It runs in a separate thread
      */
-    private void RunClock()
+    private void runClock()
     {
         long sleep;
         while (runClock)
         {
             synchronized (pseudoTcp)
             {
-                pseudoTcp.NotifyClock(System.currentTimeMillis());
-                sleep = pseudoTcp.GetNextClock(System.currentTimeMillis());
+                pseudoTcp.notifyClock(System.currentTimeMillis());
+                sleep = pseudoTcp.getNextClock(System.currentTimeMillis());
             }
 
             //there might be negative interval even if there's no error
@@ -682,12 +720,12 @@ public class PseudoTcpSocketImpl
     {
         try
         {
-            pseudoTcp.Close(true);
+            pseudoTcp.close(true);
             //System.out.println("ON CLOSE: in flight "+pseudoTcp.GetBytesInFlight());
             //System.out.println("ON CLOSE: buff not sent "+pseudoTcp.GetBytesBufferedNotSent());
-            OnTcpClosed(pseudoTcp, null);
+            onTcpClosed(pseudoTcp, null);
             socket.close();
-            JoinAllThreads();
+            joinAllThreads();
             //UpdateClock();
             //TODO: closing procedure
             //Here the thread should be blocked until TCP
@@ -719,7 +757,7 @@ public class PseudoTcpSocketImpl
     
     
     /**
-     * This class implements @link(InputStream)     *
+     * This class implements <tt>java.io.InputStream</tt>
      */
     class PseudoTcpInputStream extends InputStream
     {
@@ -774,7 +812,7 @@ public class PseudoTcpSocketImpl
                 {
                     synchronized (read_notify)
                     {
-                        read = pseudoTcp.Recv(buffer, offset, length);
+                        read = pseudoTcp.recv(buffer, offset, length);
                         if (logger.isLoggable(Level.FINER))
                         {
                             logger.log(Level.FINER, "Read Recv read count: " + read);
@@ -788,7 +826,7 @@ public class PseudoTcpSocketImpl
                         if (logger.isLoggable(Level.FINER))
                         {
                             logger.log(Level.FINER,
-                                       "Read notified: " + pseudoTcp.GetAvailable());
+                                       "Read notified: " + pseudoTcp.getAvailable());
                         }
                     }
                     if (exception != null)
@@ -813,7 +851,7 @@ public class PseudoTcpSocketImpl
         @Override
         public int available() throws IOException
         {
-            return pseudoTcp.GetAvailable();
+            return pseudoTcp.getAvailable();
         }
 
         @Override
@@ -823,7 +861,7 @@ public class PseudoTcpSocketImpl
     }
 
     /**
-     * Implements @link(OutputStream)
+     * Implements <tt>java.io.OutputStream</tt>
      */
     class PseudoTcpOutputStream extends OutputStream
     {
@@ -859,7 +897,7 @@ public class PseudoTcpSocketImpl
             {
                 synchronized (pseudoTcp)
                 {
-                    sent = pseudoTcp.Send(buffer, offset + length - toSend, toSend);
+                    sent = pseudoTcp.send(buffer, offset + length - toSend, toSend);
                 }
                 if (sent > 0)
                 {
@@ -876,7 +914,7 @@ public class PseudoTcpSocketImpl
                         }
                         logger.log(Level.FINER,
                                    "Write notified, available: "
-                            + pseudoTcp.GetAvailableSendBuffer());
+                            + pseudoTcp.getAvailableSendBuffer());
                         if (exception != null)
                         {
                             throw exception;
@@ -906,8 +944,8 @@ public class PseudoTcpSocketImpl
         public synchronized void flush() throws IOException
         {
             logger.log(Level.FINE, "Flushing...");
-            final Object ackNotify = pseudoTcp.GetAckNotify();
-            while (pseudoTcp.GetBytesBufferedNotSent() > 0)
+            final Object ackNotify = pseudoTcp.getAckNotify();
+            while (pseudoTcp.getBytesBufferedNotSent() > 0)
             {
                 synchronized (ackNotify)
                 {

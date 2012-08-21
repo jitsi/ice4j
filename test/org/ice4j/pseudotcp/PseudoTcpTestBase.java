@@ -21,7 +21,7 @@ import org.ice4j.pseudotcp.util.*;
  * @author Pawel Domas
  */
 public abstract class PseudoTcpTestBase extends MultiThreadSupportTest
-    implements IPseudoTcpNotify
+    implements PseudoTcpNotify
 {
     /**
      * The logger.
@@ -77,8 +77,8 @@ public abstract class PseudoTcpTestBase extends MultiThreadSupportTest
         remoteTcp.debugName = "REM";
         this.localTcp = new PseudoTCPBase(this, 1);
         localTcp.debugName = "LOC";
-        SetLocalMtu(65535);
-        SetRemoteMtu(65535);
+        setLocalMtu(65535);
+        setRemoteMtu(65535);
     }
 
     /**
@@ -100,9 +100,9 @@ public abstract class PseudoTcpTestBase extends MultiThreadSupportTest
      *
      * @param mtu
      */
-    void SetLocalMtu(int mtu)
+    void setLocalMtu(int mtu)
     {
-        localTcp.NotifyMTU(mtu);
+        localTcp.notifyMTU(mtu);
         local_mtu_ = mtu;
     }
 
@@ -111,9 +111,9 @@ public abstract class PseudoTcpTestBase extends MultiThreadSupportTest
      *
      * @param mtu
      */
-    void SetRemoteMtu(int mtu)
+    void setRemoteMtu(int mtu)
     {
-        remoteTcp.NotifyMTU(mtu);
+        remoteTcp.notifyMTU(mtu);
         remote_mtu_ = mtu;
     }
 
@@ -122,7 +122,7 @@ public abstract class PseudoTcpTestBase extends MultiThreadSupportTest
      *
      * @param delay
      */
-    void SetDelay(int delay)
+    void setDelay(int delay)
     {
         delay_ = delay;
     }
@@ -132,7 +132,7 @@ public abstract class PseudoTcpTestBase extends MultiThreadSupportTest
      *
      * @param percent
      */
-    void SetLoss(int percent)
+    void setLoss(int percent)
     {
         loss_ = percent;
     }
@@ -142,10 +142,10 @@ public abstract class PseudoTcpTestBase extends MultiThreadSupportTest
      *
      * @param enable_nagles
      */
-    void SetOptNagling(boolean enable_nagles)
+    void setOptNagling(boolean enable_nagles)
     {
-        localTcp.SetOption(Option.OPT_NODELAY, enable_nagles ? 0 : 1);
-        remoteTcp.SetOption(Option.OPT_NODELAY, enable_nagles ? 0 : 1);
+        localTcp.setOption(Option.OPT_NODELAY, enable_nagles ? 0 : 1);
+        remoteTcp.setOption(Option.OPT_NODELAY, enable_nagles ? 0 : 1);
 
     }
 
@@ -154,10 +154,10 @@ public abstract class PseudoTcpTestBase extends MultiThreadSupportTest
      *
      * @param ack_delay
      */
-    void SetOptAckDelay(int ack_delay)
+    void setOptAckDelay(int ack_delay)
     {
-        localTcp.SetOption(Option.OPT_ACKDELAY, ack_delay);
-        remoteTcp.SetOption(Option.OPT_ACKDELAY, ack_delay);
+        localTcp.setOption(Option.OPT_ACKDELAY, ack_delay);
+        remoteTcp.setOption(Option.OPT_ACKDELAY, ack_delay);
     }
 
     /**
@@ -165,10 +165,10 @@ public abstract class PseudoTcpTestBase extends MultiThreadSupportTest
      *
      * @param size
      */
-    void SetOptSndBuf(int size)
+    void setOptSndBuf(int size)
     {
-        localTcp.SetOption(Option.OPT_SNDBUF, size);
-        remoteTcp.SetOption(Option.OPT_SNDBUF, size);
+        localTcp.setOption(Option.OPT_SNDBUF, size);
+        remoteTcp.setOption(Option.OPT_SNDBUF, size);
     }
 
     /**
@@ -176,9 +176,9 @@ public abstract class PseudoTcpTestBase extends MultiThreadSupportTest
      *
      * @param size
      */
-    void SetRemoteOptRcvBuf(int size)
+    void setRemoteOptRcvBuf(int size)
     {
-        remoteTcp.SetOption(Option.OPT_RCVBUF, size);
+        remoteTcp.setOption(Option.OPT_RCVBUF, size);
     }
 
     /**
@@ -186,15 +186,15 @@ public abstract class PseudoTcpTestBase extends MultiThreadSupportTest
      *
      * @param size
      */
-    void SetLocalOptRcvBuf(int size)
+    void setLocalOptRcvBuf(int size)
     {
-        localTcp.SetOption(Option.OPT_RCVBUF, size);
+        localTcp.setOption(Option.OPT_RCVBUF, size);
     }
 
     /**
      * Disable window scaling for remote peer
      */
-    void DisableRemoteWindowScale()
+    void disableRemoteWindowScale()
     {
         remoteTcp.disableWindowScale();
     }
@@ -202,7 +202,7 @@ public abstract class PseudoTcpTestBase extends MultiThreadSupportTest
     /**
      * Disable window scaling for local peer
      */
-    void DisableLocalWindowScale()
+    void disableLocalWindowScale()
     {
         localTcp.disableWindowScale();
     }
@@ -212,19 +212,19 @@ public abstract class PseudoTcpTestBase extends MultiThreadSupportTest
      *
      * @throws IOException
      */
-    void Connect() throws IOException
+    void connect() throws IOException
     {
-        localTcp.Connect();
-        UpdateLocalClock();
+        localTcp.connect();
+        updateLocalClock();
     }
 
     /**
      * Closes the connection
      */
-    void Close()
+    void close()
     {
-        localTcp.Close(false);
-        UpdateLocalClock();
+        localTcp.close(false);
+        updateLocalClock();
     }
 
     /**
@@ -234,12 +234,12 @@ public abstract class PseudoTcpTestBase extends MultiThreadSupportTest
      * @param tcp
      */
     @Override
-    public void OnTcpOpen(PseudoTCPBase tcp)
+    public void onTcpOpen(PseudoTCPBase tcp)
     {
         if (tcp == localTcp)
         {
             have_connected_ = true;
-            OnTcpWriteable(tcp);
+            onTcpWriteable(tcp);
         }
     }
 
@@ -250,7 +250,7 @@ public abstract class PseudoTcpTestBase extends MultiThreadSupportTest
      * @param exc
      */
     @Override
-    public void OnTcpClosed(PseudoTCPBase tcp, IOException exc)
+    public void onTcpClosed(PseudoTCPBase tcp, IOException exc)
     {
         assert exc == null;
         if (tcp == remoteTcp)
@@ -263,7 +263,7 @@ public abstract class PseudoTcpTestBase extends MultiThreadSupportTest
      */
     private Random random = new Random();
 
-    int RandomInt()
+    int randomInt()
     {
         return random.nextInt(100);
     }
@@ -276,9 +276,9 @@ public abstract class PseudoTcpTestBase extends MultiThreadSupportTest
      * @return
      * @throws IOException
      */
-    int LocalSend(byte[] data, int len) throws IOException
+    int localSend(byte[] data, int len) throws IOException
     {
-        return localTcp.Send(data, len);
+        return localTcp.send(data, len);
     }
 
     /**
@@ -289,9 +289,9 @@ public abstract class PseudoTcpTestBase extends MultiThreadSupportTest
      * @return
      * @throws IOException
      */
-    int LocalRecv(byte[] buffer, int len) throws IOException
+    int localRecv(byte[] buffer, int len) throws IOException
     {
-        return localTcp.Recv(buffer, len);
+        return localTcp.recv(buffer, len);
     }
 
     /**
@@ -302,10 +302,10 @@ public abstract class PseudoTcpTestBase extends MultiThreadSupportTest
      * @return
      * @throws IOException
      */
-    int RemoteRecv(byte[] buffer, int len) throws IOException
+    int remoteRecv(byte[] buffer, int len) throws IOException
     {
 
-        return remoteTcp.Recv(buffer, len);
+        return remoteTcp.recv(buffer, len);
     }
 
     /**
@@ -316,10 +316,10 @@ public abstract class PseudoTcpTestBase extends MultiThreadSupportTest
      * @return
      * @throws IOException
      */
-    int RemoteSend(byte[] data, int len)
+    int remoteSend(byte[] data, int len)
         throws IOException
     {
-        return remoteTcp.Send(data, len);
+        return remoteTcp.send(data, len);
     }
 
     /**
@@ -329,11 +329,11 @@ public abstract class PseudoTcpTestBase extends MultiThreadSupportTest
      * @param len
      * @throws IOException
      */
-    private void LocalPacket(byte[] data, int len)
+    private void localPacket(byte[] data, int len)
         throws IOException
     {
-        localTcp.NotifyPacket(data, len);
-        UpdateLocalClock();
+        localTcp.notifyPacket(data, len);
+        updateLocalClock();
     }
 
     /**
@@ -343,11 +343,11 @@ public abstract class PseudoTcpTestBase extends MultiThreadSupportTest
      * @param len
      * @throws IOException
      */
-    private void RemotePacket(byte[] data, int len)
+    private void remotePacket(byte[] data, int len)
         throws IOException
     {
-        remoteTcp.NotifyPacket(data, len);
-        UpdateRemoteClock();
+        remoteTcp.notifyPacket(data, len);
+        updateRemoteClock();
     }
 
     /**
@@ -366,7 +366,7 @@ public abstract class PseudoTcpTestBase extends MultiThreadSupportTest
             {
                 try
                 {
-                    RemotePacket(data, len);
+                    remotePacket(data, len);
                 }
                 catch (IOException ex)
                 {
@@ -392,7 +392,7 @@ public abstract class PseudoTcpTestBase extends MultiThreadSupportTest
             {
                 try
                 {
-                    LocalPacket(data, len);
+                    localPacket(data, len);
                 }
                 catch (IOException ex)
                 {
@@ -412,11 +412,11 @@ public abstract class PseudoTcpTestBase extends MultiThreadSupportTest
      * @return
      */
     @Override
-    public WriteResult TcpWritePacket(PseudoTCPBase tcp, byte[] buffer, int len)
+    public WriteResult tcpWritePacket(PseudoTCPBase tcp, byte[] buffer, int len)
     {
         // Randomly drop the desired percentage of packets.
         // Also drop packets that are larger than the configured MTU.
-        if (RandomInt() < loss_)
+        if (randomInt() < loss_)
         {
             if (logger.isLoggable(Level.FINE))
             {
@@ -452,7 +452,7 @@ public abstract class PseudoTcpTestBase extends MultiThreadSupportTest
     /**
      * Wakes up local clock thread from wait method causing forced time update
      */
-    protected void UpdateLocalClock()
+    protected void updateLocalClock()
     {
         if (localClockThread != null)
         {
@@ -466,7 +466,7 @@ public abstract class PseudoTcpTestBase extends MultiThreadSupportTest
     /**
      * Wakes up remote clock thread from wait method causing forced time update
      */
-    protected void UpdateRemoteClock()
+    protected void updateRemoteClock()
     {
         if (remoteClockThread != null)
         {
@@ -483,22 +483,22 @@ public abstract class PseudoTcpTestBase extends MultiThreadSupportTest
      * @param tcp
      * @param lock
      */
-    private void UpdateNextClock(final PseudoTCPBase tcp, final Object lock)
+    private void updateNextClock(final PseudoTCPBase tcp, final Object lock)
     {
         try
         {
 
-            long now = PseudoTCPBase.Now();
+            long now = PseudoTCPBase.now();
             //System.out.println(tcp.debugName + " NOTIFY CLOCK: " + now);
             synchronized (tcp)
             {
-                tcp.NotifyClock(now);
+                tcp.notifyClock(now);
             }
             //UpdateClock(tcp);
             long interval;  // NOLINT
             synchronized (tcp)
             {
-                interval = tcp.GetNextClock(PseudoTCPBase.Now());
+                interval = tcp.getNextClock(PseudoTCPBase.now());
             }
             //interval = Math.max(interval, 0L);  // sometimes interval is < 0 
             if (logger.isLoggable(Level.FINEST))
@@ -545,7 +545,7 @@ public abstract class PseudoTcpTestBase extends MultiThreadSupportTest
     /**
      * Start clock threads
      */
-    protected void StartClocks()
+    protected void startClocks()
     {
         if (localClockThread == null && remoteClockThread == null)
         {
@@ -558,7 +558,7 @@ public abstract class PseudoTcpTestBase extends MultiThreadSupportTest
                     while (runClocks)
                     {
                         //localTcp.NotifyClock(PseudoTCPBase.Now());
-                        UpdateNextClock(localTcp, localClockLock);
+                        updateNextClock(localTcp, localClockLock);
 
                     }
 
@@ -572,7 +572,7 @@ public abstract class PseudoTcpTestBase extends MultiThreadSupportTest
                     while (runClocks)
                     {
                         //remoteTcp.NotifyClock(PseudoTCPBase.Now());
-                        UpdateNextClock(remoteTcp, remoteClockLock);
+                        updateNextClock(remoteTcp, remoteClockLock);
                     }
 
                 }
@@ -589,7 +589,7 @@ public abstract class PseudoTcpTestBase extends MultiThreadSupportTest
     /**
      * Stops clock threads
      */
-    protected void StopClocks()
+    protected void stopClocks()
     {
         if (localClockThread != null && remoteClockThread != null)
         {
@@ -623,7 +623,7 @@ public abstract class PseudoTcpTestBase extends MultiThreadSupportTest
      */
     protected boolean assert_Connected_wait(int kConnectTimeoutMs)
     {
-        return assert_wait_until(new IWaitUntilDone()
+        return assert_wait_until(new WaitUntilDone()
         {
             @Override
             public boolean isDone()
@@ -642,7 +642,7 @@ public abstract class PseudoTcpTestBase extends MultiThreadSupportTest
      */
     protected boolean assert_Disconnected_wait(long kTransferTimeoutMs)
     {
-        return assert_wait_until(new IWaitUntilDone()
+        return assert_wait_until(new WaitUntilDone()
         {
             @Override
             public boolean isDone()
@@ -676,7 +676,7 @@ public abstract class PseudoTcpTestBase extends MultiThreadSupportTest
      * @param kBps
      * @return timeout for transfer in ms(minimum 3000 ms)
      */
-    public long MaxTransferTime(long size, long kBps)
+    public long maxTransferTime(long size, long kBps)
     {
         long transferTout = ((size) / kBps) * 8 * 1000;
         return transferTout > 3000 ? transferTout : 3000;

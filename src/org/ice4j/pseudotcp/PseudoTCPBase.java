@@ -13,10 +13,16 @@ import java.util.logging.*;
 import org.ice4j.pseudotcp.util.*;
 
 /**
- * Main protocol logic class. To open connection use Connect() method. Then @link(Recv) and @link(Send) operations may be used for data transfer.
- * To operate this class requires implementation of @link(IPseudoTcpNotify)
+ * Main protocol logic class. To open connection use <tt>connect</tt> method. 
+ * Then <tt>recv</tt> and <tt>send</tt> operations may be used for data transfer.
+ * To operate this class requires implementation of <tt>PseudoTcpNotify</tt>.
  * Also it must be notified about the time progress.
+ * Based on https://developers.google.com/talk/libjingle/
  *
+ * @see PseudoTCPBase#connect
+ * @see PseudoTCPBase#recv
+ * @see PseudoTCPBase#send
+ * @see PseudoTcpNotify
  * @author Pawel Domas
  */
 public class PseudoTCPBase
@@ -263,7 +269,7 @@ public class PseudoTCPBase
      */
     long m_ack_delay;
     boolean m_support_wnd_scale;
-    IPseudoTcpNotify m_notify;
+    PseudoTcpNotify m_notify;
     EnShutdown m_shutdown;
     /**
      * Debug name used to identify peers in log messages
@@ -275,10 +281,10 @@ public class PseudoTCPBase
     //////////////////////////////////////////////////////////////////////
     /**
      *
-     * @param notify {@link IPseudoTcpNotify} implementation
+     * @param notify {@link PseudoTcpNotify} implementation
      * @param conv the conversation number used by this instance
      */
-    public PseudoTCPBase(IPseudoTcpNotify notify, long conv)
+    public PseudoTCPBase(PseudoTcpNotify notify, long conv)
     {
         m_notify = notify;
         m_shutdown = EnShutdown.SD_NONE;
@@ -288,7 +294,7 @@ public class PseudoTCPBase
         m_sbuf = new ByteFifoBuffer(m_sbuf_len);
         // Sanity check on buffer sizes (needed for OnTcpWriteable notification logic)
         assert m_rbuf_len + MIN_PACKET < m_sbuf_len;
-        long now = Now();
+        long now = now();
 
         m_state = PseudoTcpState.TCP_LISTEN;
         m_conv = conv;
@@ -332,7 +338,7 @@ public class PseudoTCPBase
      *
      * @throws IOException if the protocol is not in initial state
      */
-    public void Connect() throws IOException
+    public void connect() throws IOException
     {
         if (m_state != PseudoTcpState.TCP_LISTEN)
         {
@@ -352,7 +358,7 @@ public class PseudoTCPBase
      *
      * @param mtu
      */
-    public void NotifyMTU(int mtu)
+    public void notifyMTU(int mtu)
     {
         m_mtu_advise = mtu;
         if (m_state == PseudoTcpState.TCP_ESTABLISHED)
@@ -360,34 +366,46 @@ public class PseudoTCPBase
             adjustMTU();
         }
     }
+    
+    /**
+     * 
+     * @return MTU value
+     */
+    public int getMTU()
+    {
+        return (int)m_mtu_advise;
+    }
 
     /**
      *
      * @return current timestamp limited to 32 bits
      */
-    public static long Now()
+    public static long now()
     {
         return System.currentTimeMillis() & 0xFFFFFFFFL;
     }
 
     /**
-     * Evaluate next interval between @link(GetNextClock) calls.
+     * Evaluate next interval between <tt>getNextClock</tt> calls.
      * It is based on current protocol action timeout
      *
      * @param now current timestamp
      * @return next interval
+     *
      */
-    public long GetNextClock(long now)
+    public long getNextClock(long now)
     {
         return clock_check(now);
     }
 
     /**
-     * This method should be called in time intervals retrieved from @link(GetNextClock)
+     * This method should be called in time intervals retrieved 
+     * from <tt>getNextClock</tt>
      *
      * @param now current timestamp
+     * @see PseudoTCPBase#getNextClock(long)
      */
-    public void NotifyClock(long now)
+    public void notifyClock(long now)
     {
         if (logger.isLoggable(Level.FINEST))
         {
@@ -401,7 +419,7 @@ public class PseudoTCPBase
         now = now & 0xFFFFFFFFL;
 
         // Check if it's time to retransmit a segment
-        if (m_rto_base > 0 && (TimeDiff(m_rto_base + m_rx_rto, now) <= 0))
+        if (m_rto_base > 0 && (timeDiff(m_rto_base + m_rx_rto, now) <= 0))
         {
             assert m_slist.isEmpty() == false;
             // retransmit segments
@@ -430,9 +448,9 @@ public class PseudoTCPBase
         }
 
         // Check if it's time to probe closed windows
-        if ((getM_snd_wnd() == 0) && (TimeDiff(m_lastsend + m_rx_rto, now) <= 0))
+        if ((getM_snd_wnd() == 0) && (timeDiff(m_lastsend + m_rx_rto, now) <= 0))
         {
-            if (TimeDiff(now, m_lastrecv) >= 15000)
+            if (timeDiff(now, m_lastrecv) >= 15000)
             {
                 closedown(new IOException("Connection aborted"));
                 return;
@@ -446,7 +464,7 @@ public class PseudoTCPBase
         }
 
         // Check if it's time to send delayed acks
-        long timeDiff = TimeDiff(m_t_ack + m_ack_delay, now);
+        long timeDiff = timeDiff(m_t_ack + m_ack_delay, now);
         if (m_t_ack > 0 && (timeDiff <= 0))
         {
             packet(m_snd_nxt, (short) 0, 0, 0);
@@ -455,7 +473,7 @@ public class PseudoTCPBase
         if (PSEUDO_KEEPALIVE) // Check for idle timeout
         {
             if ((m_state == PseudoTcpState.TCP_ESTABLISHED)
-                && (TimeDiff(m_lastrecv + IDLE_TIMEOUT, now) <= 0))
+                && (timeDiff(m_lastrecv + IDLE_TIMEOUT, now) <= 0))
             {
                 closedown(new IOException("Connection aborted"));
                 return;
@@ -463,7 +481,7 @@ public class PseudoTCPBase
 
             // Check for ping timeout (to keep udp mapping open)
             if ((m_state == PseudoTcpState.TCP_ESTABLISHED)
-                && (TimeDiff(m_lasttraffic + (m_bOutgoing ? IDLE_PING * 3 / 2 : IDLE_PING), now) <= 0))
+                && (timeDiff(m_lasttraffic + (m_bOutgoing ? IDLE_PING * 3 / 2 : IDLE_PING), now) <= 0))
             {
                 packet(m_snd_nxt, (short) 0, 0, 0);
             }
@@ -479,7 +497,7 @@ public class PseudoTCPBase
      * @param len data length
      * @return true if packet was successfully parsed
      */
-    synchronized public boolean NotifyPacket(byte[] buffer, int len)
+    synchronized public boolean notifyPacket(byte[] buffer, int len)
     {
         if (len > MAX_PACKET)
         {
@@ -493,9 +511,9 @@ public class PseudoTCPBase
      * Retrieve option's value. See {@link Option} for available options
      *
      * @param opt option which value will be retrieved
-     * @return
+     * @return option's value
      */
-    long GetOption(Option opt)
+    long getOption(Option opt)
     {
         if (opt == Option.OPT_NODELAY)
         {
@@ -528,7 +546,7 @@ public class PseudoTCPBase
      * @param opt option whose value will be set
      * @param value the value to be set
      */
-    void SetOption(Option opt, int value)
+    void setOption(Option opt, long value)
     {
         if (opt == Option.OPT_NODELAY)
         {
@@ -545,13 +563,13 @@ public class PseudoTCPBase
                 if (opt == Option.OPT_SNDBUF)
                 {
                     assert m_state == PseudoTcpState.TCP_LISTEN;
-                    resizeSendBuffer(value);
+                    resizeSendBuffer((int)value);
                 }
                 else
                 {
                     assert opt == Option.OPT_RCVBUF;
                     assert m_state == PseudoTcpState.TCP_LISTEN;
-                    resizeReceiveBuffer(value);
+                    resizeReceiveBuffer((int)value);
                 }
             }
         }
@@ -561,7 +579,7 @@ public class PseudoTCPBase
      *
      * @return congestion window size
      */
-    long GetCongestionWindow()
+    long getCongestionWindow()
     {
         return m_cwnd;
     }
@@ -570,7 +588,7 @@ public class PseudoTCPBase
      *
      * @return bytes in flight
      */
-    long GetBytesInFlight()
+    long getBytesInFlight()
     {
         return m_snd_nxt - m_snd_una;
     }
@@ -579,9 +597,9 @@ public class PseudoTCPBase
      *
      * @return bytes buffered, but not sent yet
      */
-    long GetBytesBufferedNotSent()
+    long getBytesBufferedNotSent()
     {
-        long buffered_bytes = m_sbuf.GetBuffered();
+        long buffered_bytes = m_sbuf.getBuffered();
         return m_snd_una + buffered_bytes - m_snd_nxt;
     }
 
@@ -589,25 +607,25 @@ public class PseudoTCPBase
      *
      * @return bytes available in receive buffer
      */
-    int GetAvailable()
+    int getAvailable()
     {
-        return m_rbuf.GetBuffered();
+        return m_rbuf.getBuffered();
     }
 
     /**
      *
      * @return space available in the send buffer
      */
-    int GetAvailableSendBuffer()
+    int getAvailableSendBuffer()
     {
-        return m_sbuf.GetWriteRemaining();
+        return m_sbuf.getWriteRemaining();
     }
 
     /**
      *
      * @return round trip time estimate in ms
      */
-    long GetRoundTripTimeEstimateMs()
+    long getRoundTripTimeEstimateMs()
     {
         return m_rx_srtt;
     }
@@ -622,14 +640,14 @@ public class PseudoTCPBase
      * @return byte count actually read
      * @throws IOException if the protocol is not in the connected state
      */
-    public synchronized int Recv(byte[] buffer, int offset, int len) throws IOException
+    public synchronized int recv(byte[] buffer, int offset, int len) throws IOException
     {
         if (m_state != PseudoTcpState.TCP_ESTABLISHED)
         {
             throw new IOException("Socket not connected");
         }
 
-        int read = m_rbuf.Read(buffer, offset, len);
+        int read = m_rbuf.read(buffer, offset, len);
 
         // If there's no data in |m_rbuf|.
         if (read == 0)
@@ -639,7 +657,7 @@ public class PseudoTCPBase
         }
         assert read != -1;
 
-        int available_space = m_rbuf.GetWriteRemaining();
+        int available_space = m_rbuf.getWriteRemaining();
         if (available_space - m_rcv_wnd >= Math.min(m_rbuf_len / 8, m_mss))
         {
             boolean bWasClosed = (m_rcv_wnd == 0); // !?! Not sure about this was closed business
@@ -657,24 +675,24 @@ public class PseudoTCPBase
      *
      * @param buffer
      * @param len
-     * @return
+     * @return received byte count
      * @throws IOException
      */
-    public int Recv(byte[] buffer, int len) throws IOException
+    public int recv(byte[] buffer, int len) throws IOException
     {
-        return Recv(buffer, 0, len);
+        return recv(buffer, 0, len);
     }
 
     /**
      *
      * @param buffer
      * @param len
-     * @return
+     * @return sent byte count
      * @throws IOException
      */
-    public int Send(byte[] buffer, int len) throws IOException
+    public int send(byte[] buffer, int len) throws IOException
     {
-        return Send(buffer, 0, len);
+        return send(buffer, 0, len);
     }
 
     /**
@@ -686,7 +704,7 @@ public class PseudoTCPBase
      * @return bytes count written to the send buffer
      * @throws IOException if the protocol is not in connected state
      */
-    public synchronized int Send(byte[] buffer, int offset, int len)
+    public synchronized int send(byte[] buffer, int offset, int len)
         throws IOException
     {
         if (m_state != PseudoTcpState.TCP_ESTABLISHED)
@@ -695,7 +713,7 @@ public class PseudoTCPBase
         }
 
         long available_space;
-        available_space = m_sbuf.GetWriteRemaining();
+        available_space = m_sbuf.getWriteRemaining();
 
         if (available_space == 0)
         {
@@ -713,7 +731,7 @@ public class PseudoTCPBase
      *
      * @param force if true all data received from this moment will be discarded
      */
-    public void Close(boolean force)
+    void close(boolean force)
     {
         logger.log(Level.FINE, debugName + " close (" + force + ")");
         m_shutdown = force ? EnShutdown.SD_FORCEFUL : EnShutdown.SD_GRACEFUL;
@@ -738,7 +756,7 @@ public class PseudoTCPBase
     int queue(byte[] buffer, int offset, int len, boolean bCtrl)
     {
         int available_space;
-        available_space = m_sbuf.GetWriteRemaining();
+        available_space = m_sbuf.getWriteRemaining();
         if (len > available_space)
         {
             assert !bCtrl;
@@ -759,7 +777,7 @@ public class PseudoTCPBase
         else
         {
             long snd_buffered;
-            snd_buffered = m_sbuf.GetBuffered();
+            snd_buffered = m_sbuf.getBuffered();
             SSegment sseg = new SSegment(
                 m_snd_una + snd_buffered,
                 len,
@@ -773,25 +791,28 @@ public class PseudoTCPBase
             m_slist.add(sseg);
         }
 
-        int written = m_sbuf.Write(buffer, offset, len);
+        int written = m_sbuf.write(buffer, offset, len);
         return written;
     }
 
     /**
      * Creates a packet starting at <tt>offset</tt> in the send buffer of
-     * specified length and sends it with help of @link(IPseudoTcpNotify).
+     * specified length and sends it with help of <tt>PseudoTcpNotify</tt>.
      *
      * @param seq used sequence number
      * @param flags
      * @param offset in the send buffer
      * @param len length of data from
-     * @return @link(WriteResult) returned by @link(IPseudoTcpNotify)
+     * @return <tt>WriteResult</tt> returned by <tt>PseudoTcpNotify</tt>
+     * 
+     * @see PseudoTcpNotify
+     * @see WriteResult
      */
     WriteResult packet(long seq, short flags, long offset, long len)
     {
         assert HEADER_SIZE + len <= MAX_PACKET;
 
-        long now = Now();
+        long now = now();
 
         byte[] buffer = new byte[HEADER_SIZE + (int)len];
         long_to_bytes(m_conv, buffer, 0);
@@ -808,7 +829,7 @@ public class PseudoTCPBase
 
         if (len > 0)
         {
-            int bytes_read = m_sbuf.ReadOffset(buffer, HEADER_SIZE,
+            int bytes_read = m_sbuf.readOffset(buffer, HEADER_SIZE,
                                                (int) len,
                                                (int) offset);
             assert bytes_read == len;
@@ -820,7 +841,7 @@ public class PseudoTCPBase
                 + "<WND=" + m_rcv_wnd + "><SCALE=" + m_rwnd_scale + "><TS=" + now
                 + "><TSR=" + m_ts_recent + "><LEN=" + len + ">");
         }
-        WriteResult wres = m_notify.TcpWritePacket(this,
+        WriteResult wres = m_notify.tcpWritePacket(this,
                                                    buffer,
                                                    (int) len + HEADER_SIZE);
         /**
@@ -845,9 +866,9 @@ public class PseudoTCPBase
     }
 
     /**
-     * Method can be used in some debugging utilities
+     * Method can be used in debugging utilities to parse PTCP segment
      */
-    public static String parseSeg(byte[] buffer, int size)
+    public static Segment parseSeg(byte[] buffer, int size)
     {
         if (size < 12)
         {
@@ -866,15 +887,27 @@ public class PseudoTCPBase
 
         seg.data = copy_buffer(buffer, HEADER_SIZE, size - HEADER_SIZE);
         seg.len = size - HEADER_SIZE;
+        
+        return seg;
+    }
+    
+    /**
+     * Can be used to convert segments to text
+     * 
+     * @param seg
+     * @return segment in readable text form
+     */
+    public static String segToStr(Segment seg)
+    {
         String data="data: ";
         for(byte b : seg.data)
         {
             data += b;
         }
-        return "segment " + "<CONV=" + seg.conv + "><FLG=" + seg.flags
-                + "><SEQ=" + seg.seq + ":" + (seg.seq + seg.len) + "><ACK=" + seg.ack
-                + "><WND=" + seg.wnd + "><TS=" + seg.tsval
-                + "><TSR=" + seg.tsecr + "><LEN=" + seg.len + "> "+data;
+        return "<CONV=" + seg.conv + "><FLG=" + seg.flags + "><SEQ=" 
+            + seg.seq + ":" + (seg.seq + seg.len) + "><ACK=" + seg.ack
+            + "><WND=" + seg.wnd + "><TS=" + seg.tsval
+            + "><TSR=" + seg.tsecr + "><LEN=" + seg.len + "> "+data;
     }
     
     /**
@@ -892,18 +925,7 @@ public class PseudoTCPBase
             return false;
         }
 
-        Segment seg = new Segment();
-        seg.conv = bytes_to_long(buffer, 0);
-        seg.seq = bytes_to_long(buffer, 4);
-        seg.ack = bytes_to_long(buffer, 8);
-        seg.flags = buffer[13];
-        seg.wnd = bytes_to_short(buffer, 14);
-
-        seg.tsval = bytes_to_long(buffer, 16);
-        seg.tsecr = bytes_to_long(buffer, 20);
-
-        seg.data = copy_buffer(buffer, HEADER_SIZE, size - HEADER_SIZE);
-        seg.len = size - HEADER_SIZE;
+        Segment seg = parseSeg(buffer, size);
 
         if (logger.isLoggable(Level.FINE))
         {
@@ -931,7 +953,7 @@ public class PseudoTCPBase
 
         long nTimeout;
         long snd_buffered;
-        snd_buffered = m_sbuf.GetBuffered();
+        snd_buffered = m_sbuf.getBuffered();
         if ((m_shutdown == EnShutdown.SD_GRACEFUL)
             && ((m_state != PseudoTcpState.TCP_ESTABLISHED)
             || ((snd_buffered == 0) && (m_t_ack == 0))))
@@ -948,15 +970,15 @@ public class PseudoTCPBase
 
         if (m_t_ack > 0)
         {
-            nTimeout = Math.min(nTimeout, TimeDiff(m_t_ack + m_ack_delay, now));
+            nTimeout = Math.min(nTimeout, timeDiff(m_t_ack + m_ack_delay, now));
         }
         if (m_rto_base > 0)
         {
-            nTimeout = Math.min(nTimeout, TimeDiff(m_rto_base + m_rx_rto, now));
+            nTimeout = Math.min(nTimeout, timeDiff(m_rto_base + m_rx_rto, now));
         }
         if (getM_snd_wnd() == 0)
         {
-            nTimeout = Math.min(nTimeout, TimeDiff(m_lastsend + m_rx_rto, now));
+            nTimeout = Math.min(nTimeout, timeDiff(m_lastsend + m_rx_rto, now));
         }
         if (PSEUDO_KEEPALIVE)
         {
@@ -964,7 +986,7 @@ public class PseudoTCPBase
             {
                 nTimeout = Math.min(
                     nTimeout,
-                    TimeDiff(m_lasttraffic + (m_bOutgoing ? IDLE_PING * 3 / 2 : IDLE_PING), now));
+                    timeDiff(m_lasttraffic + (m_bOutgoing ? IDLE_PING * 3 / 2 : IDLE_PING), now));
             }
         }
         //nTimeout is used on wait methods, so cannot be equal to 0
@@ -993,7 +1015,7 @@ public class PseudoTCPBase
             return false;
         }
 
-        long now = Now();
+        long now = now();
         m_lasttraffic = m_lastrecv = now;
         m_bOutgoing = false;
 
@@ -1048,7 +1070,7 @@ public class PseudoTCPBase
                             adjustMTU();
                             if (m_notify != null)
                             {
-                                m_notify.OnTcpOpen(this);
+                                m_notify.onTcpOpen(this);
                             }
                             //notify(evOpen);
                         }
@@ -1075,7 +1097,7 @@ public class PseudoTCPBase
             // Calculate round-trip time
             if (seg.tsecr > 0)
             {
-                long rtt = TimeDiff(now, seg.tsecr);
+                long rtt = timeDiff(now, seg.tsecr);
                 assert rtt >= 0;
                 if (m_rx_srtt == 0)
                 {
@@ -1106,7 +1128,7 @@ public class PseudoTCPBase
 
             m_rto_base = (m_snd_una == m_snd_nxt) ? 0 : now;
 
-            m_sbuf.ConsumeReadData((int) nAcked);
+            m_sbuf.consumeReadData((int) nAcked);
             synchronized (ack_notify)
             {
                 if (logger.isLoggable(Level.FINER))
@@ -1237,7 +1259,7 @@ public class PseudoTCPBase
             adjustMTU();
             if (m_notify != null)
             {
-                m_notify.OnTcpOpen(this);
+                m_notify.onTcpOpen(this);
             }
             //notify(evOpen);
         }
@@ -1245,13 +1267,13 @@ public class PseudoTCPBase
         // The goal it to make sure we always have at least enough data to fill the
         // window.  We'd like to notify the app when we are halfway to that point.
         long kIdealRefillSize = (m_sbuf_len + m_rbuf_len) / 2;
-        long snd_buffered = m_sbuf.GetBuffered();
+        long snd_buffered = m_sbuf.getBuffered();
         if (m_bWriteEnable && snd_buffered < kIdealRefillSize)
         {
             m_bWriteEnable = false;
             if (m_notify != null)
             {
-                m_notify.OnTcpWriteable(this);
+                m_notify.onTcpWriteable(this);
             }
             //notify(evWrite);
         }
@@ -1303,7 +1325,7 @@ public class PseudoTCPBase
             if (nAdjust < seg.len)
             {
                 seg.seq += nAdjust;
-                seg.data = ScrollBuffer(seg.data, nAdjust);
+                seg.data = scrollBuffer(seg.data, (int)nAdjust);
                 seg.len -= nAdjust;
             }
             else
@@ -1311,7 +1333,7 @@ public class PseudoTCPBase
                 seg.len = 0;
             }
         }
-        long available_space = m_rbuf.GetWriteRemaining();
+        long available_space = m_rbuf.getWriteRemaining();
         if ((seg.seq + seg.len - m_rcv_nxt) > available_space)
         {
             long nAdjust = seg.seq + seg.len - m_rcv_nxt - available_space;
@@ -1339,7 +1361,7 @@ public class PseudoTCPBase
             {
                 long nOffset = seg.seq - m_rcv_nxt;
 
-                int result = m_rbuf.WriteOffset(seg.data, seg.len,
+                int result = m_rbuf.writeOffset(seg.data, seg.len,
                                                 (int) nOffset);
                 assert result == seg.len;
 
@@ -1351,7 +1373,7 @@ public class PseudoTCPBase
                                    "Avail space: " + available_space
                             + " seg.len: " + seg.len);
                     }
-                    m_rbuf.ConsumeWriteBuffer(seg.len);
+                    m_rbuf.consumeWriteBuffer(seg.len);
                     m_rcv_nxt += seg.len;
                     m_rcv_wnd -= seg.len;
                     bNewData = true;
@@ -1377,7 +1399,7 @@ public class PseudoTCPBase
                                     + m_rcv_nxt + " -> " + (m_rcv_nxt + nAdjust)
                                     + ")");
                             }
-                            m_rbuf.ConsumeWriteBuffer((int) nAdjust);
+                            m_rbuf.consumeWriteBuffer((int) nAdjust);
                             m_rcv_nxt += nAdjust;
                             m_rcv_wnd -= nAdjust;
                         }
@@ -1415,7 +1437,7 @@ public class PseudoTCPBase
             m_bReadEnable = false;
             if (m_notify != null)
             {
-                m_notify.OnTcpReadable(this);
+                m_notify.onTcpReadable(this);
             }
             //notify(evRead);
         }
@@ -1429,7 +1451,7 @@ public class PseudoTCPBase
      * @param earlier timestamp in ms
      * @return difference between <tt>later</tt> and <tt>earlier</tt>
      */
-    private static long TimeDiff(long later, long earlier)
+    private static long timeDiff(long later, long earlier)
     {
         return later - earlier;
     }
@@ -1527,10 +1549,11 @@ public class PseudoTCPBase
         return Math.min(Math.max(lower, middle), upper);
     }
 
-    private byte[] ScrollBuffer(byte[] data, long nAdjust)
+    private byte[] scrollBuffer(byte[] data, int nAdjust)
     {
-        //TODO: never been hit so far, to be implemented
-        throw new UnsupportedOperationException("Not yet implemented");
+        byte[] newBuffer = new byte[data.length - nAdjust];
+        System.arraycopy(data, nAdjust, newBuffer, 0, newBuffer.length);
+        return newBuffer;
     }
 
     /**
@@ -1634,9 +1657,9 @@ public class PseudoTCPBase
      */
     void attemptSend(SendFlags sflags)
     {
-        long now = Now();
+        long now = now();
 
-        if (TimeDiff(now, m_lastsend) > m_rx_rto)
+        if (timeDiff(now, m_lastsend) > m_rx_rto)
         {
             m_cwnd = m_mss;
         }
@@ -1653,7 +1676,7 @@ public class PseudoTCPBase
             long nInFlight = m_snd_nxt - m_snd_una;
             long nUseable = (nInFlight < nWindow) ? (nWindow - nInFlight) : 0;
 
-            long snd_buffered = m_sbuf.GetBuffered();
+            long snd_buffered = m_sbuf.getBuffered();
             /*
              * System.out.println("is available? buffered: " + snd_buffered + "
              * inFlight: " + nInFlight + " m_mss: " + m_mss + " m_snd_wnd: " +
@@ -1679,7 +1702,7 @@ public class PseudoTCPBase
 
             if (bFirst)
             {
-                long available_space = m_sbuf.GetWriteRemaining();
+                long available_space = m_sbuf.getWriteRemaining();
 
                 bFirst = false;
                 if (logger.isLoggable(Level.FINE))
@@ -1708,7 +1731,7 @@ public class PseudoTCPBase
                 }
                 else
                 {
-                    m_t_ack = Now();
+                    m_t_ack = now();
                     logger.log(Level.FINER, "Delayed ack, m_t_ack: " + m_t_ack);
                 }
                 return;
@@ -1781,7 +1804,7 @@ public class PseudoTCPBase
         m_state = PseudoTcpState.TCP_CLOSED;
         if (m_notify != null)
         {
-            m_notify.OnTcpClosed(this, e);
+            m_notify.onTcpClosed(this, e);
         }
     }
 
@@ -1813,7 +1836,7 @@ public class PseudoTCPBase
      */
     boolean isReceiveBufferFull()
     {
-        return m_rbuf.GetWriteRemaining() == 0;
+        return m_rbuf.getWriteRemaining() == 0;
     }
 
     /**
@@ -1961,7 +1984,7 @@ public class PseudoTCPBase
     void resizeSendBuffer(int new_size)
     {
         m_sbuf_len = new_size;
-        m_sbuf.SetCapacity(new_size);
+        m_sbuf.setCapacity(new_size);
     }
 
     /**
@@ -1983,7 +2006,7 @@ public class PseudoTCPBase
 
         // Determine the proper size of the buffer.
         new_size <<= scale_factor;
-        boolean result = m_rbuf.SetCapacity(new_size);
+        boolean result = m_rbuf.setCapacity(new_size);
 
         // Make sure the new buffer is large enough to contain data in the old
         // buffer. This should always be true because this method is called either
@@ -1994,7 +2017,7 @@ public class PseudoTCPBase
         m_rwnd_scale = scale_factor;
         m_ssthresh = new_size;
 
-        int available_space = m_rbuf.GetWriteRemaining();
+        int available_space = m_rbuf.getWriteRemaining();
         m_rcv_wnd = available_space;
     }
 
@@ -2050,119 +2073,22 @@ public class PseudoTCPBase
     }
     private final Object ack_notify = new Object();
 
-    public Object GetAckNotify()
+    public Object getAckNotify()
     {
         return ack_notify;
     }
-}
 
-/**
- * Class used internally as a structure for receive segments
- *
- * @author Pawel
- */
-class RSegment
-{
-    public long seq, len;
-
-    public RSegment(long seq, long len)
+    long getConversationID()
     {
-        this.seq = seq;
-        this.len = len;
+        return m_conv;
     }
-}
 
-/**
- * Class used internally as a structure for send segments
- *
- * @author Pawel Domas
- */
-class SSegment
-{
-    long seq, len;
-    //uint32 tstamp;
-    short xmit;
-    boolean bCtrl;
-
-    SSegment(long s, long l, boolean c)
+    void setConversationID(long convID)
     {
-        seq = s;
-        len = l;
-        xmit = 0;
-        bCtrl = c;
+        if(m_state != PseudoTcpState.TCP_LISTEN)
+            throw new IllegalStateException();
+        this.m_conv = convID;
     }
-}
 
-/**
- * Shutdown enum used internally
- *
- * @author Pawel Domas
- */
-enum EnShutdown
-{
-    /**
-     * There was no shutdown
-     */
-    SD_NONE,
-    /**
-     * There was a graceful shutdown
-     */
-    SD_GRACEFUL,
-    /**
-     * There was a forceful shutdown
-     */
-    SD_FORCEFUL
-};
-
-/**
- * Options used in pseudotcp
- *
- * @author Pawel Domas
- */
-enum Option
-{
-    /**
-     * Whether to enable Nagle's algorithm (0 == off)
-     */
-    OPT_NODELAY,
-    /**
-     * The Delayed ACK timeout (0 == off).
-     */
-    OPT_ACKDELAY,
-    /**
-     * Set the receive buffer size, in bytes.
-     */
-    OPT_RCVBUF,
-    /**
-     * Set the send buffer size, in bytes.
-     */
-    OPT_SNDBUF,
-};
-
-/**
- * Send flags used internally
- *
- * @author Pawel Domas
- */
-enum SendFlags
-{
-    sfNone, sfImmediateAck, sfDelayedAck;
-}
-
-/**
- * Class used internally as a segment structure
- *
- * @author Pawel Domas
- */
-class Segment
-{
-    long conv;
-    long seq;
-    long ack;
-    byte flags;
-    int wnd;
-    long tsval;
-    long tsecr;
-    byte[] data;
-    int len;
+    
 }
