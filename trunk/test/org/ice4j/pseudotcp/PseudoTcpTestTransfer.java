@@ -52,7 +52,7 @@ public class PseudoTcpTestTransfer extends PseudoTcpTestBase
      *
      * @param size
      */
-    public void TestTransfer(int size)
+    public void doTestTransfer(int size)
     {
     	Thread.setDefaultUncaughtExceptionHandler(this);
         long start, elapsed;
@@ -64,11 +64,11 @@ public class PseudoTcpTestTransfer extends PseudoTcpTestBase
         // Prepare the receive stream.
         recvStream = new ByteArrayOutputStream(size);
         // Connect and wait until connected.
-        start = PseudoTCPBase.Now();
-        StartClocks();
+        start = PseudoTCPBase.now();
+        startClocks();
         try
         {
-            Connect();
+            connect();
             //assertEquals(0, Connect());
         }
         catch (IOException ex)
@@ -79,10 +79,10 @@ public class PseudoTcpTestTransfer extends PseudoTcpTestBase
         assert_Connected_wait(kConnectTimeoutMs);
         // Sending will start from OnTcpWriteable and complete when all data has
         // been received.
-        long transferTout = MaxTransferTime(sendData.length, kMinTransferRate);
+        long transferTout = maxTransferTime(sendData.length, kMinTransferRate);
         boolean transfferInTime = assert_Disconnected_wait(transferTout);
-        elapsed = PseudoTCPBase.Now() - start;
-        StopClocks();
+        elapsed = PseudoTCPBase.now() - start;
+        stopClocks();
         received = recvStream.size();
         assertEquals("Transfer timeout, transferred: " + received
             + " required: " + sendData.length
@@ -106,14 +106,14 @@ public class PseudoTcpTestTransfer extends PseudoTcpTestBase
      *
      * @throws IOException
      */
-    void ReadData() throws IOException
+    void readData() throws IOException
     {
         byte[] block = new byte[kBlockSize];
         int rcvd;
         do
         {
-            rcvd = RemoteRecv(block, block.length);
-            UpdateRemoteClock();
+            rcvd = remoteRecv(block, block.length);
+            updateRemoteClock();
             if (rcvd != -1)
             {
                 recvStream.write(block, 0, rcvd);
@@ -128,7 +128,7 @@ public class PseudoTcpTestTransfer extends PseudoTcpTestBase
      * @return true if there's no more data left to write
      * @throws IOException
      */
-    boolean WriteData() throws IOException
+    boolean writeData() throws IOException
     {
         int tosend;
         int sent;
@@ -139,8 +139,8 @@ public class PseudoTcpTestTransfer extends PseudoTcpTestBase
             System.arraycopy(sendData, totalSent, block, 0, tosend);
             if (tosend > 0)
             {
-                sent = LocalSend(block, tosend);
-                UpdateLocalClock();
+                sent = localSend(block, tosend);
+                updateLocalClock();
                 if (sent != -1)
                 {
                     totalSent += sent;
@@ -173,13 +173,13 @@ public class PseudoTcpTestTransfer extends PseudoTcpTestBase
      * @param tcp
      */
     @Override
-    public void OnTcpReadable(PseudoTCPBase tcp)
+    public void onTcpReadable(PseudoTCPBase tcp)
     {
         if (tcp == getRemoteTcp())
         {
             try
             {
-                ReadData();
+                readData();
                 // TODO: OnTcpClosed() is currently only notified on error -
                 // there is no on-the-wire equivalent of TCP FIN.
                 // So we fake the notification when all the data has been read.
@@ -193,7 +193,7 @@ public class PseudoTcpTestTransfer extends PseudoTcpTestBase
                 }
                 if (received == required)
                 {
-                    OnTcpClosed(getRemoteTcp(), null);
+                    onTcpClosed(getRemoteTcp(), null);
                 }
             }
             catch (IOException ex)
@@ -210,7 +210,7 @@ public class PseudoTcpTestTransfer extends PseudoTcpTestBase
      * @param tcp
      */
     @Override
-    public void OnTcpWriteable(PseudoTCPBase tcp)
+    public void onTcpWriteable(PseudoTCPBase tcp)
     {
         if (tcp == getLocalTcp())
         {
@@ -219,9 +219,9 @@ public class PseudoTcpTestTransfer extends PseudoTcpTestBase
             logger.log(Level.FINER, "Flow Control Lifted");
             try
             {
-                if (WriteData())
+                if (writeData())
                 {
-                    Close();
+                    close();
                 }
             }
             catch (IOException ex)
@@ -240,9 +240,9 @@ public class PseudoTcpTestTransfer extends PseudoTcpTestBase
     {
         //logger.log(Level.INFO, "Test send");
         PseudoTcpTestTransfer test = new PseudoTcpTestTransfer();
-        test.SetLocalMtu(1500);
-        test.SetRemoteMtu(1500);
-        test.TestTransfer(1000000);
+        test.setLocalMtu(1500);
+        test.setRemoteMtu(1500);
+        test.doTestTransfer(1000000);
     }
 
     /**
@@ -253,10 +253,10 @@ public class PseudoTcpTestTransfer extends PseudoTcpTestBase
     {
         //logger.log(Level.INFO, "Test send with delay");
         PseudoTcpTestTransfer test = new PseudoTcpTestTransfer();
-        test.SetLocalMtu(1500);
-        test.SetRemoteMtu(1500);
-        test.SetDelay(50);
-        test.TestTransfer(1000000);
+        test.setLocalMtu(1500);
+        test.setRemoteMtu(1500);
+        test.setDelay(50);
+        test.doTestTransfer(1000000);
     }
 
     /**
@@ -267,10 +267,10 @@ public class PseudoTcpTestTransfer extends PseudoTcpTestBase
     {
         //logger.log(Level.INFO, "Test send with loss");
         PseudoTcpTestTransfer test = new PseudoTcpTestTransfer();
-        test.SetLocalMtu(1500);
-        test.SetRemoteMtu(1500);
-        test.SetLoss(10);
-        test.TestTransfer(100000);  // less data so test runs faster
+        test.setLocalMtu(1500);
+        test.setRemoteMtu(1500);
+        test.setLoss(10);
+        test.doTestTransfer(100000);  // less data so test runs faster
     }
 
     /**
@@ -282,11 +282,11 @@ public class PseudoTcpTestTransfer extends PseudoTcpTestBase
     {
         //logger.log(Level.INFO, "Test send with delay and loss");
         PseudoTcpTestTransfer test = new PseudoTcpTestTransfer();
-        test.SetLocalMtu(1500);
-        test.SetRemoteMtu(1500);
-        test.SetDelay(50);
-        test.SetLoss(10);
-        test.TestTransfer(100000);  // less data so test runs faster
+        test.setLocalMtu(1500);
+        test.setRemoteMtu(1500);
+        test.setDelay(50);
+        test.setLoss(10);
+        test.doTestTransfer(100000);  // less data so test runs faster
     }
 
     /**
@@ -297,11 +297,11 @@ public class PseudoTcpTestTransfer extends PseudoTcpTestBase
     {
         //logger.log(Level.INFO, "Test send with loss and OptNagling off");
         PseudoTcpTestTransfer test = new PseudoTcpTestTransfer();
-        test.SetLocalMtu(1500);
-        test.SetRemoteMtu(1500);
-        test.SetLoss(10);
-        test.SetOptNagling(false);
-        test.TestTransfer(100000);  // less data so test runs faster
+        test.setLocalMtu(1500);
+        test.setRemoteMtu(1500);
+        test.setLoss(10);
+        test.setOptNagling(false);
+        test.doTestTransfer(100000);  // less data so test runs faster
     }
 
     /**
@@ -312,11 +312,11 @@ public class PseudoTcpTestTransfer extends PseudoTcpTestBase
     {
         //logger.log(Level.INFO, "Test send with loss and OptAckDelay off");
         PseudoTcpTestTransfer test = new PseudoTcpTestTransfer();
-        test.SetLocalMtu(1500);
-        test.SetRemoteMtu(1500);
-        test.SetLoss(10);
-        test.SetOptAckDelay(0);
-        test.TestTransfer(100000);
+        test.setLocalMtu(1500);
+        test.setRemoteMtu(1500);
+        test.setLoss(10);
+        test.setOptAckDelay(0);
+        test.doTestTransfer(100000);
     }
 
     /**
@@ -326,11 +326,11 @@ public class PseudoTcpTestTransfer extends PseudoTcpTestBase
     {
         //logger.log(Level.INFO, "Test send with delay and OptNagling off");
         PseudoTcpTestTransfer test = new PseudoTcpTestTransfer();
-        test.SetLocalMtu(1500);
-        test.SetRemoteMtu(1500);
-        test.SetDelay(50);
-        test.SetOptNagling(false);
-        test.TestTransfer(100000);  // less data so test runs faster
+        test.setLocalMtu(1500);
+        test.setRemoteMtu(1500);
+        test.setDelay(50);
+        test.setOptNagling(false);
+        test.doTestTransfer(100000);  // less data so test runs faster
     }
 
     /**
@@ -340,11 +340,11 @@ public class PseudoTcpTestTransfer extends PseudoTcpTestBase
     {
         //logger.log(Level.INFO, "Test send with delay and OptAckDelay off");
         PseudoTcpTestTransfer test = new PseudoTcpTestTransfer();
-        test.SetLocalMtu(1500);
-        test.SetRemoteMtu(1500);
-        test.SetDelay(50);
-        test.SetOptAckDelay(0);
-        test.TestTransfer(100000);  // less data so test runs faster
+        test.setLocalMtu(1500);
+        test.setRemoteMtu(1500);
+        test.setDelay(50);
+        test.setOptAckDelay(0);
+        test.doTestTransfer(100000);  // less data so test runs faster
     }
 
     /**
@@ -354,11 +354,11 @@ public class PseudoTcpTestTransfer extends PseudoTcpTestBase
     {
         //logger.log(Level.INFO, "Test send - remote no window scale");
         PseudoTcpTestTransfer test = new PseudoTcpTestTransfer();
-        test.SetLocalMtu(1500);
-        test.SetRemoteMtu(1500);
-        test.SetLocalOptRcvBuf(100000);
-        test.DisableRemoteWindowScale();
-        test.TestTransfer(1000000);
+        test.setLocalMtu(1500);
+        test.setRemoteMtu(1500);
+        test.setLocalOptRcvBuf(100000);
+        test.disableRemoteWindowScale();
+        test.doTestTransfer(1000000);
     }
 
     /**
@@ -369,11 +369,11 @@ public class PseudoTcpTestTransfer extends PseudoTcpTestBase
     {
         //logger.log(Level.INFO, "Test send - local no window scale");
         PseudoTcpTestTransfer test = new PseudoTcpTestTransfer();
-        test.SetLocalMtu(1500);
-        test.SetRemoteMtu(1500);
-        test.SetRemoteOptRcvBuf(100000);
-        test.DisableLocalWindowScale();
-        test.TestTransfer(1000000);
+        test.setLocalMtu(1500);
+        test.setRemoteMtu(1500);
+        test.setRemoteOptRcvBuf(100000);
+        test.disableLocalWindowScale();
+        test.doTestTransfer(1000000);
     }
 
     /**
@@ -383,11 +383,11 @@ public class PseudoTcpTestTransfer extends PseudoTcpTestBase
     {
         //logger.log(Level.INFO, "Test send - both use window scale");
         PseudoTcpTestTransfer test = new PseudoTcpTestTransfer();
-        test.SetLocalMtu(1500);
-        test.SetRemoteMtu(1500);
-        test.SetRemoteOptRcvBuf(100000);
-        test.SetLocalOptRcvBuf(100000);
-        test.TestTransfer(1000000);
+        test.setLocalMtu(1500);
+        test.setRemoteMtu(1500);
+        test.setRemoteOptRcvBuf(100000);
+        test.setLocalOptRcvBuf(100000);
+        test.doTestTransfer(1000000);
     }
 
     /**
@@ -397,23 +397,23 @@ public class PseudoTcpTestTransfer extends PseudoTcpTestBase
     {
         //logger.log(Level.INFO, "Test send large in flight");
         PseudoTcpTestTransfer test = new PseudoTcpTestTransfer();
-        test.SetLocalMtu(1500);
-        test.SetRemoteMtu(1500);
-        test.SetRemoteOptRcvBuf(100000);
-        test.SetLocalOptRcvBuf(100000);
-        test.SetOptSndBuf(150000);
-        test.TestTransfer(1000000);
+        test.setLocalMtu(1500);
+        test.setRemoteMtu(1500);
+        test.setRemoteOptRcvBuf(100000);
+        test.setLocalOptRcvBuf(100000);
+        test.setOptSndBuf(150000);
+        test.doTestTransfer(1000000);
     }
 
     public void testSendBothUseLargeWindowScale()
     {
         //logger.log(Level.INFO, "Test send both use large window scale");
         PseudoTcpTestTransfer test = new PseudoTcpTestTransfer();
-        test.SetLocalMtu(1500);
-        test.SetRemoteMtu(1500);
-        test.SetRemoteOptRcvBuf(1000000);
-        test.SetLocalOptRcvBuf(1000000);
-        test.TestTransfer(10000000);
+        test.setLocalMtu(1500);
+        test.setRemoteMtu(1500);
+        test.setRemoteOptRcvBuf(1000000);
+        test.setLocalOptRcvBuf(1000000);
+        test.doTestTransfer(10000000);
     }
 
     /**
@@ -423,11 +423,11 @@ public class PseudoTcpTestTransfer extends PseudoTcpTestBase
     {
         //logger.log(Level.INFO, "Test send small receive buffer");
         PseudoTcpTestTransfer test = new PseudoTcpTestTransfer();
-        test.SetLocalMtu(1500);
-        test.SetRemoteMtu(1500);
-        test.SetRemoteOptRcvBuf(10000);
-        test.SetLocalOptRcvBuf(10000);
-        test.TestTransfer(1000000);
+        test.setLocalMtu(1500);
+        test.setRemoteMtu(1500);
+        test.setRemoteOptRcvBuf(10000);
+        test.setLocalOptRcvBuf(10000);
+        test.doTestTransfer(1000000);
     }
 
     /**
@@ -437,10 +437,10 @@ public class PseudoTcpTestTransfer extends PseudoTcpTestBase
     {
         //logger.log(Level.INFO, "Test send very small receive buffer");
         PseudoTcpTestTransfer test = new PseudoTcpTestTransfer();
-        test.SetLocalMtu(1500);
-        test.SetRemoteMtu(1500);
-        test.SetRemoteOptRcvBuf(100);
-        test.SetLocalOptRcvBuf(100);
-        test.TestTransfer(100000);
+        test.setLocalMtu(1500);
+        test.setRemoteMtu(1500);
+        test.setRemoteOptRcvBuf(100);
+        test.setLocalOptRcvBuf(100);
+        test.doTestTransfer(100000);
     }
 }

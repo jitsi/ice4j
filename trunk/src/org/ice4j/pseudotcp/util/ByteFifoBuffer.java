@@ -46,33 +46,33 @@ public class ByteFifoBuffer
     /**
      * @return buffer's capacity
      */
-    public int Length()
+    public int length()
     {
         return array.length;
     }
 
     /**
-     * Method reads <tt>count</tt> bytes into <tt>out_buffer</tt> 
+     * Method reads <tt>count</tt> bytes into <tt>out_buffer</tt>. 
      * Current read position is incremented by count of bytes 
-     * that has been successfully read
+     * that has been successfully read.
      *
      * @param out_buffer
      * @param count
      * @return bytes successfully read
      */
-    public int Read(byte[] out_buffer, int count)
+    public int read(byte[] out_buffer, int count)
     {
-        return Read(out_buffer, 0, count);
+        return read(out_buffer, 0, count);
     }
     
     /**
      * Read with buffer offset
      * @param out_buffer
      * @param buff_offset
-     * @param len
-     * @return
+     * @param count bytes to read
+     * @return read byte count
      */
-    public int Read(byte[] out_buffer, int buff_offset, int count) {
+    public int read(byte[] out_buffer, int buff_offset, int count) {
         count = readLimit(count);
         if (count > 0)
         {
@@ -127,7 +127,7 @@ public class ByteFifoBuffer
      *
      * @return space left in buffer for write
      */
-    public int GetWriteRemaining()
+    public int getWriteRemaining()
     {
         return array.length - buffered;
     }
@@ -136,7 +136,7 @@ public class ByteFifoBuffer
      *
      * @return bytes stored in buffer and available for reading
      */
-    public int GetBuffered()
+    public int getBuffered()
     {
         return buffered;
     }
@@ -148,9 +148,9 @@ public class ByteFifoBuffer
      * @param count
      * @return bytes successfully written to buffer
      */
-    public int Write(byte[] buffer, int count)
+    public int write(byte[] buffer, int count)
     {
-        return Write(buffer, 0, count);
+        return write(buffer, 0, count);
     }
 
     /**
@@ -160,7 +160,7 @@ public class ByteFifoBuffer
      * @param count
      * @return byte count actually read
      */
-    public int Write(byte[] data, int offset, int count)
+    public int write(byte[] data, int offset, int count)
     {
         /*
          * System.out.println("----write " + this + " " + len + " buffered " +
@@ -233,7 +233,7 @@ public class ByteFifoBuffer
         throws IllegalArgumentException
     {
         int spaceReq;
-        int availSpace = GetWriteRemaining();
+        int availSpace = getWriteRemaining();
         if (newWrPos < write_pos)
         {
             spaceReq = newWrPos + (array.length - write_pos);
@@ -254,11 +254,11 @@ public class ByteFifoBuffer
      * 
      * @param count
      */
-    public void ConsumeWriteBuffer(int count)
+    public void consumeWriteBuffer(int count)
         throws IllegalArgumentException,
                BufferOverflowException
     {
-        if (count > GetWriteRemaining())
+        if (count > getWriteRemaining())
         {
             throw new BufferOverflowException();
         }
@@ -280,9 +280,9 @@ public class ByteFifoBuffer
      * @return <tt>true</tt> if operation is possible to perform, that is if new
      * buffered data fits into new buffer
      */
-    public boolean SetCapacity(int new_size)
+    public boolean setCapacity(int new_size)
     {
-        if (new_size < GetBuffered())
+        if (new_size < getBuffered())
         {
             return false;
         }
@@ -299,7 +299,7 @@ public class ByteFifoBuffer
      * @throws BufferUnderflowException if new position exceeds buffered data
      * count
      */
-    public void ConsumeReadData(int count)
+    public void consumeReadData(int count)
         throws IllegalArgumentException,
                BufferUnderflowException
     {
@@ -328,7 +328,7 @@ public class ByteFifoBuffer
      * @param offset from current read position
      * @return bytes successfully read
      */
-    public int ReadOffset(byte[] dst_buff,
+    public int readOffset(byte[] dst_buff,
                           int dst_buff_offset,
                           int count,
                           int offset)
@@ -353,10 +353,10 @@ public class ByteFifoBuffer
      * @param nOffset from buffer's write position
      * @return bytes successfully written
      */
-    public int WriteOffset(byte[] data, int count, int nOffset)
+    public int writeOffset(byte[] data, int count, int nOffset)
         throws BufferOverflowException
     {
-        if (count > GetWriteRemaining())
+        if (count > getWriteRemaining())
         {
             throw new BufferOverflowException();
         }
@@ -366,25 +366,18 @@ public class ByteFifoBuffer
         }
         int offWritePos = (this.write_pos + nOffset) % array.length;
         count = writeLimit(count);
-        //try{
         assertWriteLimit(offWritePos + count);
-        //}catch(IllegalArgumentException e){
-        //    System.out.println("Write offset: " + nOffset + " count: " + count
-        //+ " wpos: " + write_pos + " buffered: " + buffered + " len: " + length + this);
-        //    throw e;
-        //}   
-        //buffer.position(writePos + nOffset);
         writeOp(data, 0, count, array, offWritePos, array.length);
-        //buffer.position(writePos);
+        
         return count;
     }
 
-    public void ResetReadPosition()
+    public void resetReadPosition()
     {
         this.read_pos = 0;
     }
 
-    public void ResetWritePosition()
+    public void resetWritePosition()
     {
         this.write_pos = 0;
         this.buffered = 0;

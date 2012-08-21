@@ -41,12 +41,12 @@ public class MultiThreadSupportTest
     }
     
     private long assertWaitInterval = 100;
-    protected interface IWaitUntilDone
+    protected interface WaitUntilDone
     {
         public boolean isDone();
     }    
     
-    protected boolean assert_wait_until(IWaitUntilDone wait, long timeoutMs)
+    protected boolean assert_wait_until(WaitUntilDone wait, long timeoutMs)
     {
         try
         {

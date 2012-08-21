@@ -31,10 +31,10 @@ public class ByteFifoBufferTest
     {
         int expResult = 1000;
         ByteFifoBuffer instance = new ByteFifoBuffer(expResult);
-        assertEquals(expResult, instance.Length());
+        assertEquals(expResult, instance.length());
         int wSize = 100;
-        instance.Write(getWData(wSize), wSize);
-        int result = instance.Length();
+        instance.write(getWData(wSize), wSize);
+        int result = instance.length();
         assertEquals(expResult, result);
     }
 
@@ -46,11 +46,11 @@ public class ByteFifoBufferTest
         int count = 1024;
         byte[] wData = getWData(count);
         ByteFifoBuffer instance = new ByteFifoBuffer(count);
-        instance.Write(wData, count);
+        instance.write(wData, count);
 
         byte[] readBuff = new byte[count];
         int expResult = count;
-        int result = instance.Read(readBuff, count);
+        int result = instance.read(readBuff, count);
         assertEquals(expResult, result);
         assertArrayEquals(wData, readBuff);
 
@@ -64,14 +64,14 @@ public class ByteFifoBufferTest
         int count = 1024;
         byte[] wData = getWData(count);
         ByteFifoBuffer instance = new ByteFifoBuffer(count);
-        instance.Write(wData, count);
+        instance.write(wData, count);
 
         byte[] readBuff = new byte[count];
         int expResult = count / 2;
-        int result = instance.Read(readBuff, count / 2);
+        int result = instance.read(readBuff, count / 2);
         assertEquals(expResult, result);
 
-        result = instance.Read(readBuff, count / 2, count / 2);
+        result = instance.read(readBuff, count / 2, count / 2);
         assertEquals(expResult, result);
 
         assertArrayEquals(wData, readBuff);
@@ -100,15 +100,15 @@ public class ByteFifoBufferTest
         int len = 100;
         ByteFifoBuffer instance = new ByteFifoBuffer(len);
         int expResult = len;
-        int result = instance.GetWriteRemaining();
+        int result = instance.getWriteRemaining();
         assertEquals(expResult, result);
 
         int w_size = 23;
         byte[] w_data = getWData(w_size);
-        instance.Write(w_data, w_size);
+        instance.write(w_data, w_size);
 
         expResult = len - w_size;
-        result = instance.GetWriteRemaining();
+        result = instance.getWriteRemaining();
         assertEquals(expResult, result);
     }
 
@@ -122,15 +122,15 @@ public class ByteFifoBufferTest
         int w_len = 100;
         byte[] w_data = getWData(w_len);
 
-        instance.Write(w_data, w_len);
+        instance.write(w_data, w_len);
 
         int expResult = w_len;
-        int result = instance.GetBuffered();
+        int result = instance.getBuffered();
         assertEquals(expResult, result);
         int consume = 5;
         expResult = w_len + consume;
-        instance.ConsumeWriteBuffer(consume);
-        result = instance.GetBuffered();
+        instance.consumeWriteBuffer(consume);
+        result = instance.getBuffered();
         assertEquals(expResult, result);
     }
 
@@ -143,11 +143,11 @@ public class ByteFifoBufferTest
         byte[] data = getWData(len);
         ByteFifoBuffer instance = new ByteFifoBuffer(len);
         int expResult = len;
-        int result = instance.Write(data, len);
+        int result = instance.write(data, len);
         assertEquals(expResult, result);
 
         byte[] read = new byte[len];
-        int readCount = instance.Read(read, len);
+        int readCount = instance.read(read, len);
         assertEquals(result, readCount);
         assertArrayEquals(data, read);
     }
@@ -158,13 +158,13 @@ public class ByteFifoBufferTest
         byte[] data = getWData(len);
         ByteFifoBuffer instance = new ByteFifoBuffer(len);
         int expResult = len / 2;
-        int result = instance.Write(data, 0, len / 2);
+        int result = instance.write(data, 0, len / 2);
         assertEquals(expResult, result);
-        result = instance.Write(data, len / 2, len / 2);
+        result = instance.write(data, len / 2, len / 2);
         assertEquals(expResult, result);
 
         byte[] read = new byte[len];
-        int readCount = instance.Read(read, len);
+        int readCount = instance.read(read, len);
         assertEquals(len, readCount);
         assertArrayEquals(data, read);
     }
@@ -176,11 +176,11 @@ public class ByteFifoBufferTest
     {
         int len = 100;
         ByteFifoBuffer instance = new ByteFifoBuffer(len);
-        instance.ConsumeWriteBuffer(len / 2);
-        instance.ConsumeWriteBuffer(len / 2);
+        instance.consumeWriteBuffer(len / 2);
+        instance.consumeWriteBuffer(len / 2);
         try
         {
-            instance.ConsumeWriteBuffer(1);
+            instance.consumeWriteBuffer(1);
             fail();
         }
         catch (BufferOverflowException e)
@@ -188,9 +188,9 @@ public class ByteFifoBufferTest
         }
 
         instance = new ByteFifoBuffer(len);
-        instance.ConsumeWriteBuffer(95);
-        instance.ConsumeReadData(40);
-        instance.ConsumeWriteBuffer(20);
+        instance.consumeWriteBuffer(95);
+        instance.consumeReadData(40);
+        instance.consumeWriteBuffer(20);
 
     }
 
@@ -203,14 +203,14 @@ public class ByteFifoBufferTest
         int new_size = 200;
         ByteFifoBuffer instance = new ByteFifoBuffer(old_size);
         boolean expResult = true;
-        instance.Write(getWData(old_size), old_size);
-        boolean result = instance.SetCapacity(new_size);
+        instance.write(getWData(old_size), old_size);
+        boolean result = instance.setCapacity(new_size);
         assertEquals(expResult, result);
 
         expResult = false;
-        instance.ResetWritePosition();
-        instance.Write(getWData(new_size), new_size);
-        result = instance.SetCapacity(old_size);
+        instance.resetWritePosition();
+        instance.write(getWData(new_size), new_size);
+        result = instance.setCapacity(old_size);
         assertEquals(expResult, result);
 
     }
@@ -222,12 +222,12 @@ public class ByteFifoBufferTest
     {
         int lCount = 100;
         ByteFifoBuffer instance = new ByteFifoBuffer(lCount);
-        instance.Write(getWData(lCount), lCount);
-        instance.ConsumeReadData(lCount / 2);
-        instance.ConsumeReadData(lCount / 2);
+        instance.write(getWData(lCount), lCount);
+        instance.consumeReadData(lCount / 2);
+        instance.consumeReadData(lCount / 2);
         try
         {
-            instance.ConsumeReadData(1);
+            instance.consumeReadData(1);
             fail();
         }
         catch (BufferUnderflowException e)
@@ -248,9 +248,9 @@ public class ByteFifoBufferTest
         int offset = 0;
         ByteFifoBuffer instance = new ByteFifoBuffer(len);
         int expResult = len;
-        instance.Write(src_buff, len);
+        instance.write(src_buff, len);
         int result =
-            instance.ReadOffset(dst_buff, dst_buff_offset, len, offset);
+            instance.readOffset(dst_buff, dst_buff_offset, len, offset);
         assertEquals(expResult, result);
         assertArrayEquals(dst_buff, src_buff);
 
@@ -267,26 +267,26 @@ public class ByteFifoBufferTest
         byte[] data = new byte[dataLen];
         int nOffset = 10;
         ByteFifoBuffer instance = new ByteFifoBuffer(len);
-        int result = instance.WriteOffset(srcData, dataLen, nOffset);
-        int readCount = instance.ReadOffset(data, 0, dataLen, nOffset);
+        int result = instance.writeOffset(srcData, dataLen, nOffset);
+        int readCount = instance.readOffset(data, 0, dataLen, nOffset);
         assertEquals(result, readCount);
         assertArrayEquals(srcData, data);
 
         byte[] halfFilled = new byte[dataLen * 2];
         System.arraycopy(srcData, 0, halfFilled, dataLen, dataLen);
         byte[] halfFilledRead = new byte[dataLen * 2];
-        instance.ReadOffset(halfFilledRead, dataLen, dataLen, nOffset);
+        instance.readOffset(halfFilledRead, dataLen, dataLen, nOffset);
         assertArrayEquals(halfFilled, halfFilledRead);
 
         // case when w_pos+offset exceeds current backing array length
         instance = new ByteFifoBuffer(len);
-        instance.Write(srcData, dataLen);
-        instance.Write(srcData, dataLen / 2);// current writePos = 150
-        instance.Read(data, dataLen);// curretn readPos = 100
-        instance.WriteOffset(srcData, dataLen, 50);
+        instance.write(srcData, dataLen);
+        instance.write(srcData, dataLen / 2);// current writePos = 150
+        instance.read(data, dataLen);// curretn readPos = 100
+        instance.writeOffset(srcData, dataLen, 50);
 
         instance = new ByteFifoBuffer(61440);
-        instance.WriteOffset(getWData(1384), 1384, 31832);
+        instance.writeOffset(getWData(1384), 1384, 31832);
 
     }
 
@@ -300,19 +300,19 @@ public class ByteFifoBufferTest
         int read = 0;
         do
         {
-            int wrRemaining = instance.GetWriteRemaining();
+            int wrRemaining = instance.getWriteRemaining();
             if (wrRemaining > 0 && written < wrData.length)
             {
-                int wrCount = instance.WriteOffset(wrData, wrRemaining, 0);
-                instance.ConsumeWriteBuffer(wrCount);
+                int wrCount = instance.writeOffset(wrData, wrRemaining, 0);
+                instance.consumeWriteBuffer(wrCount);
                 written += wrCount;
             }
-            int readAvailable = instance.GetBuffered();
+            int readAvailable = instance.getBuffered();
             if (readAvailable > 0)
             {
                 int rCount =
-                    instance.ReadOffset(readBuff, read, readAvailable, 0);
-                instance.ConsumeReadData(rCount);
+                    instance.readOffset(readBuff, read, readAvailable, 0);
+                instance.consumeReadData(rCount);
                 read += rCount;
             }
         }
@@ -336,9 +336,9 @@ public class ByteFifoBufferTest
         byte[] Cread = getWData(Clen);
         byte[] Dread = getWData(Dlen);
 
-        fifo.WriteOffset(A, Alen, 0);
-        fifo.ConsumeWriteBuffer(Alen);
-        fifo.ReadOffset(Aread, 0, Alen, 0);
+        fifo.writeOffset(A, Alen, 0);
+        fifo.consumeWriteBuffer(Alen);
+        fifo.readOffset(Aread, 0, Alen, 0);
         assertArrayEquals(A, Aread);
     }
 }

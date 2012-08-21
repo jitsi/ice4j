@@ -284,7 +284,7 @@ public class IcePseudoTcp
     public static void main(String[] args) throws Throwable
     {
         startTime = System.currentTimeMillis();
-
+        
         int localPort = 7999;
         int remotePort = 6000;
 
@@ -376,12 +376,14 @@ public class IcePseudoTcp
             {
                 logger.log(Level.INFO,
                            "Local pseudotcp is using: " 
-                    + dgramSocket.getLocalSocketAddress());
-                PseudoTcpSocketImpl socket = new PseudoTcpSocketImpl(
-                		1073741824, dgramSocket);
+                    + dgramSocket.getLocalSocketAddress()+dgramSocket);
+                
+                PseudoTcpSocket socket = new PseudoTcpSocketFactory().
+                    createSocket(dgramSocket);
+                socket.setConversationID(1073741824);
                 socket.setMTU(1500);
                 socket.setDebugName("L");
-                socket.Accept(5000);
+                socket.accept(5000);                
                 byte[] buffer = new byte[TEST_BYTES_COUNT];
                 int read = 0;
                 while (read != TEST_BYTES_COUNT)
@@ -423,13 +425,14 @@ public class IcePseudoTcp
                            "Remote pseudotcp is using: " +
                            dgramSocket.getLocalSocketAddress()
                            +" and will comunicate with: " + peerAddr);
-                PseudoTcpSocketImpl socket = new PseudoTcpSocketImpl(
-                		1073741824, dgramSocket);
+                PseudoTcpSocket socket = new PseudoTcpSocketFactory().
+                    createSocket(dgramSocket);
+                socket.setConversationID(1073741824);
                 socket.setMTU(1500);
                 socket.setDebugName("R");
                 long start, end;
                 start = System.currentTimeMillis();
-                socket.Connect(peerAddr, 5000);
+                socket.connect(peerAddr, 5000);
                 byte[] buffer = new byte[TEST_BYTES_COUNT];
                 socket.getOutputStream().write(buffer);
                 socket.getOutputStream().flush();
