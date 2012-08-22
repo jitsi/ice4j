@@ -200,7 +200,9 @@ public class StunDatagramPacketFilter
                 // field of the STUN header. The message length field of the
                 // STUN header does not include the 20-byte of the STUN header.
                 int total_header_length
-                    = ((((int)data[2]) & 0xff) << 8) + (((int) data[3]) & 0xff);
+                    = ((((int)data[2]) & 0xff) << 8)
+                    + (((int) data[3]) & 0xff)
+                    + 20;
                 boolean isHeaderLengthValid = (length == total_header_length);
 
                 isStunPacket = areFirstTwoBitsValid && isHeaderLengthValid;
