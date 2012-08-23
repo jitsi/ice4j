@@ -617,6 +617,25 @@ public class DelegatingDatagramSocket
     {
         if (delegate == null)
         {
+            // If the packet length is too small, then the
+            // DatagramSocket.receive function will truncate the received
+            // datagram.
+            // This problem appears when reusing the same DatagramPacket: i.e.
+            // if the first time we use the DatagramPacket to receive a small
+            // packet and the second time a bigger one, then after the first
+            // packet is received, the length is set to the size of the first
+            // packet and the second packet is truncated.
+            // http://docs.oracle.com/javase/6/docs/api/java/net/DatagramSocket.html
+            byte[] data = p.getData();
+            if(data == null)
+            {
+                p.setLength(0);
+            }
+            else
+            {
+                p.setLength(data.length - p.getOffset());
+            }
+
             super.receive(p);
 
             // no exception packet is successfully received, log it.
