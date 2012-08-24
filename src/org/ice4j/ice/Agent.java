@@ -1902,6 +1902,8 @@ public class Agent
 
             logger.info("ICE state is TERMINATED");
             terminate(IceProcessingState.TERMINATED);
+
+            terminationThread = null;
         }
     }
 
