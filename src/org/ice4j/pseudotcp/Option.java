@@ -30,4 +30,12 @@ public enum Option
      * Set the send buffer size, in bytes.
      */
     OPT_SNDBUF,
+    /**
+     * Timeout in ms for read operations(0 - no timeout)
+     */
+    OPT_READ_TIMEOUT,
+    /**
+     * Timeout in ms for write operations(0 - no timeout)
+     */
+    OPT_WRITE_TIMEOUT
 };
