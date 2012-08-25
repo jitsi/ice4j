@@ -64,6 +64,14 @@ class PseudoTcpSocketImpl
      * threads blocked on any operations.
      */
     private IOException exception;
+    /**
+     * Read operations timeout in ms
+     */
+    private long writeTimeout;
+    /**
+     * Write operations timeout in ms
+     */
+    private long readTimeout;
 
     
     /**
@@ -248,7 +256,7 @@ class PseudoTcpSocketImpl
         throw new UnsupportedOperationException("Not supported yet.");
     }
 
-    private Map<Integer, Object> options = new HashMap<Integer,Object>();
+    private Map<Integer, Object> options = new HashMap<Integer,Object>();   
     public void setOption(int optID, Object value) 
         throws SocketException
     {
@@ -265,12 +273,34 @@ class PseudoTcpSocketImpl
     
     public long getPTCPOption(Option opt)
     {
-        return pseudoTcp.getOption(opt);
+        if(Option.OPT_READ_TIMEOUT == opt)
+        {
+            return this.readTimeout;
+        }
+        else if(Option.OPT_WRITE_TIMEOUT == opt)
+        {
+            return this.writeTimeout;
+        }
+        else
+        {
+            return pseudoTcp.getOption(opt);
+        }
     }
     
     public void setPTCPOption(Option opt, long optValue)
     {
-        pseudoTcp.setOption(opt, optValue);
+        if(Option.OPT_WRITE_TIMEOUT == opt)
+        {
+            this.writeTimeout = optValue >= 0 ? optValue : 0;
+        }
+        else if(Option.OPT_READ_TIMEOUT == opt)
+        {
+            this.readTimeout = optValue >= 0 ? optValue : 0;
+        }
+        else
+        {
+            pseudoTcp.setOption(opt, optValue);
+        }
     }
     
     
@@ -483,7 +513,7 @@ class PseudoTcpSocketImpl
     {
         if (e != null)
         {
-            e.printStackTrace();
+            //e.printStackTrace();
             logger.log(Level.SEVERE, "PseudoTcp closed: " + e);
         }
         else
@@ -799,11 +829,12 @@ class PseudoTcpSocketImpl
          * @param offset destination buffer's offset
          * @param length maximum count of bytes that can be read
          * @return byte count actually read
-         * @throws IOException
+         * @throws IOException in case of error or if timeout occurs
          */
         @Override
         public int read(byte[] buffer, int offset, int length) throws IOException
         {
+            long start = System.currentTimeMillis();
             int read;
             while (true)
             {
@@ -822,11 +853,29 @@ class PseudoTcpSocketImpl
                             return read;
                         }
                         logger.log(Level.FINER, "Read wait for data available");
-                        read_notify.wait();
+                        if(readTimeout > 0)
+                        {
+                            //Check for timeout
+                            long elapsed = System.currentTimeMillis() - start;
+                            long left = readTimeout - elapsed;
+                            if(left <= 0)
+                            {
+                                IOException exc = 
+                                    new IOException("Read operation timeout");
+                                pseudoTcp.closedown(exc);
+                                throw exc;
+                            }
+                            read_notify.wait(left);
+                        }
+                        else
+                        {
+                            read_notify.wait();
+                        }
                         if (logger.isLoggable(Level.FINER))
                         {
-                            logger.log(Level.FINER,
-                                       "Read notified: " + pseudoTcp.getAvailable());
+                            logger.log(
+                                Level.FINER,
+                                "Read notified: " + pseudoTcp.getAvailable());
                         }
                     }
                     if (exception != null)
@@ -880,19 +929,20 @@ class PseudoTcpSocketImpl
         }
 
         /**
-         * This method blocks until all data has been written or an exception
-         * occurs
+         * This method blocks until all data has been written.
          *
          * @param buffer source buffer
          * @param offset source buffer's offset
          * @param length byte count to be written
-         * @throws IOException
+         * @throws IOException in case of error or if timeout occurs 
+         * 
          */
         @Override
         public void write(byte[] buffer, int offset, int length) throws IOException
         {
             int toSend = length;
             int sent;
+            long start = System.currentTimeMillis();
             while (toSend > 0)
             {
                 synchronized (pseudoTcp)
@@ -907,10 +957,26 @@ class PseudoTcpSocketImpl
                 {
                     try
                     {
-                        logger.log(Level.FINER, "Write wait for notify");
+                        logger.log(Level.FINER, "Write wait for notify");                        
                         synchronized (write_notify)
                         {
-                            write_notify.wait();
+                            if(writeTimeout > 0)
+                            {
+                                long elapsed = System.currentTimeMillis() - start;
+                                long left = writeTimeout - elapsed;
+                                if(left <= 0)
+                                {
+                                    IOException exc = 
+                                        new IOException("Write operation timeout");
+                                    pseudoTcp.closedown(exc);
+                                    throw exc;
+                                }
+                                write_notify.wait(left);
+                            }
+                            else
+                            {
+                                write_notify.wait();
+                            }
                         }
                         logger.log(Level.FINER,
                                    "Write notified, available: "
@@ -938,25 +1004,43 @@ class PseudoTcpSocketImpl
         /**
          * This method block until all buffered data has been written
          *
-         * @throws IOException
+         * @throws IOException in case of error or if timeout occurs
          */
         @Override
         public synchronized void flush() throws IOException
         {
             logger.log(Level.FINE, "Flushing...");
+            long start = System.currentTimeMillis();
             final Object ackNotify = pseudoTcp.getAckNotify();
-            while (pseudoTcp.getBytesBufferedNotSent() > 0)
+            synchronized (ackNotify)
             {
-                synchronized (ackNotify)
-                {
+                while (pseudoTcp.getBytesBufferedNotSent() > 0)
+                {   
                     try
                     {
-                        ackNotify.wait();
+                        if(writeTimeout > 0)
+                        {
+                            //Check write timeout
+                            long elapsed = System.currentTimeMillis() - start;
+                            long left = writeTimeout - elapsed;                            
+                            if(left <= 0)
+                            {
+                                IOException e = 
+                                    new IOException("Flush operation timeout"); 
+                                pseudoTcp.closedown(e);
+                                throw e;
+                            }
+                            ackNotify.wait(left);
+                        }
+                        else
+                        {
+                            ackNotify.wait();
+                        }
                     }
                     catch (InterruptedException ex)
                     {
                         throw new IOException("Flush stream interrupted", ex);
-                    }
+                    }                    
                 }
             }
             logger.log(Level.FINE, "Flushing completed");

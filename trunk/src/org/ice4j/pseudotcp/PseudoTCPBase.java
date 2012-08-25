@@ -70,8 +70,8 @@ public class PseudoTCPBase
     // TODO: Make JINGLE_HEADER_SIZE transparent to this code?
     static final int JINGLE_HEADER_SIZE = 64; // when relay framing is in use
     // Default size for receive and send buffer.
-    static final int DEFAULT_RCV_BUF_SIZE = 60 * 1024;
-    static final int DEFAULT_SND_BUF_SIZE = 90 * 1024;
+    public static final int DEFAULT_RCV_BUF_SIZE = 60 * 1024;
+    public static final int DEFAULT_SND_BUF_SIZE = 90 * 1024;
     //////////////////////////////////////////////////////////////////////
     // Global Constants and Functions
     //////////////////////////////////////////////////////////////////////
@@ -1124,13 +1124,15 @@ public class PseudoTCPBase
             //setM_snd_wnd(seg.wnd << m_swnd_scale);
 
             long nAcked = seg.ack - m_snd_una;
-            m_snd_una = seg.ack;
-
-            m_rto_base = (m_snd_una == m_snd_nxt) ? 0 : now;
-
-            m_sbuf.consumeReadData((int) nAcked);
             synchronized (ack_notify)
             {
+                
+                m_snd_una = seg.ack;
+
+                m_rto_base = (m_snd_una == m_snd_nxt) ? 0 : now;
+
+                m_sbuf.consumeReadData((int) nAcked);
+            
                 if (logger.isLoggable(Level.FINER))
                 {
                     logger.log(Level.FINER,
