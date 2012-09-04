@@ -330,7 +330,7 @@ public class PseudoTCPBase
 
         m_use_nagling = true;
         m_ack_delay = DEF_ACK_DELAY;
-        m_support_wnd_scale = true;
+        m_support_wnd_scale = false;
     }
 
     /**
@@ -343,7 +343,7 @@ public class PseudoTCPBase
         if (m_state != PseudoTcpState.TCP_LISTEN)
         {
             //m_error = PseudoTcpError.EINVAL;
-            throw new IOException("Invalid socket state");
+            throw new IOException("Invalid socket state: "+m_state);
         }
 
         m_state = PseudoTcpState.TCP_SYN_SENT;
@@ -1050,7 +1050,10 @@ public class PseudoTCPBase
                     bConnect = true;
 
                     // TCP options are in the remainder of the payload after CTL_CONNECT.
-                    parseOptions(seg.data, 1, seg.len - 1);
+                    if(!parseOptions(seg.data, 1, seg.len - 1))
+                    {
+                        return false;
+                    }
 
                     if (m_state == PseudoTcpState.TCP_LISTEN)
                     {
@@ -1855,14 +1858,19 @@ public class PseudoTCPBase
      */
     void queueConnectMessage()
     {
-        byte[] buff = new byte[4];
-        buff[0] = CTL_CONNECT & 0xFF;
+        byte[] buff = null;        
         if (m_support_wnd_scale)
         {
+            buff = new byte[4];
             buff[1] = TCP_OPT_WND_SCALE & 0xFF;
             buff[2] = 1;
             buff[3] = (byte) (m_rwnd_scale & 0xFF);
         }
+        else
+        {
+            buff = new byte[1];
+        }
+        buff[0] = CTL_CONNECT & 0xFF;
         m_snd_wnd = buff.length;
         queue(buff, 0, buff.length, true);
     }
@@ -1873,8 +1881,9 @@ public class PseudoTCPBase
      * @param data source buffer
      * @param offset source offset
      * @param len byte count
+     * @return true if options were properly parsed
      */
-    void parseOptions(byte[] data, int offset, int len)
+    boolean parseOptions(byte[] data, int offset, int len)
     {
         List<Short> options_specified = new ArrayList<Short>();
 
@@ -1917,8 +1926,10 @@ public class PseudoTCPBase
             }
             else
             {
-                logger.log(Level.SEVERE, "Invalid option length received.");
-                return;
+                logger.log(Level.SEVERE, 
+                    "Invalid option length received: "+opt_len
+                    +" data len: "+buf.remaining());
+                return false;
             }
             options_specified.add(kind);
         }
@@ -1934,6 +1945,7 @@ public class PseudoTCPBase
                 m_swnd_scale = 0;
             }
         }
+        return true;
     }
 
     /**
