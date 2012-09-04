@@ -624,7 +624,8 @@ class PseudoTcpSocketImpl
                         logger.log(Level.WARNING,
                                    "Ignoring packet from " + packet.getAddress()
                             + ":" + packet.getPort() + " should be: " + remoteAddr);
-                    }
+                        continue;
+                    }                    
                 }
                 synchronized (pseudoTcp)
                 {

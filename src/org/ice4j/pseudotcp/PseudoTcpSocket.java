@@ -126,6 +126,18 @@ public class PseudoTcpSocket extends Socket
         return getState() == PseudoTcpState.TCP_ESTABLISHED;
     }
     
+    /**
+     * 
+     * @return true if socket is connected or is trying to connect
+     */
+    public boolean isConnecting()
+    {
+        PseudoTcpState currentState = getState();
+        return currentState == PseudoTcpState.TCP_ESTABLISHED
+            || currentState == PseudoTcpState.TCP_SYN_RECEIVED
+            || currentState == PseudoTcpState.TCP_SYN_SENT;
+    }
+    
     @Override
     public boolean isClosed()
     {
