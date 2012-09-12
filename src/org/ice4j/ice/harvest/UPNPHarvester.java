@@ -96,9 +96,9 @@ public class UPNPHarvester
                         wanIPThread.start();
                         wanPPPThread.start();
 
-                        while(finishThreads != 2)
+                        synchronized(rootSync)
                         {
-                            synchronized(rootSync)
+                            while(finishThreads != 2)
                             {
                                 rootSync.wait();
                             }

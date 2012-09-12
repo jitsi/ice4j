@@ -246,6 +246,7 @@ class Connector
         synchronized(sockLock)
         {
             this.running = false;
+            this.sock.close();
             this.sock = null;
         }
     }
