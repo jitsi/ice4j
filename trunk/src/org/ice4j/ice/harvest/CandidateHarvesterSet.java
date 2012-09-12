@@ -37,6 +37,11 @@ public class CandidateHarvesterSet
         = new LinkedList<CandidateHarvesterSetElement>();
 
     /**
+     * A pool of thread used for gathering process.
+     */
+    private static ExecutorService threadPool = Executors.newCachedThreadPool();
+
+    /**
      * Initializes a new <tt>CandidateHarvesterSet</tt> instance.
      */
     public CandidateHarvesterSet()
@@ -82,10 +87,7 @@ public class CandidateHarvesterSet
     {
         synchronized (elements)
         {
-            harvest(
-                elements.iterator(),
-                component,
-                Executors.newCachedThreadPool());
+            harvest(elements.iterator(), component, threadPool);
         }
     }
 
