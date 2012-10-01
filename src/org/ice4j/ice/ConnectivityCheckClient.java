@@ -177,7 +177,7 @@ class ConnectivityCheckClient
         {
             /* Google Talk ICE dialect just need the username */
             String localUserName = parentAgent.generateLocalUserName(
-                    (RemoteCandidate)candidatePair.getRemoteCandidate(),
+                    candidatePair.getRemoteCandidate(),
                     candidatePair.getLocalCandidate());
 
             UsernameAttribute unameAttr =
@@ -531,7 +531,7 @@ class ConnectivityCheckClient
                 .findLocalCandidate(mappedAddress);
         }
 
-        Candidate validRemoteCandidate = checkedPair.getRemoteCandidate();
+        RemoteCandidate validRemoteCandidate = checkedPair.getRemoteCandidate();
 
         // RFC 5245: The agent checks the mapped address from the STUN
         // response. If the transport address does not match any of the

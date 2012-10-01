@@ -348,4 +348,78 @@ public abstract class LocalCandidate
     {
         this.extendedType = extendedType;
     }
+
+    /**
+     * Returns this candidate host address.
+     *
+     * @return This candidate host address.
+     */
+    public TransportAddress getHostAddress()
+    {
+        switch (getType())
+        {
+            case SERVER_REFLEXIVE_CANDIDATE:
+                if(getBase() != null)
+                {
+                    return getBase().getTransportAddress();
+                }
+                return null;
+            case PEER_REFLEXIVE_CANDIDATE:
+                if(getBase() != null)
+                {
+                    return getBase().getTransportAddress();
+                }
+                return null;
+            case RELAYED_CANDIDATE:
+                if(getBase() != null)
+                {
+                    return getBase().getTransportAddress();
+                }
+                return null;
+            default: //host candidate
+                return getTransportAddress();
+        }
+    }
+
+    /**
+     * Returns this candidate reflexive address.
+     *
+     * @return This candidate reflexive address. Null if this candidate
+     * does not use a peer/server reflexive address.
+     */
+    public TransportAddress getReflexiveAddress()
+    {
+        switch (getType())
+        {
+            case SERVER_REFLEXIVE_CANDIDATE:
+                return getTransportAddress();
+            case PEER_REFLEXIVE_CANDIDATE:
+                return getTransportAddress();
+            case RELAYED_CANDIDATE:
+                return getMappedAddress();
+            default: //host candidate
+                return null;
+        }
+    }
+
+    /**
+     * Returns this candidate relayed address.
+     *
+     * @return This candidate relayed address. Null if this candidate
+     * does not use a relay.
+     */
+    public TransportAddress getRelayedAddress()
+    {
+        switch (getType())
+        {
+            case SERVER_REFLEXIVE_CANDIDATE:
+                return null;
+            case PEER_REFLEXIVE_CANDIDATE:
+                return null;
+            case RELAYED_CANDIDATE:
+                return getTransportAddress();
+            default: //host candidate
+                return null;
+        }
+    }
 }

@@ -43,13 +43,15 @@ public class RemoteCandidate
      * @param priority the <tt>RemoteCandidate</tt>'s priority as reported
      * by the session description protocol.
      */
-    public RemoteCandidate(TransportAddress transportAddress,
-                           Component        parentComponent,
-                           CandidateType    type,
-                           String           foundation,
-                           long             priority)
+    public RemoteCandidate(
+            TransportAddress transportAddress,
+            Component        parentComponent,
+            CandidateType    type,
+            String           foundation,
+            long             priority)
     {
-        this(transportAddress,
+        this(
+                transportAddress,
                 parentComponent,
                 type,
                 foundation,
@@ -72,12 +74,13 @@ public class RemoteCandidate
      * by the session description protocol.
      * @param ufrag ufrag for the remote candidate
      */
-    public RemoteCandidate(TransportAddress transportAddress,
-                           Component        parentComponent,
-                           CandidateType    type,
-                           String           foundation,
-                           long             priority,
-                           String			ufrag)
+    public RemoteCandidate(
+            TransportAddress transportAddress,
+            Component        parentComponent,
+            CandidateType    type,
+            String           foundation,
+            long             priority,
+            String			ufrag)
     {
         super(transportAddress, parentComponent, type);
         setFoundation(foundation);
@@ -159,5 +162,79 @@ public class RemoteCandidate
     public String getUfrag()
     {
         return ufrag;
+    }
+
+    /**
+     * Returns this candidate host address.
+     *
+     * @return This candidate host address.
+     */
+    public TransportAddress getHostAddress()
+    {
+        switch (getType())
+        {
+            case SERVER_REFLEXIVE_CANDIDATE:
+                if(getBase() != null)
+                {
+                    return getBase().getTransportAddress();
+                }
+                return null;
+            case PEER_REFLEXIVE_CANDIDATE:
+                if(getBase() != null)
+                {
+                    return getBase().getTransportAddress();
+                }
+                return null;
+            case RELAYED_CANDIDATE:
+                // If we are able to find the base address of the mapped
+                // address, it will be a great enhancement.
+                // i.e. but not working
+                // getMappedAddress().getBase().getTransportAddress();
+                return null;
+            default: //host candidate
+                return getTransportAddress();
+        }
+    }
+
+    /**
+     * Returns this candidate reflexive address.
+     *
+     * @return This candidate reflexive address. Null if this candidate
+     * does not use a peer/server reflexive address.
+     */
+    public TransportAddress getReflexiveAddress()
+    {
+        switch (getType())
+        {
+            case SERVER_REFLEXIVE_CANDIDATE:
+                return getTransportAddress();
+            case PEER_REFLEXIVE_CANDIDATE:
+                return getTransportAddress();
+            case RELAYED_CANDIDATE:
+                return getMappedAddress();
+            default: //host candidate
+                return null;
+        }
+    }
+
+    /**
+     * Returns this candidate relayed address.
+     *
+     * @return This candidate relayed address. Null if this candidate
+     * does not use a relay.
+     */
+    public TransportAddress getRelayedAddress()
+    {
+        switch (getType())
+        {
+            case SERVER_REFLEXIVE_CANDIDATE:
+                return null;
+            case PEER_REFLEXIVE_CANDIDATE:
+                return null;
+            case RELAYED_CANDIDATE:
+                return getTransportAddress();
+            default: //host candidate
+                return null;
+        }
     }
 }

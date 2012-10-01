@@ -78,14 +78,15 @@ public class Component
     /**
      * The list of candidates that the peer agent sent for this stream.
      */
-    private List<Candidate> remoteCandidates = new LinkedList<Candidate>();
+    private List<RemoteCandidate> remoteCandidates
+        = new LinkedList<RemoteCandidate>();
 
     /**
      * The list of candidates that the peer agent sent for this stream after
      * connectivity establishment.
      */
-    private List<Candidate> remoteUpdateCandidates =
-        new LinkedList<Candidate>();
+    private List<RemoteCandidate> remoteUpdateCandidates =
+        new LinkedList<RemoteCandidate>();
 
     /**
      * A <tt>Comparator</tt> that we use for sorting <tt>Candidate</tt>s by
@@ -208,7 +209,7 @@ public class Component
      *
      * @param candidate the <tt>Candidate</tt> instance to add.
      */
-    public void addRemoteCandidate(Candidate candidate)
+    public void addRemoteCandidate(RemoteCandidate candidate)
     {
         logger.info("Add remote candidate for " + toShortString() + ": " +
                 candidate.getTransportAddress());
@@ -225,7 +226,7 @@ public class Component
      *
      * @param candidate new <tt>Candidate</tt> to add.
      */
-    public void addUpdateRemoteCandidate(Candidate candidate)
+    public void addUpdateRemoteCandidate(RemoteCandidate candidate)
     {
         logger.info("Update remote candidate for " + toShortString() + ": " +
                 candidate.getTransportAddress());
@@ -356,7 +357,7 @@ public class Component
                     continue;
                 }
 
-                for(Candidate remoteCnd : remoteUpdateCandidates)
+                for(RemoteCandidate remoteCnd : remoteUpdateCandidates)
                 {
                     if(localCnd.canReach(remoteCnd))
                     {
@@ -372,8 +373,8 @@ public class Component
                             }
                         }
 
-                        CandidatePair pair = new CandidatePair(localCnd,
-                                remoteCnd);
+                        CandidatePair pair
+                            = new CandidatePair(localCnd, remoteCnd);
                         logger.info("new Pair added: " + pair.toShortString());
                         checkList.add(pair);
                     }
@@ -410,11 +411,11 @@ public class Component
      * @return Returns a copy of the list containing all remote candidates
      * currently registered in this <tt>Component</tt>.
      */
-    public List<Candidate> getRemoteCandidates()
+    public List<RemoteCandidate> getRemoteCandidates()
     {
         synchronized(remoteCandidates)
         {
-            return new ArrayList<Candidate>(remoteCandidates);
+            return new ArrayList<RemoteCandidate>(remoteCandidates);
         }
     }
 
@@ -437,7 +438,7 @@ public class Component
      * @param candidates the <tt>List</tt> of <tt>Candidate</tt>s reported by
      * the remote agent for this component.
      */
-    public void addRemoteCandidates(List<Candidate> candidates)
+    public void addRemoteCandidates(List<RemoteCandidate> candidates)
     {
         synchronized(remoteCandidates)
         {
@@ -539,7 +540,7 @@ public class Component
                                 + getDefaultRemoteCandidate());
             synchronized(remoteCandidates)
             {
-                for (Candidate cand : remoteCandidates)
+                for (RemoteCandidate cand : remoteCandidates)
                 {
                     buff.append("\n" + cand.toString());
                 }
