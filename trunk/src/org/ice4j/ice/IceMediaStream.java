@@ -351,7 +351,7 @@ public class IceMediaStream
                                  final List<CandidatePair> checkList)
     {
         List<LocalCandidate> localCnds = component.getLocalCandidates();
-        List<Candidate> remoteCnds = component.getRemoteCandidates();
+        List<RemoteCandidate> remoteCnds = component.getRemoteCandidates();
         LocalCandidate upnpBase = null;
 
         for(LocalCandidate lc : localCnds)
@@ -368,7 +368,7 @@ public class IceMediaStream
             if(localCnd == upnpBase)
                 continue;
 
-            for(Candidate remoteCnd : remoteCnds)
+            for(RemoteCandidate remoteCnd : remoteCnds)
             {
                 if(localCnd.canReach(remoteCnd))
                 {
@@ -377,7 +377,7 @@ public class IceMediaStream
                             CompatibilityMode.GTALK)
                     {
                         final LocalCandidate loc = localCnd;
-                        final Candidate remot = remoteCnd;
+                        final RemoteCandidate remot = remoteCnd;
 
                         new Thread()
                         {
@@ -625,8 +625,7 @@ public class IceMediaStream
             for( CandidatePair pair : checkList)
             {
                 LocalCandidate local = pair.getLocalCandidate();
-                RemoteCandidate remote =
-                    (RemoteCandidate)pair.getRemoteCandidate();
+                RemoteCandidate remote = pair.getRemoteCandidate();
 
                 if(local.getUfrag().equals(remoteUFrag) &&
                     remote.getUfrag().equals(localUFrag))

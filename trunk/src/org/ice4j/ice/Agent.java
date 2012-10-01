@@ -1306,7 +1306,7 @@ public class Agent
                 useCandidate = pair2.useCandidateReceived();
             }
 
-            ufrag = ((RemoteCandidate)pair.getRemoteCandidate()).getUfrag();
+            ufrag = pair.getRemoteCandidate().getUfrag();
         }
         remoteCandidate = new RemoteCandidate(
                 remoteAddress,
@@ -2101,5 +2101,71 @@ public class Agent
             }
         }
         logger.info("KeepAliveThread ends");
+    }
+
+    /**
+     * Returns the selected pair for this Agent.
+     *
+     * @param streamName The stream name (AUDIO, VIDEO);
+     *
+     * @return The selected pair for this Agent. Null if no pair is selected.
+     */
+    private CandidatePair getSelectedPair(String streamName)
+    {
+        List<IceMediaStream> iceMediaStreams = this.getStreams();
+        for(int i = 0; i < iceMediaStreams.size(); ++i)
+        {
+            if(iceMediaStreams.get(i).getName().equals(streamName))
+            {
+                List<org.ice4j.ice.Component> components =
+                    iceMediaStreams.get(i).getComponents();
+                for(int j = 0; j < components.size(); ++j)
+                {
+                    Component component = components.get(i);
+                    if(component.getComponentID()
+                            == org.ice4j.ice.Component.RTP)
+                    {
+                        return component.getSelectedPair();
+                    }
+                }
+            }
+        }
+        return null;
+    }
+
+    /**
+     * Returns the selected local candidate for this Agent.
+     *
+     * @param streamName The stream name (AUDIO, VIDEO);
+     *
+     * @return The selected local candidate for this Agent. Null if no pair is
+     * selected.
+     */
+    public LocalCandidate getSelectedLocalCandidate(String streamName)
+    {
+        CandidatePair candidatePair = this.getSelectedPair(streamName);
+        if(candidatePair != null)
+        {
+            return candidatePair.getLocalCandidate();
+        }
+        return null;
+    }
+
+    /**
+     * Returns the selected remote candidate for this Agent.
+     *
+     * @param streamName The stream name (AUDIO, VIDEO);
+     *
+     * @return The selected remote candidate for this Agent. Null if no pair is
+     * selected.
+     */
+    public RemoteCandidate getSelectedRemoteCandidate(String streamName)
+    {
+        CandidatePair candidatePair = this.getSelectedPair(streamName);
+        if(candidatePair != null)
+        {
+            return candidatePair.getRemoteCandidate();
+        }
+        return null;
     }
 }
