@@ -34,6 +34,18 @@ public class HostCandidateHarvester
         = Logger.getLogger(HostCandidateHarvester.class.getName());
 
     /**
+     * The last harvest start time for this harvester. -1 if this harvester is
+     * not currently harvesting.
+     */
+    private long lastStartHarvestingTime = -1;
+
+    /**
+     * The last ended harvesting time for this harvester. -1 if this harvester
+     * has never harvested yet.
+     */
+    private long lastHarvestingTime = -1;
+
+    /**
      * Gathers all candidate addresses on the local machine, binds sockets on
      * them and creates {@link HostCandidate}s. The harvester would always
      * try to bind the sockets on the specified <tt>preferredPort</tt> first.
@@ -64,7 +76,7 @@ public class HostCandidateHarvester
         throws IllegalArgumentException,
                IOException
     {
-        long startCandidateHarvestTime = System.currentTimeMillis();
+        this.startHarvesting();
 
         Enumeration<NetworkInterface> interfaces
                         = NetworkInterface.getNetworkInterfaces();
@@ -172,12 +184,10 @@ public class HostCandidateHarvester
                             + " maxPort=" + maxPort);
         }
 
-        long stopCandidateHarvestTime = System.currentTimeMillis();
-        long  candidateHarvestTime
-            = stopCandidateHarvestTime - startCandidateHarvestTime;
+        this.stopHarvesting();
         logger.info(
                 "End candidate harvest within "
-                + candidateHarvestTime
+                + this.getHarvestingTime()
                 + " ms, for "
                 + this.getClass().getName()
                 + ", component: " + component.getComponentID());
@@ -402,5 +412,52 @@ public class HostCandidateHarvester
                             +") must be between minPort (" + minPort
                             + ") and maxPort (" + maxPort + ")");
         }
+    }
+
+    /**
+     * Starts the harvesting timer. Called when the harvest begins.
+     */
+    public void startHarvesting()
+    {
+        // Remember the start date of this harvester.
+        this.lastStartHarvestingTime = System.currentTimeMillis();
+    }
+
+    /**
+     * Stops the harvesting timer. Called when the harvest ends.
+     */
+    public void stopHarvesting()
+    {
+        // Remember the last harvesting time.
+        this.lastHarvestingTime = this.getHarvestingTime();
+        // Stops the current timer.
+        this.lastStartHarvestingTime = -1;
+    }
+
+    /**
+     * Returns the current harvesting time in ms. If this harvester is not
+     * currently harvesting, then returns the value of the last harvesting time.
+     * -1 if this harvester has nerver harvested.
+     *
+     * @return The current harvesting time in ms. If this harvester is not
+     * currently harvesting, then returns the value of the last harvesting time.
+     * -1 if this harvester has nerver harvested.
+     */
+    public long getHarvestingTime()
+    {
+        if(this.lastStartHarvestingTime != -1)
+        {
+            long currentHarvestingTime
+                = System.currentTimeMillis() - lastStartHarvestingTime;
+            // Retest here, while the harvesting may be end while computing the
+            // harvsting time.
+            if(this.lastStartHarvestingTime != -1)
+            {
+                return currentHarvestingTime;
+            }
+        }
+        // If we are ont currently harvesting, then returns the value of the
+        // last harvesting time.
+        return this.lastHarvestingTime;
     }
 }

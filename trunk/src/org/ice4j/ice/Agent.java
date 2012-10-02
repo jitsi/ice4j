@@ -2168,4 +2168,43 @@ public class Agent
         }
         return null;
     }
+
+
+    /**
+     * Returns the harvesting time (in ms) for the harvester given in parameter.
+     *
+     * @param harvesterName The class name if the harvester.
+     *
+     * @return The harvesting time (in ms) for the harvester given in parameter.
+     * -1 if this harvester does not exists, if the ICE agent is null, or if the
+     * agent is not currently harvesting with this harvester.
+     */     
+    public long getHarvestingTime(String harvesterName)
+    {
+        if(this.hostCandidateHarvester.getClass().getName().endsWith(
+                    harvesterName))
+        {
+            return this.hostCandidateHarvester.getHarvestingTime();
+        }
+
+        long harvestingTime = -1;
+        CandidateHarvester tmpHarvester;
+        Iterator<CandidateHarvester> itHarvesters = this.harvesters.iterator();
+        while(itHarvesters.hasNext())
+        {
+            tmpHarvester = itHarvesters.next();
+            if(tmpHarvester.getClass().getName().endsWith(harvesterName))
+            {
+                harvestingTime = tmpHarvester.getHarvestingTime();
+                // Theremay be several harvester with the same class name. Thus,
+                // returns only an active one.
+                if(harvestingTime != -1)
+                {
+                    return harvestingTime;
+                }
+            }
+        }
+
+        return -1;
+    }
 }

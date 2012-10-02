@@ -416,17 +416,14 @@ public class CandidateHarvesterSet
         {
             if (isEnabled())
             {
-                long startCandidateHarvestTime = System.currentTimeMillis();
-
+                harvester.startHarvesting();
                 Collection<LocalCandidate> candidates
                     = harvester.harvest(component);
+                harvester.stopHarvesting();
 
-                long stopCandidateHarvestTime = System.currentTimeMillis();
-                long  candidateHarvestTime
-                    = stopCandidateHarvestTime - startCandidateHarvestTime;
                 logger.info(
                         "End candidate harvest within "
-                        + candidateHarvestTime
+                        + harvester.getHarvestingTime()
                         + " ms, for "
                         + harvester.getClass().getName()
                         + ", component: " + component.getComponentID());
