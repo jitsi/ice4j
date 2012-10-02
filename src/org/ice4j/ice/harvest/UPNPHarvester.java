@@ -24,7 +24,7 @@ import org.bitlet.weupnp.*;
  * @author Sebastien Vincent
  */
 public class UPNPHarvester
-    implements CandidateHarvester
+    extends CandidateHarvester
 {
     /**
      * The logger.
