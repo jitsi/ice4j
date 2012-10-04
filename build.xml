@@ -9,6 +9,8 @@
     <property name="junit.reports" value="junit-reports"/>
     <property name="junit.html.reports" value="${junit.reports}/html"/>
     <property name="ice4j.jar" value="ice4j.jar"/>
+    <property name="doc" value="doc"/>
+    <property name="java.doc" value="${doc}/api"/>
 
     <path id="project.class.path">
         <pathelement location="${dest}"/>
@@ -76,7 +78,7 @@
 
     <!-- creates the javadocs -->
     <target name="javadoc">
-        <javadoc author="true" destdir="doc" package="true">
+        <javadoc author="true" destdir="${java.doc}" package="true">
             <fileset dir="${src}"/>
         </javadoc>
     </target>
