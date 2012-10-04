@@ -90,6 +90,18 @@ public class Agent
         = new CandidateHarvesterSet();
 
     /**
+     * The last harvest start time. -1 if this agent is not currently
+     * harvesting.
+     */
+    private long lastStartHarvestingTime = -1;
+
+    /**
+     * The last ended harvesting time. -1 if this agent has never harvested yet.
+     */
+    private long lastHarvestingTime = -1;
+
+
+    /**
      * We use the <tt>FoundationsRegistry</tt> to keep track of the foundations
      * we assign within a session (i.e. the entire life time of an
      * <tt>Agent</tt>)
@@ -431,6 +443,8 @@ public class Agent
         logger.info("Gather candidates for component " +
                 component.toShortString());
 
+        this.startHarvesting();
+
         hostCandidateHarvester.harvest(
                 component,
                 preferredPort, minPort, maxPort, Transport.UDP);
@@ -447,6 +461,12 @@ public class Agent
 
         //apply other harvesters here
         harvesters.harvest(component);
+
+        this.stopHarvesting();
+        logger.info(
+                "End candidate harvest for all harvesters within "
+                + this.getTotalHarvestingTime() + " ms"
+                + ", component: " + component.getComponentID());
 
         logger.fine("host+harvested candidate count: " +
             component.getLocalCandidateCount());
@@ -2176,8 +2196,8 @@ public class Agent
      * @param harvesterName The class name if the harvester.
      *
      * @return The harvesting time (in ms) for the harvester given in parameter.
-     * -1 if this harvester does not exists, if the ICE agent is null, or if the
-     * agent is not currently harvesting with this harvester.
+     * -1 if this harvester does not exists, or if the
+     * agent has not yet harvested with this harvester.
      */     
     public long getHarvestingTime(String harvesterName)
     {
@@ -2206,5 +2226,54 @@ public class Agent
         }
 
         return -1;
+    }
+
+    /**
+     * Starts the harvesting timer. Called when the harvest begins.
+     */
+    public void startHarvesting()
+    {
+        // Remember the start date of this harvester.
+        this.lastStartHarvestingTime = System.currentTimeMillis();
+        // Reset the last harvesting time.
+        this.lastHarvestingTime = -1;
+    }
+
+    /**
+     * Stops the harvesting timer. Called when the harvest ends.
+     */
+    public void stopHarvesting()
+    {
+        // Remember the last harvesting time.
+        this.lastHarvestingTime = this.getTotalHarvestingTime();
+        // Stops the current timer.
+        this.lastStartHarvestingTime = -1;
+    }
+
+    /**
+     * Returns the current harvesting time in ms. If this agent is not currently
+     * harvesting, then returns the value of the last total harvesting time for
+     * all the harvesters.  -1 if this agent has nerver harvested.
+     *
+     * @return The current harvesting time in ms. If this agent is not currently
+     * harvesting, then returns the value of the last total harvesting time for
+     * all the harvesters.  -1 if this agent has nerver harvested.
+     */
+    public long getTotalHarvestingTime()
+    {
+        if(this.lastStartHarvestingTime != -1)
+        {
+            long currentHarvestingTime
+                = System.currentTimeMillis() - lastStartHarvestingTime;
+            // Retest here, while the harvesting may be end while computing the
+            // harvsting time.
+            if(this.lastStartHarvestingTime != -1)
+            {
+                return currentHarvestingTime;
+            }
+        }
+        // If we are ont currently harvesting, then returns the value of the
+        // last harvesting time.
+        return this.lastHarvestingTime;
     }
 }

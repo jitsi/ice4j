@@ -107,8 +107,6 @@ public class CandidateHarvesterSet
             final Component component,
             ExecutorService executorService)
     {
-        long startCandidateHarvestTime = System.currentTimeMillis();
-
         /**
          * Represents a task to be executed by the specified executorService and
          * to call {@link CandidateHarvester#harvestComponent} on the specified
@@ -279,14 +277,6 @@ public class CandidateHarvesterSet
             }
             taskIter.remove();
         }
-
-        long stopCandidateHarvestTime = System.currentTimeMillis();
-        long  candidateHarvestTime
-            = stopCandidateHarvestTime - startCandidateHarvestTime;
-        logger.info(
-                "End candidate harvest for all harvesters within "
-                + candidateHarvestTime + " ms"
-                + ", component: " + component.getComponentID());
     }
 
     /**
