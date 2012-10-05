@@ -74,6 +74,17 @@ public abstract class CandidateHarvester
     }
 
     /**
+     * Disabless the harvesting timer. Called when the harvest is disabled.
+     */
+    public void disableHarvesting()
+    {
+        // Remember the last harvesting time.
+        this.lastHarvestingTime = -1;
+        // Stops the current timer.
+        this.lastStartHarvestingTime = -1;
+    }
+
+    /**
      * Returns the current harvesting time in ms. If this harvester is not
      * currently harvesting, then returns the value of the last harvesting time.
      * -1 if this harvester has nerver harvested.
