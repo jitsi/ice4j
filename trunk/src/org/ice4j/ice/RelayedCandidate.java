@@ -67,7 +67,9 @@ public class RelayedCandidate
             transportAddress,
             turnCandidateHarvest.hostCandidate.getParentComponent(),
             CandidateType.RELAYED_CANDIDATE,
-            CandidateExtendedType.TURN_RELAYED_CANDIDATE);
+            CandidateExtendedType.TURN_RELAYED_CANDIDATE,
+            turnCandidateHarvest.hostCandidate.getParentComponent()
+                .findLocalCandidate(mappedAddress));
 
         this.turnCandidateHarvest = turnCandidateHarvest;
 

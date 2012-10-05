@@ -912,9 +912,9 @@ public class Component
      * <tt>localAddress</tt> if it belongs to this component or <tt>null</tt>
      * if it doesn't.
      */
-    public Candidate findRemoteCandidate(TransportAddress remoteAddress)
+    public RemoteCandidate findRemoteCandidate(TransportAddress remoteAddress)
     {
-        for( Candidate remoteCnd : localCandidates)
+        for(RemoteCandidate remoteCnd : remoteCandidates)
         {
             if(remoteCnd.getTransportAddress().equals(remoteAddress))
                 return remoteCnd;

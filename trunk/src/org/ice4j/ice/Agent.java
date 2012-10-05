@@ -1171,13 +1171,13 @@ public class Agent
      * <tt>remoteAddress</tt> if it belongs to any of this {@link Agent}'s
      * streams or <tt>null</tt> if it doesn't.
      */
-    public Candidate findRemoteCandidate(TransportAddress remoteAddress)
+    public RemoteCandidate findRemoteCandidate(TransportAddress remoteAddress)
     {
         Collection<IceMediaStream> streamsCollection = mediaStreams.values();
 
         for( IceMediaStream stream : streamsCollection)
         {
-            Candidate cnd = stream.findRemoteCandidate(remoteAddress);
+            RemoteCandidate cnd = stream.findRemoteCandidate(remoteAddress);
 
             if(cnd != null)
                 return cnd;
@@ -1334,6 +1334,9 @@ public class Agent
                 CandidateType.PEER_REFLEXIVE_CANDIDATE,
                 foundationsRegistry.obtainFoundationForPeerReflexiveCandidate(),
                 priority,
+                // We can not know the related candidate of a remote peer
+                // reflexive candidate. We must set it to "null".
+                null,
                 ufrag);
 
         CandidatePair triggeredPair

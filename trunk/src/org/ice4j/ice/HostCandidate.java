@@ -50,7 +50,8 @@ public class HostCandidate extends LocalCandidate
                         socket.getLocalPort(), Transport.UDP),
               parentComponent,
               CandidateType.HOST_CANDIDATE,
-              CandidateExtendedType.HOST_CANDIDATE);
+              CandidateExtendedType.HOST_CANDIDATE,
+              null);
 
         this.socket = socket;
         setBase(this);
@@ -73,7 +74,8 @@ public class HostCandidate extends LocalCandidate
                         socket.getLocalPort(), transport),
               parentComponent,
               CandidateType.HOST_CANDIDATE,
-              CandidateExtendedType.HOST_CANDIDATE);
+              CandidateExtendedType.HOST_CANDIDATE,
+              null);
 
         this.socket = socket;
         setBase(this);

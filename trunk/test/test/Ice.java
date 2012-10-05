@@ -245,7 +245,8 @@ public class Ice
                             localComponent,
                             rCand.getType(),
                             rCand.getFoundation(),
-                            rCand.getPriority()));
+                            rCand.getPriority(),
+                            null));
         }
     }
 
