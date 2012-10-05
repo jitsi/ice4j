@@ -469,6 +469,7 @@ public class CandidateHarvesterSet
         public void setEnabled(boolean enabled)
         {
             logger.info("disabling harvester: " + harvester);
+            harvester.disableHarvesting();
             this.enabled = enabled;
         }
     }
