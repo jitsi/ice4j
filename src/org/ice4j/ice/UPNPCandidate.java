@@ -44,7 +44,8 @@ public class UPNPCandidate
                 transportAddress,
                 parentComponent,
                 CandidateType.SERVER_REFLEXIVE_CANDIDATE,
-                CandidateExtendedType.UPNP_CANDIDATE);
+                CandidateExtendedType.UPNP_CANDIDATE,
+                base);
 
         this.setBase(base);
         this.device = device;

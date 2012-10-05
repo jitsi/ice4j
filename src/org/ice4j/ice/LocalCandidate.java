@@ -23,7 +23,7 @@ import org.ice4j.stack.*;
  * @author Lyubomir Marinov
  */
 public abstract class LocalCandidate
-    extends Candidate
+    extends Candidate<LocalCandidate>
 {
     /**
      * The type of method used to discover this candidate ("host", "upnp", "stun
@@ -57,13 +57,18 @@ public abstract class LocalCandidate
      * ("host", "upnp", "stun peer reflexive", "stun server reflexive", "turn
      * relayed", "google turn relayed", "google tcp turn relayed" or "jingle
      * node").
+     * @param relatedCandidate the relatedCandidate: null for a host candidate,
+     * the base address (host candidate) for a reflexive candidate, the mapped
+     * address (the mapped address of the TURN allocate response) for a relayed
+     * candidate.
      */
     public LocalCandidate(TransportAddress transportAddress,
                           Component        parentComponent,
                           CandidateType    type,
-                          CandidateExtendedType extendedType)
+                          CandidateExtendedType extendedType,
+                          LocalCandidate  relatedCandidate)
     {
-        super(transportAddress, parentComponent, type);
+        super(transportAddress, parentComponent, type, relatedCandidate);
         this.extendedType = extendedType;
     }
 
@@ -350,76 +355,28 @@ public abstract class LocalCandidate
     }
 
     /**
-     * Returns this candidate host address.
+     * Find the candidate corresponding to the address given in parameter.
      *
-     * @return This candidate host address.
-     */
-    public TransportAddress getHostAddress()
-    {
-        switch (getType())
-        {
-            case SERVER_REFLEXIVE_CANDIDATE:
-                if(getBase() != null)
-                {
-                    return getBase().getTransportAddress();
-                }
-                return null;
-            case PEER_REFLEXIVE_CANDIDATE:
-                if(getBase() != null)
-                {
-                    return getBase().getTransportAddress();
-                }
-                return null;
-            case RELAYED_CANDIDATE:
-                if(getBase() != null)
-                {
-                    return getBase().getTransportAddress();
-                }
-                return null;
-            default: //host candidate
-                return getTransportAddress();
-        }
-    }
-
-    /**
-     * Returns this candidate reflexive address.
+     * @param relatedAddress The related address:
+     * - null for a host candidate,
+     * - the base address (host candidate) for a reflexive candidate,
+     * - the mapped address (the mapped address of the TURN allocate response)
+     * for a relayed candidate.
+     * - null for a peer reflexive candidate : there is no way to know the
+     * related address.
      *
-     * @return This candidate reflexive address. Null if this candidate
-     * does not use a peer/server reflexive address.
+     * @return The related candidate corresponding to the address given in
+     * parameter:
+     * - null for a host candidate,
+     * - the base address (host candidate) for a reflexive candidate,
+     * - the mapped address (the mapped address of the TURN allocate response)
+     * for a relayed candidate.
+     * - null for a peer reflexive candidate : there is no way to know the
+     * related address.
      */
-    public TransportAddress getReflexiveAddress()
+    protected LocalCandidate findRelatedCandidate(
+            TransportAddress relatedAddress)
     {
-        switch (getType())
-        {
-            case SERVER_REFLEXIVE_CANDIDATE:
-                return getTransportAddress();
-            case PEER_REFLEXIVE_CANDIDATE:
-                return getTransportAddress();
-            case RELAYED_CANDIDATE:
-                return getMappedAddress();
-            default: //host candidate
-                return null;
-        }
-    }
-
-    /**
-     * Returns this candidate relayed address.
-     *
-     * @return This candidate relayed address. Null if this candidate
-     * does not use a relay.
-     */
-    public TransportAddress getRelayedAddress()
-    {
-        switch (getType())
-        {
-            case SERVER_REFLEXIVE_CANDIDATE:
-                return null;
-            case PEER_REFLEXIVE_CANDIDATE:
-                return null;
-            case RELAYED_CANDIDATE:
-                return getTransportAddress();
-            default: //host candidate
-                return null;
-        }
+        return getParentComponent().findLocalCandidate(relatedAddress);
     }
 }

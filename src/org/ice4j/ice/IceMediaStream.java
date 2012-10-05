@@ -558,13 +558,13 @@ public class IceMediaStream
      * Component}s or <tt>null</tt> if it doesn't.
      *
      */
-    public Candidate findRemoteCandidate(TransportAddress remoteAddress)
+    public RemoteCandidate findRemoteCandidate(TransportAddress remoteAddress)
     {
         Collection<Component> cmpCol = components.values();
 
         for( Component cmp : cmpCol)
         {
-            Candidate cnd = cmp.findRemoteCandidate(remoteAddress);
+            RemoteCandidate cnd = cmp.findRemoteCandidate(remoteAddress);
 
             if(cnd != null)
                 return cnd;

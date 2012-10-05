@@ -17,13 +17,8 @@ import org.ice4j.*;
  * @author Emil Ivov
  */
 public class RemoteCandidate
-    extends Candidate
+    extends Candidate<RemoteCandidate>
 {
-    /**
-     * The related address that the remote party sent in SDP, if it did.
-     */
-    private TransportAddress raddr;
-
     /**
      * Ufrag for the Google Talk candidate.
      */
@@ -42,13 +37,18 @@ public class RemoteCandidate
      * by the session description protocol.
      * @param priority the <tt>RemoteCandidate</tt>'s priority as reported
      * by the session description protocol.
+     * @param relatedCandidate the relatedCandidate: null for a host candidate,
+     * the base address (host candidate) for a reflexive candidate, the mapped
+     * address (the mapped address of the TURN allocate response) for a relayed
+     * candidate.
      */
     public RemoteCandidate(
             TransportAddress transportAddress,
             Component        parentComponent,
             CandidateType    type,
             String           foundation,
-            long             priority)
+            long             priority,
+            RemoteCandidate  relatedCandidate)
     {
         this(
                 transportAddress,
@@ -56,6 +56,7 @@ public class RemoteCandidate
                 type,
                 foundation,
                 priority,
+                relatedCandidate,
                 null);
     }
 
@@ -72,6 +73,10 @@ public class RemoteCandidate
      * by the session description protocol.
      * @param priority the <tt>RemoteCandidate</tt>'s priority as reported
      * by the session description protocol.
+     * @param relatedCandidate the relatedCandidate: null for a host candidate,
+     * the base address (host candidate) for a reflexive candidate, the mapped
+     * address (the mapped address of the TURN allocate response) for a relayed
+     * candidate.
      * @param ufrag ufrag for the remote candidate
      */
     public RemoteCandidate(
@@ -80,9 +85,10 @@ public class RemoteCandidate
             CandidateType    type,
             String           foundation,
             long             priority,
+            RemoteCandidate  relatedCandidate,
             String			ufrag)
     {
-        super(transportAddress, parentComponent, type);
+        super(transportAddress, parentComponent, type, relatedCandidate);
         setFoundation(foundation);
         setPriority(priority);
         this.ufrag = ufrag;
@@ -122,39 +128,6 @@ public class RemoteCandidate
     }
 
     /**
-     * Returns the <tt>TransportAddress</tt> that the remote party indicated
-     * as "related" for this <tt>Candidate</tt>.
-     * <p>
-     * Related addresses are present for server reflexive, peer reflexive and
-     * relayed candidates. If a candidate is server or peer reflexive,
-     * the related address is equal to the base of this <tt>Candidate</tt>.
-     * If the candidate is relayed, the returned address is equal to the mapped
-     * address. If the candidate is a host candidate then the method returns
-     * <tt>null</tt>.
-     *
-     * @return the <tt>TransportAddress</tt> that the remote party indicated
-     * as "related" for this <tt>Candidate</tt> or <tt>null</tt> if they didn't
-     * include it in SDP.
-     */
-    @Override
-    public TransportAddress getRelatedAddress()
-    {
-        return raddr;
-    }
-
-    /**
-     * Specifies the <tt>TransportAddress</tt> that the remote party indicated
-     * as "related" for this <tt>Candidate</tt>.
-     *
-     * @param relatedAddr the <tt>TransportAddress</tt> that the remote party
-     * indicated as "related" for this <tt>Candidate</tt>.
-     */
-    public void setRelatedAddress(TransportAddress relatedAddr)
-    {
-        this.raddr = relatedAddr;
-    }
-
-    /**
      * Get the remote ufrag.
      *
      * @return remote ufrag
@@ -165,76 +138,28 @@ public class RemoteCandidate
     }
 
     /**
-     * Returns this candidate host address.
+     * Find the candidate corresponding to the address given in parameter.
      *
-     * @return This candidate host address.
-     */
-    public TransportAddress getHostAddress()
-    {
-        switch (getType())
-        {
-            case SERVER_REFLEXIVE_CANDIDATE:
-                if(getBase() != null)
-                {
-                    return getBase().getTransportAddress();
-                }
-                return null;
-            case PEER_REFLEXIVE_CANDIDATE:
-                if(getBase() != null)
-                {
-                    return getBase().getTransportAddress();
-                }
-                return null;
-            case RELAYED_CANDIDATE:
-                // If we are able to find the base address of the mapped
-                // address, it will be a great enhancement.
-                // i.e. but not working
-                // getMappedAddress().getBase().getTransportAddress();
-                return null;
-            default: //host candidate
-                return getTransportAddress();
-        }
-    }
-
-    /**
-     * Returns this candidate reflexive address.
+     * @param relatedAddress The related address:
+     * - null for a host candidate,
+     * - the base address (host candidate) for a reflexive candidate,
+     * - the mapped address (the mapped address of the TURN allocate response)
+     * for a relayed candidate.
+     * - null for a peer reflexive candidate : there is no way to know the
+     * related address.
      *
-     * @return This candidate reflexive address. Null if this candidate
-     * does not use a peer/server reflexive address.
+     * @return The related candidate corresponding to the address given in
+     * parameter:
+     * - null for a host candidate,
+     * - the base address (host candidate) for a reflexive candidate,
+     * - the mapped address (the mapped address of the TURN allocate response)
+     * for a relayed candidate.
+     * - null for a peer reflexive candidate : there is no way to know the
+     * related address.
      */
-    public TransportAddress getReflexiveAddress()
+    protected RemoteCandidate findRelatedCandidate(
+            TransportAddress relatedAddress)
     {
-        switch (getType())
-        {
-            case SERVER_REFLEXIVE_CANDIDATE:
-                return getTransportAddress();
-            case PEER_REFLEXIVE_CANDIDATE:
-                return getTransportAddress();
-            case RELAYED_CANDIDATE:
-                return getMappedAddress();
-            default: //host candidate
-                return null;
-        }
-    }
-
-    /**
-     * Returns this candidate relayed address.
-     *
-     * @return This candidate relayed address. Null if this candidate
-     * does not use a relay.
-     */
-    public TransportAddress getRelayedAddress()
-    {
-        switch (getType())
-        {
-            case SERVER_REFLEXIVE_CANDIDATE:
-                return null;
-            case PEER_REFLEXIVE_CANDIDATE:
-                return null;
-            case RELAYED_CANDIDATE:
-                return getTransportAddress();
-            default: //host candidate
-                return null;
-        }
+        return getParentComponent().findRemoteCandidate(relatedAddress);
     }
 }

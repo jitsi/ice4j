@@ -52,14 +52,12 @@ public class ServerReflexiveCandidate
                                     TransportAddress stunSrvrAddr,
                                     CandidateExtendedType extendedType)
     {
-        super(address,
-            base.getParentComponent(),
-            CandidateType.SERVER_REFLEXIVE_CANDIDATE,
-            extendedType);
-
-        setBase(base);
-        setStunServerAddress(stunSrvrAddr);
-        stunHarvest = null;
+        this(
+                address,
+                base,
+                stunSrvrAddr,
+                null,
+                extendedType);
     }
 
     /**
@@ -87,7 +85,8 @@ public class ServerReflexiveCandidate
         super(address,
               base.getParentComponent(),
               CandidateType.SERVER_REFLEXIVE_CANDIDATE,
-              extendedType);
+              extendedType,
+              base);
 
         setBase(base);
         setStunServerAddress(stunSrvrAddr);

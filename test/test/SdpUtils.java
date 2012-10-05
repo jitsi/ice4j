@@ -229,13 +229,9 @@ public class SdpUtils
         if(component == null)
             return null;
 
-        RemoteCandidate cand = new RemoteCandidate(transAddr, component, type,
-                        foundation, priority);
-
-        component.addRemoteCandidate(cand);
-
         // check if there's a related address property
 
+        RemoteCandidate relatedCandidate = null;
         if (tokenizer.countTokens() >= 4)
         {
             tokenizer.nextToken(); // skip the raddr element
@@ -246,8 +242,13 @@ public class SdpUtils
             TransportAddress raddr = new TransportAddress(
                             relatedAddr, relatedPort, Transport.UDP);
 
-            cand.setRelatedAddress(raddr);
+            relatedCandidate = component.findRemoteCandidate(raddr);
         }
+
+        RemoteCandidate cand = new RemoteCandidate(transAddr, component, type,
+                        foundation, priority, relatedCandidate);
+
+        component.addRemoteCandidate(cand);
 
         return cand;
     }
