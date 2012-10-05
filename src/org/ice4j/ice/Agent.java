@@ -90,16 +90,9 @@ public class Agent
         = new CandidateHarvesterSet();
 
     /**
-     * The last harvest start time. -1 if this agent is not currently
-     * harvesting.
+     * Manages statisics about harvesting time.
      */
-    private long lastStartHarvestingTime = -1;
-
-    /**
-     * The last ended harvesting time. -1 if this agent has never harvested yet.
-     */
-    private long lastHarvestingTime = -1;
-
+    private HarvestingTimeStat harvestingTimeStat = new HarvestingTimeStat();
 
     /**
      * We use the <tt>FoundationsRegistry</tt> to keep track of the foundations
@@ -2199,8 +2192,8 @@ public class Agent
      * @param harvesterName The class name if the harvester.
      *
      * @return The harvesting time (in ms) for the harvester given in parameter.
-     * -1 if this harvester does not exists, or if the
-     * agent has not yet harvested with this harvester.
+     * 0 if this harvester does not exists, or if the agent has not yet
+     * harvested with this harvester.
      */     
     public long getHarvestingTime(String harvesterName)
     {
@@ -2210,7 +2203,7 @@ public class Agent
             return this.hostCandidateHarvester.getHarvestingTime();
         }
 
-        long harvestingTime = -1;
+        long harvestingTime = 0;
         CandidateHarvester tmpHarvester;
         Iterator<CandidateHarvester> itHarvesters = this.harvesters.iterator();
         while(itHarvesters.hasNext())
@@ -2219,16 +2212,54 @@ public class Agent
             if(tmpHarvester.getClass().getName().endsWith(harvesterName))
             {
                 harvestingTime = tmpHarvester.getHarvestingTime();
-                // Theremay be several harvester with the same class name. Thus,
-                // returns only an active one.
-                if(harvestingTime != -1)
+                // There may be several harvester with the same class name.
+                // Thus, returns only an active one (if any).
+                if(harvestingTime != 0)
                 {
                     return harvestingTime;
                 }
             }
         }
 
-        return -1;
+        return 0;
+    }
+
+    /**
+     * Returns the number of harvesting time for the harvester given in
+     * parameter.
+     *
+     * @param harvesterName The class name if the harvester.
+     *
+     * @return The number of harvesting time for the harvester given in
+     * parameter.
+     */     
+    public int getNbHarvesting(String harvesterName)
+    {
+        if(this.hostCandidateHarvester.getClass().getName().endsWith(
+                    harvesterName))
+        {
+            return this.hostCandidateHarvester.getNbHarvesting();
+        }
+
+        int nbHarvesting = 0;
+        CandidateHarvester tmpHarvester;
+        Iterator<CandidateHarvester> itHarvesters = this.harvesters.iterator();
+        while(itHarvesters.hasNext())
+        {
+            tmpHarvester = itHarvesters.next();
+            if(tmpHarvester.getClass().getName().endsWith(harvesterName))
+            {
+                nbHarvesting = tmpHarvester.getNbHarvesting();
+                // There may be several harvester with the same class name.
+                // Thus, returns only an active one (if any).
+                if(nbHarvesting != 0)
+                {
+                    return nbHarvesting;
+                }
+            }
+        }
+
+        return 0;
     }
 
     /**
@@ -2236,10 +2267,7 @@ public class Agent
      */
     public void startHarvesting()
     {
-        // Remember the start date of this harvester.
-        this.lastStartHarvestingTime = System.currentTimeMillis();
-        // Reset the last harvesting time.
-        this.lastHarvestingTime = -1;
+        this.harvestingTimeStat.startHarvesting();
     }
 
     /**
@@ -2247,36 +2275,30 @@ public class Agent
      */
     public void stopHarvesting()
     {
-        // Remember the last harvesting time.
-        this.lastHarvestingTime = this.getTotalHarvestingTime();
-        // Stops the current timer.
-        this.lastStartHarvestingTime = -1;
+        this.harvestingTimeStat.stopHarvesting();
     }
 
     /**
      * Returns the current harvesting time in ms. If this agent is not currently
      * harvesting, then returns the value of the last total harvesting time for
-     * all the harvesters.  -1 if this agent has nerver harvested.
+     * all the harvesters.  0 if this agent has nerver harvested.
      *
      * @return The current harvesting time in ms. If this agent is not currently
      * harvesting, then returns the value of the last total harvesting time for
-     * all the harvesters.  -1 if this agent has nerver harvested.
+     * all the harvesters.  0 if this agent has nerver harvested.
      */
     public long getTotalHarvestingTime()
     {
-        if(this.lastStartHarvestingTime != -1)
-        {
-            long currentHarvestingTime
-                = System.currentTimeMillis() - lastStartHarvestingTime;
-            // Retest here, while the harvesting may be end while computing the
-            // harvsting time.
-            if(this.lastStartHarvestingTime != -1)
-            {
-                return currentHarvestingTime;
-            }
-        }
-        // If we are ont currently harvesting, then returns the value of the
-        // last harvesting time.
-        return this.lastHarvestingTime;
+        return this.harvestingTimeStat.getHarvestingTime();
+    }
+
+    /**
+     * Returns the number of harvesting for this agent.
+     *
+     * @return The number of harvesting for this agent.
+     */
+    public int getNbHarvesting()
+    {
+        return this.harvestingTimeStat.getNbHarvesting();
     }
 }
