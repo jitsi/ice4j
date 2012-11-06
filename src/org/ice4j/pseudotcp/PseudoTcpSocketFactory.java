@@ -12,7 +12,7 @@ public class PseudoTcpSocketFactory
      * Default conversation ID
      */
     public static final long DEFAULT_CONVERSATION_ID=0;
-    
+
     /**
      * Default timeout for connect operation
      */
@@ -22,7 +22,6 @@ public class PseudoTcpSocketFactory
      * Creates a socket and connects it to the specified 
      * port number at the specified address.
      */
-    @Override
     public Socket createSocket(String host, int port)
         throws IOException,
                UnknownHostException
@@ -36,20 +35,19 @@ public class PseudoTcpSocketFactory
      * Creates a socket and connect it to the specified remote address 
      * on the specified remote port.
      */
-    @Override
     public Socket createSocket(InetAddress host, int port) throws IOException
     {
         Socket socket = createSocket();
         connectSocket(socket, new InetSocketAddress(host, port));
         return socket;
     }    
-    
+
     private void connectSocket(Socket socket, InetSocketAddress remoteSockAddr)
         throws IOException
     {
         socket.connect(remoteSockAddr, DEFAULT_CONNECT_TIMEOUT);
     }
-    
+
     /**
      * Creates socket bound to local <tt>sockAddr</tt>
      * @param sockAddr
@@ -67,7 +65,6 @@ public class PseudoTcpSocketFactory
     /**
      *  Creates a socket and connects it to the specified remote host at the specified remote port.
      */
-    @Override
     public Socket createSocket(String host, 
                                int port, 
                                InetAddress localHost,
@@ -84,7 +81,6 @@ public class PseudoTcpSocketFactory
     /**
      * Creates a socket and connects it to the specified remote host on the specified remote port.
      */
-    @Override
     public Socket createSocket(InetAddress address, int port,
         InetAddress localAddress, int localPort) throws IOException
     {
@@ -107,14 +103,14 @@ public class PseudoTcpSocketFactory
         return new PseudoTcpSocket(
             new PseudoTcpSocketImpl(DEFAULT_CONVERSATION_ID, datagramSocket));
     }
-    
+
     /**
      * Creates the PseudoTcp socket and binds it to any available port
      * on the local host machine.  The socket will be bound to the
      * {@link InetAddress#isAnyLocalAddress wildcard} address,
      * an IP address chosen by the kernel.
-     * 
      */
+    @Override
     public PseudoTcpSocket createSocket() 
         throws SocketException
     {        
@@ -122,7 +118,6 @@ public class PseudoTcpSocketFactory
             new PseudoTcpSocketImpl(DEFAULT_CONVERSATION_ID));
     }
 
-    @Override
     public SocketImpl createSocketImpl()
     {
         try
@@ -134,5 +129,4 @@ public class PseudoTcpSocketFactory
             throw new RuntimeException(e);
         }        
     }
-
 }
