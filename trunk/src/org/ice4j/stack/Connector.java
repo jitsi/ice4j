@@ -27,8 +27,8 @@ class Connector
     /**
      * Our class logger.
      */
-    private static final Logger logger =
-        Logger.getLogger(Connector.class.getName());
+    private static final Logger logger
+        = Logger.getLogger(Connector.class.getName());
 
     /**
      * The message queue is where incoming messages are added.
@@ -204,10 +204,10 @@ class Connector
                     stop();
                     //Something wrong has happened
                     errorHandler.handleFatalError(
-                        this,
-                        "A socket exception was thrown while trying to "
-                        + "receive a message.",
-                        ex);
+                            this,
+                            "A socket exception was thrown"
+                                + " while trying to receive a message.",
+                            ex);
                 }
                 else
                 {
@@ -230,24 +230,26 @@ class Connector
 
                 stop();
                 errorHandler.handleFatalError(
-                    this,
-                    "Unknown error occurred while listening for messages!",
-                    ex);
+                        this,
+                        "Unknown error occurred while listening for messages!",
+                        ex);
             }
         }
     }
 
     /**
      * Makes the access point stop listening on its socket.
-     *
      */
     protected void stop()
     {
         synchronized(sockLock)
         {
             this.running = false;
-            this.sock.close();
-            this.sock = null;
+            if (this.sock != null)
+            {
+                this.sock.close();
+                this.sock = null;
+            }
         }
     }
 

@@ -232,15 +232,19 @@ class NetAccessManager
      */
     protected void removeSocket(TransportAddress address)
     {
-        Connector ap = null;
+        Connector ap;
 
-        if(address.getTransport() == Transport.UDP)
+        switch (address.getTransport())
         {
-            ap = netUDPAccessPoints.remove(address);
-        }
-        else if(address.getTransport() == Transport.TCP)
-        {
+        case TCP:
             ap = netTCPAccessPoints.remove(address);
+            break;
+        case UDP:
+            ap = netUDPAccessPoints.remove(address);
+            break;
+        default:
+            ap = null;
+            break;
         }
 
         if(ap != null)
