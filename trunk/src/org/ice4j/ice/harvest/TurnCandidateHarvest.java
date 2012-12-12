@@ -195,7 +195,7 @@ public class TurnCandidateHarvest
              */
             boolean existsRelayedCandidate = false;
 
-            for (Candidate aCandidate : getCandidates())
+            for (Candidate<?> aCandidate : getCandidates())
             {
                 if (CandidateType.RELAYED_CANDIDATE.equals(
                         aCandidate.getType()))

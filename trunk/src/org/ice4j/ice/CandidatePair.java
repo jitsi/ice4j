@@ -299,7 +299,7 @@ public class CandidatePair
      * @return a reference to the <tt>Candidate</tt> instance that comes from
      * the controlling agent.
      */
-    public Candidate getControllingAgentCandidate()
+    public Candidate<?> getControllingAgentCandidate()
     {
         return (getLocalCandidate().getParentComponent().getParentStream()
                         .getParentAgent().isControlling())
@@ -313,7 +313,7 @@ public class CandidatePair
      * @return a reference to the <tt>Candidate</tt> instance that comes from
      * the controlled agent.
      */
-    public Candidate getControlledAgentCandidate()
+    public Candidate<?> getControlledAgentCandidate()
     {
         return (getLocalCandidate().getParentComponent().getParentStream()
                         .getParentAgent().isControlling())

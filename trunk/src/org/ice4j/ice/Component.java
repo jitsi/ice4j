@@ -111,7 +111,7 @@ public class Component
      * words, the candidate that we would have used to communicate with the
      * remote peer if we hadn't been using ICE.
      */
-    private Candidate defaultRemoteCandidate = null;
+    private Candidate<?> defaultRemoteCandidate = null;
 
     /**
      * Creates a new <tt>Component</tt> with the specified <tt>componentID</tt>
@@ -175,10 +175,10 @@ public class Component
         synchronized(localCandidates)
         {
             int count = 0;
-            for(Candidate cand : localCandidates)
+            for(Candidate<?> cand : localCandidates)
             {
-                if (cand.getType() == CandidateType.HOST_CANDIDATE
-                    && !cand.isVirtual())
+                if ((cand.getType() == CandidateType.HOST_CANDIDATE)
+                        && !cand.isVirtual())
                 {
                     count++;
                 }
@@ -519,9 +519,9 @@ public class Component
 
             synchronized(localCandidates)
             {
-                for (Candidate cand : localCandidates)
+                for (Candidate<?> cand : localCandidates)
                 {
-                    buff.append("\n" + cand.toString());
+                    buff.append('\n').append(cand.toString());
                 }
             }
         }
@@ -586,7 +586,7 @@ public class Component
             localCandidates.toArray(candidates);
 
             //first compute the actual priorities
-            for (Candidate cand : candidates)
+            for (Candidate<?> cand : candidates)
             {
                 if(compat == CompatibilityMode.GTALK)
                 {
@@ -612,7 +612,7 @@ public class Component
      * Compares candidates based on their priority.
      */
     private static class CandidatePrioritizer
-        implements Comparator<Candidate>
+        implements Comparator<Candidate<?>>
     {
         /**
          * Compares the two <tt>Candidate</tt>s based on their priority and
@@ -627,7 +627,7 @@ public class Component
          * <tt>Candidate</tt> has a lower, equal, or greater priority than the
          * second.
          */
-        public int compare(Candidate c1, Candidate c2)
+        public int compare(Candidate<?> c1, Candidate<?> c2)
         {
             if(c1.getPriority() < c2.getPriority())
                 return 1;
@@ -740,7 +740,7 @@ public class Component
      * default for this <tt>Component</tt> or <tt>null</tt> if no such
      * <tt>Candidate</tt> has reported yet.
      */
-    public Candidate getDefaultRemoteCandidate()
+    public Candidate<?> getDefaultRemoteCandidate()
     {
         return defaultRemoteCandidate;
     }
@@ -753,7 +753,7 @@ public class Component
      * @param candidate the <tt>Candidate</tt> that the remote party has
      * reported as default for this <tt>Component</tt>.
      */
-    public void setDefaultRemoteCandidate(Candidate candidate)
+    public void setDefaultRemoteCandidate(Candidate<?> candidate)
     {
         this.defaultRemoteCandidate = candidate;
     }
