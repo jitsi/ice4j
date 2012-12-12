@@ -27,7 +27,7 @@ import org.ice4j.*;
  * @author Lyubomir Marinov
  */
 public abstract class Candidate
-    <T extends Candidate>
+    <T extends Candidate<?>>
 {
     /**
      * The transport address represented by this candidate.
@@ -291,7 +291,7 @@ public abstract class Candidate
         if( ! (obj instanceof Candidate))
             return false;
 
-        Candidate targetCandidate = (Candidate)obj;
+        Candidate<?> targetCandidate = (Candidate<?>) obj;
 
         //compare candidate addresses
         if( ! targetCandidate.getTransportAddress()
@@ -786,7 +786,7 @@ public abstract class Candidate
      * otherwise.
      *
      */
-    public boolean canReach(Candidate dst)
+    public boolean canReach(Candidate<?> dst)
     {
         return getTransportAddress().canReach(dst.getTransportAddress());
     }

@@ -7,10 +7,6 @@
  */
 package org.ice4j.ice.harvest;
 
-import java.util.*;
-
-import org.ice4j.ice.*;
-
 /**
  * Manages statisics about harvesting time.
  *

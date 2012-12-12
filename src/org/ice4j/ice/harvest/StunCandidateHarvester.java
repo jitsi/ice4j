@@ -231,10 +231,14 @@ public class StunCandidateHarvester
                 component.getComponentID());
         stunStack = component.getParentStream().getParentAgent().getStunStack();
 
-        for (Candidate cand : component.getLocalCandidates())
-            if (cand instanceof HostCandidate &&
-                cand.getTransport() == stunServer.getTransport())
+        for (Candidate<?> cand : component.getLocalCandidates())
+        {
+            if ((cand instanceof HostCandidate)
+                    && (cand.getTransport() == stunServer.getTransport()))
+            {
                 startResolvingCandidate((HostCandidate) cand);
+            }
+        }
 
         waitForResolutionEnd();
 

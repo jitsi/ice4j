@@ -348,7 +348,7 @@ public class Agent
 
         gatherCandidates(component, preferredPort, minPort, maxPort);
 
-        for(Candidate candidate : component.getLocalCandidates())
+        for(Candidate<?> candidate : component.getLocalCandidates())
         {
             logger.info("\t" + candidate.getTransportAddress() + " (" +
                     candidate.getType() + ")");
@@ -692,7 +692,7 @@ public class Agent
     {
         List<LocalCandidate> candidates = component.getLocalCandidates();
 
-        for (Candidate cand : candidates)
+        for (Candidate<?> cand : candidates)
             foundationsRegistry.assignFoundation(cand);
     }
 
@@ -851,8 +851,8 @@ public class Agent
      * check for outgoing Binding Requests.
      */
     private String generateUserName(
-            Candidate candidate1,
-            Candidate candidate2)
+            Candidate<?> candidate1,
+            Candidate<?> candidate2)
     {
         String ret = null;
         String ufrag1 = candidate1.getUfrag();

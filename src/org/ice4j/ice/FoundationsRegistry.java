@@ -42,7 +42,7 @@ public class FoundationsRegistry
      * @param candidate the <tt>Candidate</tt> that we'd like to assign a
      * foundation to.
      */
-    public void assignFoundation(Candidate candidate)
+    public void assignFoundation(Candidate<?> candidate)
     {
         //create the foundation key String
         CandidateType candidateType = candidate.getType();
