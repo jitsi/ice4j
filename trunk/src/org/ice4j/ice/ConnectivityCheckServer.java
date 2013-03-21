@@ -91,9 +91,9 @@ class ConnectivityCheckServer
         UsernameAttribute uname = (UsernameAttribute)request
             .getAttribute(Attribute.USERNAME);
 
-        if(uname == null ||
-                (parentAgent.getCompatibilityMode() == CompatibilityMode.RFC5245
-                       && !checkLocalUserName(new String(uname.getUsername()))))
+        if(   uname == null
+           ||  ( parentAgent.getCompatibilityMode() == CompatibilityMode.RFC5245
+              && !checkLocalUserName(new String(uname.getUsername()))))
         {
             return;
         }
@@ -143,8 +143,8 @@ class ConnectivityCheckServer
             remoteUfrag = username.substring(0, colon);
         }
 
-        if(parentAgent.getCompatibilityMode() == CompatibilityMode.GTALK &&
-            parentAgent.findCandidatePair(localUFrag, remoteUfrag) == null)
+        if(    parentAgent.getCompatibilityMode() == CompatibilityMode.GTALK
+            && parentAgent.findCandidatePair(localUFrag, remoteUfrag) == null)
         {
             logger.info("No candidate pair that match local and remote ufrag");
 

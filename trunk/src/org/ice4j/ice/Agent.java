@@ -565,8 +565,23 @@ public class Agent
      */
     public boolean isStarted()
     {
-        return state != IceProcessingState.WAITING &&
-        state != IceProcessingState.TERMINATED;
+        return state != IceProcessingState.WAITING
+            && state != IceProcessingState.COMPLETED
+            && state != IceProcessingState.TERMINATED;
+    }
+
+    /**
+     * Indicates whether this {@link Agent} has finished ICE processing.
+     *
+     * @return <tt>true</tt> if ICE processing is in the {@link
+     * IceProcessingState#FAILED}, {@link IceProcessingState#COMPLETED} or
+     * {@link IceProcessingState#TERMINATED} and <tt>false</tt> otherwise.
+     */
+    public boolean isOver()
+    {
+        return state == IceProcessingState.COMPLETED
+            || state != IceProcessingState.TERMINATED
+            || state != IceProcessingState.FAILED;
     }
 
     /**
@@ -1273,6 +1288,15 @@ public class Agent
                                          String           localUFrag,
                                          boolean          useCandidate)
     {
+        if (isOver())
+        {
+            //means we already completed ICE and are happily running media
+            //the only reason we are called is most probably because the remote
+            //party is still sending Binding Requests our way and making sure we
+            //are still alive.
+            return;
+        }
+
         String ufrag = null;
         LocalCandidate localCandidate = null;
 
@@ -1604,7 +1628,7 @@ public class Agent
         boolean allListsEnded = true;
         boolean atLeastOneListSucceeded = false;
 
-        if(state == IceProcessingState.COMPLETED)
+        if(getState() == IceProcessingState.COMPLETED)
             return;
 
         List<IceMediaStream> streams = getStreams();
@@ -1626,84 +1650,93 @@ public class Agent
             }
         }
 
+
+        if(!allListsEnded)
+            return;
+
+        if(!atLeastOneListSucceeded)
+        {
+            //all lists ended but none succeeded. No love today ;(
+            logger.info("ICE state is FAILED");
+            terminate(IceProcessingState.FAILED);
+            return;
+        }
+
         //Once the state of each check list is Completed:
         //The agent sets the state of ICE processing overall to Completed.
-        if(allListsEnded)
+        if(getState() != IceProcessingState.RUNNING)
         {
-            if(atLeastOneListSucceeded)
+            //Oh, seems like we already did this.
+            return;
+        }
+
+        logger.info("ICE state is COMPLETED");
+
+        setState(IceProcessingState.COMPLETED);
+
+        // keep ICE running (answer binding request)
+        if(stunKeepAliveThread == null)
+        {
+            // schedule STUN checks for selected candidates
+            scheduleSTUNKeepAlive();
+        }
+
+        if(compatibilityMode == CompatibilityMode.RFC5245)
+        {
+            scheduleTermination();
+        }
+
+        //print logs for the types of addresses we chose.
+        logCandTypes();
+
+    }
+
+    /**
+     * Goes through all streams and components and prints into the logs the type
+     * of local candidates that were selected as well as the server that
+     * were used (if any) to obtain them.
+     */
+    private void logCandTypes()
+    {
+        List<IceMediaStream> strms = getStreams();
+
+        for(IceMediaStream stream : strms)
+        {
+            for(Component component : stream.getComponents())
             {
-                if(getState() == IceProcessingState.RUNNING)
+                CandidatePair selectedPair = component.getSelectedPair();
+
+                StringBuffer buf = new StringBuffer( "Harvester selected for ");
+                buf.append(component.toShortString());
+                buf.append(" ");
+
+                if(selectedPair == null)
                 {
-                    logger.info("ICE state is COMPLETED");
-
-                    setState(IceProcessingState.COMPLETED);
-
-                    // keep ICE running (answer binding request)
-                    if(stunKeepAliveThread == null)
-                    {
-                        // schedule STUN checks for selected candidates
-                        scheduleSTUNKeepAlive();
-                    }
-
-                    if(compatibilityMode == CompatibilityMode.RFC5245)
-                    {
-                        scheduleTermination();
-                    }
-
-                    List<IceMediaStream> strms = getStreams();
-
-                    // logs the harvester type and server used for each of
-                    // of the components
-                    for(IceMediaStream stream : strms)
-                    {
-                        for(Component c : stream.getComponents())
-                        {
-                            StringBuffer buf = new StringBuffer(
-                                "Harvester selected for ");
-                            buf.append(c.toShortString());
-                            buf.append(" ");
-                            if(c.getSelectedPair() == null)
-                            {
-                                buf.append("none ");
-                                buf.append("(it means that conncheck failed)");
-                                logger.info(buf.toString());
-                                continue;
-                            }
-
-                            TransportAddress serverAddr = c.getSelectedPair().
-                                getLocalCandidate().getStunServerAddress();
-                            TransportAddress relayAddr =
-                                c.getSelectedPair().getLocalCandidate().
-                                getRelayServerAddress();
-
-                            buf.append(c.getSelectedPair().getLocalCandidate().
-                                    getType());
-
-                            if(serverAddr != null)
-                            {
-                                buf.append(" (server = ");
-                                buf.append(c.getSelectedPair().
-                                        getLocalCandidate().
-                                        getStunServerAddress());
-                                buf.append(")");
-                            }
-                            else if(relayAddr != null)
-                            {
-                                buf.append(" (relay = ");
-                                buf.append(c.getSelectedPair().
-                                        getLocalCandidate().
-                                        getRelayServerAddress());
-                                buf.append(")");
-                            }
-                            logger.info(buf.toString());
-                        }
-                    }
+                    buf.append("none (conn checks failed)");
+                    logger.info(buf.toString());
+                    continue;
                 }
-            }
-            else
-            {
-                logger.info("ICE state is FAILED");
-                terminate(IceProcessingState.FAILED);
+
+                Candidate localCnd = selectedPair.getLocalCandidate();
+
+                TransportAddress serverAddr = localCnd.getStunServerAddress();
+                TransportAddress relayAddr = localCnd.getRelayServerAddress();
+
+                buf.append(localCnd.getType());
+
+                if(serverAddr != null)
+                {
+                    buf.append(" (STUN server = ");
+                    buf.append(localCnd.getStunServerAddress());
+                    buf.append(")");
+                }
+                else if(relayAddr != null)
+                {
+                    buf.append(" (relay = ");
+                    buf.append(localCnd.getRelayServerAddress());
+                    buf.append(")");
+                }
+                logger.info(buf.toString());
             }
         }
     }
@@ -1855,7 +1888,7 @@ public class Agent
     }
 
     /**
-     * Initializes and starts the {@link STUNKeepAliveThread}
+     * Initializes and starts the {@link StunKeepAliveThread}
      */
     private void scheduleSTUNKeepAlive()
     {
@@ -1937,9 +1970,13 @@ public class Agent
                 && !IceProcessingState.TERMINATED.equals(terminationState))
             throw new IllegalArgumentException("terminationState");
 
-        // stop listening for checks
+        // stop making any checks.
         connCheckClient.stop();
-        connCheckServer.stop();
+
+        //do not stop the conn check server here because it may still need to
+        //process STUN Binding Requests that remote agents may send our way.
+        //we'll do this in "free()" instead.
+        //connCheckServer.stop();
 
         setState(terminationState);
     }
@@ -1963,10 +2000,10 @@ public class Agent
     }
 
     /**
-     * Prepares this <tt>Agent</tt> for garbage collection by setting the
-     * {@link IceProcessingState#TERMINATED} state on it unless this
-     * <tt>Agent</tt> is in termination state already and  freeing its
-     * <tt>IceMediaStream</tt>s, <tt>Component</tt>s and <tt>Candidate</tt>s.
+     * Prepares this <tt>Agent</tt> for garbage collection by ending all related
+     * processes and  freeing its <tt>IceMediaStream</tt>s, <tt>Component</tt>s
+     * and <tt>Candidate</tt>s. This method will also place the agent in the
+     * terminated state in case it wasn't already there.
      */
     public void free()
     {
@@ -1974,8 +2011,12 @@ public class Agent
 
         shutdown = true;
 
+        //stop sending keep alives (STUN Binding Indications).
         if(stunKeepAliveThread != null)
             stunKeepAliveThread.interrupt();
+
+        //stop responding to STUN Binding Requests.
+        connCheckServer.stop();
 
         /*
          * Set the IceProcessingState#TERMINATED state on this Agent unless it
@@ -1983,9 +2024,11 @@ public class Agent
          */
         IceProcessingState state = getState();
 
-        if (!IceProcessingState.FAILED.equals(state)
-                && !IceProcessingState.TERMINATED.equals(state))
+        if (    !IceProcessingState.FAILED.equals(state)
+             && !IceProcessingState.TERMINATED.equals(state))
+        {
             terminate(IceProcessingState.TERMINATED);
+        }
 
         logger.info("remove streams");
         // Free its IceMediaStreams, Components and Candidates.
@@ -2090,19 +2133,22 @@ public class Agent
                     {
                         if(compatibilityMode == CompatibilityMode.GTALK)
                         {
+                            //apparently GTalk insists on seeing binding
+                            //requests or else it believes we are dead
+                            //Emil: I am not sure this is true. I think it would
+                            //be enough for us to respond to their binding
+                            //requests. At least that's how it seems to work for
+                            //Chrome and WebRTC.
+                            //TODO: check and maybe remove
                             connCheckClient.startCheckForPair(pair);
                         }
                         else if(compatibilityMode == CompatibilityMode.RFC5245)
                         {
                             connCheckClient.sendBindingIndicationForPair(pair);
                         }
-                        pair = null;
                     }
                 }
-                stream = null;
             }
-
-            streams = null;
 
             if(shutdown)
                 break;
