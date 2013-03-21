@@ -580,8 +580,8 @@ public class Agent
     public boolean isOver()
     {
         return state == IceProcessingState.COMPLETED
-            || state != IceProcessingState.TERMINATED
-            || state != IceProcessingState.FAILED;
+            || state == IceProcessingState.TERMINATED
+            || state == IceProcessingState.FAILED;
     }
 
     /**
