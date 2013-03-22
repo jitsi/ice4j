@@ -37,7 +37,7 @@ class PseudoTcpSocketImpl
      * Receive buffer size used for receiving packets TODO: this should be
      * checked with MTU ?
      */
-    private int DATAGRAM_RCV_BUFFER_SIZE = 70000;
+    private int DATAGRAM_RCV_BUFFER_SIZE = 8000;
     /**
      * Monitor object used to block threads on write operation. That is when the
      * send buffer is full.
@@ -114,7 +114,7 @@ class PseudoTcpSocketImpl
      * Binds <tt>DatagramSocket</tt> to given <tt>local_port</tt>
      *
      * @param conv_id conversation id, must be the same on both sides
-     * @param local_port
+     * @param local_port the local port that will be used for this socket
      * @throws SocketException
      */
     public PseudoTcpSocketImpl(long conv_id, int local_port)
@@ -142,7 +142,7 @@ class PseudoTcpSocketImpl
     
     /**
      * Sets the MTU parameter for this socket
-     * @param mtu
+     * @param mtu the MTU value
      */
     public void setMTU(int mtu)
     {
@@ -170,7 +170,7 @@ class PseudoTcpSocketImpl
     
     /**
      * Sets debug name that will be displayed in log messages for this socket
-     * @param debugName 
+     * @param debugName the debug name to set 
      */
     public void setDebugName(String debugName)
     {
@@ -270,8 +270,8 @@ class PseudoTcpSocketImpl
         //TODO: map options to PTCP options/method calls
 		if(optID == SocketOptions.TCP_NODELAY) 
         {
-				Object ret = options.get(Option.OPT_NODELAY.ordinal());
-				return ret != null;
+			Object ret = options.get(Option.OPT_NODELAY.ordinal());
+			return ret != null;
 		}
 
 		Object option = options.get(optID);
@@ -459,7 +459,7 @@ class PseudoTcpSocketImpl
      * Implements <tt>PseudoTcpNotify</tt>
      * Called when TCP enters connected state.
      *
-     * @param tcp
+     * @param tcp the {@link PseudoTCPBase} that caused an event
      * @see PseudoTcpNotify#onTcpOpen(PseudoTCPBase)
      */
     public void onTcpOpen(PseudoTCPBase tcp)
@@ -477,7 +477,7 @@ class PseudoTcpSocketImpl
     /**
      * Implements <tt>PseudoTcpNotify</tt>
      *
-     * @param tcp
+     * @param tcp the {@link PseudoTCPBase} that caused an event
      * @see PseudoTcpNotify#onTcpReadable(PseudoTCPBase)
      */
     public void onTcpReadable(PseudoTCPBase tcp)
@@ -495,7 +495,7 @@ class PseudoTcpSocketImpl
     /**
      * Implements <tt>PseudoTcpNotify</tt>
      *
-     * @param tcp
+     * @param tcp the {@link PseudoTCPBase} that caused an event
      * @see PseudoTcpNotify#onTcpWriteable(PseudoTCPBase)
      */
     public void onTcpWriteable(PseudoTCPBase tcp)
@@ -515,8 +515,9 @@ class PseudoTcpSocketImpl
     /**
      * Implements <tt>PseudoTcpNotify</tt>
      *
-     * @param tcp
-     * @param e
+     * @param tcp the {@link PseudoTCPBase} that caused an event
+     * @param e the <tt>Exception</tt> which is the reason for closing socket,
+     *  or <tt>null</tt> if there wasn't any
      * 
      * @see PseudoTcpNotify#onTcpClosed(PseudoTCPBase, IOException)
      */
@@ -574,9 +575,9 @@ class PseudoTcpSocketImpl
     /**
      * Implements <tt>PseudoTcpNotify</tt>
      *
-     * @param tcp
-     * @param buffer
-     * @param len
+     * @param tcp the {@link PseudoTCPBase} that caused an event
+     * @param buffer the buffer containing packet data
+     * @param len packet data length in bytes
      * @return operation result
      * 
      * @see PseudoTcpNotify#tcpWritePacket(PseudoTCPBase, byte[], int)
