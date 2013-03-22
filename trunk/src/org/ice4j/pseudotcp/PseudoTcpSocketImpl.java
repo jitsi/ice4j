@@ -268,7 +268,18 @@ class PseudoTcpSocketImpl
         throws SocketException
     {
         //TODO: map options to PTCP options/method calls
-        return options.get(optID);
+		if(optID == SocketOptions.TCP_NODELAY) 
+        {
+				Object ret = options.get(Option.OPT_NODELAY.ordinal());
+				return ret != null;
+		}
+
+		Object option = options.get(optID);
+		if(option == null) 
+        {
+			logger.warning("Asked for unknown optID" + optID);
+		}
+		return option;
     }
     
     public long getPTCPOption(Option opt)
