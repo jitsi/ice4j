@@ -91,6 +91,7 @@ public class CandidateHarvesterSet
         }
     }
 
+
     /**
      * Gathers candidate addresses for a specific <tt>Component</tt> using
      * specific <tt>CandidateHarvester</tt>s.
@@ -107,89 +108,29 @@ public class CandidateHarvesterSet
             final Component component,
             ExecutorService executorService)
     {
-        /**
-         * Represents a task to be executed by the specified executorService and
-         * to call {@link CandidateHarvester#harvestComponent} on the specified
-         * harvesters.
-         */
-        class CandidateHarvesterSetTask
-            implements Runnable
-        {
-            /**
-             * The <tt>CandidateHarvester</tt> on which
-             * {@link CandidateHarvester#harvest(Component)} is to be or is
-             * being called.
-             */
-            private CandidateHarvesterSetElement harvester;
 
-            /**
-             * Initializes a new <tt>CandidateHarvesterSetTask</tt> which is to
-             * call {@link CandidateHarvester#harvest(Component)} on a specific
-             * harvester and then as many harvesters as possible.
-             *
-             * @param harvester the <tt>CandidateHarvester</tt> on which the
-             * new instance is to call
-             * <tt>CandidateHarvester#harvest(Component)</tt> first
-             */
-            public CandidateHarvesterSetTask(
-                    CandidateHarvesterSetElement harvester)
-            {
-                this.harvester = harvester;
-            }
+        harvest(harvesters,
+            Arrays.asList(new Component[]{component}),
+            executorService);
+    }
 
-            /**
-             * Gets the <tt>CandidateHarvester</tt> on which
-             * {@link CandidateHarvester#harvest(Component)} is being called.
-             *
-             * @return the <tt>CandidateHarvester</tt> on which
-             * <tt>CandidateHarvester#harvest(Component)</tt> is being called
-             */
-            public CandidateHarvesterSetElement getHarvester()
-            {
-                return harvester;
-            }
-
-            public void run()
-            {
-                while (true)
-                {
-                    if (harvester.isEnabled())
-                    {
-                        try
-                        {
-                            harvester.harvest(component);
-                        }
-                        catch (Throwable t)
-                        {
-                            logger.info(
-                                "disabling harvester due to exception: " +
-                                    t.getLocalizedMessage());
-                            harvester.setEnabled(false);
-
-                            if (t instanceof ThreadDeath)
-                                throw (ThreadDeath) t;
-                        }
-                    }
-
-                    /*
-                     * CandidateHarvester#harvest(Component) has been called on
-                     * the harvester and its success or failure has been noted.
-                     * Now forget the harvester because any failure to continue
-                     * execution is surely not its fault.
-                     */
-                    harvester = null;
-
-                    synchronized (harvesters)
-                    {
-                        if (harvesters.hasNext())
-                            harvester = harvesters.next();
-                        else
-                            break;
-                    }
-                }
-            }
-        }
-
+    /**
+     * Gathers candidate addresses for a specific <tt>Component</tt> using
+     * specific <tt>CandidateHarvester</tt>s.
+     *
+     * @param harvesters the <tt>CandidateHarvester</tt>s to gather candidate
+     * addresses for the specified <tt>Component</tt>
+     * @param components the <tt>Component</tt>s to gather candidate addresses
+     * for.
+     * @param executorService the <tt>ExecutorService</tt> to schedule the
+     * execution of the gathering of candidate addresses performed by the
+     * specified <tt>harvesters</tt>
+     */
+    private void harvest(
+            final Iterator<CandidateHarvesterSetElement> harvesters,
+            final List<Component> components,
+            ExecutorService executorService)
+    {
         /*
          * Start asynchronously executing the
          * CandidateHarvester#harvest(Component) method of the harvesters.
@@ -212,14 +153,25 @@ public class CandidateHarvesterSet
                 else
                     break;
             }
+
             if (!harvester.isEnabled())
                 continue;
 
-            // Asynchronously start gathering candidates using the harvester.
-            CandidateHarvesterSetTask task
-                = new CandidateHarvesterSetTask(harvester);
+            List<Component> componentsCopy;
 
-            tasks.put(task, executorService.submit(task));
+            synchronized (components)
+            {
+                componentsCopy = new ArrayList<Component>(components);
+            }
+
+            for(Component component : componentsCopy)
+            {
+                // Asynchronously start gathering candidates using the harvester.
+                CandidateHarvesterSetTask task = new CandidateHarvesterSetTask(
+                    harvester, component, harvesters);
+
+                tasks.put(task, executorService.submit(task));
+            }
         }
 
         /*
@@ -253,6 +205,9 @@ public class CandidateHarvesterSet
                 }
                 catch (ExecutionException ee)
                 {
+                    CandidateHarvesterSetElement harvester
+                        = task.getKey().getHarvester();
+
                     /*
                      * A problem appeared during the execution of the task.
                      * CandidateHarvesterSetTask clears its harvester property
@@ -260,11 +215,9 @@ public class CandidateHarvesterSet
                      * appeared while working with a harvester.
                      */
                     logger.info(
-                        "disabling harvester due to ExecutionException: " +
+                        "disabling harvester "+ harvester.getHarvester()
+                            + " due to ExecutionException: " +
                             ee.getLocalizedMessage());
-
-                    CandidateHarvesterSetElement harvester
-                        = task.getKey().getHarvester();
 
                     if (harvester != null)
                         harvester.setEnabled(false);
@@ -319,7 +272,7 @@ public class CandidateHarvesterSet
                 public CandidateHarvester next()
                     throws NoSuchElementException
                 {
-                    return elementIter.next().harvester;
+                    return elementIter.next().getHarvester();
                 }
 
                 /**
@@ -360,116 +313,6 @@ public class CandidateHarvesterSet
         synchronized (elements)
         {
             return elements.size();
-        }
-    }
-
-    /**
-     * Represents a <tt>CandidateHarvester</tt> as an element in a
-     * <tt>CandidateHarvesterSet</tt>.
-     */
-    private static class CandidateHarvesterSetElement
-    {
-        /**
-         * The indicator which determines whether
-         * {@link CandidateHarvester#harvest(Component)} is to be called on
-         * {@link #harvester}.
-         */
-        private boolean enabled = true;
-
-        /**
-         * The <tt>CandidateHarvester</tt> which is an element in a
-         * <tt>CandidateHarvesterSet</tt>.
-         */
-        private final CandidateHarvester harvester;
-
-        /**
-         * Initializes a new <tt>CandidateHarvesterSetElement</tt> instance
-         * which is to represent a specific <tt>CandidateHarvester</tt> as an
-         * element in a <tt>CandidateHarvesterSet</tt>.
-         *
-         * @param harvester the <tt>CandidateHarvester</tt> which is to be
-         * represented as an element in a <tt>CandidateHarvesterSet</tt> by the
-         * new instance
-         */
-        public CandidateHarvesterSetElement(CandidateHarvester harvester)
-        {
-            this.harvester = harvester;
-        }
-
-        /**
-         * Calls {@link CandidateHarvester#harvest(Component)} on the associated
-         * <tt>CandidateHarvester</tt> if <tt>enabled</tt>.
-         *
-         * @param component the <tt>Component</tt> to gather candidates for
-         */
-        public void harvest(Component component)
-        {
-            if (isEnabled())
-            {
-                harvester.startHarvesting();
-                Collection<LocalCandidate> candidates
-                    = harvester.harvest(component);
-                harvester.stopHarvesting();
-
-                logger.info(
-                        "End candidate harvest within "
-                        + harvester.getHarvestingTime()
-                        + " ms, for "
-                        + harvester.getClass().getName()
-                        + ", component: " + component.getComponentID());
-
-                /*
-                 * If the CandidateHarvester has not gathered any candidates, it
-                 * is considered failed and will not be used again in order to
-                 * not risk it slowing down the overall harvesting.
-                 */
-                if ((candidates == null) || candidates.isEmpty())
-                    setEnabled(false);
-            }
-        }
-
-        /**
-         * Determines whether the associated <tt>CandidateHarvester</tt> is
-         * considered to be the same as a specific <tt>CandidateHarvester</tt>.
-         *
-         * @param harvester the <tt>CandidateHarvester</tt> to be compared to
-         * the associated <tt>CandidateHarvester</tt>
-         * @return <tt>true</tt> if the associated <tt>CandidateHarvester</tt>
-         * is considered to be the same as the specified <tt>harvester</tt>;
-         * otherwise, <tt>false</tt>
-         */
-        public boolean harvesterEquals(CandidateHarvester harvester)
-        {
-            return this.harvester.equals(harvester);
-        }
-
-        /**
-         * Gets the indicator which determines whether
-         * {@link CandidateHarvester#harvest(Component)} is to be called on the
-         * associated <tt>CandidateHarvester</tt>.
-         *
-         * @return <tt>true</tt> if
-         * <tt>CandidateHarvester#harvest(Component)</tt> is to be called on the
-         * associated <tt>CandidateHarvester</tt>; otherwise, <tt>false</tt>
-         */
-        public boolean isEnabled()
-        {
-            return enabled;
-        }
-
-        /**
-         * Sets the indicator which determines whether
-         * {@link CandidateHarvester#harvest(Component)} is to be called on the
-         * associated <tt>CandidateHarvester</tt>.
-         *
-         * @param enabled <tt>true</tt> if
-         * <tt>CandidateHarvester#harvest(Component)</tt> is to be called on the
-         * associated <tt>CandidateHarvester</tt>; otherwise, <tt>false</tt>
-         */
-        public void setEnabled(boolean enabled)
-        {
-            logger.info("disabling harvester: " + harvester);
-            this.enabled = enabled;
         }
     }
 }

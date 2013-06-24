@@ -1,6 +1,6 @@
 /*
  * ice4j, the OpenSource Java Solution for NAT and Firewall Traversal.
- * Maintained by the SIP Communicator community (http://sip-communicator.org).
+ * Maintained by the Jitsi community (https://jitsi.org).
  *
  * Distributable under LGPL license.
  * See terms of license at gnu.org.
@@ -219,9 +219,15 @@ public class Agent
     private int generation = 0;
 
     /**
+     * Determines whether this agent should perform trickling.
+     */
+    private boolean trickle = true;
+
+    /**
      * Indicates that ICE will be shutdown.
      */
     private boolean shutdown = false;
+
 
     /**
      * Creates an empty <tt>Agent</tt> with no streams, and no address.
@@ -283,7 +289,7 @@ public class Agent
      */
     public IceMediaStream createMediaStream(String mediaStreamName)
     {
-        logger.info("Create media stream for " + mediaStreamName);
+        logger.fine("Create media stream for " + mediaStreamName);
         IceMediaStream mediaStream
             = new IceMediaStream(Agent.this, mediaStreamName);
 
@@ -302,7 +308,7 @@ public class Agent
 
     /**
      * Creates a new {@link Component} for the specified <tt>stream</tt> and
-     * allocates all local candidates that should belong to it.
+     * allocates potentially all local candidates that should belong to it.
      *
      * @param stream the {@link IceMediaStream} that the new {@link Component}
      * should belong to.
@@ -343,8 +349,6 @@ public class Agent
         }
 
         Component component = stream.createComponent(transport);
-
-        logger.info("Create component " + component.toShortString());
 
         gatherCandidates(component, preferredPort, minPort, maxPort);
 
@@ -436,7 +440,7 @@ public class Agent
         logger.info("Gather candidates for component " +
                 component.toShortString());
 
-        this.startHarvesting();
+        this.startHarvestTiming();
 
         hostCandidateHarvester.harvest(
                 component,
@@ -452,31 +456,40 @@ public class Agent
         logger.fine("host candidate count: " +
             component.getLocalCandidateCount());
 
-        //apply other harvesters here
-        harvesters.harvest(component);
+        //in case we are not trickling, apply other harvesters here
+        if(!isTrickling())
+            harvesters.harvest(component);
 
-        this.stopHarvesting();
+        this.stopHarvestTiming();
         logger.info(
-                "End candidate harvest for all harvesters within "
-                + this.getTotalHarvestingTime() + " ms"
-                + ", component: " + component.getComponentID());
+                "Harvest for " + component.toShortString() + " completed in "
+                + this.getTotalHarvestingTime() + " ms.");
 
         logger.fine("host+harvested candidate count: " +
             component.getLocalCandidateCount());
 
-        computeFoundations(component);
-
-        //make sure we compute priorities only after we have all candidates
-        component.prioritizeCandidates();
+        //Emil: because of trickle we now compute foundations or priorities
+        // directly when adding candidates. This shouldn't change anything but
+        // there's no need to do it here again.
+        //computeFoundations(component);
+        //component.prioritizeCandidates();
 
         //eliminate redundant candidates
         component.eliminateRedundantCandidates();
 
-        logger.fine("host+harvested candidate count (after elimination): " +
-            component.getLocalCandidateCount());
-
         //select the candidate to put in the media line.
         component.selectDefaultCandidate();
+    }
+
+    /**
+     * Starts an asynchronous harvest across all components and reports newly
+     * discovered candidates to <tt>trickleCallback</tt>.
+     *
+     * @param trickleCallback
+     */
+    public void startCandidateTrickle(TrickleCallback trickleCallback)
+    {
+
     }
 
     /**
@@ -887,6 +900,17 @@ public class Agent
     }
 
     /**
+     * Returns the {@link FoundationsRegistry} this agent is using to assign
+     * candidate foundations. We use the <tt>FoundationsRegistry</tt> to keep
+     * track of the foundations we assign within a session (i.e. the entire life
+     * time of an <tt>Agent</tt>)
+     */
+    public final FoundationsRegistry getFoundationsRegistry()
+    {
+        return foundationsRegistry;
+    }
+
+    /**
      * Returns the <tt>IceMediaStream</tt> with the specified <tt>name</tt> or
      * <tt>null</tt> if no such stream has been registered with this
      * <tt>Agent</tt> yet.
@@ -1280,8 +1304,7 @@ public class Agent
      * {@link org.ice4j.message.Request} contained the USE-CANDIDATE ICE
      * attribute.
      */
-    protected void incomingCheckReceived(
-                                         TransportAddress remoteAddress,
+    protected void incomingCheckReceived(TransportAddress remoteAddress,
                                          TransportAddress localAddress,
                                          long             priority,
                                          String           remoteUFrag,
@@ -2231,6 +2254,37 @@ public class Agent
         return null;
     }
 
+    /**
+     * Indicates whether this agent is currently set to trickle candidates
+     * rather than gathering them synchronously while components are being
+     * added. When trickling is turned on, the agent will only gather host
+     * addresses for newly added components. When trickling is off, all
+     * harvesting for a specific component will be executed when that component
+     * is being added.
+     *
+     * @return <tt>false</tt> if this agent is configured to perform all
+     * harvesting when components are being added and <tt>false</tt> otherwise.
+     */
+    public boolean isTrickling()
+    {
+        return trickle;
+    }
+
+    /**
+     * Determines whether this agent will trickle candidates rather than
+     * gather them synchronously while components are being added. When
+     * trickling is turned on, the agent will only gather host addresses for
+     * newly added components. When trickling is off, all harvesting for a
+     * specific component will be executed when that component is being added.
+     *
+     * @param trickle <tt>false</tt> if this agent is configured to perform all
+     * harvesting when components are being added and <tt>false</tt> otherwise.
+     */
+    public void setTrickling(boolean trickle)
+    {
+        this.trickle = trickle;
+    }
+
 
     /**
      * Returns the harvesting time (in ms) for the harvester given in parameter.
@@ -2311,17 +2365,17 @@ public class Agent
     /**
      * Starts the harvesting timer. Called when the harvest begins.
      */
-    public void startHarvesting()
+    public void startHarvestTiming()
     {
-        this.harvestingTimeStat.startHarvesting();
+        this.harvestingTimeStat.startHarvestTiming();
     }
 
     /**
      * Stops the harvesting timer. Called when the harvest ends.
      */
-    public void stopHarvesting()
+    public void stopHarvestTiming()
     {
-        this.harvestingTimeStat.stopHarvesting();
+        this.harvestingTimeStat.stopHarvestTiming();
     }
 
     /**

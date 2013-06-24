@@ -34,7 +34,7 @@ public class HarvestingTimeStat
     /**
      * Starts the harvesting timer. Called when the harvest begins.
      */
-    public void startHarvesting()
+    public void startHarvestTiming()
     {
         ++nbHarvesting;
         // Remember the start date of this harvester.
@@ -44,7 +44,7 @@ public class HarvestingTimeStat
     /**
      * Stops the harvesting timer. Called when the harvest ends.
      */
-    public void stopHarvesting()
+    public void stopHarvestTiming()
     {
         // Remember the last harvesting time.
         this.lastHarvestingTime = this.getHarvestingTime();
