@@ -136,7 +136,15 @@ public class TransportAddress
      */
     public String toString()
     {
-        return super.toString() + "/" + getTransport();
+        StringBuilder bldr = new StringBuilder(getHostAddress());
+
+        if(isIPv6())
+           bldr.insert(0, "[").append("]");
+
+        bldr.append(":").append(getPort());
+        bldr.append("/").append(getTransport());
+
+        return bldr.toString();
     }
 
     /**

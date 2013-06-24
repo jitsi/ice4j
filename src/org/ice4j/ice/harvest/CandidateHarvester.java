@@ -47,17 +47,17 @@ public abstract class CandidateHarvester
     /**
      * Starts the harvesting timer. Called when the harvest begins.
      */
-    public void startHarvesting()
+    public void startHarvestTiming()
     {
-        this.harvestingTimeStat.startHarvesting();
+        this.harvestingTimeStat.startHarvestTiming();
     }
 
     /**
      * Stops the harvesting timer. Called when the harvest ends.
      */
-    public void stopHarvesting()
+    public void stopHarvestTiming()
     {
-        this.harvestingTimeStat.stopHarvesting();
+        this.harvestingTimeStat.stopHarvestTiming();
     }
 
     /**

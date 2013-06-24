@@ -226,9 +226,8 @@ public class StunCandidateHarvester
      */
     public Collection<LocalCandidate> harvest(Component component)
     {
-        logger.fine("invoked harvest / stream.component: " + toString() + " / "
-                + component.getParentStream().getName() + " / " +
-                component.getComponentID());
+        logger.fine("starting " + component.toShortString()
+            + " harvest for: " + toString() );
         stunStack = component.getParentStream().getParentAgent().getStunStack();
 
         for (Candidate<?> cand : component.getLocalCandidates())
@@ -257,29 +256,17 @@ public class StunCandidateHarvester
 
                 if (completedHarvestCandidates != null)
                 {
-                    logger.fine("harvest / stream.component: " + toString() +
-                        " / " + component.getParentStream().getName() + " / " +
-                        component.getComponentID() +
-                        ": completedHarvestCandidates element count: " +
-                        completedHarvests.size());
-
                     if(completedHarvestCandidates.length != 0)
                     {
                         candidates.addAll(
                             Arrays.asList(completedHarvestCandidates));
                     }
                 }
-                else
-                    logger.fine("harvest / stream.component: " + toString() +
-                        " / " + component.getParentStream().getName() + " / " +
-                        component.getComponentID() +
-                        ": completedHarvestCandidates == null");
             }
         }
-        logger.info("harvest / stream.component: " + toString() + " / "
-                + component.getParentStream().getName() + " / " +
-                component.getComponentID() +
-                "found " + candidates.size() + " candidates.");
+        logger.finest(
+            "Completed " + component.toShortString() + " harvest: " + toString()
+            + ". Found " + candidates.size() + " candidates.");
         return candidates;
     }
 
@@ -390,7 +377,7 @@ public class StunCandidateHarvester
         String proto = (this instanceof TurnCandidateHarvester)
                                 ? "TURN"
                                 : "STUN";
-        return proto + " harvester for srvr: " + this.stunServer;
+        return proto + " harvester(srvr: " + this.stunServer + ")";
     }
 
     /**

@@ -44,8 +44,12 @@ public class IceDistributed
         localAgent.setControlling(false);
         String localSDP = SdpUtils.createSDPDescription(localAgent);
 
+        //wait a bit so that the logger can stop dumping stuff:
+        Thread.sleep(500);
+
         System.out.println("=================== feed the following"
                         +" to the remote agent ===================");
+
 
         System.out.println(localSDP);
 

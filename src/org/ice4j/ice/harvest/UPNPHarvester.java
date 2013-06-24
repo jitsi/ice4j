@@ -143,7 +143,7 @@ public class UPNPHarvester
                             port,
                             localAddress.getHostAddress(),
                             "UDP",
-                            "Ice4J: " + port))
+                            "ice4j.org: " + port))
                     {
                         List<LocalCandidate> cands = createUPNPCandidate(socket,
                                 localAddress, externalIPAddress, externalPort,

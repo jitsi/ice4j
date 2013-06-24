@@ -264,25 +264,25 @@ public class Ice
     protected static Agent createAgent(int rtpPort)
         throws Throwable
     {
+        long startTime = System.currentTimeMillis();
         Agent agent = new Agent();
 
         // STUN
         StunCandidateHarvester stunHarv = new StunCandidateHarvester(
-            new TransportAddress("sip-communicator.net", 3478, Transport.UDP));
+            new TransportAddress("stun.jitsi.net", 3478, Transport.UDP));
         StunCandidateHarvester stun6Harv = new StunCandidateHarvester(
-            new TransportAddress("ipv6.sip-communicator.net",
+            new TransportAddress("stun6.jitsi.net",
                                  3478, Transport.UDP));
 
         agent.addCandidateHarvester(stunHarv);
         agent.addCandidateHarvester(stun6Harv);
 
         // TURN
-        String[] hostnames
-            = new String[]
-                    {
-                        "130.79.90.150",
-                        "2001:660:4701:1001:230:5ff:fe1a:805f"
-                    };
+        String[] hostnames = new String[]
+                             {
+                                "stun.jitsi.net",
+                                "stun6.jitsi.net"
+                             };
         int port = 3478;
         LongTermCredential longTermCredential
             = new LongTermCredential("guest", "anonymouspower!!");
@@ -293,9 +293,19 @@ public class Ice
                             new TransportAddress(hostname, port, Transport.UDP),
                             longTermCredential));
 
+        //UPnP: adding an UPnP harvester because they are generally slow
+        //which makes it more convenient to test things like trickle.
+        agent.addCandidateHarvester( new UPNPHarvester() );
+
         //STREAMS
         createStream(rtpPort, "audio", agent);
         createStream(rtpPort + 2, "video", agent);
+
+
+        long endTime = System.currentTimeMillis();
+        long total = endTime - startTime;
+
+        System.out.println("Total harvesting time: " + total + "ms.");
 
         return agent;
     }

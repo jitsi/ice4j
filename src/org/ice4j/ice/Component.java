@@ -142,9 +142,27 @@ public class Component
      */
     public void addLocalCandidate(LocalCandidate candidate)
     {
+        Agent agent = getParentStream().getParentAgent();
+
+        //assign foundation.
+        agent.getFoundationsRegistry().assignFoundation(candidate);
+
+        //compute priority
+        CompatibilityMode compatibilityMode = getParentStream().getParentAgent()
+                .getCompatibilityMode();
+        if(compatibilityMode == CompatibilityMode.GTALK)
+        {
+            candidate.computeGTalkPriority();
+        }
+        else
+        {
+            candidate.computePriority();
+        }
+
         synchronized(localCandidates)
         {
             localCandidates.add(candidate);
+            Collections.sort(localCandidates);
         }
     }
 
@@ -420,19 +438,6 @@ public class Component
     }
 
     /**
-     * Adds a list of local <tt>Candidate</tt>s to this media-stream component.
-     *
-     * @param candidates a <tt>List</tt> of candidates to be added
-     */
-    public void addLocalCandidates(List<LocalCandidate> candidates)
-    {
-        synchronized(localCandidates)
-        {
-            localCandidates.addAll(candidates);
-        }
-    }
-
-    /**
      * Adds a List of remote <tt>Candidate</tt>s as reported by a remote agent.
      *
      * @param candidates the <tt>List</tt> of <tt>Candidate</tt>s reported by
@@ -566,7 +571,7 @@ public class Component
         StringBuffer buff
             = new StringBuffer(parentStream.getName());
         buff.append(".");
-        buff.append(componentID);
+        buff.append(getName());
 
         return buff.toString();
     }
@@ -574,15 +579,20 @@ public class Component
     /**
      * Computes the priorities of all <tt>Candidate</tt>s and then sorts them
      * accordingly.
+     *
+     * @Deprecated candidates are now being prioritized upon addition and
+     * calling this method is no longer necessary.
      */
     protected void prioritizeCandidates()
     {
         synchronized(localCandidates)
         {
-            CompatibilityMode compat = getParentStream().getParentAgent().
-                getCompatibilityMode();
+            CompatibilityMode compat = getParentStream().getParentAgent()
+                .getCompatibilityMode();
+
             LocalCandidate[] candidates
                 = new LocalCandidate[localCandidates.size()];
+
             localCandidates.toArray(candidates);
 
             //first compute the actual priorities
@@ -605,63 +615,6 @@ public class Component
             localCandidates.clear();
             for (LocalCandidate cand : candidates)
                 localCandidates.add(cand);
-        }
-    }
-
-    /**
-     * Compares candidates based on their priority.
-     */
-    private static class CandidatePrioritizer
-        implements Comparator<Candidate<?>>
-    {
-        /**
-         * Compares the two <tt>Candidate</tt>s based on their priority and
-         * returns a negative integer, zero, or a positive integer as the first
-         * <tt>Candidate</tt> has a lower, equal, or greater priority than the
-         * second.
-         *
-         * @param c1 the first <tt>Candidate</tt> to compare.
-         * @param c2 the second <tt>Candidate</tt> to compare.
-         *
-         * @return a negative integer, zero, or a positive integer as the first
-         * <tt>Candidate</tt> has a lower, equal, or greater priority than the
-         * second.
-         */
-        public int compare(Candidate<?> c1, Candidate<?> c2)
-        {
-            if(c1.getPriority() < c2.getPriority())
-                return 1;
-            else if(c1.getPriority() == c2.getPriority())
-                return 0;
-            else //if(c1.getPriority() > c2.getPriority())
-                return -1;
-        }
-
-        /**
-         * Indicates whether some other object is &quot;equal to&quot; this
-         * Comparator.  This method must obey the general contract of
-         * <tt>Object.equals(Object)</tt>.  Additionally, this method can return
-         * <tt>true</tt> <i>only</i> if the specified Object is also a
-         * comparator and it imposes the same ordering as this comparator. Thus,
-         * <code>comp1.equals(comp2)</code> implies that
-         * <tt>sgn(comp1.compare(o1, o2))==sgn(comp2.compare(o1, o2))</tt> for
-         * every object reference <tt>o1</tt> and <tt>o2</tt>.<p>
-         *
-         * Note that it is <i>always</i> safe <i>not</i> to override
-         * <tt>Object.equals(Object)</tt>.  However, overriding this method may,
-         * in some cases, improve performance by allowing programs to determine
-         * that two distinct Comparators impose the same order.
-         *
-         * @param   obj   the reference object with which to compare.
-         * @return  <code>true</code> only if the specified object is also
-         *      a comparator and it imposes the same ordering as this
-         *      comparator.
-         * @see     java.lang.Object#equals(java.lang.Object)
-         * @see java.lang.Object#hashCode()
-         */
-        public boolean equals(Object obj)
-        {
-            return (obj instanceof CandidatePrioritizer);
         }
     }
 

@@ -28,6 +28,7 @@ import org.ice4j.*;
  */
 public abstract class Candidate
     <T extends Candidate<?>>
+    implements Comparable<T>
 {
     /**
      * The transport address represented by this candidate.
@@ -754,16 +755,16 @@ public abstract class Candidate
             return 30;
 
         if( getType() == CandidateType.SERVER_REFLEXIVE_CANDIDATE)
-            return 20;
+            return 10;
 
         if( getType() == CandidateType.HOST_CANDIDATE)
         {
             //prefer IPv4 as default since many servers would still freak out
             //when seeing IPv6 address.
             if(getTransportAddress().isIPv6())
-                return 10;
+                return 20;
             else
-                return 15;
+                return 25;
         }
 
         //WTF?
@@ -939,5 +940,22 @@ public abstract class Candidate
         }
 
         return this.relatedCandidate;
+    }
+
+    /**
+     * Compares this <tt>Candidate</tt> with the specified one based on their
+     * priority and returns a negative integer, zero, or a positive integer if
+     * this <tt>Candidate</tt> has a lower, equal, or greater priority than the
+     * second.
+     *
+     * @param candidate the second <tt>Candidate</tt> to compare.
+     *
+     * @return a negative integer, zero, or a positive integer as the first
+     * <tt>Candidate</tt> has a lower, equal, or greater priority than the
+     * second.
+     */
+    public int compareTo(T candidate)
+    {
+        return CandidatePrioritizer.compareCandidates(this, candidate);
     }
 }

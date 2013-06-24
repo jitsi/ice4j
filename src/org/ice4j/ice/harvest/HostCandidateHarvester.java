@@ -69,7 +69,7 @@ public class HostCandidateHarvester
         throws IllegalArgumentException,
                IOException
     {
-        this.startHarvesting();
+        this.startHarvestTiming();
 
         Enumeration<NetworkInterface> interfaces
                         = NetworkInterface.getNetworkInterfaces();
@@ -177,13 +177,11 @@ public class HostCandidateHarvester
                             + " maxPort=" + maxPort);
         }
 
-        this.stopHarvesting();
+        this.stopHarvestTiming();
         logger.info(
-                "End candidate harvest within "
-                + this.getHarvestingTime()
-                + " ms, for "
-                + this.getClass().getName()
-                + ", component: " + component.getComponentID());
+            "Completed " + component.toShortString() + " harvest with "
+            + getClass().getSimpleName() + " in " + getHarvestingTime()
+            + " ms. Candidates found: " + component.getLocalCandidateCount());
     }
 
     /**
@@ -334,7 +332,7 @@ public class HostCandidateHarvester
                             + " address " + laddr
                             + " and port " + port
                             + " (" + se.getMessage() +")");
-                logger.log(Level.INFO, "", se);
+                logger.log(Level.FINEST, "", se);
             }
 
             port ++;
@@ -410,17 +408,17 @@ public class HostCandidateHarvester
     /**
      * Starts the harvesting timer. Called when the harvest begins.
      */
-    public void startHarvesting()
+    public void startHarvestTiming()
     {
-        this.harvestingTimeStat.startHarvesting();
+        this.harvestingTimeStat.startHarvestTiming();
     }
 
     /**
      * Stops the harvesting timer. Called when the harvest ends.
      */
-    public void stopHarvesting()
+    public void stopHarvestTiming()
     {
-        this.harvestingTimeStat.stopHarvesting();
+        this.harvestingTimeStat.stopHarvestTiming();
     }
 
     /**
