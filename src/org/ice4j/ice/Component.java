@@ -25,7 +25,6 @@ import org.ice4j.socket.*;
  * <p>
  *
  * @author Emil Ivov
- * @author Namal Senarathne
  * @author Sebastien Vincent
  */
 public class Component
@@ -276,83 +275,109 @@ public class Component
             /* for TCP, create a new Candidate to each of remote
              * TCP candidates
              */
-            try
+            for(LocalCandidate localCnd : getLocalCandidates())
             {
-                for(LocalCandidate l : getLocalCandidates())
+                if(localCnd.getTransport() != Transport.TCP
+                   || (localCnd.getType() != CandidateType.LOCAL_CANDIDATE
+                     && localCnd.getType() != CandidateType.HOST_CANDIDATE)
+                   || !(localCnd.getIceSocketWrapper()
+                            instanceof IceTcpServerSocketWrapper)
+                   || !localCnd.getTransportAddress().canReach(
+                            candidate.getTransportAddress())
+                   )
                 {
-                    if(l.getTransport() != Transport.TCP ||
-                        (l.getType() != CandidateType.LOCAL_CANDIDATE &&
-                            l.getType() != CandidateType.HOST_CANDIDATE) ||
-                       !(l.getIceSocketWrapper() instanceof
-                           IceTcpServerSocketWrapper) ||
-                       !l.getTransportAddress().canReach(
-                            candidate.getTransportAddress()))
-                    {
-                        continue;
-                    }
-
-                    MultiplexingSocket sock = new MultiplexingSocket();
-                    try
-                    {
-                        // if we use proxy (socks5, ...), the connect() timeout
-                        // may not be respected
-                        int timeout = sock.getSoTimeout();
-                        sock.setSoTimeout(1000);
-                        sock.connect(new InetSocketAddress(
-                            candidate.getTransportAddress().getAddress(),
-                            candidate.getTransportAddress().getPort()), 1000);
-                        sock.setSoTimeout(timeout);
-                    }
-                    catch(Exception e)
-                    {
-                        logger.info("Failed to connect to " +
-                            candidate.getTransportAddress());
-                        sock.close();
-                        sock = null;
-                        continue;
-                    }
-
-                    if(candidate.getTransportAddress().getPort() == 443)
-                    {
-                        //SSLTCP handshake
-                        OutputStream outputStream =
-                            sock.getOriginalOutputStream();
-                        InputStream inputStream = sock.getOriginalInputStream();
-
-                        if(!GoogleTurnSSLCandidateHarvester.sslHandshake(
-                            inputStream, outputStream))
-                        {
-                            logger.info("Failed to connect to SSLTCP relay");
-                            outputStream = null;
-                            inputStream = null;
-                            continue;
-                        }
-                        outputStream = null;
-                        inputStream = null;
-                    }
-
-                    LocalCandidate tmp =
-                        new HostCandidate(new IceTcpSocketWrapper(sock),
-                            this, Transport.TCP);
-                    parentStream.getParentAgent().getStunStack().addSocket(
-                        tmp.getStunSocket(null));
-                    tmp.setUfrag(l.getUfrag());
-
-                    synchronized(localCandidates)
-                    {
-                        localCandidates.add(tmp);
-                    }
+                    continue;
                 }
-            }
-            catch (IOException e)
-            {
-                logger.info("Create TCP client socket error: " + e);
+
+                LocalCandidate newLocalCandidate
+                    = createLocalTcpCandidate4GTalk(candidate, localCnd);
+
+                if (newLocalCandidate == null)
+                {
+                    //sth wen wrong but we've already logged so ...
+                    continue;
+                }
+
+                synchronized(localCandidates)
+                {
+                    localCandidates.add(newLocalCandidate);
+                }
             }
         }
 
         synchronized(remoteUpdateCandidates)
         {
             remoteUpdateCandidates.add(candidate);
+        }
+    }
+
+    /**
+     * Creates a local TCP candidate for use with a specific remote GTalk TCP
+     * candidate.
+     *
+     * @param remoteCandidate the GTalk TCP candidate that we'd like to connect
+     * to.
+     * @param localCandidate the local candidate that we are pairing
+     * remoteCandidate with and that we should use as a source for the ice
+     * ufrag and password.
+     *
+     * @return the newly created {@link LocalCandidate}
+     */
+    private LocalCandidate createLocalTcpCandidate4GTalk(
+                                           RemoteCandidate remoteCandidate,
+                                           LocalCandidate  localCandidate)
+    {
+        MultiplexingSocket sock = new MultiplexingSocket();
+        try
+        {
+            // if we use proxy (socks5, ...), the connect() timeout
+            // may not be respected
+            int timeout = sock.getSoTimeout();
+            sock.setSoTimeout(1000);
+            sock.connect(new InetSocketAddress(
+                remoteCandidate.getTransportAddress().getAddress(),
+                remoteCandidate.getTransportAddress().getPort()), 1000);
+            sock.setSoTimeout(timeout);
+        }
+        catch(Exception e)
+        {
+            logger.info("Failed to connect to " +
+                remoteCandidate.getTransportAddress());
+            sock.close();
+            return null;
+        }
+
+        try
+        {
+
+
+            if(remoteCandidate.getTransportAddress().getPort() == 443)
+            {
+                //SSL/TCP handshake
+                OutputStream outputStream =
+                    sock.getOriginalOutputStream();
+                InputStream inputStream = sock.getOriginalInputStream();
+
+                if(!GoogleTurnSSLCandidateHarvester.sslHandshake(
+                    inputStream, outputStream))
+                {
+                    logger.info("Failed to connect to SSL/TCP relay");
+                    return null;
+                }
+            }
+
+            LocalCandidate newLocalCandidate =
+                new HostCandidate(new IceTcpSocketWrapper(sock),
+                    this, Transport.TCP);
+            parentStream.getParentAgent().getStunStack().addSocket(
+                newLocalCandidate.getStunSocket(null));
+            newLocalCandidate.setUfrag(localCandidate.getUfrag());
+            return newLocalCandidate;
+        }
+        catch(IOException ioe)
+        {
+            logger.log(Level.INFO, "Failed to connect to SSL/TCP relay", ioe);
+            return null;
         }
     }
 
@@ -387,6 +412,7 @@ public class Component
                 if(localCnd == upnpBase)
                     continue;
 
+                //don't pair local GTalk TCP candidates with the new remote ones
                 if(parentStream.getParentAgent().
                     getCompatibilityMode() == CompatibilityMode.GTALK &&
                     localCnd.getIceSocketWrapper() instanceof
@@ -395,6 +421,7 @@ public class Component
                     continue;
                 }
 
+                //pair each of the new remote candidates with each of our locals
                 for(RemoteCandidate remoteCnd : remoteUpdateCandidates)
                 {
                     if(localCnd.canReach(remoteCnd))
@@ -421,16 +448,15 @@ public class Component
             remoteUpdateCandidates.clear();
         }
 
-        /* sort and prune update checklist */
+        //sort and prune update checklist
         Collections.sort(checkList, CandidatePair.comparator);
         parentStream.pruneCheckList(checkList);
 
         if(parentStream.getCheckList().getState().equals(
                 CheckListState.RUNNING))
         {
-            /* add the update CandidatePair list to the currently running
-             * checklist
-             */
+            //add the updated CandidatePair list to the currently running
+            //checklist
             CheckList streamCheckList = parentStream.getCheckList();
             synchronized(streamCheckList)
             {
