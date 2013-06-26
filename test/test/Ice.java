@@ -251,8 +251,8 @@ public class Ice
     }
 
     /**
-     * Creates an ICE <tt>Agent</tt> and adds to it an audio and a video stream
-     * with RTP and RTCP components.
+     * Creates a vanilla ICE <tt>Agent</tt> and adds to it an audio and a video
+     * stream with RTP and RTCP components.
      *
      * @param rtpPort the port that we should try to bind the RTP component on
      * (the RTCP one would automatically go to rtpPort + 1)
@@ -264,15 +264,35 @@ public class Ice
     protected static Agent createAgent(int rtpPort)
         throws Throwable
     {
+        return createAgent(rtpPort, false);
+    }
+
+    /**
+     * Creates an ICE <tt>Agent</tt> (vanilla or trickle, depending on the
+     * value of <tt>isTrickling</tt>) and adds to it an audio and a video stream
+     * with RTP and RTCP components.
+     *
+     * @param rtpPort the port that we should try to bind the RTP component on
+     * (the RTCP one would automatically go to rtpPort + 1)
+     * @return an ICE <tt>Agent</tt> with an audio stream with RTP and RTCP
+     * components.
+     * @param isTrickling indicates whether the newly created agent should be
+     * performing trickle ICE.
+     *
+     * @throws Throwable if anything goes wrong.
+     */
+    protected static Agent createAgent(int rtpPort, boolean isTrickling)
+        throws Throwable
+    {
         long startTime = System.currentTimeMillis();
         Agent agent = new Agent();
+        agent.setTrickling(isTrickling);
 
         // STUN
         StunCandidateHarvester stunHarv = new StunCandidateHarvester(
             new TransportAddress("stun.jitsi.net", 3478, Transport.UDP));
         StunCandidateHarvester stun6Harv = new StunCandidateHarvester(
-            new TransportAddress("stun6.jitsi.net",
-                                 3478, Transport.UDP));
+            new TransportAddress("stun6.jitsi.net", 3478, Transport.UDP));
 
         agent.addCandidateHarvester(stunHarv);
         agent.addCandidateHarvester(stun6Harv);
@@ -311,7 +331,7 @@ public class Ice
     }
 
     /**
-     * Creates an <tt>IceMediaStrean</tt> and adds to it an RTP and and RTCP
+     * Creates an <tt>IceMediaStream</tt> and adds to it an RTP and and RTCP
      * component.
      *
      * @param rtpPort the port that we should try to bind the RTP component on

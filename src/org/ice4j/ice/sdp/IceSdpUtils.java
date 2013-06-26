@@ -6,7 +6,6 @@
  */
 package org.ice4j.ice.sdp;
 
-import gov.nist.javax.sdp.fields.*;
 import org.ice4j.*;
 import org.ice4j.ice.*;
 
@@ -41,6 +40,22 @@ public class IceSdpUtils
      * The name of the ICE SDP option that indicates support for trickle.
      */
     public static final String ICE_OPTION_TRICKLE = "trickle";
+
+    /**
+     * The name of the "mid" SDP attribute.
+     */
+    public static final String MID = "mid";
+
+    /**
+     * The name of the SDP attribute that contains RTCP address and port.
+     */
+    private static final String RTCP = "rtcp";
+
+    /**
+     * The name of the SDP attribute that indicates an end of candidate
+     * trickling: "end-of-candidates".
+     */
+    private static final String END_OF_CANDIDATES = "end-of-candidates";
 
     /**
      * A reference to the currently valid SDP factory instance.
@@ -115,39 +130,66 @@ public class IceSdpUtils
     public static void initMediaDescription(MediaDescription mediaDescription,
                                             IceMediaStream   iceMediaStream)
     {
-        for(Component component : iceMediaStream.getComponents())
+        try
         {
-            //first add the candidates
-            for(Candidate<?> candidate : component.getLocalCandidates())
+            //set mid-s
+            mediaDescription.setAttribute(MID, iceMediaStream.getName());
+
+            Component firstComponent = null;
+
+            //add candidates
+            for(Component component : iceMediaStream.getComponents())
             {
-                mediaDescription.addAttribute(
-                    new CandidateAttribute(candidate));
+                //if this is the first component, remember it so that we can
+                //later use it for default candidates.
+                if(firstComponent == null)
+                    firstComponent = component;
+
+                for(Candidate<?> candidate : component.getLocalCandidates())
+                {
+                    mediaDescription.addAttribute(
+                        new CandidateAttribute(candidate));
+                }
             }
 
             //set the default candidate
-            try
+            TransportAddress defaultAddress = firstComponent
+                .getDefaultCandidate().getTransportAddress();
+
+            mediaDescription.getMedia().setMediaPort(
+                defaultAddress.getPort());
+
+            String addressFamily = defaultAddress.isIPv6()
+                                ? Connection.IP6
+                                : Connection.IP4;
+
+            mediaDescription.setConnection(sdpFactory.createConnection(
+                "IN", defaultAddress.getHostAddress(), addressFamily));
+
+            //now check if the RTCP port for the default candidate is different
+            //than RTP.port +1, in which case we need to mention it.
+            Component rtcpComponent
+                = iceMediaStream.getComponent(Component.RTCP);
+
+            if( rtcpComponent != null )
             {
-                TransportAddress defaultAddress
-                    = component.getDefaultCandidate().getTransportAddress();
+                TransportAddress defaultRtcpCandidate = rtcpComponent
+                    .getDefaultCandidate().getTransportAddress();
 
-                mediaDescription.getMedia().setMediaPort(
-                    defaultAddress.getPort());
-
-                String addressFamily = defaultAddress.isIPv6()
-                                    ? Connection.IP6
-                                    : Connection.IP4;
-
-                mediaDescription.setConnection(sdpFactory.createConnection(
-                    "IN", defaultAddress.getHostAddress(), addressFamily));
+                if(defaultRtcpCandidate.getPort() != defaultAddress.getPort()+1)
+                {
+                    mediaDescription.setAttribute(
+                        RTCP, Integer.toString(defaultRtcpCandidate.getPort()));
+                }
             }
-            catch (SdpException exc)
-            {
-                //this shouldn't happen but let's rethrow an SDP exception just
-                //in case.
-                throw new IllegalArgumentException(
-                    "Something went wrong when setting default candidates",
-                    exc);
-            }
+        }
+        catch (SdpException exc)
+        {
+            //this shouldn't happen but let's rethrow an SDP exception just
+            //in case.
+            throw new IllegalArgumentException(
+                "Something went wrong when setting default candidates",
+                exc);
         }
     }
 
@@ -159,10 +201,14 @@ public class IceSdpUtils
      * the specified agent.
      * @param agent the {@link Agent} that we need to use when initializing
      * the session description.
+     *
+     * @throws  IllegalArgumentException Obviously, if there's a problem with
+     * the arguments ... duh!
      */
     @SuppressWarnings("unchecked") // jain-sdp legacy
     public static void initSessionDescription(SessionDescription sDes,
                                               Agent              agent)
+        throws IllegalArgumentException
     {
         //now add ICE options
         StringBuilder allOptionsBuilder = new StringBuilder();
@@ -243,5 +289,48 @@ public class IceSdpUtils
         //first set credentials
         setIceCredentials(
             sDes, agent.getLocalUfrag(), agent.getLocalPassword());
+    }
+
+
+    /**
+     * Generates and returns a set of attributes that can be used for a trickle
+     * update, such as a SIP INFO, with the specified <tt>localCandidates</tt>.
+     *
+     * @param localCandidates the list of {@link LocalCandidate}s that we'd like
+     * to generate the update for.
+     *
+     * @return a collection of {@link CandidateAttribute}s and an MID attribute
+     * that we can use in a SIP INFO trickle update.
+     */
+    public static Collection<Attribute> createTrickleUpdate(
+                                Collection<LocalCandidate> localCandidates)
+    {
+        List<Attribute> trickleUpdate = null;
+
+        if(localCandidates == null || localCandidates.size() == 0)
+        {
+            trickleUpdate = new ArrayList<Attribute>(1);
+            trickleUpdate.add(
+                sdpFactory.createAttribute(END_OF_CANDIDATES, null));
+
+            return trickleUpdate;
+        }
+
+        trickleUpdate
+            = new ArrayList<Attribute>(localCandidates.size() + 1);
+
+        String streamName = null;
+
+        for(LocalCandidate candidate : localCandidates)
+        {
+           streamName = candidate.getParentComponent()
+               .getParentStream().getName();
+
+            trickleUpdate.add(new CandidateAttribute(candidate));
+        }
+
+        trickleUpdate.add(0, sdpFactory.createAttribute(MID, streamName));
+
+        return trickleUpdate;
     }
 }

@@ -139,8 +139,12 @@ public class Component
      * registered with the agent.
      *
      * @param candidate the candidate object to be added
+     *
+     * @return <tt>true</tt> if we actually added the new candidate or
+     * <tt>false</tt> in case we didn't because it was redundant to an existing
+     * candidate.
      */
-    public void addLocalCandidate(LocalCandidate candidate)
+    public boolean addLocalCandidate(LocalCandidate candidate)
     {
         Agent agent = getParentStream().getParentAgent();
 
@@ -161,8 +165,24 @@ public class Component
 
         synchronized(localCandidates)
         {
+            //check if we already have such a candidate (redundant)
+            LocalCandidate redundantCandidate = findRedundant(candidate);
+
+            if (redundantCandidate != null)
+            {
+                //if we get here, then it's clear we won't be adding anything
+                //we will just update something at best. We purposefully don't
+                //care about priorities because allowing candidate replace is
+                //tricky to handle on the signalling layer with trickle
+                return false;
+            }
+
             localCandidates.add(candidate);
+
+            //we are done adding ... now let's just order by priority.
             Collections.sort(localCandidates);
+
+            return true;
         }
     }
 
@@ -240,11 +260,11 @@ public class Component
 
     /**
      * Update the media-stream <tt>Component</tt> with the specified
-     * <tt>Candidate</tt>.
+     * <tt>Candidate</tt>s. This would happen when performing trickle ICE.
      *
      * @param candidate new <tt>Candidate</tt> to add.
      */
-    public void addUpdateRemoteCandidate(RemoteCandidate candidate)
+    public void addUpdateRemoteCandidates(RemoteCandidate candidate)
     {
         logger.info("Update remote candidate for " + toShortString() + ": " +
                 candidate.getTransportAddress());
@@ -337,9 +357,9 @@ public class Component
     }
 
     /**
-     * Update ICE processing with the new <tt>Candidate</tt>s.
+     * Update ICE processing with new <tt>Candidate</tt>s.
      */
-    public void updateRemoteCandidate()
+    public void updateRemoteCandidates()
     {
         List<CandidatePair> checkList = null;
 
@@ -580,14 +600,15 @@ public class Component
      * Computes the priorities of all <tt>Candidate</tt>s and then sorts them
      * accordingly.
      *
-     * @Deprecated candidates are now being prioritized upon addition and
+     * @deprecated candidates are now being prioritized upon addition and
      * calling this method is no longer necessary.
      */
+    @Deprecated
     protected void prioritizeCandidates()
     {
         synchronized(localCandidates)
         {
-            CompatibilityMode compat = getParentStream().getParentAgent()
+            CompatibilityMode compatibility = getParentStream().getParentAgent()
                 .getCompatibilityMode();
 
             LocalCandidate[] candidates
@@ -598,7 +619,7 @@ public class Component
             //first compute the actual priorities
             for (Candidate<?> cand : candidates)
             {
-                if(compat == CompatibilityMode.GTALK)
+                if(compatibility == CompatibilityMode.GTALK)
                 {
                     cand.computeGTalkPriority();
                 }
@@ -628,7 +649,11 @@ public class Component
      * redundant when the agent is not behind a NAT.  The agent SHOULD eliminate
      * the redundant candidate with the lower priority which is why we have to
      * run this method only after prioritizing candidates.
+     *
+     * @deprecated redundancies are now being detected upon addition of
+     * candidates and calling this method is no longer necessary.
      */
+    @Deprecated
     protected void eliminateRedundantCandidates()
     {
         /*
@@ -667,6 +692,43 @@ public class Component
             }
         }
     }
+
+    /**
+     * Finds and returns the first candidate that is redundant to <tt>cand</tt>.
+     * A candidate is redundant if its transport address equals another
+     * candidate, and its base equals the base of that other candidate. Note
+     * that two candidates can have the same transport address yet have
+     * different bases, and these would not be considered redundant. Frequently,
+     * a server reflexive candidate and a host candidate will be redundant when
+     * the agent is not behind a NAT. The agent SHOULD eliminate the redundant
+     * candidate with the lower priority which is why we have to run this method
+     * only after prioritizing candidates.
+     *
+     * @param cand the {@link LocalCandidate} that we'd like to check for
+     * redundancies.
+     *
+     * @return the first candidate that is redundant to <tt>cand</tt> or
+     * <tt>null</tt> if there is no such candidate.
+     */
+    private LocalCandidate findRedundant(LocalCandidate cand)
+    {
+        synchronized (localCandidates)
+        {
+            for (LocalCandidate redundantCand : localCandidates)
+            {
+                if ((cand != redundantCand)
+                        && cand.getTransportAddress().equals(
+                                redundantCand.getTransportAddress())
+                        && cand.getBase().equals(redundantCand.getBase()))
+                {
+                    return redundantCand;
+                }
+            }
+        }
+
+        return null;
+    }
+
 
     /**
      * Returns the <tt>Candidate</tt> that has been selected as the default

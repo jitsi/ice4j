@@ -17,7 +17,7 @@ import java.util.logging.*;
  * <tt>CandidateHarvesterSet</tt>.
  *
  * @author Lyubomir Marinov
- * @author  Emil Ivov
+ * @author Emil Ivov
  */
 class CandidateHarvesterSetElement
 {
@@ -53,6 +53,7 @@ class CandidateHarvesterSetElement
     public CandidateHarvesterSetElement(CandidateHarvester harvester)
     {
         this.harvester = harvester;
+        harvester.getHarvestStatistics().harvesterName = harvester.toString();
     }
 
     /**
@@ -60,30 +61,36 @@ class CandidateHarvesterSetElement
      * associated <tt>CandidateHarvester</tt> if <tt>enabled</tt>.
      *
      * @param component the <tt>Component</tt> to gather candidates for
+     * @param trickleCallback the {@link TrickleCallback} that we will be
+     * feeding candidates to, or <tt>null</tt> in case the application doesn't
+     * want us trickling any candidates
      */
-    public void harvest(Component component)
+    public void harvest(Component       component,
+                        TrickleCallback trickleCallback)
     {
-        if (isEnabled())
-        {
-            harvester.startHarvestTiming();
-            Collection<LocalCandidate> candidates
-                = harvester.harvest(component);
-            harvester.stopHarvestTiming();
+        if (!isEnabled())
+            return;
 
-            logger.info(
-                    "Completed " + component.getParentStream().getName()
-                    + "." + component.getName()
-                    + " harvest with " + harvester.toString() + " in "
-                    + harvester.getHarvestingTime()
-                    + " ms. Candidates found: " + candidates.size());
-            /*
-             * If the CandidateHarvester has not gathered any candidates, it
-             * is considered failed and will not be used again in order to
-             * not risk it slowing down the overall harvesting.
-             */
-            if ((candidates == null) || candidates.isEmpty())
-                setEnabled(false);
+        startHarvestTiming();
+
+        Collection<LocalCandidate> candidates = harvester.harvest(component);
+
+        stopHarvestTiming(candidates);
+
+        /*
+         * If the CandidateHarvester has not gathered any candidates, it
+         * is considered failed and will not be used again in order to
+         * not risk it slowing down the overall harvesting.
+         */
+        if ((candidates == null) || candidates.isEmpty())
+        {
+            setEnabled(false);
         }
+        else if(trickleCallback != null)
+        {
+            trickleCallback.onIceCandidates(candidates);
+        }
+
     }
 
     /**
@@ -138,5 +145,23 @@ class CandidateHarvesterSetElement
     public CandidateHarvester getHarvester()
     {
         return harvester;
+    }
+
+    /**
+     * Starts the harvesting timer. Called when the harvest begins.
+     */
+    private void startHarvestTiming()
+    {
+        harvester.getHarvestStatistics().startHarvestTiming();
+    }
+
+    /**
+     * Stops the harvesting timer. Called when the harvest ends.
+     *
+     * @param harvest the harvest that we just concluded.
+     */
+    private void stopHarvestTiming(Collection<LocalCandidate> harvest)
+    {
+        harvester.getHarvestStatistics().stopHarvestTiming(harvest);
     }
 }

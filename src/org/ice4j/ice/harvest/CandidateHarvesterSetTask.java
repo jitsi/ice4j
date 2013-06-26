@@ -9,6 +9,7 @@ package org.ice4j.ice.harvest;
 
 import org.ice4j.ice.*;
 
+import java.util.*;
 import java.util.logging.*;
 
 /**
@@ -37,9 +38,15 @@ class CandidateHarvesterSetTask
     private CandidateHarvesterSetElement harvester;
 
     /**
-     * The {@link Component} whose addresses we will be harvesting in this task.
+     * The {@link Component}s whose addresses we will be harvesting in this
+     * task.
      */
-    private Component component;
+    private Collection<Component> components;
+
+    /**
+     * The callback that we will be notifying every time a harvester completes.
+     */
+    private final TrickleCallback trickleCallback;
 
     /**
      * Initializes a new <tt>CandidateHarvesterSetTask</tt> which is to
@@ -48,18 +55,18 @@ class CandidateHarvesterSetTask
      *
      * @param harvester the <tt>CandidateHarvester</tt> on which the
      * new instance is to call
+     * @param components the <tt>Component</tt> whose candidates we are currently
+     * gathering.
      * <tt>CandidateHarvester#harvest(Component)</tt> first
      */
-
-    java.util.Iterator<CandidateHarvesterSetElement> harvesters;
     public CandidateHarvesterSetTask(
             CandidateHarvesterSetElement harvester,
-            Component                    component,
-            java.util.Iterator<CandidateHarvesterSetElement> harvesters)
+            Collection<Component>        components,
+            TrickleCallback              trickleCallback)
     {
         this.harvester = harvester;
-        this.component = component;
-        this.harvesters = harvesters;
+        this.components = components;
+        this.trickleCallback = trickleCallback;
     }
 
     /**
@@ -80,11 +87,14 @@ class CandidateHarvesterSetTask
      */
     public void run()
     {
-        if (harvester.isEnabled())
+        if (harvester == null || !harvester.isEnabled())
+            return;
+
+        for (Component component : components)
         {
             try
             {
-                harvester.harvest(component);
+                harvester.harvest(component, trickleCallback);
             }
             catch (Throwable t)
             {

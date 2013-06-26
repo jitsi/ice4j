@@ -263,10 +263,15 @@ public class StunCandidateHarvester
                     }
                 }
             }
+
+            completedHarvests.clear();
         }
+
         logger.finest(
             "Completed " + component.toShortString() + " harvest: " + toString()
             + ". Found " + candidates.size() + " candidates.");
+
+
         return candidates;
     }
 

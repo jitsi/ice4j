@@ -17,6 +17,7 @@ import java.util.logging.*;
 
 import org.ice4j.*;
 import org.ice4j.ice.harvest.*;
+import org.ice4j.ice.harvest.TrickleCallback;
 import org.ice4j.stack.*;
 
 /**
@@ -92,7 +93,7 @@ public class Agent
     /**
      * Manages statisics about harvesting time.
      */
-    private HarvestingTimeStat harvestingTimeStat = new HarvestingTimeStat();
+    private HarvestStatistics harvestStats = new HarvestStatistics();
 
     /**
      * We use the <tt>FoundationsRegistry</tt> to keep track of the foundations
@@ -221,13 +222,20 @@ public class Agent
     /**
      * Determines whether this agent should perform trickling.
      */
-    private boolean trickle = true;
+    private boolean trickle = false;
 
     /**
      * Indicates that ICE will be shutdown.
      */
     private boolean shutdown = false;
 
+    /**
+     * Indicates that harvesting has been started at least ones. Used to warn
+     * users who are trying to trickle, that they have already completed a
+     * harvest. We may use it to throw an exception at some point if it's ever
+     * a problem.
+     */
+    private boolean harvestingStarted = false;
 
     /**
      * Creates an empty <tt>Agent</tt> with no streams, and no address.
@@ -440,8 +448,6 @@ public class Agent
         logger.info("Gather candidates for component " +
                 component.toShortString());
 
-        this.startHarvestTiming();
-
         hostCandidateHarvester.harvest(
                 component,
                 preferredPort, minPort, maxPort, Transport.UDP);
@@ -458,24 +464,20 @@ public class Agent
 
         //in case we are not trickling, apply other harvesters here
         if(!isTrickling())
+        {
+            harvestingStarted = true; //raise a flag to warn on a second call.
             harvesters.harvest(component);
+        }
 
-        this.stopHarvestTiming();
-        logger.info(
-                "Harvest for " + component.toShortString() + " completed in "
-                + this.getTotalHarvestingTime() + " ms.");
-
-        logger.fine("host+harvested candidate count: " +
+        logger.fine("Candidate count in first harvest: " +
             component.getLocalCandidateCount());
 
-        //Emil: because of trickle we now compute foundations or priorities
-        // directly when adding candidates. This shouldn't change anything but
-        // there's no need to do it here again.
+        //Emil: because of trickle we now assign foundations, compute priorities
+        //and eliminate redundancies while adding candidates on a component.
+        // This means that we no longer need to do it here, where we did before.
         //computeFoundations(component);
         //component.prioritizeCandidates();
-
-        //eliminate redundant candidates
-        component.eliminateRedundantCandidates();
+        //component.eliminateRedundantCandidates();
 
         //select the candidate to put in the media line.
         component.selectDefaultCandidate();
@@ -485,11 +487,39 @@ public class Agent
      * Starts an asynchronous harvest across all components and reports newly
      * discovered candidates to <tt>trickleCallback</tt>.
      *
-     * @param trickleCallback
+     * @param trickleCallback the callback that will be notified for all newly
+     * discovered candidates.
+     *
+     * @throws IllegalStateException if we try calling this method without being
+     * in a trickling state.
      */
     public void startCandidateTrickle(TrickleCallback trickleCallback)
+        throws IllegalStateException
     {
+        if(!isTrickling())
+        {
+            throw new IllegalStateException(
+                "Trying to start trickling without enabling it on the agent!");
+        }
 
+        if(harvestingStarted)
+        {
+            logger.warning(
+                "Hmmm ... why are you harvesting twice? You shouldn't be!");
+        }
+
+        //create a list of components and start harvesting
+        List<Component> components = new LinkedList<Component>();
+
+        for (IceMediaStream stream : getStreams())
+        {
+            components.addAll( stream.getComponents());
+        }
+
+        harvesters.harvest(components, trickleCallback);
+
+        //tell the tricklers that we are done (the WebRTC way, with null):
+        trickleCallback.onIceCandidates(null);
     }
 
     /**
@@ -540,7 +570,8 @@ public class Agent
     /**
      * <tt>Free()</tt>s and removes from this agent components or entire streams
      * if they do not contain remote candidates. A possible reason for this
-     * could be the fact that the remote party canceled some of the streams.
+     * could be the fact that the remote party canceled some of the streams or
+     * that it is using rtcp-mux or bundle.
      */
     private void pruneNonMatchedStreams()
     {
@@ -734,6 +765,16 @@ public class Agent
     public void addCandidateHarvester(CandidateHarvester harvester)
     {
         harvesters.add(harvester);
+    }
+
+    /**
+     * Returns the set of harvesters currently in use by this agent.
+     *
+     * @return the set of harvesters currently in use by this agent.
+     */
+    public CandidateHarvesterSet getHarvesters()
+    {
+        return harvesters;
     }
 
     /**
@@ -2292,26 +2333,17 @@ public class Agent
      * @param harvesterName The class name if the harvester.
      *
      * @return The harvesting time (in ms) for the harvester given in parameter.
-     * 0 if this harvester does not exists, or if the agent has not yet
-     * harvested with this harvester.
-     */     
+     */
     public long getHarvestingTime(String harvesterName)
     {
-        if(this.hostCandidateHarvester.getClass().getName().endsWith(
-                    harvesterName))
-        {
-            return this.hostCandidateHarvester.getHarvestingTime();
-        }
-
         long harvestingTime = 0;
-        CandidateHarvester tmpHarvester;
-        Iterator<CandidateHarvester> itHarvesters = this.harvesters.iterator();
-        while(itHarvesters.hasNext())
+
+        for(CandidateHarvester harvester : harvesters)
         {
-            tmpHarvester = itHarvesters.next();
-            if(tmpHarvester.getClass().getName().endsWith(harvesterName))
+            if(harvester.getClass().getName().endsWith(harvesterName))
             {
-                harvestingTime = tmpHarvester.getHarvestingTime();
+                harvestingTime = harvester.getHarvestStatistics()
+                    .getHarvestDuration();
                 // There may be several harvester with the same class name.
                 // Thus, returns only an active one (if any).
                 if(harvestingTime != 0)
@@ -2333,28 +2365,21 @@ public class Agent
      * @return The number of harvesting time for the harvester given in
      * parameter.
      */     
-    public int getNbHarvesting(String harvesterName)
+    public int getHarvestCount(String harvesterName)
     {
-        if(this.hostCandidateHarvester.getClass().getName().endsWith(
-                    harvesterName))
-        {
-            return this.hostCandidateHarvester.getNbHarvesting();
-        }
+        int harvestCount;
 
-        int nbHarvesting = 0;
-        CandidateHarvester tmpHarvester;
-        Iterator<CandidateHarvester> itHarvesters = this.harvesters.iterator();
-        while(itHarvesters.hasNext())
+        for(CandidateHarvester harvester : harvesters)
         {
-            tmpHarvester = itHarvesters.next();
-            if(tmpHarvester.getClass().getName().endsWith(harvesterName))
+            if(harvester.getClass().getName().endsWith(harvesterName))
             {
-                nbHarvesting = tmpHarvester.getNbHarvesting();
+                harvestCount
+                    = harvester.getHarvestStatistics().getHarvestCount();
                 // There may be several harvester with the same class name.
                 // Thus, returns only an active one (if any).
-                if(nbHarvesting != 0)
+                if(harvestCount != 0)
                 {
-                    return nbHarvesting;
+                    return harvestCount;
                 }
             }
         }
@@ -2363,42 +2388,41 @@ public class Agent
     }
 
     /**
-     * Starts the harvesting timer. Called when the harvest begins.
-     */
-    public void startHarvestTiming()
-    {
-        this.harvestingTimeStat.startHarvestTiming();
-    }
-
-    /**
-     * Stops the harvesting timer. Called when the harvest ends.
-     */
-    public void stopHarvestTiming()
-    {
-        this.harvestingTimeStat.stopHarvestTiming();
-    }
-
-    /**
-     * Returns the current harvesting time in ms. If this agent is not currently
-     * harvesting, then returns the value of the last total harvesting time for
-     * all the harvesters.  0 if this agent has nerver harvested.
+     * Returns the combined harvesting time for all harvesters in this agent.
      *
-     * @return The current harvesting time in ms. If this agent is not currently
-     * harvesting, then returns the value of the last total harvesting time for
-     * all the harvesters.  0 if this agent has nerver harvested.
+     * @return the total time this agent has spent harvesting.
      */
     public long getTotalHarvestingTime()
     {
-        return this.harvestingTimeStat.getHarvestingTime();
+        long harvestDuration = 0;
+
+        for(CandidateHarvester harvester : harvesters)
+        {
+            harvestDuration += harvester
+                .getHarvestStatistics().getHarvestDuration();
+        }
+
+        return harvestDuration;
     }
 
     /**
-     * Returns the number of harvesting for this agent.
+     * Returns the total number of harvests completed by this agent. Normally
+     * this number should be equal to NB_HARVESTERS*NB_COMPONENTS but could be
+     * less if some harvesters were disabled for inefficiency or more ... if
+     * there's a bug ;).
      *
-     * @return The number of harvesting for this agent.
+     * @return the number of harvest this agent has completed.
      */
-    public int getNbHarvesting()
+    public int getHarvestCount()
     {
-        return this.harvestingTimeStat.getNbHarvesting();
+        int harvestCount = 0;
+
+        for(CandidateHarvester harvester : harvesters)
+        {
+            harvestCount += harvester
+                .getHarvestStatistics().getHarvestDuration();
+        }
+
+        return harvestCount;
     }
 }

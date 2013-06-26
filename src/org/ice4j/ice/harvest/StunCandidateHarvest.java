@@ -160,8 +160,12 @@ public class StunCandidateHarvest
     {
         if (!candidates.contains(candidate))
         {
-            hostCandidate.getParentComponent().addLocalCandidate(candidate);
-            candidates.add(candidate);
+            //try to add the candidate to the component and then only add it to
+            //the harvest if it wasn't deemed redundant
+            if( hostCandidate.getParentComponent().addLocalCandidate(candidate))
+            {
+                candidates.add(candidate);
+            }
         }
     }
 
