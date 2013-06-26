@@ -22,9 +22,9 @@ import org.ice4j.ice.*;
 public abstract class CandidateHarvester
 {
     /**
-     * Manages statisics about harvesting time.
+     * Manages statistics about harvesting time.
      */
-    private HarvestingTimeStat harvestingTimeStat = new HarvestingTimeStat();
+    private HarvestStatistics harvestStatistics = new HarvestStatistics();
 
     /**
      * Gathers all candidate addresses of the type that this
@@ -45,42 +45,14 @@ public abstract class CandidateHarvester
     public abstract Collection<LocalCandidate> harvest(Component component);
 
     /**
-     * Starts the harvesting timer. Called when the harvest begins.
-     */
-    public void startHarvestTiming()
-    {
-        this.harvestingTimeStat.startHarvestTiming();
-    }
-
-    /**
-     * Stops the harvesting timer. Called when the harvest ends.
-     */
-    public void stopHarvestTiming()
-    {
-        this.harvestingTimeStat.stopHarvestTiming();
-    }
-
-    /**
-     * Returns the current harvesting time in ms. If this harvester is not
-     * currently harvesting, then returns the value of the last harvesting time.
-     * 0 if this harvester has nerver harvested.
+     * Returns the statistics describing how well the various harvests of this
+     * harvester went.
      *
-     * @return The current harvesting time in ms. If this harvester is not
-     * currently harvesting, then returns the value of the last harvesting time.
-     * 0 if this harvester has nerver harvested.
+     * @return The {@link HarvestStatistics} describing this harvester's
+     * harvests.
      */
-    public long getHarvestingTime()
+    public HarvestStatistics getHarvestStatistics()
     {
-        return this.harvestingTimeStat.getHarvestingTime();
-    }
-
-    /**
-     * Returns the number of harvesting for this harvester.
-     *
-     * @return The number of harvesting for this harvester.
-     */
-    public int getNbHarvesting()
-    {
-        return this.harvestingTimeStat.getNbHarvesting();
+        return harvestStatistics;
     }
 }

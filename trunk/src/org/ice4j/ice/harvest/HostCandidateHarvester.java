@@ -36,7 +36,7 @@ public class HostCandidateHarvester
     /**
      * Manages statisics about harvesting time.
      */
-    private HarvestingTimeStat harvestingTimeStat = new HarvestingTimeStat();
+    private HarvestStatistics harvestStatistics = new HarvestStatistics();
 
     /**
      * Gathers all candidate addresses on the local machine, binds sockets on
@@ -69,7 +69,7 @@ public class HostCandidateHarvester
         throws IllegalArgumentException,
                IOException
     {
-        this.startHarvestTiming();
+        harvestStatistics.startHarvestTiming();
 
         Enumeration<NetworkInterface> interfaces
                         = NetworkInterface.getNetworkInterfaces();
@@ -177,11 +177,8 @@ public class HostCandidateHarvester
                             + " maxPort=" + maxPort);
         }
 
-        this.stopHarvestTiming();
-        logger.info(
-            "Completed " + component.toShortString() + " harvest with "
-            + getClass().getSimpleName() + " in " + getHarvestingTime()
-            + " ms. Candidates found: " + component.getLocalCandidateCount());
+        this.harvestStatistics
+            .stopHarvestTiming(component.getLocalCandidateCount());
     }
 
     /**
@@ -406,42 +403,14 @@ public class HostCandidateHarvester
     }
 
     /**
-     * Starts the harvesting timer. Called when the harvest begins.
-     */
-    public void startHarvestTiming()
-    {
-        this.harvestingTimeStat.startHarvestTiming();
-    }
-
-    /**
-     * Stops the harvesting timer. Called when the harvest ends.
-     */
-    public void stopHarvestTiming()
-    {
-        this.harvestingTimeStat.stopHarvestTiming();
-    }
-
-    /**
-     * Returns the current harvesting time in ms. If this harvester is not
-     * currently harvesting, then returns the value of the last harvesting time.
-     * 0 if this harvester has nerver harvested.
+     * Returns the statistics describing how well the various harvests of this
+     * harvester went.
      *
-     * @return The current harvesting time in ms. If this harvester is not
-     * currently harvesting, then returns the value of the last harvesting time.
-     * 0 if this harvester has nerver harvested.
+     * @return The {@link HarvestStatistics} describing this harvester's
+     * harvests.
      */
-    public long getHarvestingTime()
+    public HarvestStatistics getHarvestStatistics()
     {
-        return this.harvestingTimeStat.getHarvestingTime();
-    }
-
-    /**
-     * Returns the number of harvesting for this harvester.
-     *
-     * @return The number of harvesting for this harvester.
-     */
-    public int getNbHarvesting()
-    {
-        return this.harvestingTimeStat.getNbHarvesting();
+        return harvestStatistics;
     }
 }

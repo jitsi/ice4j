@@ -80,7 +80,7 @@ public class UPNPHarvester
         Collection<LocalCandidate> candidates = new HashSet<LocalCandidate>();
         int retries = 0;
 
-        logger.info("Begin UPnP harvesting");
+        logger.fine("Begin UPnP harvesting");
         try
         {
             if(device == null)
@@ -146,8 +146,7 @@ public class UPNPHarvester
                             "ice4j.org: " + port))
                     {
                         List<LocalCandidate> cands = createUPNPCandidate(socket,
-                                localAddress, externalIPAddress, externalPort,
-                                component, device);
+                            externalIPAddress, externalPort, component, device);
 
                         logger.info("Add UPnP port mapping: " +
                                 externalIPAddress + " " + externalPort);
@@ -158,8 +157,12 @@ public class UPNPHarvester
                         // UPNPCandidate
                         for(LocalCandidate cand : cands)
                         {
-                            component.addLocalCandidate(cand);
-                            candidates.add(cand);
+                            //try to add the candidate to the component and then
+                            //only add it to the harvest not redundant
+                            if(component.addLocalCandidate(cand))
+                            {
+                                candidates.add(cand);
+                            }
                         }
 
                         break;
@@ -188,7 +191,6 @@ public class UPNPHarvester
      * Create a UPnP candidate.
      *
      * @param socket local socket
-     * @param localAddr local host address
      * @param externalIP external IP address
      * @param port local port
      * @param cmp parent component
@@ -198,8 +200,7 @@ public class UPNPHarvester
      * @throws Exception if something goes wrong during candidate creation
      */
     public List<LocalCandidate> createUPNPCandidate(IceSocketWrapper socket,
-            InetAddress localAddr, String externalIP, int port, Component cmp,
-            GatewayDevice device)
+            String externalIP, int port, Component cmp, GatewayDevice device)
         throws Exception
     {
         List<LocalCandidate> ret = new ArrayList<LocalCandidate>();
@@ -291,5 +292,18 @@ public class UPNPHarvester
                 }
             }
         }
+    }
+
+    /**
+     * Returns a <tt>String</tt> representation of this harvester containing its
+     * name.
+     *
+     * @return a <tt>String</tt> representation of this harvester containing its
+     * name.
+     */
+    @Override
+    public String toString()
+    {
+        return getClass().getSimpleName();
     }
 }

@@ -85,33 +85,29 @@ public class CandidateHarvesterSet
      */
     public void harvest(Component component)
     {
-        synchronized (elements)
-        {
-            harvest(elements.iterator(), component, threadPool);
-        }
+        harvest(Arrays.asList(new Component[]{component}), null);
     }
 
 
     /**
-     * Gathers candidate addresses for a specific <tt>Component</tt> using
-     * specific <tt>CandidateHarvester</tt>s.
+     * Gathers candidate addresses for a specific <tt>Component</tt>.
+     * <tt>CandidateHarvesterSet</tt> delegates to the
+     * <tt>CandidateHarvester</tt>s which are its <tt>Set</tt> elements.
      *
-     * @param harvesters the <tt>CandidateHarvester</tt>s to gather candidate
-     * addresses for the specified <tt>Component</tt>
-     * @param component the <tt>Component</tt> to gather candidate addresses for
-     * @param executorService the <tt>ExecutorService</tt> to schedule the
-     * execution of the gathering of candidate addresses performed by the
-     * specified <tt>harvesters</tt>
+     * @param components the <tt>Component</tt> to gather candidate addresses for
+     * @see CandidateHarvester#harvest(Component)
+     * @param trickleCallback the {@link TrickleCallback} that we will be
+     * feeding candidates to, or <tt>null</tt> in case the application doesn't
+     * want us trickling any candidates
      */
-    private void harvest(
-            final Iterator<CandidateHarvesterSetElement> harvesters,
-            final Component component,
-            ExecutorService executorService)
+    public void harvest(final List<Component> components,
+                              TrickleCallback trickleCallback)
     {
-
-        harvest(harvesters,
-            Arrays.asList(new Component[]{component}),
-            executorService);
+        synchronized (elements)
+        {
+            harvest(
+                elements.iterator(), components, threadPool, trickleCallback);
+        }
     }
 
     /**
@@ -125,11 +121,15 @@ public class CandidateHarvesterSet
      * @param executorService the <tt>ExecutorService</tt> to schedule the
      * execution of the gathering of candidate addresses performed by the
      * specified <tt>harvesters</tt>
+     * @param trickleCallback the {@link TrickleCallback} that we will be
+     * feeding candidates to, or <tt>null</tt> in case the application doesn't
+     * want us trickling any candidates
      */
     private void harvest(
             final Iterator<CandidateHarvesterSetElement> harvesters,
-            final List<Component> components,
-            ExecutorService executorService)
+            final List<Component>                        components,
+                  ExecutorService                        executorService,
+            final TrickleCallback                        trickleCallback)
     {
         /*
          * Start asynchronously executing the
@@ -164,14 +164,11 @@ public class CandidateHarvesterSet
                 componentsCopy = new ArrayList<Component>(components);
             }
 
-            for(Component component : componentsCopy)
-            {
-                // Asynchronously start gathering candidates using the harvester.
-                CandidateHarvesterSetTask task = new CandidateHarvesterSetTask(
-                    harvester, component, harvesters);
+            // Asynchronously start gathering candidates using the harvester.
+            CandidateHarvesterSetTask task = new CandidateHarvesterSetTask(
+                harvester, componentsCopy, trickleCallback);
 
-                tasks.put(task, executorService.submit(task));
-            }
+            tasks.put(task, executorService.submit(task));
         }
 
         /*
