@@ -275,10 +275,9 @@ public class RelayedCandidateDatagramSocket
                     pOffset += CHANNELDATA_CHANNELNUMBER_LENGTH;
                     pLength -= CHANNELDATA_CHANNELNUMBER_LENGTH;
 
-                    char length
-                        = (char)
-                            ((pData[pOffset++] << 8)
-                                    | (pData[pOffset++] & 0xFF));
+                    int length
+                        = ((pData[pOffset++] << 8)
+                              | (pData[pOffset++] & 0xFF));
 
                     int padding = ((length % 4) > 0) ? 4 - (length % 4) : 0;
 
@@ -288,8 +287,8 @@ public class RelayedCandidateDatagramSocket
                      * the padding that is sometimes present in the data of the
                      * DatagramPacket.
                      */
-                    return (length ==
-                        (pLength - padding - CHANNELDATA_LENGTH_LENGTH));
+                    return length == pLength - padding - CHANNELDATA_LENGTH_LENGTH 
+                    	|| length == pLength - CHANNELDATA_LENGTH_LENGTH;
                 }
             }
         }
@@ -1127,7 +1126,7 @@ public class RelayedCandidateDatagramSocket
         }
     }
 
-    /**
+	/**
      * Represents a channel which relays data sent through this
      * <tt>RelayedCandidateDatagramSocket</tt> to a specific
      * <tt>TransportAddress</tt> via the TURN server associated with this
