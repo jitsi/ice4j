@@ -310,7 +310,7 @@ public class DefaultNominator
                 }
             }
 
-            if(allFailed)
+            if(allFailed && ! pair.isNominated())
             {
                 // all other pairs are failed to do not waste time, cancel
                 // timer and nominate ourself (the relayed candidate).
