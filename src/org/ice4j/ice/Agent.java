@@ -2220,7 +2220,7 @@ public class Agent
 
             try
             {
-                Thread.sleep(3000);
+                Thread.sleep(15000);
                 Thread.yield();
             }
             catch(InterruptedException e)
