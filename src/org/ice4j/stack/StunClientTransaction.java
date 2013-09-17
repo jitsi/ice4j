@@ -230,8 +230,13 @@ class StunClientTransaction
 
                 try
                 {
-                    logger.fine("retrying transmission of STUN test to " +
-                            requestDestination.getHostAddress());
+                    logger.fine("retrying transmission of STUN test"
+                                + " tid " + transactionID
+                                + " from " + localAddress
+                                + " to " + requestDestination
+                                + " nextWait " + nextWaitInterval
+                                + " retrans " + (retransmissionCounter+1)
+                                + " of " + maxRetransmissions);
                     sendRequest0();
                 }
                 catch (Exception ex)

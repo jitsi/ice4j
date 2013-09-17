@@ -1438,8 +1438,8 @@ public class Agent
                 //so it's now safe to go and see whether this is a new PR cand.
                 if(triggeredPair.getParentComponent().getSelectedPair() == null)
                 {
-                    logger.info("Receive check from " +
-                        triggeredPair.toShortString() + "triggered a check");
+                    logger.info("Received check from " +
+                        triggeredPair.toShortString() + " triggered a check");
                 }
                 triggerCheck(triggeredPair);
             }
@@ -1770,9 +1770,10 @@ public class Agent
             {
                 CandidatePair selectedPair = component.getSelectedPair();
 
-                StringBuffer buf = new StringBuffer( "Harvester selected for ");
+                StringBuffer buf
+                    = new StringBuffer( "Harvester used for selected pair for ");
                 buf.append(component.toShortString());
-                buf.append(" ");
+                buf.append(": ");
 
                 if(selectedPair == null)
                 {
@@ -2364,7 +2365,7 @@ public class Agent
      *
      * @return The number of harvesting time for the harvester given in
      * parameter.
-     */     
+     */
     public int getHarvestCount(String harvesterName)
     {
         int harvestCount;

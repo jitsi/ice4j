@@ -743,6 +743,15 @@ public abstract class Candidate
     }
 
     /**
+     * Returns short <tt>String</tt> representation of this <tt>Candidate</tt>.
+     * @return short <tt>String</tt> representation of this <tt>Candidate</tt>.
+     */
+    public String toShortString()
+    {
+        return getTransportAddress() + "/" + getType();
+    }
+
+    /**
      * Returns an integer indicating the preference that this <tt>Candidate</tt>
      * should be considered with for becoming a default candidate.
      *
