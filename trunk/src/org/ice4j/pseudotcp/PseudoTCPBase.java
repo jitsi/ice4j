@@ -407,10 +407,10 @@ public class PseudoTCPBase
      */
     public void notifyClock(long now)
     {
-        if (logger.isLoggable(Level.FINEST))
+        /*if (logger.isLoggable(Level.FINEST))
         {
             logger.log(Level.FINEST, debugName + " update clock " + now);
-        }
+        }*/
         if (m_state == PseudoTcpState.TCP_CLOSED)
         {
             return;
@@ -1312,13 +1312,19 @@ public class PseudoTCPBase
         {
             if (seg.seq > m_rcv_nxt)
             {
-                logger.log(Level.FINER, "too new");
+                logger.log(Level.FINER,
+                           "too new, seq.seq=" + seg.seq
+                                + ", seg.len=" + seg.len
+                                + ", m_rcv_nxt=" + m_rcv_nxt);
             }
             else
             {
                 if (seg.seq + seg.len <= m_rcv_nxt)
                 {
-                    logger.log(Level.FINER, "too old");
+                    logger.log(Level.FINER,
+                               "too old, seq.seq=" + seg.seq
+                                    + ", seg.len=" + seg.len
+                                    + ", m_rcv_nxt=" + m_rcv_nxt);
                 }
             }
         }
@@ -1748,7 +1754,7 @@ public class PseudoTCPBase
             // in-flight data is acknowledged.
             if (m_use_nagling && (m_snd_nxt > m_snd_una) && (nAvailable < m_mss))
             {
-                logger.log(Level.FINER, "wait untill more data is acked");
+                logger.log(Level.FINER, "wait until more data is acked");
                 return;
             }
 

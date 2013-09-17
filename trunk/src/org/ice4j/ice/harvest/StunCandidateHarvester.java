@@ -269,10 +269,21 @@ public class StunCandidateHarvester
 
         logger.finest(
             "Completed " + component.toShortString() + " harvest: " + toString()
-            + ". Found " + candidates.size() + " candidates.");
+            + ". Found " + candidates.size()
+            + " candidates: " + listCandidates(candidates));
 
 
         return candidates;
+    }
+
+    private String listCandidates(Collection<? extends Candidate<?>> candidates)
+    {
+        StringBuilder retval = new StringBuilder();
+        for(Candidate<?> candidate : candidates)
+        {
+            retval.append(candidate.toShortString());
+        }
+        return retval.toString();
     }
 
     /**

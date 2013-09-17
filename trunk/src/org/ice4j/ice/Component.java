@@ -248,8 +248,8 @@ public class Component
      */
     public void addRemoteCandidate(RemoteCandidate candidate)
     {
-        logger.info("Add remote candidate for " + toShortString() + ": " +
-                candidate.getTransportAddress());
+        logger.info("Add remote candidate for " + toShortString()
+                            + ": " + candidate.toShortString());
 
         synchronized(remoteCandidates)
         {

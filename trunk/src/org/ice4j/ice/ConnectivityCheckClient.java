@@ -170,7 +170,6 @@ class ConnectivityCheckClient
         //we don't need to do a canReach() verification here as it has been
         //already verified during the gathering process.
 
-        logger.fine("start check for " + candidatePair.toShortString());
         Request request = MessageFactory.createBindingRequest();
 
         if(parentAgent.getCompatibilityMode() == CompatibilityMode.GTALK)
@@ -263,6 +262,9 @@ class ConnectivityCheckClient
 
         TransactionID tran = TransactionID.createNewTransactionID();
         tran.setApplicationData(candidatePair);
+
+        logger.fine("start check for " + candidatePair.toShortString()
+                            + " tid " + tran);
 
         try
         {

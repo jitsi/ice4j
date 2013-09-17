@@ -760,10 +760,10 @@ public class StunStack
             else
             {
                 //do nothing - just drop the phantom response.
-                logger.fine("Dropped response - "
-                                            + "no matching client tran found.");
-                logger.fine("response tid was - " + tid);
-                logger.fine("all tids in stock were" + clientTransactions);
+                logger.fine("Dropped response - no matching client tran found"
+                                + " for tid " + tid + "\n"
+                                + "all tids in stock were "
+                                + clientTransactions.keySet());
             }
         }
         // indication

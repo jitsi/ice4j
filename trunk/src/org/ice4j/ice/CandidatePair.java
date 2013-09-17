@@ -432,9 +432,9 @@ public class CandidatePair
      */
     public String toShortString()
     {
-        return getLocalCandidate().getTransportAddress() + " -> " +
-            getRemoteCandidate().getTransportAddress() +
-            " (" + getParentComponent().toShortString() + ")";
+        return getLocalCandidate().toShortString()
+                + " -> " + getRemoteCandidate().toShortString()
+                + " (" + getParentComponent().toShortString() + ")";
     }
 
     /**
