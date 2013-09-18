@@ -17,6 +17,10 @@ import java.net.*;
 public class PseudoTcpSocket extends Socket 
 {
     private final PseudoTcpSocketImpl socketImpl;
+
+    private final Object connectLock = new Object();
+
+    private final Object closeLock = new Object();
     
     PseudoTcpSocket(PseudoTcpSocketImpl socketImpl) 
         throws SocketException 
@@ -144,4 +148,126 @@ public class PseudoTcpSocket extends Socket
         return getState() == PseudoTcpState.TCP_CLOSED;
     }
 
+    /**
+     * {@inheritDoc}
+     *
+     * Connects without the timeout.
+     */
+    @Override
+    public void connect(SocketAddress endpoint)
+            throws IOException
+    {
+        this.connect(endpoint, 0);
+    }
+
+    /**
+     * Checks destination port number.
+     *
+     * @param dstPort the destination port to check.
+     */
+    private void checkDestination(int dstPort)
+    {
+        if (dstPort < 0 || dstPort > 65535)
+        {
+            throw new IllegalArgumentException("Port out of range: " + dstPort);
+        }
+    }
+
+    /**
+     * {@inheritDoc}
+     *
+     * On Android, we must not use the default <tt>connect</tt> implementation,
+     * because that one deals directly with physical resources, while we create
+     * a socket on top of another socket.
+     *
+     */
+    @Override
+    public void connect(SocketAddress remoteAddr, int timeout)
+            throws IOException
+    {
+        if (isClosed())
+        {
+            throw new SocketException("Socket is closed");
+        }
+        if (timeout < 0)
+        {
+            throw new IllegalArgumentException("timeout < 0");
+        }
+        if (isConnected())
+        {
+            throw new SocketException("Already connected");
+        }
+        if (remoteAddr == null)
+        {
+            throw new IllegalArgumentException("remoteAddr == null");
+        }
+        if (!(remoteAddr instanceof InetSocketAddress))
+        {
+            throw new IllegalArgumentException(
+                    "Remote address not an InetSocketAddress: " +
+                            remoteAddr.getClass());
+        }
+        InetSocketAddress inetAddr = (InetSocketAddress) remoteAddr;
+        if (inetAddr.getAddress() == null)
+        {
+            throw new UnknownHostException(
+                    "Host is unresolved: " + inetAddr.getHostName());
+        }
+
+        int port = inetAddr.getPort();
+        checkDestination(port);
+
+        synchronized (connectLock)
+        {
+            try
+            {
+                socketImpl.connect(remoteAddr, timeout);
+            }
+            catch (IOException e)
+            {
+                socketImpl.close();
+                throw e;
+            }
+        }
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    public synchronized void close()
+            throws IOException
+    {
+        synchronized (closeLock)
+        {
+            if (isClosed())
+                return;
+            socketImpl.close();
+        }
+    }
+
+    /**
+     * Allows to set up the remote address directly.
+     * Otherwise, when using the other <tt>accept</tt> methods,
+     * the first address from which a packet is received, is considered
+     * the remote address.
+     *
+     * @param remoteAddress the one and only remote address that will be
+     *                      accepted as remote packet's source
+     * @param timeout connection accept timeout value in milliseconds, after
+     *                which the exception will be thrown.
+     */
+    public void accept(SocketAddress remoteAddress, int timeout)
+            throws IOException
+    {
+        socketImpl.accept(remoteAddress, timeout);
+    }
+
+    /**
+     * Return the <tt>FileDescriptor</tt> of the underlying socket.
+     * @return the <tt>FileDescriptor</tt> of the underlying socket.
+     */
+    public FileDescriptor getFileDescriptor()
+    {
+        return socketImpl.getFileDescriptor();
+    }
 }
