@@ -1739,7 +1739,9 @@ public class Agent
         setState(IceProcessingState.COMPLETED);
 
         // keep ICE running (answer binding request)
-        if(stunKeepAliveThread == null)
+        if(stunKeepAliveThread == null
+                && ! StackProperties.getBoolean(
+                        StackProperties.NO_KEEP_ALIVES, false))
         {
             // schedule STUN checks for selected candidates
             scheduleSTUNKeepAlive();
