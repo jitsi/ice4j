@@ -95,6 +95,15 @@ class PseudoTcpSocketImpl
         //Default MTU
         setMTU(1450);
         this.socket = sock;
+        //TODO: find out if this call is required
+        /*try
+        {
+            setOption(SO_TIMEOUT, 0);
+        }
+        catch (SocketException e)
+        {
+            throw new RuntimeException(e);
+        }*/
     }
 
     /**
@@ -358,7 +367,23 @@ class PseudoTcpSocketImpl
             throw new IOException("Connect aborted");
         }
     }
-    
+
+    /**
+     * Blocking method waits for connection.
+     *
+     * @param remoteAddress the one and only address that will be
+     *                      accepted as the source for remote packets
+     * @param timeout for this operation in ms
+     * @throws IOException If socket gets closed or timeout expires
+     */
+    void accept(SocketAddress remoteAddress, int timeout)
+        throws IOException
+    {
+        this.remoteAddr = remoteAddress;
+        accept(timeout);
+    }
+
+
     /**
      * Blocking method waits for connection.
      *
@@ -586,7 +611,9 @@ class PseudoTcpSocketImpl
     {
         if (logger.isLoggable(Level.FINEST))
         {
-            logger.log(Level.FINEST, "write packet to network " + len);
+            logger.log(Level.FINEST,
+                       "write packet to network length " + len
+                            + " address " + remoteAddr);
         }
         try
         {
@@ -617,7 +644,8 @@ class PseudoTcpSocketImpl
     private void receivePackets()
     {
         byte[] buffer = new byte[DATAGRAM_RCV_BUFFER_SIZE];
-        DatagramPacket packet = new DatagramPacket(buffer, DATAGRAM_RCV_BUFFER_SIZE);
+        DatagramPacket packet = new DatagramPacket(buffer,
+                                                   DATAGRAM_RCV_BUFFER_SIZE);
         while (runReceive)
         {
             try
@@ -628,6 +656,9 @@ class PseudoTcpSocketImpl
                 if (remoteAddr == null)
                 {
                     remoteAddr = packet.getSocketAddress();
+                    logger.log(Level.WARNING,
+                               "Remote addr not set previously, setting to "
+                                       + remoteAddr);
                 }
                 else
                 {
@@ -635,7 +666,8 @@ class PseudoTcpSocketImpl
                     {
                         logger.log(Level.WARNING,
                                    "Ignoring packet from " + packet.getAddress()
-                            + ":" + packet.getPort() + " should be: " + remoteAddr);
+                                    + ":" + packet.getPort()
+                                    + " should be: " + remoteAddr);
                         continue;
                     }                    
                 }
@@ -698,7 +730,7 @@ class PseudoTcpSocketImpl
             {
                 try
                 {
-                    logger.log(Level.FINEST, "Clock sleep for " + sleep);
+                    //logger.log(Level.FINEST, "Clock sleep for " + sleep);
                     clock_notify.wait(sleep);
                 }
                 catch (InterruptedException ex)
@@ -826,7 +858,7 @@ class PseudoTcpSocketImpl
         {
             byte[] buff = new byte[1];
             int readCount = read(buff, 0, 1);
-            return readCount == 1 ? buff[0] : -1;
+            return readCount == 1 ? (buff[0] & 0xFF) : -1;
         }
 
         @Override
@@ -919,6 +951,33 @@ class PseudoTcpSocketImpl
         @Override
         public void close() throws IOException
         {
+        }
+
+        /**
+         * {@inheritDoc}
+         */
+        @Override
+        public long skip(long n) throws IOException
+        {
+            throw new UnsupportedOperationException("skip");
+        }
+
+        /**
+         * {@inheritDoc}
+         */
+        @Override
+        public synchronized void mark(int readlimit)
+        {
+            throw new UnsupportedOperationException("mark");
+        }
+
+        /**
+         * {@inheritDoc}
+         */
+        @Override
+        public synchronized void reset() throws IOException
+        {
+            throw new UnsupportedOperationException("reset");
         }
     }
 
@@ -1063,5 +1122,81 @@ class PseudoTcpSocketImpl
         public void close() throws IOException
         {
         }
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    protected FileDescriptor getFileDescriptor()
+    {
+        return fd;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    protected void shutdownInput()
+            throws IOException
+    {
+        throw new IOException("Method not implemented!");
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    protected void shutdownOutput()
+            throws IOException
+    {
+        throw new IOException("Method not implemented!");
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    protected InetAddress getInetAddress()
+    {
+        return ((InetSocketAddress) remoteAddr).getAddress();
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    protected int getPort()
+    {
+        return ((InetSocketAddress) remoteAddr).getPort();
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    protected boolean supportsUrgentData()
+    {
+        return false;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    protected int getLocalPort()
+    {
+        return socket.getLocalPort();
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    protected void setPerformancePreferences(int connectionTime,
+                                             int latency,
+                                             int bandwidth)
+    {
+        throw new UnsupportedOperationException("setPerformancePreferences");
     }
 }
