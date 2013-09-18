@@ -114,6 +114,12 @@ public class StackProperties
                                     = "org.ice4j.TERMINATION_DELAY";
 
     /**
+     * The name of the property that can be used to disable STUN keep alives.
+     * Set to <tt>true</tt> to disable.
+     */
+    public static final String NO_KEEP_ALIVES = "org.ice4j.NO_KEEP_ALIVES";
+
+    /**
      * THIS PROPERTY IS CURRENTLY UNUSED. IF YOU WANT TO SPEED UP NOMINATIONS
      * THEN CONSIDER SPEEDING UP TRANSACTION FAILURE FOR THE TIME BEING.
      * The maximum number of milliseconds that we should wait for a check list
