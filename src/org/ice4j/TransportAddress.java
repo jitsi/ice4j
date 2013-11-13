@@ -155,7 +155,8 @@ public class TransportAddress
     public String getHostAddress()
     {
         InetAddress addr = getAddress();
-        String addressStr = addr.getHostAddress();
+        String addressStr
+            = addr != null ? addr.getHostAddress() : "null";
 
         if(addr instanceof Inet6Address)
             addressStr = NetworkUtils.stripScopeID(addressStr);
