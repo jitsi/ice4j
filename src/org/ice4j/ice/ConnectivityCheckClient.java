@@ -643,7 +643,8 @@ class ConnectivityCheckClient
 
         synchronized(this)
         {
-            CheckList parentCheckList = parentStream.getCheckList();
+            Vector<CandidatePair> parentCheckList
+                = new Vector<CandidatePair>(parentStream.getCheckList());
 
             for(CandidatePair pair : parentCheckList)
                 if ((pair.getState() == CandidatePairState.FROZEN) &&
