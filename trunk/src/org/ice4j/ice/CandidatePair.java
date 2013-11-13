@@ -25,6 +25,12 @@ public class CandidatePair
     implements Comparable<CandidatePair>
 {
     /**
+     * The value of <tt>Math.pow(2, 32)</tt> calculated once for the purposes of
+     * optimizing performance.
+     */
+    private static final long MATH_POW_2_32 = 1L << 32;
+
+    /**
      * The local candidate of this pair.
      */
     private LocalCandidate localCandidate;
@@ -337,14 +343,26 @@ public class CandidatePair
      */
     protected void computePriority()
     {
-        //use G and D as local and remote candidate priority names to fit the
-        //definition in the RFC.
-        long G = getControllingAgentCandidate().getPriority();
-        long D = getControlledAgentCandidate().getPriority();
+        // Use g and d as local and remote candidate priority names to fit the
+        // definition in the RFC.
+        long g = getControllingAgentCandidate().getPriority();
+        long d = getControlledAgentCandidate().getPriority();
+        long min, max, expr;
 
-        this.priority = (long)Math.pow(2, 32)*Math.min(G,D)
-                          + 2*Math.max(G,D)
-                          + (G>D?1l:0l);
+        if (g > d)
+        {
+            min = d;
+            max = g;
+            expr = 1L;
+        }
+        else
+        {
+            min = g;
+            max = d;
+            expr = 0L;
+        }
+
+        this.priority = MATH_POW_2_32 * min + 2 * max + expr;
     }
 
     /**
