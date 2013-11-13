@@ -126,32 +126,54 @@ public class GoogleTurnSSLCandidateHarvester
     protected HostCandidate getHostCandidate(HostCandidate hostCand)
     {
         HostCandidate cand = null;
+        Socket sock = null;
 
         try
         {
-            Socket sock = new Socket(stunServer.getAddress(),
-                stunServer.getPort());
+            sock = new Socket(stunServer.getAddress(), stunServer.getPort());
 
             OutputStream outputStream = sock.getOutputStream();
             InputStream inputStream = sock.getInputStream();
 
             if(sslHandshake(inputStream, outputStream))
             {
-                cand = new HostCandidate(new IceTcpSocketWrapper(
-                    new MultiplexingSocket(sock)),
-                    hostCand.getParentComponent(), Transport.TCP);
-                hostCand.getParentComponent().getParentStream().
-                    getParentAgent().getStunStack().addSocket(
-                        cand.getStunSocket(null));
-            }
-            else
-                return null;
-        }
-        catch(Exception io)
-        {
-            return null;
-        }
+                Component parentComponent = hostCand.getParentComponent();
 
+                cand
+                    = new HostCandidate(
+                            new IceTcpSocketWrapper(
+                                    new MultiplexingSocket(sock)),
+                            parentComponent,
+                            Transport.TCP);
+                parentComponent
+                    .getParentStream()
+                        .getParentAgent()
+                            .getStunStack()
+                                .addSocket(cand.getStunSocket(null));
+            }
+        }
+        catch (Exception e)
+        {
+            cand = null;
+        }
+        finally
+        {
+            if ((cand == null) && (sock != null))
+            {
+                try
+                {
+                    sock.close();
+                }
+                catch (IOException ioe)
+                {
+                    /*
+                     * We failed to close sock but that should not be much of a
+                     * problem because we were not closing it in earlier
+                     * revisions.
+                     */
+                }
+            }
+        }
         return cand;
     }
 
