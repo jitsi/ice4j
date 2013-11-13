@@ -91,7 +91,7 @@ public class Agent
         = new CandidateHarvesterSet();
 
     /**
-     * Manages statisics about harvesting time.
+     * Manages statistics about harvesting time.
      */
     private HarvestStatistics harvestStats = new HarvestStatistics();
 
@@ -1784,24 +1784,29 @@ public class Agent
                     continue;
                 }
 
-                Candidate localCnd = selectedPair.getLocalCandidate();
+                Candidate<?> localCnd = selectedPair.getLocalCandidate();
 
                 TransportAddress serverAddr = localCnd.getStunServerAddress();
-                TransportAddress relayAddr = localCnd.getRelayServerAddress();
 
                 buf.append(localCnd.getType());
 
                 if(serverAddr != null)
                 {
                     buf.append(" (STUN server = ");
-                    buf.append(localCnd.getStunServerAddress());
+                    buf.append(serverAddr);
                     buf.append(")");
                 }
-                else if(relayAddr != null)
+                else
                 {
-                    buf.append(" (relay = ");
-                    buf.append(localCnd.getRelayServerAddress());
-                    buf.append(")");
+                    TransportAddress relayAddr
+                        = localCnd.getRelayServerAddress();
+
+                    if(relayAddr != null)
+                    {
+                        buf.append(" (relay = ");
+                        buf.append(relayAddr);
+                        buf.append(")");
+                    }
                 }
                 logger.info(buf.toString());
             }
