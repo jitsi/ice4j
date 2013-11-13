@@ -28,14 +28,14 @@ public class CandidateAttribute extends AttributeField
     /**
      * The Candidate that we will be encapsulating.
      */
-    private final Candidate candidate;
+    private final Candidate<?> candidate;
 
     /**
      * Creates an attribute instance
      *
      * @param candidate the Candidate
      */
-    public CandidateAttribute(Candidate candidate)
+    public CandidateAttribute(Candidate<?> candidate)
     {
         this.candidate = candidate;
     }
