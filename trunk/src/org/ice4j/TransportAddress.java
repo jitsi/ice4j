@@ -136,7 +136,13 @@ public class TransportAddress
      */
     public String toString()
     {
-        StringBuilder bldr = new StringBuilder(getHostAddress());
+        String hostAddress = getHostAddress();
+        if(hostAddress == null)
+        {
+            hostAddress = getHostName();
+        }
+
+        StringBuilder bldr = new StringBuilder(hostAddress);
 
         if(isIPv6())
            bldr.insert(0, "[").append("]");
@@ -156,7 +162,7 @@ public class TransportAddress
     {
         InetAddress addr = getAddress();
         String addressStr
-            = addr != null ? addr.getHostAddress() : "null";
+            = addr != null ? addr.getHostAddress() : null;
 
         if(addr instanceof Inet6Address)
             addressStr = NetworkUtils.stripScopeID(addressStr);
