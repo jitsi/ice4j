@@ -58,9 +58,22 @@ public class MultiplexingDatagramSocket
         = new LinkedList<DatagramPacket>();
 
     /**
+     * The value with which {@link DatagramSocket#setReceiveBufferSize(int)} is
+     * to be invoked if {@link #setReceiveBufferSize} is <tt>true</tt>. 
+     */
+    private int receiveBufferSize;
+
+    /**
      * The <tt>Object</tt> which synchronizes the access to {@link #inReceive}.
      */
     private final Object receiveSyncRoot = new Object();
+
+    /**
+     * The indicator which determines whether
+     * {@link DatagramSocket#setReceiveBufferSize(int)} is to be invoked with
+     * the value of {@link #receiveBufferSize}.
+     */
+    private boolean setReceiveBufferSize = false;
 
     /**
      * The <tt>MultiplexedDatagramSocket</tt>s filtering
@@ -177,13 +190,21 @@ public class MultiplexingDatagramSocket
     {
         synchronized (p)
         {
-            byte[] pData = p.getData();
-            byte[] cData = (pData == null) ? null : pData.clone();
+            byte[] data = p.getData().clone();
+            InetAddress address = p.getAddress();
+            int port = p.getPort();
 
-            return
-                new DatagramPacket(
-                        cData, p.getOffset(), p.getLength(),
-                        p.getAddress(), p.getPort());
+            if ((address == null) || (port < 0))
+            {
+                return new DatagramPacket(data, p.getOffset(), p.getLength());
+            }
+            else
+            {
+                return
+                    new DatagramPacket(
+                            data, p.getOffset(), p.getLength(),
+                            address, port);
+            }
         }
     }
 
@@ -200,6 +221,7 @@ public class MultiplexingDatagramSocket
             int socketCount = sockets.length;
 
             for (int i = 0; i < socketCount; i++)
+            {
                 if (sockets[i].equals(multiplexed))
                 {
                     if (socketCount == 1)
@@ -218,6 +240,7 @@ public class MultiplexingDatagramSocket
                     }
                     break;
                 }
+            }
         }
     }
 
@@ -300,8 +323,10 @@ public class MultiplexingDatagramSocket
              * create a new one and return the existing.
              */
             for (MultiplexedDatagramSocket socket : sockets)
-                    if (filter.equals(socket.getFilter()))
-                        return socket;
+            {
+                if (filter.equals(socket.getFilter()))
+                    return socket;
+            }
 
             // Create a new socket for the specified filter.
             MultiplexedDatagramSocket socket
@@ -374,77 +399,118 @@ public class MultiplexingDatagramSocket
 
         do
         {
-            boolean doReceive;
+            synchronized (received)
+            {
+                if (!received.isEmpty())
+                {
+                    r = received.remove(0);
+                    if (r != null)
+                        break;
+                }
+            }
+
+            boolean wait;
 
             synchronized (receiveSyncRoot)
             {
-                if (received.isEmpty())
+                if (inReceive)
                 {
-                    if (inReceive)
-                    {
-                        doReceive = false;
-                        try
-                        {
-                            receiveSyncRoot.wait();
-                        }
-                        catch (InterruptedException iex)
-                        {
-                            continue;
-                        }
-                    }
-                    else
-                    {
-                        doReceive = true;
-                        inReceive = true;
-                    }
+                    wait = true;
                 }
                 else
                 {
-                    doReceive = false;
-                    r = received.remove(0);
+                    wait = false;
+                    inReceive = true;
                 }
             }
-            if (doReceive)
+
+            try
             {
-                try
+                if (wait)
                 {
-                    super.receive(p);
-
-                    synchronized (receiveSyncRoot)
+                    synchronized (received)
                     {
-                        synchronized (socketsSyncRoot)
+                        if (received.isEmpty())
                         {
-                            boolean accepted = false;
+                            try
+                            {
+                                received.wait(1000);
+                            }
+                            catch (InterruptedException ie)
+                            {
+                            }
+                        }
+                        else
+                        {
+                            received.notifyAll();
+                        }
+                    }
+                    continue;
+                }
 
-                            for (MultiplexedDatagramSocket socket : sockets)
-                                if (socket.getFilter().accept(p))
-                                {
-                                    socket.received.add(clone(p));
-                                    accepted = true;
+                DatagramPacket c = clone(p);
 
-                                    /*
-                                     * Emil: Don't break because we want all
-                                     * filtering sockets to get this.
-                                     */
-                                    //break;
-                                }
-
-                            if (!accepted)
-                                this.received.add(clone(p));
+                synchronized (receiveSyncRoot)
+                {
+                    if (setReceiveBufferSize)
+                    {
+                        setReceiveBufferSize = false;
+                        try
+                        {
+                            super.setReceiveBufferSize(receiveBufferSize);
+                        }
+                        catch (Throwable t)
+                        {
+                            if (t instanceof ThreadDeath)
+                                throw (ThreadDeath) t;
                         }
                     }
                 }
-                finally
+                super.receive(c);
+
+                synchronized (socketsSyncRoot)
                 {
-                    synchronized (receiveSyncRoot)
+                    boolean accepted = false;
+
+                    for (MultiplexedDatagramSocket socket : sockets)
                     {
-                        inReceive = false;
-                        receiveSyncRoot.notify();
+                        if (socket.getFilter().accept(c))
+                        {
+                            synchronized (socket.received)
+                            {
+                                socket.received.add(accepted ? clone(c) : c);
+                                socket.received.notifyAll();
+                            }
+                            accepted = true;
+
+                            /*
+                             * Emil: Don't break because we want all
+                             * filtering sockets to get this.
+                             */
+                            //break;
+                        }
+                    }
+
+                    if (!accepted)
+                    {
+                        synchronized (this.received)
+                        {
+                            this.received.add(c);
+                            this.received.notifyAll();
+                        }
                     }
                 }
             }
+            finally
+            {
+                synchronized (receiveSyncRoot)
+                {
+                    if (!wait)
+                        inReceive = false;
+                }
+            }
         }
-        while (r == null);
+        while (true);
 
         copy(r, p);
     }
@@ -464,5 +530,28 @@ public class MultiplexingDatagramSocket
         throws IOException
     {
         receive(multiplexed.received, p);
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public void setReceiveBufferSize(int receiveBufferSize)
+        throws SocketException
+    {
+        synchronized (receiveSyncRoot)
+        {
+            this.receiveBufferSize = receiveBufferSize;
+
+            if (inReceive)
+            {
+                setReceiveBufferSize = true;
+            }
+            else
+            {
+                super.setReceiveBufferSize(receiveBufferSize);
+                setReceiveBufferSize = false;
+            }
+        }
     }
 }
