@@ -225,17 +225,18 @@ class StunClientTransaction
                 if(cancelled)
                     return;
 
+                int curWaitInterval = nextWaitInterval;
                 if(nextWaitInterval < maxWaitInterval)
                     nextWaitInterval *= 2;
 
                 try
                 {
-                    logger.fine("retrying transmission of STUN test"
+                    logger.fine("retrying STUN "
                                 + " tid " + transactionID
                                 + " from " + localAddress
                                 + " to " + requestDestination
-                                + " nextWait " + nextWaitInterval
-                                + " retrans " + (retransmissionCounter+1)
+                                + " waited " + curWaitInterval
+                                + " ms retrans " + (retransmissionCounter+1)
                                 + " of " + maxRetransmissions);
                     sendRequest0();
                 }
@@ -279,6 +280,10 @@ class StunClientTransaction
     void sendRequest()
         throws IllegalArgumentException, IOException
     {
+        logger.fine("sending STUN "
+                + " tid " + transactionID
+                + " from " + localAddress
+                + " to " + requestDestination);
         sendRequest0();
 
         retransmissionsThread.start();
@@ -330,7 +335,7 @@ class StunClientTransaction
         }
         catch (InterruptedException ex)
         {
-            logger.log(Level.FINE, "Interrupted", ex);
+        	throw new RuntimeException(ex);
         }
     }
 
@@ -366,6 +371,7 @@ class StunClientTransaction
      */
     synchronized void handleResponse(StunMessageEvent evt)
     {
+    	logger.log(Level.FINE, "handleResponse tid " + getTransactionID());
         if( !Boolean.getBoolean(StackProperties.KEEP_CRANS_AFTER_A_RESPONSE) )
             this.cancel();
 
