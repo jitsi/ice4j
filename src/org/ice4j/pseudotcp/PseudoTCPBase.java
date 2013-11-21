@@ -416,8 +416,6 @@ public class PseudoTCPBase
             return;
         }
 
-        now = now & 0xFFFFFFFFL;
-
         // Check if it's time to retransmit a segment
         if (m_rto_base > 0 && (timeDiff(m_rto_base + m_rx_rto, now) <= 0))
         {
