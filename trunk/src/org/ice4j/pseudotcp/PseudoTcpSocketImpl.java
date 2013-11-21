@@ -459,7 +459,7 @@ class PseudoTcpSocketImpl
      */
     private void startThreads()
     {
-        pseudoTcp.notifyClock(System.currentTimeMillis());
+        pseudoTcp.notifyClock(PseudoTCPBase.now());
         receiveThread = new Thread(new Runnable()
         {
             public void run()
@@ -713,8 +713,8 @@ class PseudoTcpSocketImpl
         {
             synchronized (pseudoTcp)
             {
-                pseudoTcp.notifyClock(System.currentTimeMillis());
-                sleep = pseudoTcp.getNextClock(System.currentTimeMillis());
+                pseudoTcp.notifyClock(PseudoTCPBase.now());
+                sleep = pseudoTcp.getNextClock(PseudoTCPBase.now());
             }
 
             //there might be negative interval even if there's no error
