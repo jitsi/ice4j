@@ -507,12 +507,15 @@ class PseudoTcpSocketImpl
      */
     public void onTcpReadable(PseudoTCPBase tcp)
     {
-        //release all thread blocked at read_notify monitor
-        synchronized (read_notify)
+        if(logger.isLoggable(Level.FINER))
         {
             logger.log(
                 Level.FINER,
                 "TCP READABLE data available for reading: "+tcp.getAvailable());
+        }
+        //release all thread blocked at read_notify monitor
+        synchronized (read_notify)
+        {
             read_notify.notifyAll();
         }
     }
@@ -877,7 +880,8 @@ class PseudoTcpSocketImpl
          * @throws IOException in case of error or if timeout occurs
          */
         @Override
-        public int read(byte[] buffer, int offset, int length) throws IOException
+        public int read(byte[] buffer, int offset, int length)
+            throws IOException
         {
             long start = System.currentTimeMillis();
             int read;
@@ -886,42 +890,52 @@ class PseudoTcpSocketImpl
                 logger.log(Level.FINER, "Read Recv");
                 try
                 {
-                    synchronized (read_notify)
+                    read = pseudoTcp.recv(buffer, offset, length);
+                    if (logger.isLoggable(Level.FINER))
                     {
-                        read = pseudoTcp.recv(buffer, offset, length);
-                        if (logger.isLoggable(Level.FINER))
+                        logger.log(Level.FINER,
+                                   "Read Recv read count: " + read);
+                    }
+                    if (read > 0)
+                    {
+                        return read;
+                    }
+                    logger.log(Level.FINER, "Read wait for data available");
+                    if(readTimeout > 0)
+                    {
+                        //Check for timeout
+                        long elapsed = System.currentTimeMillis() - start;
+                        long left = readTimeout - elapsed;
+                        if(left <= 0)
                         {
-                            logger.log(Level.FINER, "Read Recv read count: " + read);
+                            IOException exc =
+                                new IOException("Read operation timeout");
+                            pseudoTcp.closedown(exc);
+                            throw exc;
                         }
-                        if (read > 0)
+                        synchronized (read_notify)
                         {
-                            return read;
-                        }
-                        logger.log(Level.FINER, "Read wait for data available");
-                        if(readTimeout > 0)
-                        {
-                            //Check for timeout
-                            long elapsed = System.currentTimeMillis() - start;
-                            long left = readTimeout - elapsed;
-                            if(left <= 0)
+                            if(pseudoTcp.getAvailable() == 0)
                             {
-                                IOException exc = 
-                                    new IOException("Read operation timeout");
-                                pseudoTcp.closedown(exc);
-                                throw exc;
+                                read_notify.wait(left);
                             }
-                            read_notify.wait(left);
                         }
-                        else
+                    }
+                    else
+                    {
+                        synchronized (read_notify)
                         {
-                            read_notify.wait();
+                            if(pseudoTcp.getAvailable() == 0)
+                            {
+                                read_notify.wait();
+                            }
                         }
-                        if (logger.isLoggable(Level.FINER))
-                        {
-                            logger.log(
-                                Level.FINER,
-                                "Read notified: " + pseudoTcp.getAvailable());
-                        }
+                    }
+                    if (logger.isLoggable(Level.FINER))
+                    {
+                        logger.log(
+                            Level.FINER,
+                            "Read notified: " + pseudoTcp.getAvailable());
                     }
                     if (exception != null)
                     {
