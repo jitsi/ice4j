@@ -102,6 +102,12 @@ public class HostCandidateHarvester
             {
                 InetAddress addr = addresses.nextElement();
 
+                if (addr.isLoopbackAddress())
+                {
+                    //loopback again
+                    continue;
+                }
+
                 if((addr instanceof Inet4Address) || !isIPv6Disabled)
                 {
                     IceSocketWrapper sock = null;
