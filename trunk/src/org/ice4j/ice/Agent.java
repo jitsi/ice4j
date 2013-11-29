@@ -824,14 +824,31 @@ public class Agent
     public String generateLocalUserName(String media)
     {
         IceMediaStream stream = getStream(media);
-        String ret = null;
+        String ret;
 
-        if(stream == null || stream.getRemoteUfrag() == null)
+        if (stream == null)
         {
-            return null;
+            ret = null;
+            logger.warning(
+                    "Agent contains no IceMediaStream with name " + media
+                        + "!");
         }
+        else
+        {
+            String remoteUfrag = stream.getRemoteUfrag();
 
-        ret = stream.getRemoteUfrag() + ":" + getLocalUfrag();
+            if (remoteUfrag == null)
+            {
+                ret = null;
+                logger.warning(
+                        "Remote ufrag of IceMediaStream with name " + media
+                            + " is null!");
+            }
+            else
+            {
+                ret = remoteUfrag + ":" + getLocalUfrag();
+            }
+        }
         return ret;
     }
 
