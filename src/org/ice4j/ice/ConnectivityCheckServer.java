@@ -194,7 +194,7 @@ class ConnectivityCheckServer
 
         if(parentAgent.getCompatibilityMode() == CompatibilityMode.GTALK)
         {
-            /* add Mapped address */
+            /* add Mapped address and remove the XOR_MAPPED_ADDRESS one*/
             Attribute mappedAddressAttribute =
                 AttributeFactory.createMappedAddressAttribute(
                         evt.getRemoteAddress());
