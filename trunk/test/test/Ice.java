@@ -9,6 +9,7 @@ package test;
 
 import java.beans.*;
 import java.util.*;
+import java.util.logging.*;
 
 import org.ice4j.*;
 import org.ice4j.ice.*;
@@ -24,6 +25,12 @@ import org.ice4j.security.*;
  */
 public class Ice
 {
+    /**
+     * The <tt>Logger</tt> used by the <tt>Ice</tt>
+     * class and its instances for logging output.
+     */
+    private static final Logger logger
+        = Logger.getLogger(Ice.class.getName());
 
     /**
      * The indicator which determines whether the <tt>Ice</tt> application (i.e.
@@ -49,10 +56,10 @@ public class Ice
     {
         startTime = System.currentTimeMillis();
 
-        Agent localAgent = createAgent(9090);
+        Agent localAgent = createAgent(9090, false);
         localAgent.setNominationStrategy(
                         NominationStrategy.NOMINATE_HIGHEST_PRIO);
-        Agent remotePeer = createAgent(6060);
+        Agent remotePeer = createAgent(6060, false);
 
         localAgent.addStateChangeListener(new IceProcessingListener());
 
@@ -78,22 +85,22 @@ public class Ice
             stream.setRemotePassword(localAgent.getLocalPassword());
         }
 
-        System.out.println("Total candidate gathering time: "
+        logger.info("Total candidate gathering time: "
                         + (endTime - startTime) + "ms");
-        System.out.println("LocalAgent:\n" + localAgent);
+        logger.info("LocalAgent:\n" + localAgent);
 
         localAgent.startConnectivityEstablishment();
 
         if (START_CONNECTIVITY_ESTABLISHMENT_OF_REMOTE_PEER)
             remotePeer.startConnectivityEstablishment();
 
-        System.out.println("Local audio clist:\n"
+        logger.info("Local audio clist:\n"
                         + localAgent.getStream("audio").getCheckList());
 
         IceMediaStream videoStream = localAgent.getStream("video");
 
         if(videoStream != null)
-            System.out.println("Local video clist:\n"
+            logger.info("Local video clist:\n"
                             + videoStream.getCheckList());
 
         //Give processing enough time to finish. We'll System.exit() anyway
@@ -120,11 +127,11 @@ public class Ice
 
             Object iceProcessingState = evt.getNewValue();
 
-            System.out.println(
+            logger.info(
                     "Agent entered the " + iceProcessingState + " state.");
             if(iceProcessingState == IceProcessingState.COMPLETED)
             {
-                System.out.println(
+                logger.info(
                         "Total ICE processing time: "
                             + (processingEndTime - startTime) + "ms");
                 Agent agent = (Agent)evt.getSource();
@@ -133,26 +140,29 @@ public class Ice
                 for(IceMediaStream stream : streams)
                 {
                     String streamName = stream.getName();
-                    System.out.println(
+                    logger.info(
                             "Pairs selected for stream: " + streamName);
                     List<Component> components = stream.getComponents();
 
                     for(Component cmp : components)
                     {
                         String cmpName = cmp.getName();
-                        System.out.println(cmpName + ": "
+                        logger.info(cmpName + ": "
                                         + cmp.getSelectedPair());
                     }
                 }
 
-                System.out.println("Printing the completed check lists:");
+                logger.info("Printing the completed check lists:");
                 for(IceMediaStream stream : streams)
                 {
                     String streamName = stream.getName();
-                    System.out.println("Check list for  stream: " + streamName);
+                    logger.info("Check list for  stream: " + streamName);
                     //uncomment for a more verbose output
-                    System.out.println(stream.getCheckList());
+                    logger.info(stream.getCheckList().toString());
                 }
+
+                logger.info("Total ICE processing time to completion: "
+                    + (System.currentTimeMillis() - startTime));
             }
             else if(iceProcessingState == IceProcessingState.TERMINATED
                     || iceProcessingState == IceProcessingState.FAILED)
@@ -164,6 +174,8 @@ public class Ice
                  */
                 ((Agent) evt.getSource()).free();
 
+                logger.info("Total ICE processing time: "
+                    + (System.currentTimeMillis() - startTime));
                 System.exit(0);
             }
         }
@@ -325,7 +337,7 @@ public class Ice
         long endTime = System.currentTimeMillis();
         long total = endTime - startTime;
 
-        System.out.println("Total harvesting time: " + total + "ms.");
+        logger.info("Total harvesting time: " + total + "ms.");
 
         return agent;
     }
@@ -361,16 +373,16 @@ public class Ice
                 stream, Transport.UDP, rtpPort, rtpPort, rtpPort + 100);
 
         long endTime = System.currentTimeMillis();
-        System.out.println("RTP Component created in "
-                        + (endTime - startTime) +" ms");
+        logger.info("RTP Component created in "
+            + (endTime - startTime) + " ms");
         startTime = endTime;
         //rtcpComp
         agent.createComponent(
                 stream, Transport.UDP, rtpPort + 1, rtpPort + 1, rtpPort + 101);
 
         endTime = System.currentTimeMillis();
-        System.out.println("RTCP Component created in "
-                        + (endTime - startTime) +" ms");
+        logger.info("RTCP Component created in "
+            + (endTime - startTime) + " ms");
 
         return stream;
     }

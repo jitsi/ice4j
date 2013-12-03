@@ -53,17 +53,19 @@ public class TrickleIce
         //wait a bit so that the logger can stop dumping stuff:
         Thread.sleep(500);
 
-        System.err.println("=================== feed the following"
+        logger.info("=================== feed the following"
                     +" to the remote agent ===================");
 
 
-        System.err.println(localSDP);
+        logger.info("\n" + localSDP);
 
-        System.err.println("======================================"
+        logger.info("======================================"
             + "========================================\n");
 
         CandidatePrinter printer = new CandidatePrinter();
         printer.agent = localAgent;
+
+
         localAgent.startCandidateTrickle(printer);
 
 
@@ -77,15 +79,15 @@ public class TrickleIce
                 allCandidates += component.getLocalCandidateCount();
             }
         }
-        System.out.println("all candidates = " + allCandidates);
+        logger.info("all candidates = " + allCandidates);
 
-        String sdp = IceDistributed.readSDP();
+        /*String sdp = IceDistributed.readSDP();
 
         startTime = System.currentTimeMillis();
         SdpUtils.parseSDP(localAgent, sdp);
 
         localAgent.startConnectivityEstablishment();
-
+        */
 
         //Give processing enough time to finish. We'll System.exit() anyway
         //as soon as localAgent enters a final state.
@@ -121,20 +123,21 @@ public class TrickleIce
 
             for(Attribute attribute : update)
             {
-                System.err.print(attribute);
+                logger.info(attribute.toString().trim());
             }
 
             if(iceCandidates == null)
             {
                 try{Thread.sleep(1000);}catch(Exception e){};
 
-                System.err.println("ICE stats: time="
+                logger.info("ICE stats: time="
                     + agent.getTotalHarvestingTime() + "ms");
 
                 //print statistics
                 for (CandidateHarvester harvester : agent.getHarvesters())
                 {
-                    System.err.println(harvester.getHarvestStatistics());
+                    logger.info(
+                        harvester.getHarvestStatistics().toString().trim());
                 }
 
 
