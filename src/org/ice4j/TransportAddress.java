@@ -267,16 +267,9 @@ public class TransportAddress
                 //opposite is considerably lower than the probability of us
                 //trying to reach a distant global address through one of our
                 //own. Therefore we would return false here by default.
-
-                if(Boolean.getBoolean(
-                            StackProperties.ALLOW_LINK_TO_GLOBAL_REACHABILITY))
-                {
-                    return true;
-                }
-                else
-                {
-                    return false;
-                }
+                return
+                    Boolean.getBoolean(
+                            StackProperties.ALLOW_LINK_TO_GLOBAL_REACHABILITY);
             }
         }
 

@@ -609,17 +609,12 @@ public class Component
      * Returns a short <tt>String</tt> representation of this
      * <tt>Component</tt>.
      *
-     * @return  a short <tt>String</tt> representation of this
+     * @return a short <tt>String</tt> representation of this
      * <tt>Component</tt>.
      */
     public String toShortString()
     {
-        StringBuffer buff
-            = new StringBuffer(parentStream.getName());
-        buff.append(".");
-        buff.append(getName());
-
-        return buff.toString();
+        return parentStream.getName() + "." + getName();
     }
 
     /**
