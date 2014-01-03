@@ -9,13 +9,13 @@ package test;
 import java.beans.*;
 import java.io.*;
 import java.net.*;
-import java.util.*;
 import java.util.logging.*;
+
 import org.ice4j.*;
 import org.ice4j.ice.*;
 import org.ice4j.ice.harvest.*;
-import org.ice4j.security.*;
 import org.ice4j.pseudotcp.*;
+import org.ice4j.security.*;
 
 /**
  * Sample program which first uses ICE to discover UDP connectivity. After that
@@ -143,13 +143,16 @@ public class IcePseudoTcp
 
             Object iceProcessingState = evt.getNewValue();
 
-            logger.log(Level.INFO,
-                       "Local agent entered the " + iceProcessingState + " state.");
+            logger.log(
+                    Level.INFO,
+                    "Local agent entered the " + iceProcessingState
+                        + " state.");
             if (iceProcessingState == IceProcessingState.COMPLETED)
             {
-                logger.log(Level.INFO,
-                           "Local - Total ICE processing time: "
-                    + (processingEndTime - startTime) + "ms");
+                logger.log(
+                        Level.INFO,
+                        "Local - Total ICE processing time: "
+                            + (processingEndTime - startTime) + "ms");
                 Agent agent = (Agent) evt.getSource();
                 logger.log(Level.INFO, "Local: Create pseudo tcp stream");
                 IceMediaStream dataStream = agent.getStream("data");
@@ -157,8 +160,10 @@ public class IcePseudoTcp
                 CandidatePair selectedPair = udpComponent.getSelectedPair();
                 if (selectedPair != null)
                 {
-                    LocalCandidate localCandidate = selectedPair.getLocalCandidate();
-                    Candidate remoteCandidate = selectedPair.getRemoteCandidate();
+                    LocalCandidate localCandidate
+                        = selectedPair.getLocalCandidate();
+                    Candidate<?> remoteCandidate
+                        = selectedPair.getRemoteCandidate();
                     logger.log(Level.INFO, "Local: " + localCandidate);
                     logger.log(Level.INFO, "Remote: " + remoteCandidate);
                     try
@@ -175,7 +180,9 @@ public class IcePseudoTcp
                 }
                 else
                 {
-                    logger.log(Level.INFO, "Failed to select any candidate pair");
+                    logger.log(
+                            Level.INFO,
+                            "Failed to select any candidate pair");
                 }
             }
             else
@@ -188,8 +195,9 @@ public class IcePseudoTcp
                      * that Agent instances are to be explicitly prepared for
                      * garbage collection.
                      */
-                    if (localJob != null
-                    		&& iceProcessingState == IceProcessingState.TERMINATED)
+                    if ((localJob != null)
+                            && (iceProcessingState
+                                    == IceProcessingState.TERMINATED))
                     {
                     	localJob.start();                        
                     }
@@ -217,8 +225,10 @@ public class IcePseudoTcp
 
             Object iceProcessingState = evt.getNewValue();
 
-            logger.log(Level.INFO,
-                       "Remote agent entered the " + iceProcessingState + " state.");
+            logger.log(
+                    Level.INFO,
+                    "Remote agent entered the " + iceProcessingState
+                        + " state.");
             if (iceProcessingState == IceProcessingState.COMPLETED)
             {
                 logger.log(Level.INFO,
@@ -232,8 +242,10 @@ public class IcePseudoTcp
                 CandidatePair usedPair = udpComponent.getSelectedPair();
                 if (usedPair != null)
                 {
-                    LocalCandidate localCandidate = usedPair.getLocalCandidate();
-                    Candidate remoteCandidate = usedPair.getRemoteCandidate();
+                    LocalCandidate localCandidate
+                        = usedPair.getLocalCandidate();
+                    Candidate<?> remoteCandidate
+                        = usedPair.getRemoteCandidate();
                     logger.log(Level.INFO,
                                "Remote: Local address " + localCandidate);
                     logger.log(Level.INFO,
@@ -267,8 +279,9 @@ public class IcePseudoTcp
                      * that Agent instances are to be explicitly prepared for
                      * garbage collection.
                      */
-                    if (remoteJob != null
-                    		&& iceProcessingState == IceProcessingState.TERMINATED)
+                    if ((remoteJob != null)
+                            && (iceProcessingState
+                                    == IceProcessingState.TERMINATED))
                     {
                     	remoteJob.start();                        
                     }
@@ -294,8 +307,10 @@ public class IcePseudoTcp
         Agent remotePeer =
             createAgent(remotePort);
 
-        localAgent.addStateChangeListener(new IcePseudoTcp.LocalIceProcessingListener());
-        remotePeer.addStateChangeListener(new IcePseudoTcp.RemoteIceProcessingListener());
+        localAgent.addStateChangeListener(
+                new IcePseudoTcp.LocalIceProcessingListener());
+        remotePeer.addStateChangeListener(
+                new IcePseudoTcp.RemoteIceProcessingListener());
 
         //let them fight ... fights forge character.
         localAgent.setControlling(true);
@@ -450,5 +465,4 @@ public class IcePseudoTcp
             logger.log(Level.FINEST, "Remote pseudotcp worker finished");
         }
     }
-
 }

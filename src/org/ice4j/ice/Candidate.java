@@ -26,8 +26,7 @@ import org.ice4j.*;
  * @author Emil Ivov
  * @author Lyubomir Marinov
  */
-public abstract class Candidate
-    <T extends Candidate<?>>
+public abstract class Candidate<T extends Candidate<?>>
     implements Comparable<T>
 {
     /**

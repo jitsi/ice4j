@@ -125,13 +125,13 @@ public class SdpUtils
             Component rtpComponent = stream.getComponent(Component.RTP);
             Component rtcpComponent = stream.getComponent(Component.RTCP);
 
-            Candidate defaultRtpCandidate
+            Candidate<?> defaultRtpCandidate
                 = rtpComponent.findRemoteCandidate(defaultRtpAddress);
             rtpComponent.setDefaultRemoteCandidate(defaultRtpCandidate);
 
             if(rtcpComponent != null)
             {
-                Candidate defaultRtcpCandidate
+                Candidate<?> defaultRtcpCandidate
                     = rtcpComponent.findRemoteCandidate(defaultRtcpAddress);
                 rtcpComponent.setDefaultRemoteCandidate(defaultRtcpCandidate);
             }
