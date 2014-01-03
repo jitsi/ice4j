@@ -245,14 +245,15 @@ public class Ice
                                                  Component remoteComponent)
     {
         List<LocalCandidate> remoteCandidates
-                                = remoteComponent.getLocalCandidates();
+            = remoteComponent.getLocalCandidates();
 
         localComponent.setDefaultRemoteCandidate(
-                        remoteComponent.getDefaultCandidate());
+                remoteComponent.getDefaultCandidate());
 
-        for(Candidate rCand : remoteCandidates)
+        for(Candidate<?> rCand : remoteCandidates)
         {
-            localComponent.addRemoteCandidate(new RemoteCandidate(
+            localComponent.addRemoteCandidate(
+                    new RemoteCandidate(
                             rCand.getTransportAddress(),
                             localComponent,
                             rCand.getType(),

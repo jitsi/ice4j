@@ -6,14 +6,14 @@
  */
 package test;
 
+import java.util.*;
+import java.util.logging.*;
+
+import javax.sdp.*;
+
 import org.ice4j.ice.*;
 import org.ice4j.ice.harvest.*;
 import org.ice4j.ice.sdp.*;
-
-import javax.sdp.*;
-import java.io.*;
-import java.util.*;
-import java.util.logging.*;
 
 /**
  * An example of using trickle ICE.

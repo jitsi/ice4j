@@ -20,9 +20,9 @@ public class Signalling
     /**
      * The socket where we send and receive signalling
      */
-    private Socket signallingSocket = null;
+    private Socket signallingSocket;
 
-    private SignallingCallback signallingCallback = null;
+    private SignallingCallback signallingCallback;
 
     /**
      * Creates a signalling instance over the specified socket.
@@ -49,12 +49,12 @@ public class Signalling
      * socket stuff).
      */
     public static Signalling createServerSignalling(
-                                       InetSocketAddress socketAddress,
-                                       SignallingCallback signallingCallback)
+            InetSocketAddress socketAddress,
+            SignallingCallback signallingCallback)
         throws Throwable
     {
-        ServerSocket serverSocket = new ServerSocket(socketAddress);
-
-        Signalling signalling = new Signalling(socketAddress, signallingCallback);
+//        ServerSocket serverSocket = new ServerSocket(socketAddress);
+//        Signalling signalling = new Signalling(socketAddress, signallingCallback);
+        return null;
     }
 }
