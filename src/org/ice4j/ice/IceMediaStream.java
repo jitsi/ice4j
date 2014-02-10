@@ -32,6 +32,31 @@ public class IceMediaStream
         Logger.getLogger(IceMediaStream.class.getName());
 
     /**
+     * The property name that we use when delivering events notifying listeners
+     * that the consent freshness of a pair has changed.
+     */
+    public static final String PROPERTY_PAIR_CONSENT_FRESHNESS_CHANGED
+        = "PairConsentFreshnessChanged";
+
+    /**
+     * The property name that we use when delivering events notifying listeners
+     * of newly nominated pairs.
+     */
+    public static final String PROPERTY_PAIR_NOMINATED = "PairNominated";
+
+    /**
+     * The property name that we use when delivering events notifying listeners
+     * that a pair has changed states.
+     */
+    public static final String PROPERTY_PAIR_STATE_CHANGED = "PairStateChanged";
+
+    /**
+     * The property name that we use when delivering events notifying listeners
+     * of newly validated pairs.
+     */
+    public static final String PROPERTY_PAIR_VALIDATED = "PairValidated";
+
+    /**
      * The name of this media stream. The name is equal to the value specified
      * in the SDP description.
      */
@@ -72,24 +97,6 @@ public class IceMediaStream
      * The agent that this media stream belongs to.
      */
     private final Agent parentAgent;
-
-    /**
-     * The property name that we use when delivering events notifying listeners
-     * of newly validated pairs.
-     */
-    public static final String PROPERTY_PAIR_VALIDATED = "PairValidated";
-
-    /**
-     * The property name that we use when delivering events notifying listeners
-     * that a pair has changed states..
-     */
-    public static final String PROPERTY_PAIR_STATE_CHANGED = "PairStateChanged";
-
-    /**
-     * The property name that we use when delivering events notifying listeners
-     * of newly nominated pairs.
-     */
-    public static final String PROPERTY_PAIR_NOMINATED = "PairNominated";
 
     /**
      * Contains {@link PropertyChangeListener}s registered with this {@link
@@ -176,9 +183,12 @@ public class IceMediaStream
     @Override
     public String toString()
     {
-        StringBuffer buff = new StringBuffer( "media stream:")
-            .append(getName());
-        buff.append(" (component count=").append(getComponentCount())
+        StringBuilder buff
+            = new StringBuilder( "media stream:")
+                .append(getName());
+
+        buff.append(" (component count=")
+            .append(getComponentCount())
             .append(")");
 
         for (Component cmp : getComponents())
@@ -283,10 +293,12 @@ public class IceMediaStream
         synchronized (components)
         {
             Iterator<Map.Entry<Integer, Component>> cmpEntries
-                            = components.entrySet().iterator();
+                = components.entrySet().iterator();
+
             while (cmpEntries.hasNext())
             {
                 Component component = cmpEntries.next().getValue();
+
                 component.free();
                 cmpEntries.remove();
             }
@@ -357,9 +369,7 @@ public class IceMediaStream
         for(LocalCandidate lc : localCnds)
         {
             if(lc instanceof UPNPCandidate)
-            {
                 upnpBase = lc.getBase();
-            }
         }
 
         for(LocalCandidate localCnd : localCnds)
@@ -372,9 +382,9 @@ public class IceMediaStream
             {
                 if(localCnd.canReach(remoteCnd))
                 {
-                    if(localCnd.getTransport() == Transport.TCP &&
-                        parentAgent.getCompatibilityMode() ==
-                            CompatibilityMode.GTALK)
+                    if(localCnd.getTransport() == Transport.TCP
+                            && parentAgent.getCompatibilityMode()
+                                    == CompatibilityMode.GTALK)
                     {
                         final LocalCandidate loc = localCnd;
                         final RemoteCandidate remot = remoteCnd;
@@ -533,9 +543,7 @@ public class IceMediaStream
      */
     public LocalCandidate findLocalCandidate(TransportAddress localAddress)
     {
-        Collection<Component> cmpCol = components.values();
-
-        for( Component cmp : cmpCol)
+        for( Component cmp : components.values())
         {
             LocalCandidate cnd = cmp.findLocalCandidate(localAddress);
 
@@ -560,9 +568,7 @@ public class IceMediaStream
      */
     public RemoteCandidate findRemoteCandidate(TransportAddress remoteAddress)
     {
-        Collection<Component> cmpCol = components.values();
-
-        for( Component cmp : cmpCol)
+        for( Component cmp : components.values())
         {
             RemoteCandidate cnd = cmp.findRemoteCandidate(remoteAddress);
 
@@ -595,8 +601,8 @@ public class IceMediaStream
             for( CandidatePair pair : checkList)
             {
                 if( pair.getLocalCandidate().getTransportAddress()
-                                .equals(localAddress)
-                    && pair.getRemoteCandidate().getTransportAddress()
+                            .equals(localAddress)
+                        && pair.getRemoteCandidate().getTransportAddress()
                                 .equals(remoteAddress) )
                 {
                     return pair;
@@ -627,8 +633,8 @@ public class IceMediaStream
                 LocalCandidate local = pair.getLocalCandidate();
                 RemoteCandidate remote = pair.getRemoteCandidate();
 
-                if(local.getUfrag().equals(remoteUFrag) &&
-                    remote.getUfrag().equals(localUFrag))
+                if(local.getUfrag().equals(remoteUFrag)
+                        && remote.getUfrag().equals(localUFrag))
                 {
                     return pair;
                 }
@@ -648,12 +654,8 @@ public class IceMediaStream
 
         synchronized (components)
         {
-            Collection<Component> cmpCol = components.values();
-
-            for( Component cmp : cmpCol)
-            {
+            for(Component cmp : components.values())
                 num += cmp.coundHostCandidates();
-            }
         }
 
         return num;
@@ -670,7 +672,7 @@ public class IceMediaStream
     {
         synchronized(checkList)
         {
-            this.checkList.add(candidatePair);
+            checkList.add(candidatePair);
         }
     }
 
@@ -706,8 +708,10 @@ public class IceMediaStream
         synchronized(validList)
         {
             for(CandidatePair pair : validList)
+            {
                 if (pair.getFoundation().equals(foundation))
                     return true;
+            }
         }
         return false;
     }
@@ -730,8 +734,8 @@ public class IceMediaStream
         {
             for(CandidatePair pair : validList)
             {
-                if (pair.isNominated() && pair.getParentComponent() ==
-                    component)
+                if (pair.isNominated()
+                        && pair.getParentComponent() == component)
                 {
                     return true;
                 }
@@ -751,17 +755,15 @@ public class IceMediaStream
      */
     protected boolean validListContainsAllComponents()
     {
-        List<Component> cmpList = getComponents();
-        for(Component cmp : cmpList)
+        for(Component cmp : getComponents())
         {
-            if (getValidPair(cmp) != null)
-                continue;
-
-            //it looks like there's at least one component we don't have a
-            //valid candidate for.
-            return false;
+            if (getValidPair(cmp) == null)
+            {
+                //it looks like there's at least one component we don't have a
+                //valid candidate for.
+                return false;
+            }
         }
-
         return true;
     }
 
@@ -781,8 +783,10 @@ public class IceMediaStream
         synchronized (validList)
         {
             for(CandidatePair pair : validList)
+            {
                 if(pair.isNominated())
                     components.remove(pair.getParentComponent());
+            }
         }
 
         return components.isEmpty();
@@ -800,9 +804,10 @@ public class IceMediaStream
     protected boolean allComponentsHaveSelected()
     {
         for(Component component : getComponents())
+        {
             if(component.getSelectedPair() == null)
                 return false;
-
+        }
         return true;
     }
 
@@ -821,10 +826,11 @@ public class IceMediaStream
         synchronized(validList)
         {
             for(CandidatePair pair : validList)
+            {
                 if(pair.getParentComponent() == component)
                     return pair;
+            }
         }
-
         return null;
     }
 
@@ -841,7 +847,7 @@ public class IceMediaStream
         synchronized(streamListeners)
         {
             if(!streamListeners.contains(l))
-                this.streamListeners.add(l);
+                streamListeners.add(l);
         }
     }
 
@@ -855,7 +861,7 @@ public class IceMediaStream
     {
         synchronized(streamListeners)
         {
-            this.streamListeners.remove(l);
+            streamListeners.remove(l);
         }
     }
 
@@ -869,25 +875,24 @@ public class IceMediaStream
      * @param newValue the new value of the property that changed.
      */
     protected void firePairPropertyChange(CandidatePair source,
-                                       String        propertyName,
-                                       Object        oldValue,
-                                       Object        newValue)
+                                          String        propertyName,
+                                          Object        oldValue,
+                                          Object        newValue)
     {
-        List<PropertyChangeListener> listenersCopy;
+        PropertyChangeListener[] ls;
 
         synchronized(streamListeners)
         {
-            listenersCopy
-                = new LinkedList<PropertyChangeListener>(streamListeners);
+            ls
+                = streamListeners.toArray(
+                        new PropertyChangeListener[streamListeners.size()]);
         }
 
-        PropertyChangeEvent evt = new PropertyChangeEvent(
-                        source, propertyName, oldValue, newValue);
+        PropertyChangeEvent ev
+            = new PropertyChangeEvent(source, propertyName, oldValue, newValue);
 
-        for(PropertyChangeListener l : listenersCopy)
-        {
-            l.propertyChange(evt);
-        }
+        for(PropertyChangeListener l : ls)
+            l.propertyChange(ev);
     }
 
     /**

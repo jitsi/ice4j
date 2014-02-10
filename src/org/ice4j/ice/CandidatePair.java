@@ -20,10 +20,18 @@ import org.ice4j.stack.*;
  * sending a STUN request from the local candidate to the remote candidate.
  *
  * @author Emil Ivov
+ * @author Lyubomir Marinov
  */
 public class CandidatePair
     implements Comparable<CandidatePair>
 {
+    /**
+     * The value of the <tt>consentFreshness</tt> property of
+     * <tt>CandidatePair</tt> which indicates that the time in milliseconds of
+     * the latest consent freshness confirmation is unknown.
+     */
+    public static final long CONSENT_FRESHNESS_UNKNOWN = -1;
+
     /**
      * The value of <tt>Math.pow(2, 32)</tt> calculated once for the purposes of
      * optimizing performance.
@@ -93,6 +101,11 @@ public class CandidatePair
      * IN_PROGRESS} state.
      */
     private TransactionID connCheckTranID = null;
+
+    /**
+     * The time in milliseconds of the latest consent freshness confirmation.
+     */
+    private long consentFreshness = CONSENT_FRESHNESS_UNKNOWN;
 
     /**
      * Creates a <tt>CandidatePair</tt> instance mapping <tt>localCandidate</tt>
@@ -264,25 +277,32 @@ public class CandidatePair
 
         this.state = newState;
 
-        if(newState != CandidatePairState.IN_PROGRESS)
+        if(newState == CandidatePairState.IN_PROGRESS)
         {
-            if (tranID != null)
+            if (tranID == null)
+            {
                 throw new IllegalArgumentException(
-                                "How could you have a transaction for a pair"
-                                + " that's not in the In-Progress state?");
+                        "Putting a pair into the In-Progress state MUST be"
+                            + " accomapnied with the TransactionID of the"
+                            + " connectivity check.");
+            }
         }
         else
         {
-            if (tranID == null)
-                throw new IllegalArgumentException("Putting a pair into the "
-                                +"In-Progress state MUST be accomapnied with "
-                                +"the TransactionID of the conn check.");
+            if (tranID != null)
+            {
+                throw new IllegalArgumentException(
+                        "How could you have a transaction for a pair that's not"
+                            + " in the In-Progress state?");
+            }
         }
         this.connCheckTranID = tranID;
 
         getParentComponent().getParentStream().firePairPropertyChange(
-                this, IceMediaStream.PROPERTY_PAIR_STATE_CHANGED,
-                    oldState, newState);
+                this,
+                IceMediaStream.PROPERTY_PAIR_STATE_CHANGED,
+                oldState,
+                newState);
     }
 
     /**
@@ -395,39 +415,32 @@ public class CandidatePair
         long thisPri = getPriority();
         long otherPri = candidatePair.getPriority();
 
-        return (thisPri < otherPri
-                        ? 1
-                        : (thisPri==otherPri
-                                        ? 0
-                                        : -1));
+        return (thisPri < otherPri) ? 1 : (thisPri == otherPri) ? 0 : -1;
     }
 
     /**
-     * Compares this <tt>CandidatePair</tt> to <tt>targetPair</tt> and returns
+     * Compares this <tt>CandidatePair</tt> to <tt>obj</tt> and returns
      * <tt>true</tt> if pairs have equal local and equal remote candidates and
      * <tt>false</tt> otherwise.
      *
-     * @param targetPair the <tt>Object</tt> that we'd like to compare this
-     * target pair to.
-     *
+     * @param obj the <tt>Object</tt> that we'd like to compare this pair to.
      * @return <tt>true</tt> if pairs have equal local and equal remote
      * candidates and <tt>false</tt> otherwise.
      */
-    public boolean equals(Object targetPair)
+    @Override
+    public boolean equals(Object obj)
     {
-        if (! (targetPair instanceof CandidatePair)
-            || targetPair == null
-            || !localCandidate.equals(((CandidatePair)targetPair)
-                            .localCandidate)
-            || !remoteCandidate.equals(((CandidatePair)targetPair)
-                            .remoteCandidate))
+        if ((obj == null) || !(obj instanceof CandidatePair))
             return false;
+
+        CandidatePair candidatePair = (CandidatePair) obj;
 
         //DO NOT change this method to also depend on other pair properties
         //because the Conn Check Client counts on it only using the candidates
         //for comparisons.
-
-        return true;
+        return
+            localCandidate.equals(candidatePair.localCandidate)
+                && remoteCandidate.equals(candidatePair.remoteCandidate);
     }
 
     /**
@@ -435,12 +448,13 @@ public class CandidatePair
      *
      * @return a String representation of the object.
      */
+    @Override
     public String toString()
     {
-        return "CandidatePair (State=" + getState()
-            + " Priority=" + getPriority()
-            + "):\n\tLocalCandidate=" + getLocalCandidate()
-            + "\n\tRemoteCandidate=" + getRemoteCandidate();
+        return
+            "CandidatePair (State=" + getState() + " Priority=" + getPriority()
+                + "):\n\tLocalCandidate=" + getLocalCandidate()
+                + "\n\tRemoteCandidate=" + getRemoteCandidate();
     }
 
     /**
@@ -504,6 +518,7 @@ public class CandidatePair
          * @see     java.lang.Object#equals(java.lang.Object)
          * @see java.lang.Object#hashCode()
          */
+        @Override
         public boolean equals(Object obj)
         {
             return obj instanceof PairComparator;
@@ -584,8 +599,11 @@ public class CandidatePair
     public void nominate()
     {
         this.isNominated = true;
-        getParentComponent().getParentStream().firePairPropertyChange(this,
-                        IceMediaStream.PROPERTY_PAIR_NOMINATED, false, true);
+        getParentComponent().getParentStream().firePairPropertyChange(
+                this,
+                IceMediaStream.PROPERTY_PAIR_NOMINATED,
+                false,
+                true);
     }
 
     /**
@@ -619,7 +637,56 @@ public class CandidatePair
     protected void validate()
     {
         this.isValid = true;
-        getParentComponent().getParentStream().firePairPropertyChange(this,
-                        IceMediaStream.PROPERTY_PAIR_VALIDATED, false, true);
+        getParentComponent().getParentStream().firePairPropertyChange(
+                this,
+                IceMediaStream.PROPERTY_PAIR_VALIDATED,
+                false,
+                true);
+    }
+
+    /**
+     * Gets the time in milliseconds of the latest consent freshness
+     * confirmation.
+     *
+     * @return the time in milliseconds of the latest consent freshness
+     * confirmation
+     */
+    public long getConsentFreshness()
+    {
+        return consentFreshness;
+    }
+
+    /**
+     * Sets the time in milliseconds of the latest consent freshness
+     * confirmation to now.
+     */
+    void setConsentFreshness()
+    {
+        setConsentFreshness(System.currentTimeMillis());
+    }
+
+    /**
+     * Sets the time in milliseconds of the latest consent freshness
+     * confirmation to a specific time.
+     *
+     * @param consentFreshness the time in milliseconds of the latest consent
+     * freshness to be set on this <tt>CandidatePair</tt>
+     */
+    void setConsentFreshness(long consentFreshness)
+    {
+        if (this.consentFreshness != consentFreshness)
+        {
+            long oldValue = this.consentFreshness;
+
+            this.consentFreshness = consentFreshness;
+
+            long newValue = this.consentFreshness;
+
+            getParentComponent().getParentStream().firePairPropertyChange(
+                    this,
+                    IceMediaStream.PROPERTY_PAIR_CONSENT_FRESHNESS_CHANGED,
+                    oldValue,
+                    newValue);
+        }
     }
 }

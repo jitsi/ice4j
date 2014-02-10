@@ -346,35 +346,30 @@ class NetAccessManager
      * @param srcAddr the access point to use to send the message
      * @param remoteAddr the destination of the message.
      *
-     * @throws IOException  if an error occurs while sending message bytes
-     * through the network socket.
      * @throws IllegalArgumentException if the apDescriptor references an
      * access point that had not been installed,
+     * @throws IOException  if an error occurs while sending message bytes
+     * through the network socket.
      */
     void sendMessage(
             Message stunMessage,
             TransportAddress srcAddr,
             TransportAddress remoteAddr)
-        throws IOException, IllegalArgumentException
+        throws IllegalArgumentException,
+               IOException
     {
         byte[] bytes = stunMessage.encode(stunStack);
+
         Connector ap = null;
 
-        if(srcAddr.getTransport() == Transport.UDP)
-        {
+        if (srcAddr.getTransport() == Transport.UDP)
             ap = netUDPAccessPoints.get(srcAddr);
-        }
-        else if(srcAddr.getTransport() == Transport.TCP)
-        {
+        else if (srcAddr.getTransport() == Transport.TCP)
             ap = netTCPAccessPoints.get(srcAddr);
-        }
-
         if (ap == null)
         {
-            throw
-                new IllegalArgumentException(
-                        "No socket has been added for source address: "
-                            + srcAddr);
+            throw new IllegalArgumentException(
+                    "No socket has been added for source address: " + srcAddr);
         }
 
         ap.sendMessage(bytes, remoteAddr);

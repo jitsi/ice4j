@@ -17,9 +17,9 @@ public interface ResponseCollector
     /**
      * Dispatch the specified response.
      *
-     * @param response the response to dispatch.
+     * @param event the response to dispatch.
      */
-    public void processResponse(StunResponseEvent response);
+    public void processResponse(StunResponseEvent event);
 
     /**
      * Notifies this collector that no response had been received after repeated

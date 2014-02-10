@@ -111,26 +111,17 @@ class ConnectivityCheckClient
      * @param candidatePair that {@link CandidatePair} that we'd like to send
      * an indication
      */
-    protected void sendBindingIndicationForPair(
-        CandidatePair candidatePair)
+    protected void sendBindingIndicationForPair(CandidatePair candidatePair)
     {
         LocalCandidate localCandidate = candidatePair.getLocalCandidate();
-
         Indication indication = MessageFactory.createBindingIndication();
-
-        TransactionID tran = TransactionID.createNewTransactionID();
-        tran.setApplicationData(candidatePair);
 
         try
         {
-            TransportAddress localAddr = localCandidate.getBase().
-                getTransportAddress();
-
             stunStack.sendIndication(
-                        indication,
-                        candidatePair
-                            .getRemoteCandidate().getTransportAddress(),
-                        localAddr);
+                    indication,
+                    candidatePair.getRemoteCandidate().getTransportAddress(),
+                    localCandidate.getBase().getTransportAddress());
             if(logger.isLoggable(Level.FINEST))
             {
                 logger.finest(
@@ -140,14 +131,15 @@ class ConnectivityCheckClient
         catch (Exception ex)
         {
             IceSocketWrapper stunSocket = localCandidate.getStunSocket(null);
+
             if(stunSocket != null)
+            {
                 logger.log(
-                    Level.INFO,
-                    "Failed to send " + indication
-                        + " through " + stunSocket.getLocalSocketAddress(),
-                    ex);
-            stunSocket = null;
-            tran = null;
+                        Level.INFO,
+                        "Failed to send " + indication + " through "
+                            + stunSocket.getLocalSocketAddress(),
+                        ex);
+            }
         }
     }
 
@@ -166,6 +158,30 @@ class ConnectivityCheckClient
      */
     protected TransactionID startCheckForPair(CandidatePair candidatePair)
     {
+        return startCheckForPair(candidatePair, -1, -1, -1);
+    }
+
+    /**
+     * Creates a STUN {@link Request} containing the necessary PRIORITY and
+     * CONTROLLING/CONTROLLED attributes. Also stores a reference to
+     * <tt>candidatePair</tt> in the newly created transactionID so that we
+     * could then refer back to it in subsequent response or failure events.
+     *
+     * @param candidatePair that {@link CandidatePair} that we'd like to start
+     * a check for.
+     * @param originalWiatIterval
+     * @param maxWaitInterval
+     * @param maxRetransmissions
+     * @return a reference to the {@link TransactionID} used in the connectivity
+     * check client transaction or <tt>null</tt> if sending the check has
+     * failed for some reason.
+     */
+    protected TransactionID startCheckForPair(
+            CandidatePair candidatePair,
+            int originalWiatIterval,
+            int maxWaitInterval,
+            int maxRetransmissions)
+    {
         LocalCandidate localCandidate = candidatePair.getLocalCandidate();
         //we don't need to do a canReach() verification here as it has been
         //already verified during the gathering process.
@@ -175,25 +191,23 @@ class ConnectivityCheckClient
         if(parentAgent.getCompatibilityMode() == CompatibilityMode.GTALK)
         {
             /* Google Talk ICE dialect just need the username */
-            String localUserName = parentAgent.generateLocalUserName(
-                    candidatePair.getRemoteCandidate(),
-                    candidatePair.getLocalCandidate());
-
-            UsernameAttribute unameAttr =
-                AttributeFactory.createUsernameAttribute(localUserName);
+            String localUserName
+                = parentAgent.generateLocalUserName(
+                        candidatePair.getRemoteCandidate(),
+                        candidatePair.getLocalCandidate());
+            UsernameAttribute unameAttr
+                = AttributeFactory.createUsernameAttribute(localUserName);
 
             request.addAttribute(unameAttr);
 
-            if (parentAgent.isControlling())
+            //if we are the controlling agent then we need to indicate our
+            //nominated pairs.
+            if (parentAgent.isControlling() && candidatePair.isNominated())
             {
-                //if we are the controlling agent then we need to indicate our
-                //nominated pairs.
-                if(candidatePair.isNominated())
-                {
-                    logger.fine("set useCandidateSent for " +
-                        candidatePair.toShortString());
-                    candidatePair.setUseCandidateSent();
-                }
+                logger.fine(
+                        "set useCandidateSent for "
+                            + candidatePair.toShortString());
+                candidatePair.setUseCandidateSent();
             }
         }
         else
@@ -201,8 +215,8 @@ class ConnectivityCheckClient
             //the priority we'd like the remote party to use for a peer
             //reflexive candidate if one is discovered as a consequence of this
             //check.
-            PriorityAttribute priority =
-                AttributeFactory.createPriorityAttribute(
+            PriorityAttribute priority
+                = AttributeFactory.createPriorityAttribute(
                         localCandidate.computePriorityForType(
                                 CandidateType.PEER_REFLEXIVE_CANDIDATE));
 
@@ -211,102 +225,102 @@ class ConnectivityCheckClient
             //controlling controlled
             if (parentAgent.isControlling())
             {
-                request.addAttribute(AttributeFactory
-                                .createIceControllingAttribute(parentAgent
-                                                .getTieBreaker()));
+                request.addAttribute(
+                        AttributeFactory.createIceControllingAttribute(
+                                parentAgent.getTieBreaker()));
 
                 //if we are the controlling agent then we need to indicate our
                 //nominated pairs.
                 if(candidatePair.isNominated())
                 {
-                    logger.fine("Add USE-CANDIDATE in check for: " +
-                            candidatePair.toShortString());
-                    request.addAttribute(AttributeFactory
-                                    .createUseCandidateAttribute());
+                    logger.fine(
+                            "Add USE-CANDIDATE in check for: "
+                                + candidatePair.toShortString());
+                    request.addAttribute(
+                            AttributeFactory.createUseCandidateAttribute());
                 }
             }
             else
             {
-                request.addAttribute(AttributeFactory
-                                .createIceControlledAttribute(parentAgent
-                                                .getTieBreaker()));
+                request.addAttribute(
+                        AttributeFactory.createIceControlledAttribute(
+                                parentAgent.getTieBreaker()));
             }
 
             //credentials
-            String localUserName = parentAgent.generateLocalUserName(
-                    candidatePair.getParentComponent().getParentStream().
-                        getName());
+            String media
+                = candidatePair
+                    .getParentComponent().getParentStream().getName();
+            String localUserName = parentAgent.generateLocalUserName(media);
 
             if(localUserName == null)
                 return null;
 
-            UsernameAttribute unameAttr =
-                AttributeFactory.createUsernameAttribute(localUserName);
+            UsernameAttribute unameAttr
+                = AttributeFactory.createUsernameAttribute(localUserName);
 
             request.addAttribute(unameAttr);
 
             // TODO Also implement SASL prepare
-            MessageIntegrityAttribute msgIntegrity = AttributeFactory
-                .createMessageIntegrityAttribute(localUserName);
+            MessageIntegrityAttribute msgIntegrity
+                = AttributeFactory.createMessageIntegrityAttribute(
+                        localUserName);
 
             // when we will encode the MESSAGE-INTEGRITY attribute (thus
             // generate the HMAC-SHA1 authentication), we need to know the
             // remote key of the current stream, that why we pass the media
             // name.
-            msgIntegrity.setMedia(
-                    candidatePair.getParentComponent().getParentStream().
-                        getName());
-
+            msgIntegrity.setMedia(media);
             request.addAttribute(msgIntegrity);
         }
 
         TransactionID tran = TransactionID.createNewTransactionID();
+
         tran.setApplicationData(candidatePair);
 
-        logger.fine("start check for " + candidatePair.toShortString()
-                            + " tid " + tran);
-
+        logger.fine(
+                "start check for " + candidatePair.toShortString() + " tid "
+                    + tran);
         try
         {
-            TransportAddress localAddr = localCandidate.getBase().
-                getTransportAddress();
-
             tran
                 = stunStack.sendRequest(
                         request,
                         candidatePair
                             .getRemoteCandidate().getTransportAddress(),
-                        localAddr,
+                        localCandidate.getBase().getTransportAddress(),
                         this,
-                        tran);
+                        tran,
+                        originalWiatIterval,
+                        maxWaitInterval,
+                        maxRetransmissions);
             if(logger.isLoggable(Level.FINEST))
             {
                 logger.finest(
-                        "checking pair " + candidatePair
-                            + " with tran=" + tran);
+                        "checking pair " + candidatePair + " tid " + tran);
             }
         }
         catch (Exception ex)
         {
+            tran = null;
+
             IceSocketWrapper stunSocket = localCandidate.getStunSocket(null);
+
             if(stunSocket != null)
             {
-                String msg = "Failed to send " + request
-                    + " through " + stunSocket.getLocalSocketAddress();
+                String msg
+                    = "Failed to send " + request + " through "
+                        + stunSocket.getLocalSocketAddress() + ".";
 
-                if((ex instanceof NoRouteToHostException) ||
-                    (ex.getMessage() != null &&
-                        ex.getMessage().equals("No route to host")))
+                if((ex instanceof NoRouteToHostException)
+                        || (ex.getMessage() != null
+                                && ex.getMessage().equals("No route to host")))
                 {
-                    msg += " No route to host";
+                    msg += " No route to host.";
                     ex = null;
                 }
-
                 logger.log(Level.INFO, msg, ex);
-
             }
-            stunSocket = null;
-            tran = null;
         }
 
         return tran;
@@ -318,17 +332,17 @@ class ConnectivityCheckClient
      * to FAILED, or SUCCEDED, or rescheduling a check in case of a role
      * conflict.
      *
-     * @param evt the {@link StunResponseEvent} that contains the newly
-     * received response.
+     * @param ev the {@link StunResponseEvent} that contains the newly received
+     * response.
      */
-    public void processResponse(StunResponseEvent evt)
+    public void processResponse(StunResponseEvent ev)
     {
         CandidatePair checkedPair
-            = (CandidatePair) evt.getTransactionID().getApplicationData();
+            = (CandidatePair) ev.getTransactionID().getApplicationData();
 
         //make sure that the response came from the right place.
-        if (parentAgent.getCompatibilityMode() == CompatibilityMode.RFC5245 &&
-            !checkSymmetricAddresses(evt))
+        if (parentAgent.getCompatibilityMode() == CompatibilityMode.RFC5245
+                && !checkSymmetricAddresses(ev))
         {
             logger.fine("Received a non-symmetric response for pair: "
                         + checkedPair.toShortString() + ". Failing");
@@ -336,23 +350,27 @@ class ConnectivityCheckClient
                         + checkedPair.toShortString() + ", failing");
             checkedPair.setStateFailed();
         }
-        //handle error responses.
-        else if(evt.getResponse().getMessageType()
-                        == Response.BINDING_ERROR_RESPONSE)
+        else
         {
-            if(! evt.getResponse().containsAttribute(Attribute.ERROR_CODE))
-            {
-                logger.fine("Received a malformed error response.");
-                return; //malformed error response
-            }
+            Response response = ev.getResponse();
+            char messageType = response.getMessageType();
 
-            processErrorResponse(evt);
-        }
-        //handle success responses.
-        else if(evt.getResponse().getMessageType()
-                        == Response.BINDING_SUCCESS_RESPONSE)
-        {
-            processSuccessResponse(evt);
+            //handle error responses.
+            if(messageType== Response.BINDING_ERROR_RESPONSE)
+            {
+                if(!response.containsAttribute(Attribute.ERROR_CODE))
+                {
+                    logger.fine("Received a malformed error response.");
+                    return; //malformed error response
+                }
+
+                processErrorResponse(ev);
+            }
+            //handle success responses.
+            else if(messageType == Response.BINDING_SUCCESS_RESPONSE)
+            {
+                processSuccessResponse(ev);
+            }
         }
 
         //Regardless of whether the check was successful or failed, the
@@ -375,7 +393,7 @@ class ConnectivityCheckClient
         final CheckList checkList = stream.getCheckList();
 
         if(stream.getParentAgent().getState().equals(
-            IceProcessingState.COMPLETED))
+                IceProcessingState.COMPLETED))
             return;
 
         //If all of the pairs in the check list are now either in the Failed or
@@ -441,18 +459,18 @@ class ConnectivityCheckClient
     /**
      * Handles STUN success responses as per the rules in RFC 5245.
      *
-     * @param evt the event that delivered the error response.
+     * @param ev the event that delivered the error response.
      */
-    private void processSuccessResponse(StunResponseEvent evt)
+    private void processSuccessResponse(StunResponseEvent ev)
     {
-        Response response = evt.getResponse();
-        Request  request  = evt.getRequest();
+        Response response = ev.getResponse();
+        Request  request  = ev.getRequest();
 
         CandidatePair checkedPair
-            = (CandidatePair) evt.getTransactionID().getApplicationData();
+            = (CandidatePair) ev.getTransactionID().getApplicationData();
 
         TransportAddress mappedAddress = null;
-        if(this.parentAgent.getCompatibilityMode() == CompatibilityMode.GTALK)
+        if(parentAgent.getCompatibilityMode() == CompatibilityMode.GTALK)
         {
             if(response.containsAttribute(Attribute.XOR_MAPPED_ADDRESS))
             {
@@ -504,10 +522,11 @@ class ConnectivityCheckClient
         // XXX AddressAttribute always returns UDP based TransportAddress
         if(checkedPair.getLocalCandidate().getTransport() == Transport.TCP)
         {
-            mappedAddress = new TransportAddress(
-                mappedAddress.getAddress(),
-                mappedAddress.getPort(),
-                Transport.TCP);
+            mappedAddress
+                = new TransportAddress(
+                        mappedAddress.getAddress(),
+                        mappedAddress.getPort(),
+                        Transport.TCP);
         }
 
         LocalCandidate validLocalCandidate = null;
@@ -560,10 +579,12 @@ class ConnectivityCheckClient
                 priority = prioAttr.getPriority();
             }
 
-            LocalCandidate peerReflexiveCandidate = new PeerReflexiveCandidate(
-                            mappedAddress, checkedPair.getParentComponent(),
-                            checkedPair.getLocalCandidate(),
-                            priority);
+            LocalCandidate peerReflexiveCandidate
+                = new PeerReflexiveCandidate(
+                        mappedAddress,
+                        checkedPair.getParentComponent(),
+                        checkedPair.getLocalCandidate(),
+                        priority);
 
             peerReflexiveCandidate.setBase(checkedPair.getLocalCandidate());
 
@@ -571,7 +592,7 @@ class ConnectivityCheckClient
             //candidates for the media stream, so that it would be available for
             //updated offers.
             checkedPair.getParentComponent().addLocalCandidate(
-                            peerReflexiveCandidate);
+                    peerReflexiveCandidate);
 
             //However, the peer reflexive candidate is not paired with other
             //remote candidates. This is not necessary; a valid pair will be
@@ -590,35 +611,29 @@ class ConnectivityCheckClient
         }
 
         //check if the resulting valid pair was already in our check lists.
-        CandidatePair existingPair = parentAgent.findCandidatePair(
-                        validLocalCandidate.getTransportAddress(),
-                        validRemoteCandidate.getTransportAddress());
+        CandidatePair existingPair
+            = parentAgent.findCandidatePair(
+                    validLocalCandidate.getTransportAddress(),
+                    validRemoteCandidate.getTransportAddress());
 
         // RFC 5245: 7.1.3.2.2. The agent constructs a candidate pair whose
         // local candidate equals the mapped address of the response, and whose
         // remote candidate equals the destination address to which the request
-        // was sent.  This is called a valid pair, since it has been validated
+        // was sent. This is called a valid pair, since it has been validated
         // by a STUN connectivity check.
-        CandidatePair validPair;
-        if(existingPair != null)
-        {
-            validPair = existingPair;
-        }
-        else
-        {
-            validPair = new CandidatePair(validLocalCandidate,
-                        validRemoteCandidate);
-        }
+        CandidatePair validPair
+            = (existingPair == null)
+                ? new CandidatePair(validLocalCandidate, validRemoteCandidate)
+                : existingPair;
 
-        // we synchronize here because the same pair object can be
-        // processed (in another thread) in Agent's triggerCheck.
-        // A controlled agent select its pair here if the pair has
-        // useCandidateReceived as true (set in triggerCheck)  or in t
-        // triggerCheck if the pair state is succeeded (set here). So be
-        // sure that if a binding response and a binding request (for
-        // the same check) from other peer come at the very same time,
-        // that we will trigger the nominationConfirmed (that will
-        // pass the pair as selected if it is the first time).
+        // we synchronize here because the same pair object can be processed (in
+        // another thread) in Agent's triggerCheck. A controlled agent select
+        // its pair here if the pair has useCandidateReceived as true (set in
+        // triggerCheck) or in triggerCheck if the pair state is succeeded (set
+        // here). So be sure that if a binding response and a binding request
+        // (for the same check) from other peer come at the very same time, that
+        // we will trigger the nominationConfirmed (that will pass the pair as
+        // as selected if it is the first time).
         synchronized(checkedPair)
         {
             //The agent sets the state of the pair that *generated* the check to
@@ -647,15 +662,16 @@ class ConnectivityCheckClient
                 = new Vector<CandidatePair>(parentStream.getCheckList());
 
             for(CandidatePair pair : parentCheckList)
-                if ((pair.getState() == CandidatePairState.FROZEN) &&
-                    (checkedPair.getFoundation().equals(pair.getFoundation())))
+                if ((pair.getState() == CandidatePairState.FROZEN)
+                        && checkedPair.getFoundation().equals(
+                                pair.getFoundation()))
                     pair.setStateWaiting();
         }
 
-        // The agent examines the check list for all other streams in turn
-        // If the check list is active, the agent changes the state of
-        // all Frozen pairs in that check list whose foundation matches a
-        // pair in the valid list under consideration to Waiting.
+        // The agent examines the check list for all other streams in turn. If
+        // the check list is active, the agent changes the state of all Frozen
+        // pairs in that check list whose foundation matches a pair in the valid
+        // list under consideration to Waiting.
         List<IceMediaStream> allOtherStreams = parentAgent.getStreams();
         allOtherStreams.remove(parentStream);
 
@@ -669,8 +685,8 @@ class ConnectivityCheckClient
                 for(CandidatePair pair : checkList)
                 {
                     if (parentStream.validListContainsFoundation(
-                                                    pair.getFoundation())
-                        && pair.getState() == CandidatePairState.FROZEN)
+                                pair.getFoundation())
+                            && pair.getState() == CandidatePairState.FROZEN)
                     {
                         pair.setStateWaiting();
                     }
@@ -705,22 +721,22 @@ class ConnectivityCheckClient
         //CANDIDATE attribute in the Binding request, the valid pair generated
         //from that check has its nominated flag set to true.
         if((parentAgent.isControlling()
-                && request.containsAttribute(Attribute.USE_CANDIDATE)) ||
-                ((parentAgent.getCompatibilityMode() ==
-                           CompatibilityMode.GTALK) &&
-                           validPair.isNominated()))
-                           //checkedPair.useCandidateSent()))
+                    && request.containsAttribute(Attribute.USE_CANDIDATE))
+                || ((parentAgent.getCompatibilityMode()
+                            == CompatibilityMode.GTALK)
+                        && validPair.isNominated()))
         {
             if(validPair.getParentComponent().getSelectedPair() == null)
             {
-                logger.info("Nomination confirmed for pair: " +
-                        validPair.toShortString());
+                logger.info(
+                        "Nomination confirmed for pair: "
+                            + validPair.toShortString());
                 parentAgent.nominationConfirmed( validPair );
             }
             else
             {
-                logger.fine("Keep alive for pair: " +
-                    validPair.toShortString());
+                logger.fine(
+                        "Keep alive for pair: " + validPair.toShortString());
             }
         }
         //If the agent is the controlled agent, the response may be the result
@@ -728,22 +744,27 @@ class ConnectivityCheckClient
         //itself had the USE-CANDIDATE attribute.  This case is described in
         //Section 7.2.1.5, and may now result in setting the nominated flag for
         //the pair learned from the original request.
-        else if(!parentAgent.isControlling() &&
-            checkedPair.useCandidateReceived() &&
-            !checkedPair.isNominated())
+        else if(!parentAgent.isControlling()
+                && checkedPair.useCandidateReceived()
+                && !checkedPair.isNominated())
         {
             if(checkedPair.getParentComponent().getSelectedPair() == null)
             {
-                logger.info("Nomination confirmed for pair: " +
-                        validPair.toShortString());
+                logger.info(
+                        "Nomination confirmed for pair: "
+                            + validPair.toShortString());
                 parentAgent.nominationConfirmed( checkedPair );
             }
             else
             {
-                logger.fine("Keep alive for pair: " +
-                    validPair.toShortString());
+                logger.fine(
+                        "Keep alive for pair: " + validPair.toShortString());
             }
         }
+
+        // Selected pairs get their consent freshness confirmed.
+        if (checkedPair == checkedPair.getParentComponent().getSelectedPair())
+            checkedPair.setConsentFreshness();
     }
 
     /**
@@ -768,16 +789,15 @@ class ConnectivityCheckClient
      */
     private boolean checkSymmetricAddresses(StunResponseEvent evt)
     {
-        CandidatePair pair = ((CandidatePair)evt.getTransactionID()
-                        .getApplicationData());
-        TransportAddress localAddr = pair.getLocalCandidate().getBase().
-            getTransportAddress();
+        CandidatePair pair
+            = ((CandidatePair) evt.getTransactionID().getApplicationData());
+        TransportAddress localAddr
+            = pair.getLocalCandidate().getBase().getTransportAddress();
 
-        boolean sym = localAddr.equals(evt.getLocalAddress())
-           && pair.getRemoteCandidate().getTransportAddress()
-                                        .equals(evt.getRemoteAddress());
-
-        return sym;
+        return
+            localAddr.equals(evt.getLocalAddress())
+                && pair.getRemoteCandidate().getTransportAddress().equals(
+                        evt.getRemoteAddress());
     }
 
     /**
@@ -785,15 +805,15 @@ class ConnectivityCheckClient
      * reschedules the check, in all other cases sets the corresponding peer
      * state to FAILED.
      *
-     * @param evt the event that delivered the error response.
+     * @param ev the event that delivered the error response.
      */
-    private void processErrorResponse(StunResponseEvent evt)
+    private void processErrorResponse(StunResponseEvent ev)
     {
-        Response response = evt.getResponse();
-        Request originalRequest = evt.getRequest();
+        Response response = ev.getResponse();
+        Request originalRequest = ev.getRequest();
 
-        ErrorCodeAttribute errorAttr = (ErrorCodeAttribute)response.
-            getAttribute(Attribute.ERROR_CODE);
+        ErrorCodeAttribute errorAttr
+            = (ErrorCodeAttribute) response.getAttribute(Attribute.ERROR_CODE);
         // GTalk error code is not RFC3489/RFC5389 compliant
         // example: 400 becomes 0x01 0x90 with GTalk
         // RFC3489/RFC5389 gives 0x04 0x00
@@ -801,16 +821,16 @@ class ConnectivityCheckClient
         int co = errorAttr.getErrorNumber() & 0xff;
         char errorCode = errorAttr.getErrorCode();
 
-        CandidatePair pair = ((CandidatePair)evt.getTransactionID()
-                        .getApplicationData());
+        CandidatePair pair
+            = (CandidatePair) ev.getTransactionID().getApplicationData();
 
         logger.finer("Received error code " + ((int) errorCode));
 
         //RESOLVE ROLE_CONFLICTS
         if(errorCode == ErrorCodeAttribute.ROLE_CONFLICT)
         {
-            boolean wasControlling = originalRequest
-                                .containsAttribute(Attribute.ICE_CONTROLLING);
+            boolean wasControlling
+                = originalRequest.containsAttribute(Attribute.ICE_CONTROLLING);
 
             logger.finer("Swithing to isControlling=" + !wasControlling);
             parentAgent.setControlling(!wasControlling);
@@ -818,8 +838,9 @@ class ConnectivityCheckClient
             pair.getParentComponent().getParentStream().getCheckList()
                 .scheduleTriggeredCheck(pair);
         }
-        else if(parentAgent.getCompatibilityMode() == CompatibilityMode.GTALK &&
-            cl == 1 && co == 0xae) // STALE_CREDENTIALS (430)
+        else if(parentAgent.getCompatibilityMode() == CompatibilityMode.GTALK
+                && cl == 1
+                && co == 0xae) // STALE_CREDENTIALS (430)
         {
             // it may be an error due to remote peer that does not processed
             // our candidates IQ and we start connectivity checks too quickly
@@ -853,13 +874,14 @@ class ConnectivityCheckClient
      * {@link CandidatePairState#FAILED} and updates check list and timer
      * states.
      *
-     * @param event the {@link StunTimeoutEvent} containing the original
+     * @param ev the {@link StunTimeoutEvent} containing the original
      * transaction and hence {@link CandidatePair} that's being checked.
      */
-    public void processTimeout(StunTimeoutEvent event)
+    public void processTimeout(StunTimeoutEvent ev)
     {
-        CandidatePair pair = ((CandidatePair)event.getTransactionID()
-                        .getApplicationData());
+        CandidatePair pair
+            = (CandidatePair) ev.getTransactionID() .getApplicationData();
+
         logger.info("timeout for pair: " + pair.toShortString() + ", failing.");
         pair.setStateFailed();
         updateCheckListAndTimerStates(pair);
@@ -983,8 +1005,9 @@ class ConnectivityCheckClient
 
                             if(transactionID == null)
                             {
-                                logger.info("Pair failed: "  +
-                                        pairToCheck.toShortString());
+                                logger.info(
+                                        "Pair failed: "
+                                            + pairToCheck.toShortString());
                                 pairToCheck.setStateFailed();
                             }
                             else
@@ -1017,7 +1040,7 @@ class ConnectivityCheckClient
     }
 
     /**
-     * Stops and removes all PaceMakers.
+     * Stops and removes all <tt>PaceMaker</tt>s.
      */
     public void stop()
     {

@@ -38,12 +38,12 @@ class StunServerTransaction
     /**
      * The time that we keep server transactions active.
      */
-    private long transactionLifetime = 16000;
+    private static final long LIFETIME = 16000;
 
     /**
      * The <tt>StunStack</tt> that created us.
      */
-    private StunStack stackCallback  = null;
+    private final StunStack stackCallback;
 
     /**
      * The address that we are sending responses to.
@@ -53,7 +53,7 @@ class StunServerTransaction
     /**
      * The address that we are receiving requests from.
      */
-    private TransportAddress requestSource = null;
+    private final TransportAddress requestSource;
 
     /**
      * The response sent in response to the request.
@@ -63,7 +63,7 @@ class StunServerTransaction
     /**
      * The <tt>TransportAddress</tt> that we received our request on.
      */
-    private TransportAddress localListeningAddress = null;
+    private final TransportAddress localListeningAddress;
 
     /**
      * The <tt>TransportAddress</tt> we use when sending responses
@@ -73,7 +73,7 @@ class StunServerTransaction
     /**
      * The id of the transaction.
      */
-    private TransactionID transactionID = null;
+    private final TransactionID transactionID;
 
     /**
      * The date (in milliseconds) when the next retransmission should follow.
@@ -114,7 +114,6 @@ class StunServerTransaction
     {
         this.stackCallback  = stackCallback;
         this.transactionID  = tranID;
-        this.requestSource  = requestSource;
         this.localListeningAddress = localListeningAddress;
         this.requestSource = requestSource;
 
@@ -140,7 +139,7 @@ class StunServerTransaction
     {
         runningThread.setName("ServTran");
 
-        schedule(transactionLifetime);
+        schedule(LIFETIME);
         waitNextScheduledDate();
 
         //let's get lost
@@ -212,25 +211,22 @@ class StunServerTransaction
 
     /**
      * Waits until next retransmission is due or until the transaction is
-     * canceled (whichever comes first).
+     * cancelled (whichever comes first).
      */
     private synchronized void waitNextScheduledDate()
     {
-        long current = System.currentTimeMillis();
-        while(expirationDate - current > 0)
+        long timeout;
+
+        while (!expired
+                && (timeout = expirationDate - System.currentTimeMillis()) > 0)
         {
             try
             {
-                wait(expirationDate - current);
+                wait(timeout);
             }
             catch (InterruptedException ex)
             {
             }
-
-            //did someone ask us to get lost?
-            if(expired)
-                return;
-            current = System.currentTimeMillis();
         }
     }
 
@@ -253,7 +249,6 @@ class StunServerTransaction
         this.expired = true;
         notifyAll();
     }
-
 
     /**
      * Returns the ID of the current transaction.
