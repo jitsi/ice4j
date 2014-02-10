@@ -151,15 +151,20 @@ public class StackProperties
      */
     public static String getString(String propertyName)
     {
-        Object propValue = System.getProperty(propertyName);
-        if (propValue == null)
-            return null;
+        Object obj = System.getProperty(propertyName);
+        String str;
 
-        String propStrValue = propValue.toString().trim();
-
-        return (propStrValue.length() > 0)
-                    ? propStrValue
-                    : null;
+        if (obj == null)
+        {
+            str = null;
+        }
+        else
+        {
+            str = obj.toString().trim();
+            if (str.length() == 0)
+                str = null;
+        }
+        return str;
     }
 
     /**
@@ -194,41 +199,35 @@ public class StackProperties
             }
             catch (NumberFormatException ex)
             {
-                logger.log(Level.FINE, propertyName
-                    + " does not appear to be an integer. " + "Defaulting to "
-                    + defaultValue + ".", ex);
+                logger.log(
+                        Level.FINE,
+                        propertyName + " does not appear to be an integer. "
+                            + "Defaulting to " + defaultValue + ".",
+                        ex);
             }
         }
         return intValue;
     }
 
     /**
-     * Gets the value of a specific property as a boolean. If the specified
-     * property name is associated with a value in this
-     * <code>ConfigurationService</code>, the string representation of the value
-     * is parsed into a boolean according to the rules of
-     * {@link Boolean#parseBoolean(String)} . Otherwise,
-     * <code>defaultValue</code> is returned.
+     * Gets the value of a specific property as a <tt>boolean</tt>. If the
+     * specified property name is associated with a value, the string
+     * representation of the value is parsed into a <tt>boolean</tt> according
+     * to the rules of {@link Boolean#parseBoolean(String)} . Otherwise,
+     * <tt>defaultValue</tt> is returned.
      *
-     * @param propertyName
-     *            the name of the property to get the value of as a boolean
-     * @param defaultValue
-     *            the value to be returned if the specified property name is not
-     *            associated with a value in this
-     *            <code>ConfigurationService</code>
-     * @return the value of the property with the specified name in this
-     *         <code>ConfigurationService</code> as a boolean;
-     *         <code>defaultValue</code> if the property with the specified name
-     *         is not associated with a value in this
-     *         <code>ConfigurationService</code>
+     * @param propertyName the name of the property to get the value of as a
+     * <tt>boolean</tt>
+     * @param defaultValue the value to be returned if the specified property
+     * name is not associated with a value
+     * @return the value of the property with the specified name as a
+     * <tt>boolean</tt>; <tt>defaultValue</tt> if the property with the
+     * specified name is not associated with a value
      */
     public static boolean getBoolean(String propertyName, boolean defaultValue)
     {
-        String stringValue = getString(propertyName);
+        String str = getString(propertyName);
 
-        return (stringValue == null)
-            ? defaultValue
-            : Boolean.parseBoolean(stringValue);
+        return (str == null) ? defaultValue : Boolean.parseBoolean(str);
     }
-
 }

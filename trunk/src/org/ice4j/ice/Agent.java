@@ -42,6 +42,21 @@ import org.ice4j.stack.*;
 public class Agent
 {
     /**
+     * The maximum number of retransmissions of a STUN Binding request without
+     * a valid STUN Binding response after which consent freshness is to be
+     * considered unconfirmed according to &quot;STUN Usage for Consent
+     * Freshness&quot;. 
+     */
+    private static final int CONSENT_FRESHNESS_MAX_RETRANSMISSIONS = 30;
+
+    /**
+     * The number of milliseconds without a valid STUN Binding response after
+     * which a STUN Binding request is to be retransmitted according to
+     * &quot;STUN Usage for Consent Freshness&quot;.
+     */
+    private static final int CONSENT_FRESHNESS_WAIT_INTERVAL = 500;
+
+    /**
      * The default maximum size for check lists.
      */
     public static final int DEFAULT_MAX_CHECK_LIST_SIZE = 100;
@@ -93,7 +108,7 @@ public class Agent
     /**
      * Manages statistics about harvesting time.
      */
-    private HarvestStatistics harvestStats = new HarvestStatistics();
+//    private final HarvestStatistics harvestStats = new HarvestStatistics();
 
     /**
      * We use the <tt>FoundationsRegistry</tt> to keep track of the foundations
@@ -111,7 +126,7 @@ public class Agent
     /**
      * ICE compatibility mode for this agent.
      */
-    private CompatibilityMode compatibilityMode = CompatibilityMode.RFC5245;
+    private final CompatibilityMode compatibilityMode;
 
     /**
      * The name of the {@link PropertyChangeEvent} that we use to deliver
@@ -208,7 +223,7 @@ public class Agent
     /**
      * The thread that we use for STUN keep-alive.
      */
-    private StunKeepAliveThread stunKeepAliveThread;
+    private Thread stunKeepAliveThread;
 
     /**
      * Some protocols, such as XMPP, need to be able to distinguish the separate
@@ -236,6 +251,12 @@ public class Agent
      * a problem.
      */
     private boolean harvestingStarted = false;
+
+    /**
+     * The indicator which determines whether this <tt>Agent</tt> is to perform
+     * consent freshness.
+     */
+    private boolean performConsentFreshness = false;
 
     /**
      * Creates an empty <tt>Agent</tt> with no streams, and no address.
@@ -266,15 +287,16 @@ public class Agent
         if (StackProperties.getString(StackProperties.SOFTWARE) == null)
             System.setProperty(StackProperties.SOFTWARE, "ice4j.org");
 
-        if(compatibilityMode == CompatibilityMode.GTALK)
+        if (compatibilityMode == CompatibilityMode.GTALK)
         {
-            /* username is 16 byte in Google Talk dialect but it is set
-             * for each candidate and not globally
+            /*
+             * The ufrag is 16 bytes in the Google Talk dialect but it is set
+             * per candidate, not globally.
              */
             ufrag = null;
-
-            /* no password in Google Talk dialect (at least libnice does not use
-             * one)
+            /*
+             * There is no password in the Google Talk dialect. (At least
+             * libnice does not use one.)
              */
             password = "";
         }
@@ -374,12 +396,9 @@ public class Agent
                  * ufrag since it must be the same as username present in
                  * HTTP response
                  */
-                if(localCand.getUfrag() != null)
-                {
-                    continue;
-                }
+                if(localCand.getUfrag() == null)
+                    localCand.setUfrag(generateGTalkUfrag());
 
-                localCand.setUfrag(generateGTalkUfrag());
             }
         }
 
@@ -472,9 +491,10 @@ public class Agent
         logger.fine("Candidate count in first harvest: " +
             component.getLocalCandidateCount());
 
-        //Emil: because of trickle we now assign foundations, compute priorities
-        //and eliminate redundancies while adding candidates on a component.
-        // This means that we no longer need to do it here, where we did before.
+        // Emil: Because of trickle, we now assign foundations, compute
+        // priorities, and eliminate redundancies while adding candidates on a
+        // component. This means that we no longer need to do it here, where we
+        // did before.
         //computeFoundations(component);
         //component.prioritizeCandidates();
         //component.eliminateRedundantCandidates();
@@ -513,7 +533,7 @@ public class Agent
 
         for (IceMediaStream stream : getStreams())
         {
-            components.addAll( stream.getComponents());
+            components.addAll(stream.getComponents());
         }
 
         harvesters.harvest(components, trickleCallback);
@@ -551,8 +571,10 @@ public class Agent
             //trigger a check for those candidate pairs.
             if(this.preDiscoveredPairsQueue.size() > 0)
             {
-                logger.info("Trigger checks for pairs that were received " +
-                        "before running state");
+                logger.info(
+                        "Trigger checks for pairs that were received before "
+                            + "running state");
+
                 Iterator<CandidatePair> it = preDiscoveredPairsQueue.iterator();
 
                 while(it.hasNext())
@@ -747,13 +769,11 @@ public class Agent
      * @param component the component whose candidate foundations we'd like to
      * compute and assign.
      */
-    private void computeFoundations(Component component)
-    {
-        List<LocalCandidate> candidates = component.getLocalCandidates();
-
-        for (Candidate<?> cand : candidates)
-            foundationsRegistry.assignFoundation(cand);
-    }
+//    private void computeFoundations(Component component)
+//    {
+//        for (Candidate<?> localCandidate : component.getLocalCandidates())
+//            foundationsRegistry.assignFoundation(localCandidate);
+//    }
 
     /**
      * Adds <tt>harvester</tt> to the list of harvesters that this agent will
@@ -1116,16 +1136,14 @@ public class Agent
     {
         StringBuilder buff = new StringBuilder("ICE Agent (stream-count=");
 
-        buff.append(getStreamCount()).append(" ice-pwd:")
-            .append(getLocalPassword());
-        buff.append(getStreamCount()).append(" ice-ufrag:")
-            .append(getLocalUfrag());
-        buff.append(getStreamCount()).append(" tie-breaker:")
-            .append(getTieBreaker());
+        buff.append(getStreamCount());
+        buff.append(" ice-pwd:").append(getLocalPassword());
+        buff.append(" ice-ufrag:").append(getLocalUfrag());
+        buff.append(" tie-breaker:").append(getTieBreaker());
         buff.append("):\n");
 
         for(IceMediaStream stream : getStreams())
-            buff.append(stream.toString()).append("\n");
+            buff.append(stream).append("\n");
 
         return buff.toString();
     }
@@ -1154,8 +1172,7 @@ public class Agent
 
         //in case we have already initialized our check lists we'd need to
         //recompute pair priorities.
-        List<IceMediaStream> streams = getStreams();
-        for(IceMediaStream stream : streams)
+        for(IceMediaStream stream : getStreams())
         {
             CheckList list = stream.getCheckList();
 
@@ -1205,16 +1222,13 @@ public class Agent
      */
     public LocalCandidate findLocalCandidate(TransportAddress localAddress)
     {
-        Collection<IceMediaStream> streamsCollection = mediaStreams.values();
-
-        for( IceMediaStream stream : streamsCollection)
+        for(IceMediaStream stream : mediaStreams.values())
         {
             LocalCandidate cnd = stream.findLocalCandidate(localAddress);
 
             if(cnd != null)
                 return cnd;
         }
-
         return null;
     }
 
@@ -1229,24 +1243,25 @@ public class Agent
      * <tt>localAddress</tt> if it belongs to any of this {@link Agent}'s
      * streams or <tt>null</tt> if it doesn't.
      */
-    public LocalCandidate findLocalCandidate(TransportAddress localAddress,
-        String ufrag)
+    public LocalCandidate findLocalCandidate(
+            TransportAddress localAddress,
+            String ufrag)
     {
-        Collection<IceMediaStream> streamsCollection = mediaStreams.values();
-
-        for(IceMediaStream stream : streamsCollection)
+        for(IceMediaStream stream : mediaStreams.values())
         {
             for(Component c : stream.getComponents())
             {
                 for(LocalCandidate cnd : c.getLocalCandidates())
                 {
-                    if(cnd != null && cnd.getUfrag() != null &&
-                        cnd.getUfrag().equals(ufrag))
+                    if(cnd != null
+                            && cnd.getUfrag() != null
+                            && cnd.getUfrag().equals(ufrag))
+                    {
                         return cnd;
+                    }
                 }
             }
         }
-
         return null;
     }
 
@@ -1263,16 +1278,13 @@ public class Agent
      */
     public RemoteCandidate findRemoteCandidate(TransportAddress remoteAddress)
     {
-        Collection<IceMediaStream> streamsCollection = mediaStreams.values();
-
-        for( IceMediaStream stream : streamsCollection)
+        for(IceMediaStream stream : mediaStreams.values())
         {
             RemoteCandidate cnd = stream.findRemoteCandidate(remoteAddress);
 
             if(cnd != null)
                 return cnd;
         }
-
         return null;
     }
 
@@ -1295,19 +1307,15 @@ public class Agent
     {
         synchronized(mediaStreams)
         {
-            Collection<IceMediaStream> streamsCollection
-                = mediaStreams.values();
-
-            for (IceMediaStream stream : streamsCollection)
+            for (IceMediaStream stream : mediaStreams.values())
             {
                 CandidatePair pair
                     = stream.findCandidatePair(localAddress, remoteAddress);
 
-                if( pair != null )
+                if (pair != null )
                     return pair;
             }
         }
-
         return null;
     }
 
@@ -1327,19 +1335,15 @@ public class Agent
     {
         synchronized(mediaStreams)
         {
-            Collection<IceMediaStream> streamsCollection
-                = mediaStreams.values();
-
-            for (IceMediaStream stream : streamsCollection)
+            for (IceMediaStream stream : mediaStreams.values())
             {
                 CandidatePair pair
                     = stream.findCandidatePair(localUFrag, remoteUFrag);
 
-                if( pair != null )
+                if (pair != null )
                     return pair;
             }
         }
-
         return null;
     }
 
@@ -1755,23 +1759,22 @@ public class Agent
 
         setState(IceProcessingState.COMPLETED);
 
-        // keep ICE running (answer binding request)
+        // keep ICE running (answer STUN Binding requests, send STUN Binding
+        // indications or requests)
         if(stunKeepAliveThread == null
-                && ! StackProperties.getBoolean(
-                        StackProperties.NO_KEEP_ALIVES, false))
+                && !StackProperties.getBoolean(
+                        StackProperties.NO_KEEP_ALIVES,
+                        false))
         {
             // schedule STUN checks for selected candidates
-            scheduleSTUNKeepAlive();
+            scheduleStunKeepAlive();
         }
 
-        if(compatibilityMode == CompatibilityMode.RFC5245)
-        {
+        if (compatibilityMode == CompatibilityMode.RFC5245)
             scheduleTermination();
-        }
 
         //print logs for the types of addresses we chose.
         logCandTypes();
-
     }
 
     /**
@@ -1977,13 +1980,24 @@ public class Agent
     }
 
     /**
-     * Initializes and starts the {@link StunKeepAliveThread}
+     * Initializes and starts the background <tt>Thread</tt> which is to send
+     * STUN keep-alives once this <tt>Agent</tt> is <tt>COMPLETED</tt>.
      */
-    private void scheduleSTUNKeepAlive()
+    private void scheduleStunKeepAlive()
     {
         if (stunKeepAliveThread == null)
         {
-            stunKeepAliveThread = new StunKeepAliveThread();
+            stunKeepAliveThread
+                = new Thread()
+                        {
+                            @Override
+                            public void run()
+                            {
+                                runInStunKeepAliveThread();
+                            }
+                        };
+            stunKeepAliveThread.setDaemon(true);
+            stunKeepAliveThread.setName("StunKeepAliveThread");
             stunKeepAliveThread.start();
         }
     }
@@ -2101,7 +2115,7 @@ public class Agent
         shutdown = true;
 
         //stop sending keep alives (STUN Binding Indications).
-        if(stunKeepAliveThread != null)
+        if (stunKeepAliveThread != null)
             stunKeepAliveThread.interrupt();
 
         //stop responding to STUN Binding Requests.
@@ -2113,26 +2127,35 @@ public class Agent
          */
         IceProcessingState state = getState();
 
-        if (    !IceProcessingState.FAILED.equals(state)
+        if (!IceProcessingState.FAILED.equals(state)
              && !IceProcessingState.TERMINATED.equals(state))
         {
             terminate(IceProcessingState.TERMINATED);
         }
 
-        logger.info("remove streams");
         // Free its IceMediaStreams, Components and Candidates.
-        for(IceMediaStream stream : getStreams())
+        boolean interrupted = false;
+
+        logger.info("remove streams");
+        for (IceMediaStream stream : getStreams())
         {
             try
             {
                 removeStream(stream);
+                logger.info("remove stream " + stream.getName());
             }
-            catch(Throwable t)
+            catch (Throwable t)
             {
-                logger.info("remove stream failed: " + t);
+                logger.info(
+                        "remove stream "  + stream.getName() + " failed: " + t);
+                if (t instanceof InterruptedException)
+                    interrupted = true;
+                else if (t instanceof ThreadDeath)
+                    throw (ThreadDeath) t;
             }
-            logger.info("remove stream " + stream.getName());
         }
+        if (interrupted)
+            Thread.currentThread().interrupt();
 
         getStunStack().shutDown();
 
@@ -2174,62 +2197,29 @@ public class Agent
     }
 
     /**
-     * Thread that performs STUN keep-alive once ICE has COMPLETED.
-     */
-    private class StunKeepAliveThread
-        extends Thread
-    {
-        /**
-         * Creates a new termination timer.
-         */
-        private StunKeepAliveThread()
-        {
-            super("StunKeepAliveThread");
-        }
-
-        /**
-         * Thread entry to point.
-         */
-        @Override
-        public synchronized void run()
-        {
-            runInStunKeepAliveThread();
-        }
-    }
-
-    /**
      * Schedule STUN checks for selected pair.
      */
-    public void runInStunKeepAliveThread()
+    private void runInStunKeepAliveThread()
     {
-        while(state == IceProcessingState.COMPLETED || state ==
-            IceProcessingState.TERMINATED)
+        while (runInStunKeepAliveThreadCondition())
         {
-            if(shutdown)
-                break;
-
-            List<IceMediaStream> streams = getStreams();
-
-            for(IceMediaStream stream : streams)
+            for(IceMediaStream stream : getStreams())
             {
-                List<Component> cmps = stream.getComponents();
-
-                for(Component cmp : cmps)
+                for(Component component : stream.getComponents())
                 {
-                    CandidatePair pair = cmp.getSelectedPair();
+                    CandidatePair pair = component.getSelectedPair();
 
                     if(pair != null)
                     {
-                        if(compatibilityMode == CompatibilityMode.GTALK)
+                        if(performConsentFreshness
+                                || (compatibilityMode
+                                        == CompatibilityMode.GTALK))
                         {
-                            //apparently GTalk insists on seeing binding
-                            //requests or else it believes we are dead
-                            //Emil: I am not sure this is true. I think it would
-                            //be enough for us to respond to their binding
-                            //requests. At least that's how it seems to work for
-                            //Chrome and WebRTC.
-                            //TODO: check and maybe remove
-                            connCheckClient.startCheckForPair(pair);
+                            connCheckClient.startCheckForPair(
+                                    pair,
+                                    CONSENT_FRESHNESS_WAIT_INTERVAL,
+                                    CONSENT_FRESHNESS_WAIT_INTERVAL,
+                                    CONSENT_FRESHNESS_MAX_RETRANSMISSIONS);
                         }
                         else if(compatibilityMode == CompatibilityMode.RFC5245)
                         {
@@ -2239,7 +2229,7 @@ public class Agent
                 }
             }
 
-            if(shutdown)
+            if (!runInStunKeepAliveThreadCondition())
                 break;
 
             try
@@ -2251,7 +2241,23 @@ public class Agent
             {
             }
         }
-        logger.info("KeepAliveThread ends");
+        logger.info(Thread.currentThread().getName() + " ends.");
+    }
+
+    /**
+     * Determines whether {@link #runInStunKeepAliveThread()} is to run.
+     *
+     * @return <tt>true</tt> if <tt>runInStunKeepAliveThread()</tt> is to run;
+     * otherwise, <tt>false</tt>
+     */
+    private boolean runInStunKeepAliveThreadCondition()
+    {
+        IceProcessingState state = this.state;
+
+        return
+            (IceProcessingState.COMPLETED.equals(state)
+                    || IceProcessingState.TERMINATED.equals(state))
+                && !shutdown;
     }
 
     /**
@@ -2294,12 +2300,10 @@ public class Agent
      */
     public LocalCandidate getSelectedLocalCandidate(String streamName)
     {
-        CandidatePair candidatePair = this.getSelectedPair(streamName);
-        if(candidatePair != null)
-        {
-            return candidatePair.getLocalCandidate();
-        }
-        return null;
+        CandidatePair candidatePair = getSelectedPair(streamName);
+
+        return
+            (candidatePair == null) ? null : candidatePair.getLocalCandidate();
     }
 
     /**
@@ -2312,12 +2316,10 @@ public class Agent
      */
     public RemoteCandidate getSelectedRemoteCandidate(String streamName)
     {
-        CandidatePair candidatePair = this.getSelectedPair(streamName);
-        if(candidatePair != null)
-        {
-            return candidatePair.getRemoteCandidate();
-        }
-        return null;
+        CandidatePair candidatePair = getSelectedPair(streamName);
+
+        return
+            (candidatePair == null) ? null : candidatePair.getRemoteCandidate();
     }
 
     /**
@@ -2367,8 +2369,8 @@ public class Agent
         {
             if(harvester.getClass().getName().endsWith(harvesterName))
             {
-                harvestingTime = harvester.getHarvestStatistics()
-                    .getHarvestDuration();
+                harvestingTime
+                    = harvester.getHarvestStatistics().getHarvestDuration();
                 // There may be several harvester with the same class name.
                 // Thus, returns only an active one (if any).
                 if(harvestingTime != 0)
@@ -2423,8 +2425,8 @@ public class Agent
 
         for(CandidateHarvester harvester : harvesters)
         {
-            harvestDuration += harvester
-                .getHarvestStatistics().getHarvestDuration();
+            harvestDuration
+                += harvester.getHarvestStatistics().getHarvestDuration();
         }
 
         return harvestDuration;
@@ -2444,10 +2446,34 @@ public class Agent
 
         for(CandidateHarvester harvester : harvesters)
         {
-            harvestCount += harvester
-                .getHarvestStatistics().getHarvestDuration();
+            harvestCount
+                += harvester.getHarvestStatistics().getHarvestDuration();
         }
 
         return harvestCount;
+    }
+
+    /**
+     * Gets the indicator which determines whether this <tt>Agent</tt> is to
+     * perform consent freshness.
+     *
+     * @return <tt>true</tt> if this <tt>Agent</tt> is to perform consent
+     * freshness; otherwise, <tt>false</tt>
+     */
+    public boolean getPerformConsentFreshness()
+    {
+        return performConsentFreshness;
+    }
+
+    /**
+     * Sets the indicator which determines whether this <tt>Agent</tt> is to
+     * perform consent freshness.
+     *
+     * @param performConsentFreshness <tt>true</tt> if this <tt>Agent</tt> is to
+     * perform consent freshness; otherwise, <tt>false</tt>
+     */
+    public void setPerformConsentFreshness(boolean performConsentFreshness)
+    {
+        this.performConsentFreshness = performConsentFreshness;
     }
 }

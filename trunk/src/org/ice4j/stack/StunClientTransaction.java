@@ -7,6 +7,7 @@
 package org.ice4j.stack;
 
 import java.io.*;
+import java.util.concurrent.*;
 import java.util.logging.*;
 
 import org.ice4j.*;
@@ -31,6 +32,7 @@ import org.ice4j.message.*;
  *
  * @author Emil Ivov.
  * @author Pascal Mogeri (contributed configuration of client transactions).
+ * @author Lyubomir Marinov
  */
 class StunClientTransaction
     implements Runnable
@@ -38,14 +40,68 @@ class StunClientTransaction
     /**
      * Our class logger.
      */
-    private static final Logger logger =
-        Logger.getLogger(StunClientTransaction.class.getName());
+    private static final Logger logger
+        = Logger.getLogger(StunClientTransaction.class.getName());
 
     /**
      * The number of times to retransmit a request if no explicit value has been
      * specified by org.ice4j.MAX_RETRANSMISSIONS.
      */
     public static final int DEFAULT_MAX_RETRANSMISSIONS = 6;
+
+    /**
+     * The maximum number of milliseconds a client should wait between
+     * consecutive retransmissions, after it has sent a request for the first
+     * time.
+     */
+    public static final int DEFAULT_MAX_WAIT_INTERVAL = 1600;
+
+    /**
+     * The number of milliseconds a client should wait before retransmitting,
+     * after it has sent a request for the first time.
+     */
+    public static final int DEFAULT_ORIGINAL_WAIT_INTERVAL = 100;
+
+    /**
+     * The pool of <tt>Thread</tt>s which retransmit
+     * <tt>StunClientTransaction</tt>s.
+     */
+    private static final ExecutorService retransmissionThreadPool
+        = Executors.newCachedThreadPool(
+                new ThreadFactory()
+                        {
+                            /**
+                             * The default <tt>ThreadFactory</tt> implementation
+                             * which is augmented by this instance to create
+                             * daemon <tt>Thread</tt>s.
+                             */
+                            private final ThreadFactory defaultThreadFactory
+                                = Executors.defaultThreadFactory();
+
+                            @Override
+                            public Thread newThread(Runnable r)
+                            {
+                                Thread t = defaultThreadFactory.newThread(r);
+
+                                if (t != null)
+                                {
+                                    t.setDaemon(true);
+
+                                    /*
+                                     * Additionally, make it known through the
+                                     * name of the Thread that it is associated
+                                     * with the StunClientTransaction class for
+                                     * debugging/informational purposes.
+                                     */
+                                    String name = t.getName();
+
+                                    if (name == null)
+                                        name = "";
+                                    t.setName("StunClientTransaction-" + name);
+                                }
+                                return t;
+                            }
+                        });
 
     /**
      * Maximum number of retransmissions. Once this number is reached and if no
@@ -55,23 +111,10 @@ class StunClientTransaction
     public int maxRetransmissions = DEFAULT_MAX_RETRANSMISSIONS;
 
     /**
-     * The number of milliseconds a client should wait before retransmitting,
-     * after it has sent a request for the first time.
-     */
-    public static final int DEFAULT_ORIGINAL_WAIT_INTERVAL = 100;
-
-    /**
      * The number of milliseconds to wait before the first retransmission of the
      * request.
      */
     public int originalWaitInterval = DEFAULT_ORIGINAL_WAIT_INTERVAL;
-
-    /**
-     * The maximum number of milliseconds a client should wait between
-     * consecutive retransmissions, after it has sent a request for the first
-     * time.
-     */
-    public static final int DEFAULT_MAX_WAIT_INTERVAL = 1600;
 
     /**
      * The maximum wait interval. Once this interval is reached we should stop
@@ -127,11 +170,6 @@ class StunClientTransaction
     private boolean cancelled = false;
 
     /**
-     * The thread that this transaction runs in.
-     */
-    private Thread retransmissionsThread = null;
-
-    /**
      * Creates a client transaction.
      *
      * @param stackCallback the stack that created us.
@@ -148,8 +186,12 @@ class StunClientTransaction
                                  TransportAddress  localAddress,
                                  ResponseCollector responseCollector)
     {
-        this(stackCallback, request, requestDestination, localAddress,
-                   responseCollector, TransactionID.createNewTransactionID());
+        this(stackCallback,
+             request,
+             requestDestination,
+             localAddress,
+             responseCollector,
+             TransactionID.createNewTransactionID());
     }
 
     /**
@@ -189,15 +231,12 @@ class StunClientTransaction
         }
         catch (StunException ex)
         {
-            //Shouldn't happen so lets just through a runtime exception in
-            //case anything is real messed up
-            throw new IllegalArgumentException("The TransactionID class "
-                                      +"generated an invalid transaction ID");
+            //Shouldn't happen so lets just through a runtime exception in case
+            //anything is real messed up
+            throw new IllegalArgumentException(
+                    "The TransactionID class generated an invalid transaction"
+                        + " ID");
         }
-
-        retransmissionsThread = new Thread(this,
-                        "StunClientTransaction@"+hashCode());
-        retransmissionsThread.setDaemon(true);
     }
 
     /**
@@ -210,7 +249,6 @@ class StunClientTransaction
      */
     public void run()
     {
-        retransmissionsThread.setName("ice4j.ClientTransaction");
         nextWaitInterval = originalWaitInterval;
 
         synchronized(this)
@@ -245,14 +283,15 @@ class StunClientTransaction
                     //I wonder whether we should notify anyone that a
                     //retransmission has failed
                     logger.log(Level.INFO,
-                               "A client tran retransmission failed", ex);
+                               "A client tran retransmission failed",
+                               ex);
                 }
             }
 
             //before stating that a transaction has timeout-ed we should first
             //wait for a reception of the response
             if(nextWaitInterval < maxWaitInterval)
-                    nextWaitInterval *= 2;
+                nextWaitInterval *= 2;
 
             waitFor(nextWaitInterval);
 
@@ -280,13 +319,12 @@ class StunClientTransaction
     void sendRequest()
         throws IllegalArgumentException, IOException
     {
-        logger.fine("sending STUN "
-                + " tid " + transactionID
-                + " from " + localAddress
-                + " to " + requestDestination);
+        logger.fine(
+                "sending STUN " + " tid " + transactionID + " from "
+                    + localAddress + " to " + requestDestination);
         sendRequest0();
 
-        retransmissionsThread.start();
+        retransmissionThreadPool.execute(this);
     }
 
     /**
@@ -303,13 +341,14 @@ class StunClientTransaction
         if(cancelled)
         {
             logger.finer("Trying to resend a cancelled transaction.");
-            return;
         }
-
-        stackCallback.getNetAccessManager().sendMessage(
-                this.request,
-                localAddress,
-                requestDestination);
+        else
+        {
+            stackCallback.getNetAccessManager().sendMessage(
+                    this.request,
+                    localAddress,
+                    requestDestination);
+        }
     }
 
     /**
@@ -395,8 +434,8 @@ class StunClientTransaction
     }
 
     /**
-     * Init transaction duration/retransmission parameters.
-     * (Mostly, contributed by Pascal Maugeri).
+     * Init transaction duration/retransmission parameters. (Mostly contributed
+     * by Pascal Maugeri.)
      */
     private void initTransactionConfiguration()
     {
@@ -405,7 +444,8 @@ class StunClientTransaction
             = System.getProperty(StackProperties.MAX_CTRAN_RETRANSMISSIONS);
 
         if(maxRetransmissionsStr != null
-           && maxRetransmissionsStr.trim().length() > 0){
+                && maxRetransmissionsStr.trim().length() > 0)
+        {
             try
             {
                 maxRetransmissions = Integer.parseInt(maxRetransmissionsStr);
@@ -424,7 +464,8 @@ class StunClientTransaction
             = System.getProperty(StackProperties.FIRST_CTRAN_RETRANS_AFTER);
 
         if(originalWaitIntervalStr != null
-           && originalWaitIntervalStr.trim().length() > 0){
+                && originalWaitIntervalStr.trim().length() > 0)
+        {
             try
             {
                 originalWaitInterval
@@ -444,7 +485,8 @@ class StunClientTransaction
                 = System.getProperty(StackProperties.MAX_CTRAN_RETRANS_TIMER);
 
         if(maxWaitIntervalStr != null
-           && maxWaitIntervalStr.trim().length() > 0){
+                && maxWaitIntervalStr.trim().length() > 0)
+        {
             try
             {
                 maxWaitInterval = Integer.parseInt(maxWaitIntervalStr);

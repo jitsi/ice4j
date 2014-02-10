@@ -344,19 +344,17 @@ public class StunStack
         }
         catch (IllegalArgumentException iaex)
         {
-            throw
-                new StunException(
-                        StunException.ILLEGAL_ARGUMENT,
-                        "Failed to send STUN indication: " + indication,
-                        iaex);
+            throw new StunException(
+                    StunException.ILLEGAL_ARGUMENT,
+                    "Failed to send STUN indication: " + indication,
+                    iaex);
         }
         catch (IOException ioex)
         {
-            throw
-                new StunException(
-                        StunException.NETWORK_ERROR,
-                        "Failed to send STUN indication: " + indication,
-                        ioex);
+            throw new StunException(
+                    StunException.NETWORK_ERROR,
+                    "Failed to send STUN indication: " + indication,
+                    ioex);
         }
     }
 
@@ -402,24 +400,77 @@ public class StunStack
      * @return the <tt>TransactionID</tt> of the <tt>StunClientTransaction</tt>
      * that we used in order to send the request.
      *
-     * @throws IOException  if an error occurs while sending message bytes
-     * through the network socket.
      * @throws IllegalArgumentException if the apDescriptor references an
      * access point that had not been installed,
+     * @throws IOException  if an error occurs while sending message bytes
+     * through the network socket.
      */
-    public TransactionID sendRequest(  Request           request,
-                                       TransportAddress  sendTo,
-                                       TransportAddress  sendThrough,
-                                       ResponseCollector collector,
-                                       TransactionID     transactionID)
-        throws IOException, IllegalArgumentException
+    public TransactionID sendRequest(Request           request,
+                                     TransportAddress  sendTo,
+                                     TransportAddress  sendThrough,
+                                     ResponseCollector collector,
+                                     TransactionID     transactionID)
+        throws IllegalArgumentException,
+               IOException
+    {
+        return
+            sendRequest(
+                    request, sendTo, sendThrough, collector, transactionID,
+                    -1, -1, -1);
+    }
+
+    /**
+     * Sends the specified request through the specified access point, and
+     * registers the specified ResponseCollector for later notification.
+     * @param  request     the request to send
+     * @param  sendTo      the destination address of the request.
+     * @param  sendThrough the local address to use when sending the request
+     * @param  collector   the instance to notify when a response arrives or the
+     * the transaction timeouts
+     * @param transactionID the ID that we'd like the new transaction to use
+     * in case the application created it in order to use it for application
+     * data correlation.
+     * @param originalWiatIterval
+     * @param maxWaitInterval
+     * @param maxRetransmissions
+     * @return the <tt>TransactionID</tt> of the <tt>StunClientTransaction</tt>
+     * that we used in order to send the request.
+     *
+     * @throws IllegalArgumentException if the apDescriptor references an
+     * access point that had not been installed,
+     * @throws IOException  if an error occurs while sending message bytes
+     * through the network socket.
+     */
+    public TransactionID sendRequest(Request           request,
+                                     TransportAddress  sendTo,
+                                     TransportAddress  sendThrough,
+                                     ResponseCollector collector,
+                                     TransactionID     transactionID,
+                                     int               originalWaitInterval,
+                                     int               maxWaitInterval,
+                                     int               maxRetransmissions)
+        throws IllegalArgumentException,
+               IOException
     {
         StunClientTransaction clientTransaction
-            = new StunClientTransaction(this, request, sendTo, sendThrough,
-                                    collector, transactionID);
+            = new StunClientTransaction(
+                    this,
+                    request,
+                    sendTo,
+                    sendThrough,
+                    collector,
+                    transactionID);
 
-        clientTransactions.put(clientTransaction.getTransactionID(),
-                            clientTransaction);
+        if (originalWaitInterval > 0)
+            clientTransaction.originalWaitInterval = originalWaitInterval;
+        if (maxWaitInterval > 0)
+            clientTransaction.maxWaitInterval = maxWaitInterval;
+        if (maxRetransmissions >= 0)
+            clientTransaction.maxRetransmissions = maxRetransmissions;
+
+        clientTransactions.put(
+                clientTransaction.getTransactionID(),
+                clientTransaction);
 
         clientTransaction.sendRequest();
 
@@ -620,26 +671,27 @@ public class StunStack
     /**
      * Called to notify this provider for an incoming message.
      *
-     * @param event the event object that contains the new message.
+     * @param ev the event object that contains the new message.
      */
-    public void handleMessageEvent(StunMessageEvent event)
+    public void handleMessageEvent(StunMessageEvent ev)
     {
-        Message msg = event.getMessage();
+        Message msg = ev.getMessage();
 
         if(logger.isLoggable(Level.FINEST))
-            logger.finest("Received a message on "
-                        + event.getLocalAddress()
-                        + " of type:"
-                        + (int)msg.getMessageType());
+        {
+            logger.finest(
+                    "Received a message on " + ev.getLocalAddress()
+                        + " of type:" + (int) msg.getMessageType());
+        }
 
         //request
         if(msg instanceof Request)
         {
             logger.finest("parsing request");
 
-            TransactionID serverTid = event.getTransactionID();
-
+            TransactionID serverTid = ev.getTransactionID();
             StunServerTransaction sTran  = serverTransactions.get(serverTid);
+
             if( sTran != null)
             {
                 //requests from this transaction have already been seen
@@ -655,7 +707,8 @@ public class StunStack
                 {
                     //we couldn't really do anything here .. apart from logging
                     logger.log(Level.WARNING,
-                               "Failed to retransmit a stun response", ex);
+                               "Failed to retransmit a stun response",
+                               ex);
                 }
 
                 if(!Boolean.getBoolean(
@@ -667,8 +720,12 @@ public class StunStack
             else
             {
                 logger.finest("existing transaction not found");
-                sTran = new StunServerTransaction(this, serverTid,
-                             event.getLocalAddress(), event.getRemoteAddress());
+                sTran
+                    = new StunServerTransaction(
+                            this,
+                            serverTid,
+                            ev.getLocalAddress(),
+                            ev.getRemoteAddress());
 
                 // if there is an OOM error here, it will lead to
                 // NetAccessManager.handleFatalError that will stop the
@@ -689,18 +746,18 @@ public class StunStack
             //validate attributes that need validation.
             try
             {
-                validateRequestAttributes(event);
+                validateRequestAttributes(ev);
             }
             catch(Exception exc)
             {
                 //validation failed. log get lost.
-                logger.log(Level.FINE, "Failed to validate msg: " + event, exc);
+                logger.log(Level.FINE, "Failed to validate msg: " + ev, exc);
                 return;
             }
 
             try
             {
-                eventDispatcher.fireMessageEvent(event);
+                eventDispatcher.fireMessageEvent(ev);
             }
             catch (Throwable t)
             {
@@ -709,12 +766,14 @@ public class StunStack
                 logger.log(Level.INFO, "Received an invalid request.", t);
                 Throwable cause = t.getCause();
 
-                if(((t instanceof StunException) &&
-                    ((StunException)t).getID() ==
-                        StunException.TRANSACTION_ALREADY_ANSWERED) ||
-                    (cause != null && (cause instanceof StunException) &&
-                    ((StunException)cause).getID() ==
-                        StunException.TRANSACTION_ALREADY_ANSWERED))
+                if(((t instanceof StunException)
+                            && ((StunException) t).getID()
+                                    == StunException
+                                        .TRANSACTION_ALREADY_ANSWERED)
+                        || ((cause instanceof StunException)
+                                && ((StunException) cause).getID()
+                                        == StunException
+                                            .TRANSACTION_ALREADY_ANSWERED))
                 {
                     // do not try to send an error response since we will
                     // get another TRANSACTION_ALREADY_ANSWERED
@@ -723,53 +782,58 @@ public class StunStack
 
                 if(t instanceof IllegalArgumentException)
                 {
-                    error = MessageFactory.createBindingErrorResponse(
+                    error
+                        = MessageFactory.createBindingErrorResponse(
                                 ErrorCodeAttribute.BAD_REQUEST,
                                 t.getMessage());
                 }
                 else
                 {
-                    error = MessageFactory.createBindingErrorResponse(
+                    error
+                        = MessageFactory.createBindingErrorResponse(
                                 ErrorCodeAttribute.SERVER_ERROR,
                                 "Oops! Something went wrong on our side :(");
                 }
 
                 try
                 {
-                    sendResponse(event.getTransactionID().getBytes(),
-                        error, event.getLocalAddress(),
-                        event.getRemoteAddress());
+                    sendResponse(
+                            serverTid.getBytes(),
+                            error,
+                            ev.getLocalAddress(),
+                            ev.getRemoteAddress());
                 }
                 catch(Exception exc)
                 {
-                    logger.log(Level.FINE, "Couldn't send a server error "
-                                    + "response", exc);
+                    logger.log(Level.FINE,
+                               "Couldn't send a server error response",
+                               exc);
                 }
             }
         }
         //response
         else if(msg instanceof Response)
         {
-            TransactionID tid = event.getTransactionID();
+            TransactionID tid = ev.getTransactionID();
             StunClientTransaction tran = clientTransactions.remove(tid);
 
             if(tran != null)
             {
-                tran.handleResponse(event);
+                tran.handleResponse(ev);
             }
             else
             {
                 //do nothing - just drop the phantom response.
-                logger.fine("Dropped response - no matching client tran found"
-                                + " for tid " + tid + "\n"
-                                + "all tids in stock were "
-                                + clientTransactions.keySet());
+                logger.fine(
+                        "Dropped response - no matching client tran found for"
+                            + " tid " + tid + "\n" + "all tids in stock were "
+                            + clientTransactions.keySet());
             }
         }
         // indication
         else if (msg instanceof Indication)
         {
-            eventDispatcher.fireMessageEvent(event);
+            eventDispatcher.fireMessageEvent(ev);
         }
     }
 
@@ -792,20 +856,24 @@ public class StunStack
     {
         eventDispatcher.removeAllListeners();
 
-        Enumeration<TransactionID> tids = clientTransactions.keys();
-        while (tids.hasMoreElements())
+        for (Iterator<StunClientTransaction> i
+                    = clientTransactions.values().iterator();
+                i.hasNext();)
         {
-            TransactionID item = tids.nextElement();
-            StunClientTransaction tran = clientTransactions.remove(item);
+            StunClientTransaction tran = i.next();
+
+            i.remove();
             if(tran != null)
                 tran.cancel();
         }
 
-        tids = serverTransactions.keys();
-        while (tids.hasMoreElements())
+        for (Iterator<StunServerTransaction> i
+                    = serverTransactions.values().iterator();
+                i.hasNext();)
         {
-            TransactionID item = tids.nextElement();
-            StunServerTransaction tran = serverTransactions.remove(item);
+            StunServerTransaction tran = i.next();
+
+            i.remove();
             if(tran != null)
                 tran.expire();
         }

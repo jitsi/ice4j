@@ -484,8 +484,8 @@ public class MultiplexingDatagramSocket
                             accepted = true;
 
                             /*
-                             * Emil: Don't break because we want all
-                             * filtering sockets to get this.
+                             * Emil: Don't break because we want all filtering
+                             * sockets to get the received packet.
                              */
                             //break;
                         }

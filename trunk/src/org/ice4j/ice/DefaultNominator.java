@@ -21,8 +21,8 @@ public class DefaultNominator
     /**
      * The logger.
      */
-    private static Logger logger =
-        Logger.getLogger(DefaultNominator.class.getName());
+    private static final Logger logger
+        = Logger.getLogger(DefaultNominator.class.getName());
 
     /**
      * The Agent that created us.
@@ -39,8 +39,8 @@ public class DefaultNominator
      * Map that will remember association between validated relayed candidate
      * and a timer. It is use with the NOMINATE_FIRST_HIGHEST_VALID strategy.
      */
-    private Map<String, TimerTask> validatedCandidates =
-        new HashMap<String, TimerTask>();
+    private final Map<String, TimerTask> validatedCandidates
+        = new HashMap<String, TimerTask>();
 
     /**
      * Creates a new instance of this nominator using <tt>parentAgent</tt> as
@@ -59,21 +59,19 @@ public class DefaultNominator
      * Tracks changes of state in {@link IceMediaStream}s and {@link
      * CheckList}s.
      *
-     * @param evt the event that we should use in case it means we should
+     * @param ev the event that we should use in case it means we should
      * nominate someone.
      */
-    public void propertyChange(PropertyChangeEvent evt)
+    public void propertyChange(PropertyChangeEvent ev)
     {
-        if(Agent.PROPERTY_ICE_PROCESSING_STATE.equals(evt.getPropertyName()))
-        {
-            IceProcessingState newState = (IceProcessingState)evt.getNewValue();
+        String propertyName = ev.getPropertyName();
 
-            if(newState != IceProcessingState.RUNNING)
+        if(Agent.PROPERTY_ICE_PROCESSING_STATE.equals(propertyName))
+        {
+            if(ev.getNewValue() != IceProcessingState.RUNNING)
                 return;
 
-            List<IceMediaStream> streams = parentAgent.getStreams();
-
-            for(IceMediaStream stream : streams)
+            for(IceMediaStream stream : parentAgent.getStreams())
             {
                 stream.addPairChangeListener(this);
                 stream.getCheckList().addStateChangeListener(this);
@@ -81,33 +79,37 @@ public class DefaultNominator
         }
 
         if (!parentAgent.isControlling() //CONTROLLED agents cannot nominate
-            || strategy == NominationStrategy.NONE)
+                || strategy == NominationStrategy.NONE)
         {
             return;
         }
 
-        if(evt.getSource() instanceof CandidatePair)
+        if(ev.getSource() instanceof CandidatePair)
         {
-            CandidatePair validPair = (CandidatePair)evt.getSource();
+            // STUN Usage for Consent Freshness is of no concern here.
+            if (IceMediaStream.PROPERTY_PAIR_CONSENT_FRESHNESS_CHANGED.equals(
+                    propertyName))
+                return;
 
+            CandidatePair validPair = (CandidatePair) ev.getSource();
 
             // do not nominate pair if there is currently a selected pair for
             // the component
             if(validPair.getParentComponent().getSelectedPair() != null)
             {
-                logger.fine("Keep-alive for pair: " +
-                    validPair.toShortString());
+                logger.fine(
+                        "Keep-alive for pair: " + validPair.toShortString());
                 return;
             }
         }
 
-        if(strategy == NominationStrategy.NOMINATE_FIRST_VALID)
-            strategyNominateFirstValid(evt);
+        if (strategy == NominationStrategy.NOMINATE_FIRST_VALID)
+            strategyNominateFirstValid(ev);
         else if (strategy == NominationStrategy.NOMINATE_HIGHEST_PRIO)
-            strategyNominateHighestPrio(evt);
-        else if (strategy ==
-            NominationStrategy.NOMINATE_FIRST_HOST_OR_REFLEXIVE_VALID)
-            strategyNominateFirstHostOrReflexiveValid(evt);
+            strategyNominateHighestPrio(ev);
+        else if (strategy
+                == NominationStrategy.NOMINATE_FIRST_HOST_OR_REFLEXIVE_VALID)
+            strategyNominateFirstHostOrReflexiveValid(ev);
     }
 
     /**
@@ -133,18 +135,18 @@ public class DefaultNominator
      * pairs in a check list to conclude before nominating the one with the
      * highest priority.
      *
-     * @param evt the {@link PropertyChangeEvent} containing the new state and
+     * @param ev the {@link PropertyChangeEvent} containing the new state and
      * the source {@link CheckList}.
      */
-    private void strategyNominateHighestPrio(PropertyChangeEvent evt)
+    private void strategyNominateHighestPrio(PropertyChangeEvent ev)
     {
-        String propName = evt.getPropertyName();
-        if(IceMediaStream.PROPERTY_PAIR_VALIDATED.equals(propName)
-           || (IceMediaStream.PROPERTY_PAIR_STATE_CHANGED.equals(propName)
-                && ((CandidatePairState)evt.getNewValue())
-                                == CandidatePairState.FAILED))
+        String pname = ev.getPropertyName();
+
+        if(IceMediaStream.PROPERTY_PAIR_VALIDATED.equals(pname)
+                || (IceMediaStream.PROPERTY_PAIR_STATE_CHANGED.equals(pname)
+                        && (ev.getNewValue() == CandidatePairState.FAILED)))
         {
-            CandidatePair validPair = (CandidatePair)evt.getSource();
+            CandidatePair validPair = (CandidatePair) ev.getSource();
             Component parentComponent = validPair.getParentComponent();
             IceMediaStream parentStream = parentComponent.getParentStream();
             CheckList parentCheckList = parentStream.getCheckList();
@@ -152,15 +154,15 @@ public class DefaultNominator
             if(!parentCheckList.allChecksCompleted())
                 return;
 
-            List<Component> components = parentStream.getComponents();
-
-            for(Component component : components)
+            for(Component component : parentStream.getComponents())
             {
                 CandidatePair pair = parentStream.getValidPair(component);
+
                 if(pair != null)
                 {
-                    logger.info("Nominate (highest priority): " +
-                            validPair.toShortString());
+                    logger.info(
+                            "Nominate (highest priority): "
+                                + validPair.toShortString());
                     parentAgent.nominate(pair);
                 }
             }
@@ -194,21 +196,22 @@ public class DefaultNominator
     {
         if(IceMediaStream.PROPERTY_PAIR_VALIDATED.equals(evt.getPropertyName()))
         {
-            CandidatePair validPair = (CandidatePair)evt.getSource();
+            CandidatePair validPair = (CandidatePair) evt.getSource();
 
-            TimerTask task = null;
-            boolean isRelayed =
-                (validPair.getLocalCandidate() instanceof RelayedCandidate) ||
-                validPair.getLocalCandidate().getType().equals(
-                    CandidateType.RELAYED_CANDIDATE) ||
-                validPair.getRemoteCandidate().getType().equals(
-                    CandidateType.RELAYED_CANDIDATE);
+            Component component = validPair.getParentComponent();
+            LocalCandidate localCandidate = validPair.getLocalCandidate();
+            boolean isRelayed
+                = (localCandidate instanceof RelayedCandidate)
+                    || localCandidate.getType().equals(
+                            CandidateType.RELAYED_CANDIDATE)
+                    || validPair.getRemoteCandidate().getType().equals(
+                            CandidateType.RELAYED_CANDIDATE);
             boolean nominate = false;
 
             synchronized(validatedCandidates)
             {
-                task = validatedCandidates.get(
-                    validPair.getParentComponent().toShortString());
+                TimerTask task
+                    = validatedCandidates.get(component.toShortString());
 
                 if(isRelayed && task == null)
                 {
@@ -221,9 +224,7 @@ public class DefaultNominator
 
                     logger.info("Wait timeout to nominate relayed candidate");
                     timer.schedule(task, 0);
-                    validatedCandidates.put(
-                             validPair.getParentComponent().toShortString(),
-                            task);
+                    validatedCandidates.put(component.toShortString(), task);
                 }
                 else if(!isRelayed)
                 {
@@ -232,13 +233,13 @@ public class DefaultNominator
                     {
                         task.cancel();
                         logger.info(
-                            "Found a better candidate pair to nominate for "
-                                    + validPair.getParentComponent().
-                                        toShortString());
+                                "Found a better candidate pair to nominate for "
+                                    + component.toShortString());
                     }
 
-                    logger.info("Nominate (first highest valid): " +
-                            validPair.toShortString());
+                    logger.info(
+                            "Nominate (first highest valid): "
+                                + validPair.toShortString());
                     nominate = true;
                 }
             }
@@ -269,9 +270,9 @@ public class DefaultNominator
         private final CandidatePair pair;
 
         /**
-         * If the task has been canceled.
+         * If the task has been cancelled.
          */
-        private boolean canceled = false;
+        private boolean cancelled = false;
 
         /**
          * Constructor.
@@ -306,18 +307,20 @@ public class DefaultNominator
                     if(c != pair && c.getState() != CandidatePairState.FAILED)
                     {
                         allFailed = false;
+                        break;
                     }
                 }
             }
 
-            if(allFailed && ! pair.isNominated())
+            if(allFailed && !pair.isNominated())
             {
                 // all other pairs are failed to do not waste time, cancel
                 // timer and nominate ourself (the relayed candidate).
                 this.cancel();
 
-                logger.info("Nominate (first highest valid): " +
-                        pair.toShortString());
+                logger.info(
+                        "Nominate (first highest valid): "
+                            + pair.toShortString());
                 parentAgent.nominate(pair);
             }
         }
@@ -328,7 +331,7 @@ public class DefaultNominator
         @Override
         public boolean cancel()
         {
-            canceled = true;
+            cancelled = true;
             return super.cancel();
         }
 
@@ -343,23 +346,22 @@ public class DefaultNominator
             }
             catch(InterruptedException e)
             {
-                canceled = true;
+                cancelled = true;
             }
 
-            pair.getParentComponent().getParentStream().getCheckList().
-                removeChecksListener(this);
-            validatedCandidates.remove(
-                    pair.getParentComponent().toShortString());
+            Component component = pair.getParentComponent();
 
-            if(canceled)
-            {
+            component.getParentStream().getCheckList().removeChecksListener(
+                    this);
+            validatedCandidates.remove(component.toShortString());
+
+            if(cancelled)
                 return;
-            }
 
-            logger.info("Nominate (first highest valid): " +
-                    pair.toShortString());
+            logger.info(
+                    "Nominate (first highest valid): " + pair.toShortString());
 
-            // task has not been canceled after WAIT_TIME milliseconds so
+            // task has not been cancelled after WAIT_TIME milliseconds so
             // nominate the pair
             parentAgent.nominate(pair);
         }
