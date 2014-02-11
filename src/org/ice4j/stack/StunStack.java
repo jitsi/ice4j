@@ -73,6 +73,13 @@ public class StunStack
             = new Hashtable<TransactionID, StunClientTransaction>();
 
     /**
+     * The <tt>Thread</tt> which expires the <tt>StunServerTransaction</tt>s of
+     * this <tt>StunStack</tt> and removes them from
+     * {@link #serverTransactions}.
+     */
+    private Thread serverTransactionExpireThread;
+
+    /**
      * Currently open server transactions. The vector contains transaction ids
      * for transactions corresponding to all non-answered received requests.
      */
@@ -167,16 +174,48 @@ public class StunStack
     {
         synchronized (serverTransactions)
         {
-            Collection<StunServerTransaction> sTrans
-                = serverTransactions.values();
+            long now = System.currentTimeMillis();
 
-            for (StunServerTransaction tran : sTrans)
+            for (Iterator<StunServerTransaction> i
+                        = serverTransactions.values().iterator();
+                    i.hasNext();)
             {
-                if (tran.getTransactionID().equals(transactionID))
-                    return tran;
+                StunServerTransaction serverTransaction = i.next();
+
+                if (serverTransaction.isExpired(now))
+                    i.remove();
+                else if (serverTransaction.getTransactionID().equals(
+                        transactionID))
+                    return serverTransaction;
             }
         }
         return null;
+    }
+
+    /**
+     * Returns the transaction with the specified <tt>transactionID</tt> or
+     * <tt>null</tt> if no such transaction exists.
+     *
+     * @param transactionID the ID of the transaction we are looking for.
+     *
+     * @return the {@link StunClientTransaction} we are looking for.
+     */
+    protected StunServerTransaction getServerTransaction(
+            TransactionID transactionID)
+    {
+        StunServerTransaction serverTransaction;
+
+        synchronized (serverTransactions)
+        {
+            serverTransaction = serverTransactions.get(transactionID);
+        }
+        /*
+         * If a StunServerTransaction is expired, do not return it. It will be
+         * removed from serverTransactions soon.
+         */
+        if ((serverTransaction != null) && serverTransaction.isExpired())
+            serverTransaction = null;
+        return serverTransaction;
     }
 
     /**
@@ -208,48 +247,41 @@ public class StunStack
      */
     private void cancelTransactionsForAddress(TransportAddress localAddr)
     {
-        synchronized(clientTransactions)
+        synchronized (clientTransactions)
         {
-            Iterator<Map.Entry<TransactionID, StunClientTransaction>>
-                clientTransactionsIter = clientTransactions.entrySet()
-                    .iterator();
+            Iterator<StunClientTransaction> clientTransactionsIter
+                = clientTransactions.values().iterator();
 
             while (clientTransactionsIter.hasNext())
             {
-                Map.Entry<TransactionID, StunClientTransaction> entry
-                    = clientTransactionsIter.next();
+                StunClientTransaction tran = clientTransactionsIter.next();
 
-                StunClientTransaction tran = entry.getValue();
                 if (tran.getLocalAddress().equals(localAddr))
+                {
                     clientTransactionsIter.remove();
-
-                tran.cancel();
+                    tran.cancel();
+                }
             }
         }
 
-        synchronized(serverTransactions)
+        synchronized (serverTransactions)
         {
-            Iterator<Map.Entry<TransactionID, StunServerTransaction>>
-                serverTransactionsIter = serverTransactions.entrySet()
-                    .iterator();
+            Iterator<StunServerTransaction> serverTransactionsIter
+                = serverTransactions.values().iterator();
 
             while (serverTransactionsIter.hasNext())
             {
-                Map.Entry<TransactionID, StunServerTransaction> entry
-                    = serverTransactionsIter.next();
-
-                StunServerTransaction tran = entry.getValue();
-
+                StunServerTransaction tran = serverTransactionsIter.next();
                 TransportAddress listenAddr = tran.getLocalListeningAddress();
                 TransportAddress sendingAddr = tran.getSendingAddress();
 
-                if ( listenAddr.equals(localAddr)
-                     || (sendingAddr != null && sendingAddr.equals(localAddr)) )
+                if (listenAddr.equals(localAddr)
+                        || (sendingAddr != null
+                                && sendingAddr.equals(localAddr)))
                 {
                     serverTransactionsIter.remove();
+                    tran.expire();
                 }
-
-                tran.expire();
             }
         }
     }
@@ -534,7 +566,7 @@ public class StunStack
     {
         TransactionID tid
             = TransactionID.createTransactionID(this, transactionID);
-        StunServerTransaction sTran = serverTransactions.get(tid);
+        StunServerTransaction sTran = getServerTransaction(tid);
 
         if(sTran == null)
         {
@@ -652,9 +684,12 @@ public class StunStack
      * Method is used by StunClientTransaction-s themselves when a timeout occurs.
      * @param tran the transaction to remove.
      */
-    synchronized void removeClientTransaction(StunClientTransaction tran)
+    void removeClientTransaction(StunClientTransaction tran)
     {
-        clientTransactions.remove(tran.getTransactionID());
+        synchronized (clientTransactions)
+        {
+            clientTransactions.remove(tran.getTransactionID());
+        }
     }
 
     /**
@@ -663,9 +698,12 @@ public class StunStack
      * Method is used by StunServerTransaction-s themselves when they expire.
      * @param tran the transaction to remove.
      */
-    synchronized void removeServerTransaction(StunServerTransaction tran)
+    void removeServerTransaction(StunServerTransaction tran)
     {
-        serverTransactions.remove(tran.getTransactionID());
+        synchronized (serverTransactions)
+        {
+            serverTransactions.remove(tran.getTransactionID());
+        }
     }
 
     /**
@@ -690,7 +728,7 @@ public class StunStack
             logger.finest("parsing request");
 
             TransactionID serverTid = ev.getTransactionID();
-            StunServerTransaction sTran  = serverTransactions.get(serverTid);
+            StunServerTransaction sTran  = getServerTransaction(serverTid);
 
             if( sTran != null)
             {
@@ -740,7 +778,11 @@ public class StunStack
                     logger.info("STUN transaction thread start failed:" + t);
                     return;
                 }
-                serverTransactions.put(serverTid, sTran);
+                synchronized (serverTransactions)
+                {
+                    serverTransactions.put(serverTid, sTran);
+                    maybeStartServerTransactionExpireThread();
+                }
             }
 
             //validate attributes that need validation.
@@ -856,26 +898,32 @@ public class StunStack
     {
         eventDispatcher.removeAllListeners();
 
-        for (Iterator<StunClientTransaction> i
-                    = clientTransactions.values().iterator();
-                i.hasNext();)
+        synchronized (clientTransactions)
         {
-            StunClientTransaction tran = i.next();
+            for (Iterator<StunClientTransaction> i
+                        = clientTransactions.values().iterator();
+                    i.hasNext();)
+            {
+                StunClientTransaction tran = i.next();
 
-            i.remove();
-            if(tran != null)
-                tran.cancel();
+                i.remove();
+                if (tran != null)
+                    tran.cancel();
+            }
         }
 
-        for (Iterator<StunServerTransaction> i
-                    = serverTransactions.values().iterator();
-                i.hasNext();)
+        synchronized (serverTransactions)
         {
-            StunServerTransaction tran = i.next();
+            for (Iterator<StunServerTransaction> i
+                        = serverTransactions.values().iterator();
+                    i.hasNext();)
+            {
+                StunServerTransaction tran = i.next();
 
-            i.remove();
-            if(tran != null)
-                tran.expire();
+                i.remove();
+                if (tran != null)
+                    tran.expire();
+            }
         }
 
         netAccessManager.stop();
@@ -1213,5 +1261,134 @@ public class StunStack
     public CompatibilityMode getCompatibilityMode()
     {
         return mode;
+    }
+
+    /**
+     * Initializes and starts {@link #serverTransactionExpireThread} if
+     * necessary.
+     */
+    private void maybeStartServerTransactionExpireThread()
+    {
+        synchronized (serverTransactions)
+        {
+            if (!serverTransactions.isEmpty()
+                    && (serverTransactionExpireThread == null))
+            {
+                Thread t
+                    = new Thread()
+                            {
+                                @Override
+                                public void run()
+                                {
+                                    runInServerTransactionExpireThread();
+                                }
+                            };
+
+                t.setDaemon(true);
+                t.setName(
+                        getClass().getName()
+                            + ".serverTransactionExpireThread");
+
+                boolean started = false;
+
+                serverTransactionExpireThread = t;
+                try
+                {
+                    t.start();
+                    started = true;
+                }
+                finally
+                {
+                    if (!started && (serverTransactionExpireThread == t))
+                        serverTransactionExpireThread = null;
+                }
+            }
+        }
+    }
+
+    /**
+     * Runs in {@link #serverTransactionExpireThread} and expires the
+     * <tt>StunServerTransaction</tt>s of this <tt>StunStack</tt> and removes
+     * them from {@link #serverTransactions}.
+     */
+    private void runInServerTransactionExpireThread()
+    {
+        try
+        {
+            long idleStartTime = -1;
+
+            do
+            {
+                synchronized (serverTransactions)
+                {
+                    try
+                    {
+                        serverTransactions.wait(StunServerTransaction.LIFETIME);
+                    }
+                    catch (InterruptedException ie)
+                    {
+                    }
+
+                    /*
+                     * Is the current Thread still designated to expire the
+                     * StunServerTransactions of this StunStack?
+                     */
+                    if (Thread.currentThread() != serverTransactionExpireThread)
+                        break;
+
+                    long now = System.currentTimeMillis();
+
+                    /*
+                     * Has the current Thread been idle long enough to merit
+                     * disposing of it?
+                     */
+                    if (serverTransactions.isEmpty())
+                    {
+                        if (idleStartTime == -1)
+                            idleStartTime = now;
+                        else if (now - idleStartTime > 60 * 1000)
+                            break;
+                    }
+                    else
+                    {
+                        // Expire the StunServerTransactions of this StunStack.
+
+                        idleStartTime = -1;
+
+                        for (Iterator<StunServerTransaction> i
+                                    = serverTransactions.values().iterator();
+                                i.hasNext();)
+                        {
+                            StunServerTransaction serverTransaction = i.next();
+
+                            if (serverTransaction == null)
+                            {
+                                i.remove();
+                            }
+                            else if (serverTransaction.isExpired(now))
+                            {
+                                i.remove();
+                                serverTransaction.expire();
+                            }
+                        }
+                    }
+                }
+            }
+            while (true);
+        }
+        finally
+        {
+            synchronized (serverTransactions)
+            {
+                if (serverTransactionExpireThread == Thread.currentThread())
+                    serverTransactionExpireThread = null;
+                /*
+                 * If serverTransactionExpireThread dies unexpectedly and yet it
+                 * is still necessary, resurrect it.
+                 */
+                if (serverTransactionExpireThread == null)
+                    maybeStartServerTransactionExpireThread();
+            }
+        }
     }
 }

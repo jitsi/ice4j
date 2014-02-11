@@ -33,12 +33,11 @@ import org.ice4j.message.*;
  * @author Emil Ivov
  */
 class StunServerTransaction
-    implements Runnable
 {
     /**
      * The time that we keep server transactions active.
      */
-    private static final long LIFETIME = 16000;
+    static final long LIFETIME = 16000;
 
     /**
      * The <tt>StunStack</tt> that created us.
@@ -76,14 +75,9 @@ class StunServerTransaction
     private final TransactionID transactionID;
 
     /**
-     * The date (in milliseconds) when the next retransmission should follow.
+     * The time in milliseconds when the next retransmission should follow.
      */
-    private long expirationDate = -1;
-
-    /**
-     * The thread that this transaction runs in.
-     */
-    private Thread runningThread = null;
+    private long expirationTime = -1;
 
     /**
      * Determines whether or not the transaction has expired.
@@ -116,35 +110,25 @@ class StunServerTransaction
         this.transactionID  = tranID;
         this.localListeningAddress = localListeningAddress;
         this.requestSource = requestSource;
-
-        runningThread = new Thread(this, "StunServerTransaction@"+hashCode());
-        runningThread.setDaemon(true);
     }
 
     /**
      * Start the transaction. This launches the countdown to the moment the
      * transaction would expire.
      */
-    public void start()
+    public synchronized void start()
     {
-        expired = false;
-        runningThread.start();
-    }
-
-    /**
-     * Actually this method is simply a timer waiting for the server transaction
-     * lifetime to come to an end.
-     */
-    public void run()
-    {
-        runningThread.setName("ServTran");
-
-        schedule(LIFETIME);
-        waitNextScheduledDate();
-
-        //let's get lost
-        expire();
-        stackCallback.removeServerTransaction(this);
+        if (expirationTime == -1)
+        {
+            expired = false;
+            expirationTime = LIFETIME + System.currentTimeMillis();
+        }
+        else
+        {
+            throw new IllegalStateException(
+                    "StunServerTransaction " + getTransactionID()
+                        + " has already been started!");
+        }
     }
 
     /**
@@ -200,7 +184,7 @@ class StunServerTransaction
     {
         //don't retransmit if we are expired or if the user application
         //hasn't yet transmitted a first response
-        if(expired || !isRetransmitting)
+        if(isExpired() || !isRetransmitting)
             return;
 
         stackCallback.getNetAccessManager().sendMessage(
@@ -210,44 +194,46 @@ class StunServerTransaction
     }
 
     /**
-     * Waits until next retransmission is due or until the transaction is
-     * cancelled (whichever comes first).
-     */
-    private synchronized void waitNextScheduledDate()
-    {
-        long timeout;
-
-        while (!expired
-                && (timeout = expirationDate - System.currentTimeMillis()) > 0)
-        {
-            try
-            {
-                wait(timeout);
-            }
-            catch (InterruptedException ex)
-            {
-            }
-        }
-    }
-
-    /**
-     * Sets the expiration date for this server transaction.
-     *
-     * @param timeout the number of milliseconds to wait before expiration.
-     */
-    private void schedule(long timeout)
-    {
-        this.expirationDate = System.currentTimeMillis() + timeout;
-    }
-
-    /**
      * Cancels the transaction. Once this method is called the transaction is
      * considered terminated and will stop retransmissions.
      */
     public synchronized void expire()
     {
-        this.expired = true;
-        notifyAll();
+        expired = true;
+        /*
+         * StunStack has a background Thread running with the purpose of
+         * removing expired StunServerTransactions.
+         */
+    }
+
+    /**
+     * Determines whether this <tt>StunServerTransaction</tt> is expired now.
+     *
+     * @return <tt>true</tt> if this <tt>StunServerTransaction</tT> is expired
+     * now; otherwise, <tt>false</tt>
+     */
+    public boolean isExpired()
+    {
+        return isExpired(System.currentTimeMillis());
+    }
+
+    /**
+     * Determines whether this <tt>StunServerTransaction</tt> will be expired at
+     * a specific point in time.
+     *
+     * @param now the time in milliseconds at which the <tt>expired</tt> state
+     * of this <tt>StunServerTransaction</tt> is to be returned
+     * @return <tt>true</tt> if this <tt>StunServerTransaction</tt> will be
+     * expired at the specified point in time; otherwise, <tt>false</tt>
+     */
+    public synchronized boolean isExpired(long now)
+    {
+        if (expirationTime == -1)
+            return false;
+        else if (expirationTime < now)
+            return true;
+        else
+            return expired;
     }
 
     /**
@@ -257,7 +243,7 @@ class StunServerTransaction
      */
     public TransactionID getTransactionID()
     {
-        return this.transactionID;
+        return transactionID;
     }
 
     /**
