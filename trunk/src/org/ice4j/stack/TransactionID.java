@@ -30,7 +30,7 @@ public class TransactionID
     /**
      * The id itself
      */
-    private final byte transactionID[];
+    private final byte[] transactionID;
 
     /**
      * Any object that the application would like to correlate to a transaction.
@@ -53,7 +53,7 @@ public class TransactionID
      */
     private TransactionID()
     {
-        transactionID = new byte[RFC5389_TRANSACTION_ID_LENGTH];
+        this(false);
     }
 
     /**
@@ -63,14 +63,11 @@ public class TransactionID
      */
     private TransactionID(boolean rfc3489Compatibility)
     {
-        if(rfc3489Compatibility)
-        {
-            transactionID = new byte[RFC3489_TRANSACTION_ID_LENGTH];
-        }
-        else
-        {
-            transactionID = new byte[RFC5389_TRANSACTION_ID_LENGTH];
-        }
+        transactionID
+            = new byte[
+                    rfc3489Compatibility
+                        ? RFC3489_TRANSACTION_ID_LENGTH
+                        : RFC5389_TRANSACTION_ID_LENGTH];
     }
 
     /**
@@ -211,11 +208,10 @@ public class TransactionID
      */
     public boolean equals(Object obj)
     {
-        if(!(obj instanceof TransactionID))
-            return false;
-
         if(this == obj)
             return true;
+        if(!(obj instanceof TransactionID))
+            return false;
 
         byte targetBytes[] = ((TransactionID)obj).transactionID;
 
@@ -234,7 +230,7 @@ public class TransactionID
 
     /**
      * Returns the first four bytes of the transactionID to ensure proper
-     * retrieval from hashtables;
+     * retrieval from hashtables.
      * @return the hashcode of this object - as advised by the Java Platform
      * Specification
      */
@@ -262,19 +258,17 @@ public class TransactionID
      */
     public static String toString(byte[] transactionID)
     {
-        StringBuffer idStr = new StringBuffer();
+        StringBuilder idStr = new StringBuilder();
 
         idStr.append("0x");
         for(int i = 0; i < transactionID.length; i++)
         {
 
             if((transactionID[i] & 0xFF) <= 15)
-            {
                 idStr.append("0");
-            }
 
-            idStr.append(Integer.toHexString(transactionID[i] & 0xff)
-                            .toUpperCase());
+            idStr.append(
+                    Integer.toHexString(transactionID[i] & 0xFF).toUpperCase());
         }
 
         return idStr.toString();
