@@ -2,6 +2,7 @@
 
 <project name="ice4j" basedir="." default="rebuild">
     <property name="dest" value="classes"/>
+    <property name="dest-test" value="classes-test"/>
     <property name="lib" value="lib"/>
     <property name="JUnit.home" value="${lib}"/>
     <property name="src" value="src"/>
@@ -14,9 +15,13 @@
 
     <path id="project.class.path">
         <pathelement location="${dest}"/>
-        <pathelement location="${JUnit.home}/junit.jar"/>
         <pathelement location="${lib}/jain-sdp.jar"/>
         <pathelement location="${lib}/weupnp-0.1.2-SNAPSHOT.jar"/>
+    </path>
+    <path id="test.class.path">
+        <path refid="project.class.path" />
+        <pathelement location="${dest-test}"/>
+        <pathelement location="${JUnit.home}/junit.jar"/>
     </path>
 
     <!--Patternset to exclude files from the output directory:-->
@@ -38,6 +43,18 @@
                target="1.5"
                source="1.5">
             <src path="${src}"/>
+            <compilerarg value="-Xlint"/>
+        </javac>
+    </target>
+    <target name="compile-test" depends="init">
+        <javac classpathref="test.class.path"
+               debug="true"
+               deprecation="true"
+               destdir="${dest-test}"
+               nowarn="false"
+               optimize="true"
+               target="1.5"
+               source="1.5">
             <src path="${src2}"/>
             <compilerarg value="-Xlint"/>
         </javac>
@@ -88,6 +105,7 @@
     <target name="clean">
         <delete failonerror="false" includeemptydirs="true">
             <fileset dir="${dest}"/>
+            <fileset dir="${dest-test}"/>
             <fileset dir="${junit.reports}"/>
             <fileset dir="doc" />
         </delete>
@@ -106,6 +124,7 @@
     <!-- create needed subdirs-->
     <target name="init">
         <mkdir dir="${dest}"/>
+        <mkdir dir="${dest-test}"/>
         <mkdir dir="${junit.reports}"/>
         <mkdir dir="${junit.html.reports}"/>
     </target>
@@ -134,13 +153,13 @@
     </target>
 
     <!-- Run the tests-->
-    <target name="test">
+    <target name="test" depends="compile-test">
         <junit haltonfailure="true" fork="true" forkmode="once">
             <formatter type="xml"/>
             <formatter type="brief" usefile="false"/>
             <test name="org.ice4j.StunTestSuite" todir="${junit.reports}"/>
             <test name="org.ice4j.PseudoTcpTestSuite" todir="${junit.reports}"/>
-            <classpath refid="project.class.path"/>
+            <classpath refid="test.class.path"/>
         </junit>
 
         <!-- Generate the html report.
