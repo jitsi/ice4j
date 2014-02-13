@@ -460,15 +460,15 @@ class ConnectivityCheckServer
      */
     public byte[] getRemoteKey(String username, String media)
     {
-        //support both the case where username is the local fragment or the
-        //entire user name.
-        int colon = username.indexOf(":");
-
         IceMediaStream stream = parentAgent.getStream(media);
         if(stream == null)
         {
             return null;
         }
+
+        //support both the case where username is the local fragment or the
+        //entire user name.
+        int colon = username.indexOf(":");
 
         if (colon < 0)
         {

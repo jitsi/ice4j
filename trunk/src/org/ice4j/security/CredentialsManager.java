@@ -22,6 +22,7 @@ import java.util.*;
  * authority.
  *
  * @author Emil Ivov
+ * @author Lyubomir Marinov
  */
 public class CredentialsManager
 {
@@ -31,6 +32,61 @@ public class CredentialsManager
      */
     private final List<CredentialsAuthority> authorities =
         new LinkedList<CredentialsAuthority>();
+
+    /**
+     * The list of <tt>CredentialsAuthority</tt>s registered with this manager
+     * as being able to provide credentials. If non-<tt>null</tt>, represents
+     * an unmodifiable view of {@link #authorities}. The field was introduced in
+     * order to reduce the scopes of the synchronization blocks of
+     * <tt>CredentialsManager</tt> and to thus reduce the risks of deadlocks.
+     */
+    private CredentialsAuthority[] unmodifiableAuthorities;
+
+    /**
+     * Verifies whether <tt>username</tt> is currently known to any of the
+     * {@link CredentialsAuthority}s registered with this manager and
+     * and returns <tt>true</tt> if so. Returns <tt>false</tt> otherwise.
+     *
+     * @param username the user name whose validity we'd like to check.
+     *
+     * @return <tt>true</tt> if <tt>username</tt> is known to any of the
+     * <tt>CredentialsAuthority</tt>s registered here and <tt>false</tt>
+     * otherwise.
+     */
+    public boolean checkLocalUserName(String username)
+    {
+        for (CredentialsAuthority auth : getAuthorities())
+        {
+            if (auth.checkLocalUserName(username))
+                return true;
+        }
+        return false;
+    }
+
+    /**
+     * Gets the list of <tt>CredentialsAuthority</tt>s registered with this
+     * manager as being able to provide credentials. <b>Warning</b>: the
+     * returned value is an internal state of this instance and is to be
+     * considered unmodifiable.
+     *
+     * @return the list of <tt>CredentialsAuthority</tt>s registered with this
+     * manager as being able to provide credentials. <b>Warning</b>: the
+     * returned value is an internal state of this instance and is to be
+     * considered unmodifiable.
+     */
+    private CredentialsAuthority[] getAuthorities()
+    {
+        synchronized (authorities)
+        {
+            if (unmodifiableAuthorities == null)
+            {
+                unmodifiableAuthorities
+                    = authorities.toArray(
+                            new CredentialsAuthority[authorities.size()]);
+            }
+            return unmodifiableAuthorities;
+        }
+    }
 
     /**
      * Queries all currently registered {@link CredentialsAuthority}s for a
@@ -47,17 +103,12 @@ public class CredentialsManager
      */
     public byte[] getLocalKey(String username)
     {
-        synchronized(authorities)
+        for (CredentialsAuthority auth : getAuthorities())
         {
-            for (CredentialsAuthority auth : authorities)
-            {
-                byte[] passwd = auth.getLocalKey(username);
+            byte[] passwd = auth.getLocalKey(username);
 
-                if (passwd != null)
-                {
-                    return passwd;
-                }
-            }
+            if (passwd != null)
+                return passwd;
         }
         return null;
     }
@@ -78,44 +129,17 @@ public class CredentialsManager
      */
     public byte[] getRemoteKey(String username, String media)
     {
-        synchronized(authorities)
+        for (CredentialsAuthority auth : getAuthorities())
         {
-            for (CredentialsAuthority auth : authorities)
-            {
-                byte[] passwd = auth.getRemoteKey(username, media);
+            byte[] passwd = auth.getRemoteKey(username, media);
 
-                if (passwd != null)
-                {
-                    /** @todo: we should probably add SASLprep here.*/
-                    return passwd;
-                }
+            if (passwd != null)
+            {
+                /** @todo: we should probably add SASLprep here.*/
+                return passwd;
             }
         }
         return null;
-    }
-
-    /**
-     * Verifies whether <tt>username</tt> is currently known to any of the
-     * {@link CredentialsAuthority}s registered with this manager and
-     * and returns <tt>true</tt> if so. Returns <tt>false</tt> otherwise.
-     *
-     * @param username the user name whose validity we'd like to check.
-     *
-     * @return <tt>true</tt> if <tt>username</tt> is known to any of the
-     * <tt>CredentialsAuthority</tt>s registered here and <tt>false</tt>
-     * otherwise.
-     */
-    public boolean checkLocalUserName(String username)
-    {
-        synchronized(authorities)
-        {
-            for (CredentialsAuthority auth : authorities)
-            {
-                if( auth.checkLocalUserName(username))
-                    return true;
-            }
-        }
-        return false;
     }
 
     /**
@@ -126,10 +150,10 @@ public class CredentialsManager
      */
     public void registerAuthority(CredentialsAuthority authority)
     {
-        synchronized(authorities)
+        synchronized (authorities)
         {
-            if(!authorities.contains(authority))
-                authorities.add(authority);
+            if (!authorities.contains(authority) && authorities.add(authority))
+                unmodifiableAuthorities = null;
         }
     }
 
@@ -142,9 +166,10 @@ public class CredentialsManager
      */
     public void unregisterAuthority(CredentialsAuthority authority)
     {
-        synchronized(authorities)
+        synchronized (authorities)
         {
-            authorities.remove(authority);
+            if (authorities.remove(authority))
+                unmodifiableAuthorities = null;
         }
     }
 }

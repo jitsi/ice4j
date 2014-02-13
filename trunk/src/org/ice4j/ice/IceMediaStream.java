@@ -292,15 +292,13 @@ public class IceMediaStream
     {
         synchronized (components)
         {
-            Iterator<Map.Entry<Integer, Component>> cmpEntries
-                = components.entrySet().iterator();
-
-            while (cmpEntries.hasNext())
+            for (Iterator<Component> i = components.values().iterator();
+                    i.hasNext();)
             {
-                Component component = cmpEntries.next().getValue();
+                Component component = i.next();
 
+                i.remove();
                 component.free();
-                cmpEntries.remove();
             }
         }
     }

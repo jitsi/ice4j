@@ -1193,8 +1193,14 @@ public class Agent
         synchronized (mediaStreams)
         {
             mediaStreams.remove(stream.getName());
-            stream.free();
         }
+        /*
+         * XXX The invocation of IceMediaStream#free() on stream has been moved
+         * out of the synchronized block in order to reduce the chances of a
+         * deadlock. There was no obvious reason why it should stay in the
+         * synchronized block at the time of the modification.
+         */
+        stream.free();
     }
 
     /**
