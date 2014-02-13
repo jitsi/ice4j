@@ -385,19 +385,32 @@ class StunClientTransaction
      * @param waitForResponse indicates whether we should wait for the current
      * RTO to expire before ending the transaction or immediately terminate.
      */
-    synchronized void cancel(boolean waitForResponse)
+    void cancel(boolean waitForResponse)
     {
-        this.cancelled = true;
+        /*
+         * XXX The cancelled field is initialized to false and then the one and
+         * only write access to it is here to set it to true. The rest of the
+         * code just checks whether it has become true. Consequently, there
+         * shouldn't be a problem if the set is outside a synchronized block.
+         * However, it being outside a synchronized block will decrease the risk
+         * of deadlocks.
+         */
+        cancelled = true;
 
         if(!waitForResponse)
-            notifyAll();
+        {
+            synchronized (this)
+            {
+                notifyAll();
+            }
+        }
     }
 
     /**
      * Cancels the transaction. Once this method is called the transaction is
      * considered terminated and will stop retransmissions.
      */
-    synchronized void cancel()
+    void cancel()
     {
         cancel(false);
     }
