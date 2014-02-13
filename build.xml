@@ -46,7 +46,7 @@
             <compilerarg value="-Xlint"/>
         </javac>
     </target>
-    <target name="compile-test" depends="init">
+    <target name="compile-test">
         <javac classpathref="test.class.path"
                debug="true"
                deprecation="true"
@@ -113,7 +113,7 @@
     </target>
 
     <!-- make everything -->
-    <target name="make" depends="compile,resource,jar"/>
+    <target name="make" depends="compile,resource,jar,compile-test"/>
 
     <!-- clean and make everything -->
     <target name="rebuild" depends="clean,make" />
@@ -153,7 +153,7 @@
     </target>
 
     <!-- Run the tests-->
-    <target name="test" depends="compile-test">
+    <target name="test">
         <junit haltonfailure="true" fork="true" forkmode="once">
             <formatter type="xml"/>
             <formatter type="brief" usefile="false"/>
@@ -180,7 +180,7 @@
     <target name="run-sample">
         <java fork="true"
               classname="test.Ice"
-              classpathref="project.class.path">
+              classpathref="test.class.path">
 
             <!-- Tell java.util.logging about our logging preferences -->
             <sysproperty key="java.util.logging.config.file"
@@ -189,10 +189,10 @@
     </target>
     
     <!-- Run pseudotcp sample application -->
-    <target name="run-pseudotcp" depends="compile">
+    <target name="run-pseudotcp">
         <java fork="true"
               classname="test.IcePseudoTcp"
-              classpathref="project.class.path">
+              classpathref="test.class.path">
 
             <!-- Tell java.util.logging about our logging preferences -->
             <sysproperty key="java.util.logging.config.file"
@@ -200,10 +200,10 @@
         </java>
     </target>
     <!-- Debug pseudotcp example on port 5005 -->
-    <target name="debug-pseudotcp" depends="compile">
+    <target name="debug-pseudotcp">
         <java fork="true"
               classname="test.IcePseudoTcp"
-              classpathref="project.class.path">
+              classpathref="test.class.path">
 
             <!-- Tell java.util.logging about our logging preferences -->
             <sysproperty key="java.util.logging.config.file"
@@ -214,9 +214,9 @@
     </target>
 
     <!-- Debug pseudotcp example with netbeans -->
-    <target name="nb-debug-pseudotcp" depends="compile">
+    <target name="nb-debug-pseudotcp">
         <nbjpdastart addressproperty="jpda.address" name="ice4j" transport="dt_socket">
-            <classpath refid="project.class.path"/>
+            <classpath refid="test.class.path"/>
         </nbjpdastart>
         <java classname="test.IcePseudoTcp" fork="true">
             <classpath refid="project.class.path"/>
@@ -234,7 +234,7 @@
     <target name="run-dist">
         <java fork="true"
               classname="test.IceDistributed"
-              classpathref="project.class.path">
+              classpathref="test.class.path">
 
             <!-- Tell java.util.logging about our logging preferences -->
             <sysproperty key="java.util.logging.config.file"
@@ -246,7 +246,7 @@
     <target name="run-trickle">
         <java fork="true"
               classname="test.TrickleIce"
-              classpathref="project.class.path">
+              classpathref="test.class.path">
 
             <!-- Tell java.util.logging about our logging preferences -->
             <sysproperty key="java.util.logging.config.file"
@@ -258,7 +258,7 @@
     <target name="run-lite">
         <java fork="true"
               classname="test.IceLite"
-              classpathref="project.class.path">
+              classpathref="test.class.path">
 
             <!-- Tell java.util.logging about our logging preferences -->
             <sysproperty key="java.util.logging.config.file"
