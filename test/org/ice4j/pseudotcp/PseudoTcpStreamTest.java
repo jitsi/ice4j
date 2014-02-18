@@ -7,11 +7,11 @@
  */
 package org.ice4j.pseudotcp;
 
+import static org.junit.Assert.*;
+
 import java.io.*;
 import java.net.*;
 import java.util.logging.*;
-import static org.junit.Assert.*;
-import org.junit.*;
 
 /**
  * 

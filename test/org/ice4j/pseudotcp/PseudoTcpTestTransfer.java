@@ -7,11 +7,10 @@
  */
 package org.ice4j.pseudotcp;
 
+import static org.junit.Assert.*;
+
 import java.io.*;
 import java.util.logging.*;
-import org.ice4j.pseudotcp.util.*;
-import static org.junit.Assert.*;
-import org.junit.*;
 
 /**
  * Implements one way transfer test

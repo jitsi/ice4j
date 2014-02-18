@@ -7,11 +7,12 @@
  */
 package org.ice4j.pseudotcp.util;
 
-import junit.framework.*;
+import static org.junit.Assert.*;
+
 import java.nio.*;
 import java.util.*;
-import static org.junit.Assert.*;
-import org.junit.*;
+
+import junit.framework.*;
 
 /**
  * 

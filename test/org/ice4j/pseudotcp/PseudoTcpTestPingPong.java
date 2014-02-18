@@ -9,9 +9,8 @@ package org.ice4j.pseudotcp;
 
 import java.io.*;
 import java.util.logging.*;
+
 import org.ice4j.pseudotcp.util.*;
-import static org.junit.Assert.*;
-import org.junit.*;
 
 /**
  * This class implements test for two way transfers
@@ -69,7 +68,7 @@ public class PseudoTcpTestPingPong extends PseudoTcpTestBase
     public void doTestPingPong(int size, int iterations)
     {
         Thread.setDefaultUncaughtExceptionHandler(this);
-        long start, end;
+        long start;
         iterationsRemaining = iterations;
         receiver = getRemoteTcp();
         sender = getLocalTcp();
