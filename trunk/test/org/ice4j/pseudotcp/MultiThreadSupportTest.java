@@ -1,9 +1,6 @@
 package org.ice4j.pseudotcp;
 
-
 import junit.framework.*;
-import java.lang.Thread.*;
-import static org.junit.Assert.*;
 
 /**
  * This class enables multi thread tests where main thread waits in loop 
@@ -18,7 +15,7 @@ import static org.junit.Assert.*;
  */
 public class MultiThreadSupportTest 
 	extends TestCase
-	implements UncaughtExceptionHandler
+	implements Thread.UncaughtExceptionHandler
 {
     private volatile Throwable testError;
     private volatile Thread errorThread;

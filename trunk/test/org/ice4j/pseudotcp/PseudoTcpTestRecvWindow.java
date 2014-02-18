@@ -10,9 +10,8 @@ package org.ice4j.pseudotcp;
 import java.io.*;
 import java.util.*;
 import java.util.logging.*;
+
 import org.ice4j.pseudotcp.util.*;
-import static org.junit.Assert.*;
-import org.junit.*;
 
 /**
  * Fill the receiver window until it is full, drain it and then fill it with the
@@ -57,7 +56,7 @@ public class PseudoTcpTestRecvWindow extends PseudoTcpTestBase
     {
         Thread.setDefaultUncaughtExceptionHandler(this);
         testDataSize = size;
-        long start, end, elapsed;
+        long start, elapsed;
         send_position = new ArrayList<Integer>();
         recv_position = new ArrayList<Integer>();
         // Create some dummy data

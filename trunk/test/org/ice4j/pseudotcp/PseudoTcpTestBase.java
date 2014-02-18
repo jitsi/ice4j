@@ -10,7 +10,6 @@ package org.ice4j.pseudotcp;
 import java.io.*;
 import java.util.*;
 import java.util.logging.*;
-import org.ice4j.pseudotcp.util.*;
 
 /**
  * Base class for other pseduoTCP logic tests. Runs all threads required for the
@@ -20,7 +19,8 @@ import org.ice4j.pseudotcp.util.*;
  *
  * @author Pawel Domas
  */
-public abstract class PseudoTcpTestBase extends MultiThreadSupportTest
+public abstract class PseudoTcpTestBase
+    extends MultiThreadSupportTest
     implements PseudoTcpNotify
 {
     /**

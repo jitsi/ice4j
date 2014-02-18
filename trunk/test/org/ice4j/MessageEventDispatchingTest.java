@@ -6,7 +6,6 @@
  */
 package org.ice4j;
 
-import java.net.*;
 import java.util.*;
 
 import junit.framework.*;
