@@ -297,38 +297,73 @@ public class Ice
     protected static Agent createAgent(int rtpPort, boolean isTrickling)
         throws Throwable
     {
+        return createAgent(rtpPort, isTrickling, null);
+    }
+
+    /**
+     * Creates an ICE <tt>Agent</tt> (vanilla or trickle, depending on the
+     * value of <tt>isTrickling</tt>) and adds to it an audio and a video stream
+     * with RTP and RTCP components.
+     *
+     * @param rtpPort the port that we should try to bind the RTP component on
+     * (the RTCP one would automatically go to rtpPort + 1)
+     * @return an ICE <tt>Agent</tt> with an audio stream with RTP and RTCP
+     * components.
+     * @param isTrickling indicates whether the newly created agent should be
+     * performing trickle ICE.
+     * @param harvesters the list of {@link CandidateHarvester}s that the new
+     * agent should use or <tt>null</tt> if it should include the default ones.
+     *
+     * @throws Throwable if anything goes wrong.
+     */
+    protected static Agent createAgent(int      rtpPort,
+                                       boolean  isTrickling,
+                                       List<CandidateHarvester>  harvesters)
+        throws Throwable
+    {
         long startTime = System.currentTimeMillis();
         Agent agent = new Agent();
         agent.setTrickling(isTrickling);
 
-        // STUN
-        StunCandidateHarvester stunHarv = new StunCandidateHarvester(
-            new TransportAddress("stun.jitsi.net", 3478, Transport.UDP));
-        StunCandidateHarvester stun6Harv = new StunCandidateHarvester(
-            new TransportAddress("stun6.jitsi.net", 3478, Transport.UDP));
+        if(harvesters == null)
+        {
+            // STUN
+            StunCandidateHarvester stunHarv = new StunCandidateHarvester(
+                new TransportAddress("stun.jitsi.net", 3478, Transport.UDP));
+            StunCandidateHarvester stun6Harv = new StunCandidateHarvester(
+                new TransportAddress("stun6.jitsi.net", 3478, Transport.UDP));
 
-        agent.addCandidateHarvester(stunHarv);
-        agent.addCandidateHarvester(stun6Harv);
+            agent.addCandidateHarvester(stunHarv);
+            agent.addCandidateHarvester(stun6Harv);
 
-        // TURN
-        String[] hostnames = new String[]
-                             {
-                                "stun.jitsi.net",
-                                "stun6.jitsi.net"
-                             };
-        int port = 3478;
-        LongTermCredential longTermCredential
-            = new LongTermCredential("guest", "anonymouspower!!");
+            // TURN
+            String[] hostnames = new String[]
+                                 {
+                                    "stun.jitsi.net",
+                                    "stun6.jitsi.net"
+                                 };
+            int port = 3478;
+            LongTermCredential longTermCredential
+                = new LongTermCredential("guest", "anonymouspower!!");
 
-        for (String hostname : hostnames)
-            agent.addCandidateHarvester(
-                    new TurnCandidateHarvester(
-                            new TransportAddress(hostname, port, Transport.UDP),
-                            longTermCredential));
+            for (String hostname : hostnames)
+                agent.addCandidateHarvester(
+                        new TurnCandidateHarvester(
+                                new TransportAddress(
+                                    hostname, port, Transport.UDP),
+                                longTermCredential));
 
-        //UPnP: adding an UPnP harvester because they are generally slow
-        //which makes it more convenient to test things like trickle.
-        agent.addCandidateHarvester( new UPNPHarvester() );
+            //UPnP: adding an UPnP harvester because they are generally slow
+            //which makes it more convenient to test things like trickle.
+            agent.addCandidateHarvester( new UPNPHarvester() );
+        }
+        else
+        {
+            for(CandidateHarvester harvester: harvesters)
+            {
+                agent.addCandidateHarvester(harvester);
+            }
+        }
 
         //STREAMS
         createStream(rtpPort, "audio", agent);

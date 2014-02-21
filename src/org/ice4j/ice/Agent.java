@@ -124,11 +124,6 @@ public class Agent
     private final DefaultNominator nominator;
 
     /**
-     * ICE compatibility mode for this agent.
-     */
-    private final CompatibilityMode compatibilityMode;
-
-    /**
      * The name of the {@link PropertyChangeEvent} that we use to deliver
      * events on changes in the state of ICE processing in this agent.
      */
@@ -263,19 +258,7 @@ public class Agent
      */
     public Agent()
     {
-        this(CompatibilityMode.RFC5245);
-    }
-
-    /**
-     * Creates an empty <tt>Agent</tt> with no streams, and no address.
-     *
-     * @param compatibilityMode ICE compatibility mode
-     */
-    public Agent(CompatibilityMode compatibilityMode)
-    {
         SecureRandom random = new SecureRandom();
-
-        this.compatibilityMode = compatibilityMode;
 
         connCheckServer = new ConnectivityCheckServer(this);
         connCheckClient = new ConnectivityCheckClient(this);
@@ -287,24 +270,8 @@ public class Agent
         if (StackProperties.getString(StackProperties.SOFTWARE) == null)
             System.setProperty(StackProperties.SOFTWARE, "ice4j.org");
 
-        if (compatibilityMode == CompatibilityMode.GTALK)
-        {
-            /*
-             * The ufrag is 16 bytes in the Google Talk dialect but it is set
-             * per candidate, not globally.
-             */
-            ufrag = null;
-            /*
-             * There is no password in the Google Talk dialect. (At least
-             * libnice does not use one.)
-             */
-            password = "";
-        }
-        else
-        {
-            ufrag = new BigInteger(24, random).toString(32);
-            password = new BigInteger(128, random).toString(32);
-        }
+        ufrag = new BigInteger(24, random).toString(32);
+        password = new BigInteger(128, random).toString(32);
 
         tieBreaker = Math.abs(random.nextLong());
         nominator = new DefaultNominator(this);
@@ -386,20 +353,6 @@ public class Agent
         {
             logger.info("\t" + candidate.getTransportAddress() + " (" +
                     candidate.getType() + ")");
-
-            if(compatibilityMode == CompatibilityMode.GTALK)
-            {
-                /* assign a local ufrag of 16 bytes for each candidate */
-                LocalCandidate localCand = (LocalCandidate)candidate;
-
-                /* Google relayed candidate should have already set their
-                 * ufrag since it must be the same as username present in
-                 * HTTP response
-                 */
-                if(localCand.getUfrag() == null)
-                    localCand.setUfrag(generateGTalkUfrag());
-
-            }
         }
 
         /*
@@ -415,23 +368,6 @@ public class Agent
         connCheckServer.start();
 
         return component;
-    }
-
-    /**
-     * Generates Ufrag for GTalk mode.
-     *
-     * @return 16 bytes Ufrag
-     */
-    public String generateGTalkUfrag()
-    {
-        SecureRandom random = new SecureRandom();
-        String s = null;
-
-        while(s == null || s.length() != 16)
-        {
-            s = new BigInteger(80, random).toString(32);
-        }
-        return s;
     }
 
     /**
@@ -470,13 +406,6 @@ public class Agent
         hostCandidateHarvester.harvest(
                 component,
                 preferredPort, minPort, maxPort, Transport.UDP);
-
-        if(compatibilityMode == CompatibilityMode.GTALK)
-        {
-            hostCandidateHarvester.harvest(
-                component,
-                preferredPort, minPort, maxPort, Transport.TCP);
-        }
 
         logger.fine("host candidate count: " +
             component.getLocalCandidateCount());
@@ -903,16 +832,7 @@ public class Agent
             return null;
         }
 
-        if(compatibilityMode == CompatibilityMode.RFC5245)
-        {
-            ret = getLocalUfrag() + ":" + stream.getRemoteUfrag();
-        }
-        else if(compatibilityMode == CompatibilityMode.GTALK)
-        {
-            ret = getLocalUfrag() + stream.getRemoteUfrag();
-        }
-
-        return ret;
+        return getLocalUfrag() + ":" + stream.getRemoteUfrag();
     }
 
     /**
@@ -963,16 +883,6 @@ public class Agent
         String ret = null;
         String ufrag1 = candidate1.getUfrag();
         String ufrag2 = candidate2.getUfrag();
-
-        /* Google Talk specific
-         * each candidate has its own username/password
-         */
-        if(ufrag1 != null
-                && ufrag2 != null
-                && compatibilityMode == CompatibilityMode.GTALK)
-        {
-            ret = ufrag1 + ufrag2;
-        }
 
         return ret;
     }
@@ -1099,7 +1009,7 @@ public class Agent
     public synchronized StunStack getStunStack()
     {
         if (stunStack == null)
-            stunStack = new StunStack(compatibilityMode);
+            stunStack = new StunStack();
         return stunStack;
     }
 
@@ -1391,15 +1301,7 @@ public class Agent
         String ufrag = null;
         LocalCandidate localCandidate = null;
 
-        if(compatibilityMode == CompatibilityMode.GTALK
-                && localAddress.getTransport() != Transport.TCP)
-        {
-            localCandidate = findLocalCandidate(localAddress, remoteUFrag);
-        }
-        else
-        {
-            localCandidate = findLocalCandidate(localAddress);
-        }
+        localCandidate = findLocalCandidate(localAddress);
 
         if(localCandidate == null)
         {
@@ -1411,31 +1313,6 @@ public class Agent
         Component parentComponent = localCandidate.getParentComponent();
         RemoteCandidate remoteCandidate = null;
 
-        // we need to find the username for the couple
-        if(compatibilityMode == CompatibilityMode.GTALK)
-        {
-            CandidatePair pair = findCandidatePair(localUFrag, remoteUFrag);
-            if(pair == null)
-            {
-                logger.info("No GTalk CandidatePair that match Lufrag/Rufrag" +
-                    " " + localUFrag + " " + remoteUFrag);
-                return;
-            }
-
-            CandidatePair pair2 = findCandidatePair(
-                localCandidate.getTransportAddress(),
-                remoteAddress);
-            if(pair2 == null)
-            {
-                useCandidate = false;
-            }
-            else
-            {
-                useCandidate = pair2.useCandidateReceived();
-            }
-
-            ufrag = pair.getRemoteCandidate().getUfrag();
-        }
         remoteCandidate = new RemoteCandidate(
                 remoteAddress,
                 parentComponent,
@@ -1517,8 +1394,7 @@ public class Agent
             //we already know about the remote address so we only need to
             //trigger a check for the existing pair
 
-            if(compatibilityMode != CompatibilityMode.RFC5245 &&
-                !isControlling())
+            if(!isControlling())
             {
                 logger.fine("set useCandidateReceived for " +
                     triggerPair.toShortString());
@@ -1776,8 +1652,7 @@ public class Agent
             scheduleStunKeepAlive();
         }
 
-        if (compatibilityMode == CompatibilityMode.RFC5245)
-            scheduleTermination();
+        scheduleTermination();
 
         //print logs for the types of addresses we chose.
         logCandTypes();
@@ -2193,16 +2068,6 @@ public class Agent
     }
 
     /**
-     * Returns the compatibility mode used by this agent.
-     *
-     * @return compatibility mode
-     */
-    public CompatibilityMode getCompatibilityMode()
-    {
-        return compatibilityMode;
-    }
-
-    /**
      * Schedule STUN checks for selected pair.
      */
     private void runInStunKeepAliveThread()
@@ -2217,9 +2082,7 @@ public class Agent
 
                     if(pair != null)
                     {
-                        if(performConsentFreshness
-                                || (compatibilityMode
-                                        == CompatibilityMode.GTALK))
+                        if(performConsentFreshness)
                         {
                             connCheckClient.startCheckForPair(
                                     pair,
@@ -2227,7 +2090,7 @@ public class Agent
                                     CONSENT_FRESHNESS_WAIT_INTERVAL,
                                     CONSENT_FRESHNESS_MAX_RETRANSMISSIONS);
                         }
-                        else if(compatibilityMode == CompatibilityMode.RFC5245)
+                        else
                         {
                             connCheckClient.sendBindingIndicationForPair(pair);
                         }

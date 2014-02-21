@@ -169,7 +169,7 @@ class ConnectivityCheckClient
      *
      * @param candidatePair that {@link CandidatePair} that we'd like to start
      * a check for.
-     * @param originalWiatIterval
+     * @param originalWiatInterval
      * @param maxWaitInterval
      * @param maxRetransmissions
      * @return a reference to the {@link TransactionID} used in the connectivity
@@ -178,7 +178,7 @@ class ConnectivityCheckClient
      */
     protected TransactionID startCheckForPair(
             CandidatePair candidatePair,
-            int originalWiatIterval,
+            int originalWiatInterval,
             int maxWaitInterval,
             int maxRetransmissions)
     {
@@ -188,91 +188,66 @@ class ConnectivityCheckClient
 
         Request request = MessageFactory.createBindingRequest();
 
-        if(parentAgent.getCompatibilityMode() == CompatibilityMode.GTALK)
-        {
-            /* Google Talk ICE dialect just need the username */
-            String localUserName
-                = parentAgent.generateLocalUserName(
-                        candidatePair.getRemoteCandidate(),
-                        candidatePair.getLocalCandidate());
-            UsernameAttribute unameAttr
-                = AttributeFactory.createUsernameAttribute(localUserName);
+        //the priority we'd like the remote party to use for a peer
+        //reflexive candidate if one is discovered as a consequence of this
+        //check.
+        PriorityAttribute priority
+            = AttributeFactory.createPriorityAttribute(
+                    localCandidate.computePriorityForType(
+                            CandidateType.PEER_REFLEXIVE_CANDIDATE));
 
-            request.addAttribute(unameAttr);
+        request.addAttribute(priority);
+
+        //controlling controlled
+        if (parentAgent.isControlling())
+        {
+            request.addAttribute(
+                    AttributeFactory.createIceControllingAttribute(
+                            parentAgent.getTieBreaker()));
 
             //if we are the controlling agent then we need to indicate our
             //nominated pairs.
-            if (parentAgent.isControlling() && candidatePair.isNominated())
+            if(candidatePair.isNominated())
             {
                 logger.fine(
-                        "set useCandidateSent for "
+                        "Add USE-CANDIDATE in check for: "
                             + candidatePair.toShortString());
-                candidatePair.setUseCandidateSent();
+                request.addAttribute(
+                        AttributeFactory.createUseCandidateAttribute());
             }
         }
         else
         {
-            //the priority we'd like the remote party to use for a peer
-            //reflexive candidate if one is discovered as a consequence of this
-            //check.
-            PriorityAttribute priority
-                = AttributeFactory.createPriorityAttribute(
-                        localCandidate.computePriorityForType(
-                                CandidateType.PEER_REFLEXIVE_CANDIDATE));
-
-            request.addAttribute(priority);
-
-            //controlling controlled
-            if (parentAgent.isControlling())
-            {
-                request.addAttribute(
-                        AttributeFactory.createIceControllingAttribute(
-                                parentAgent.getTieBreaker()));
-
-                //if we are the controlling agent then we need to indicate our
-                //nominated pairs.
-                if(candidatePair.isNominated())
-                {
-                    logger.fine(
-                            "Add USE-CANDIDATE in check for: "
-                                + candidatePair.toShortString());
-                    request.addAttribute(
-                            AttributeFactory.createUseCandidateAttribute());
-                }
-            }
-            else
-            {
-                request.addAttribute(
-                        AttributeFactory.createIceControlledAttribute(
-                                parentAgent.getTieBreaker()));
-            }
-
-            //credentials
-            String media
-                = candidatePair
-                    .getParentComponent().getParentStream().getName();
-            String localUserName = parentAgent.generateLocalUserName(media);
-
-            if(localUserName == null)
-                return null;
-
-            UsernameAttribute unameAttr
-                = AttributeFactory.createUsernameAttribute(localUserName);
-
-            request.addAttribute(unameAttr);
-
-            // TODO Also implement SASL prepare
-            MessageIntegrityAttribute msgIntegrity
-                = AttributeFactory.createMessageIntegrityAttribute(
-                        localUserName);
-
-            // when we will encode the MESSAGE-INTEGRITY attribute (thus
-            // generate the HMAC-SHA1 authentication), we need to know the
-            // remote key of the current stream, that why we pass the media
-            // name.
-            msgIntegrity.setMedia(media);
-            request.addAttribute(msgIntegrity);
+            request.addAttribute(
+                    AttributeFactory.createIceControlledAttribute(
+                            parentAgent.getTieBreaker()));
         }
+
+        //credentials
+        String media
+            = candidatePair
+                .getParentComponent().getParentStream().getName();
+        String localUserName = parentAgent.generateLocalUserName(media);
+
+        if(localUserName == null)
+            return null;
+
+        UsernameAttribute unameAttr
+            = AttributeFactory.createUsernameAttribute(localUserName);
+
+        request.addAttribute(unameAttr);
+
+        // TODO Also implement SASL prepare
+        MessageIntegrityAttribute msgIntegrity
+            = AttributeFactory.createMessageIntegrityAttribute(
+                    localUserName);
+
+        // when we will encode the MESSAGE-INTEGRITY attribute (thus
+        // generate the HMAC-SHA1 authentication), we need to know the
+        // remote key of the current stream, that why we pass the media
+        // name.
+        msgIntegrity.setMedia(media);
+        request.addAttribute(msgIntegrity);
 
         TransactionID tran = TransactionID.createNewTransactionID();
 
@@ -291,7 +266,7 @@ class ConnectivityCheckClient
                         localCandidate.getBase().getTransportAddress(),
                         this,
                         tran,
-                        originalWiatIterval,
+                        originalWiatInterval,
                         maxWaitInterval,
                         maxRetransmissions);
             if(logger.isLoggable(Level.FINEST))
@@ -341,8 +316,7 @@ class ConnectivityCheckClient
             = (CandidatePair) ev.getTransactionID().getApplicationData();
 
         //make sure that the response came from the right place.
-        if (parentAgent.getCompatibilityMode() == CompatibilityMode.RFC5245
-                && !checkSymmetricAddresses(ev))
+        if (!checkSymmetricAddresses(ev))
         {
             logger.fine("Received a non-symmetric response for pair: "
                         + checkedPair.toShortString() + ". Failing");
@@ -470,54 +444,23 @@ class ConnectivityCheckClient
             = (CandidatePair) ev.getTransactionID().getApplicationData();
 
         TransportAddress mappedAddress = null;
-        if(parentAgent.getCompatibilityMode() == CompatibilityMode.GTALK)
+
+        if(! response.containsAttribute(Attribute.XOR_MAPPED_ADDRESS))
         {
-            if(response.containsAttribute(Attribute.XOR_MAPPED_ADDRESS))
-            {
-                XorMappedAddressAttribute mappedAddressAttr
-                    = (XorMappedAddressAttribute)response
-                        .getAttribute(Attribute.XOR_MAPPED_ADDRESS);
-                mappedAddress = mappedAddressAttr.getAddress(
-                    response.getTransactionID());
-            }
-            else if(response.containsAttribute(Attribute.MAPPED_ADDRESS))
-            {
-
-                MappedAddressAttribute mappedAddressAttr
-                    = (MappedAddressAttribute)response
-                        .getAttribute(Attribute.MAPPED_ADDRESS);
-
-                mappedAddress = mappedAddressAttr.getAddress();
-            }
-            else
-            {
-                   logger.fine("Received a success response with no "
-                           + "MAPPED_ADDRESS attribute.");
-                   logger.info("Pair failed (no MAPPED-ADDRESS): "
-                           + checkedPair.toShortString());
-                   checkedPair.setStateFailed();
-                   return; //malformed error response
-            }
+            logger.fine("Received a success response with no "
+                    + "XOR_MAPPED_ADDRESS attribute.");
+            logger.info("Pair failed (no XOR-MAPPED-ADDRESS): "
+                    + checkedPair.toShortString());
+            checkedPair.setStateFailed();
+            return; //malformed error response
         }
-        else
-        {
-            if(! response.containsAttribute(Attribute.XOR_MAPPED_ADDRESS))
-            {
-                logger.fine("Received a success response with no "
-                        + "XOR_MAPPED_ADDRESS attribute.");
-                logger.info("Pair failed (no XOR-MAPPED-ADDRESS): "
-                        + checkedPair.toShortString());
-                checkedPair.setStateFailed();
-                return; //malformed error response
-            }
 
-            XorMappedAddressAttribute mappedAddressAttr
-                = (XorMappedAddressAttribute)response
-                    .getAttribute(Attribute.XOR_MAPPED_ADDRESS);
+        XorMappedAddressAttribute mappedAddressAttr
+            = (XorMappedAddressAttribute)response
+                .getAttribute(Attribute.XOR_MAPPED_ADDRESS);
 
-            mappedAddress = mappedAddressAttr
-                .getAddress(response.getTransactionID());
-        }
+        mappedAddress = mappedAddressAttr
+            .getAddress(response.getTransactionID());
 
         // XXX AddressAttribute always returns UDP based TransportAddress
         if(checkedPair.getLocalCandidate().getTransport() == Transport.TCP)
@@ -531,26 +474,8 @@ class ConnectivityCheckClient
 
         LocalCandidate validLocalCandidate = null;
 
-        if(parentAgent.getCompatibilityMode() == CompatibilityMode.GTALK)
-        {
-            // find local candidate with ufrag rather than mapped address
-            UsernameAttribute uname = (UsernameAttribute)request
-                .getAttribute(Attribute.USERNAME);
-            String username = new String(uname.getUsername());
-            String ufrag = username.substring(16, 32);
-
-            if(mappedAddress.getTransport() == Transport.TCP)
-                validLocalCandidate = parentAgent.findLocalCandidate(
-                    mappedAddress);
-            else
-                validLocalCandidate = parentAgent.findLocalCandidate(
-                    mappedAddress, ufrag);
-        }
-        else if(parentAgent.getCompatibilityMode() == CompatibilityMode.RFC5245)
-        {
-            validLocalCandidate = parentAgent
-                .findLocalCandidate(mappedAddress);
-        }
+        validLocalCandidate = parentAgent
+            .findLocalCandidate(mappedAddress);
 
         RemoteCandidate validRemoteCandidate = checkedPair.getRemoteCandidate();
 
@@ -568,16 +493,9 @@ class ConnectivityCheckClient
             //o Its priority is set equal to the value of the PRIORITY attribute
             //  in the Binding request.
             long priority = 0;
-            if(parentAgent.getCompatibilityMode() == CompatibilityMode.GTALK)
-            {
-                priority = 900;
-            }
-            else
-            {
-                PriorityAttribute prioAttr = (PriorityAttribute)request
-                    .getAttribute(Attribute.PRIORITY);
-                priority = prioAttr.getPriority();
-            }
+            PriorityAttribute prioAttr = (PriorityAttribute)request
+                .getAttribute(Attribute.PRIORITY);
+            priority = prioAttr.getPriority();
 
             LocalCandidate peerReflexiveCandidate
                 = new PeerReflexiveCandidate(
@@ -598,12 +516,6 @@ class ConnectivityCheckClient
             //remote candidates. This is not necessary; a valid pair will be
             //generated from it momentarily
             validLocalCandidate = peerReflexiveCandidate;
-
-            if(parentAgent.getCompatibilityMode() == CompatibilityMode.GTALK)
-            {
-                validLocalCandidate.setUfrag(
-                    checkedPair.getLocalCandidate().getUfrag());
-            }
 
             if(checkedPair.getParentComponent().getSelectedPair() == null)
                 logger.info("Receive a peer-reflexive candidate: " +
@@ -721,10 +633,7 @@ class ConnectivityCheckClient
         //CANDIDATE attribute in the Binding request, the valid pair generated
         //from that check has its nominated flag set to true.
         if((parentAgent.isControlling()
-                    && request.containsAttribute(Attribute.USE_CANDIDATE))
-                || ((parentAgent.getCompatibilityMode()
-                            == CompatibilityMode.GTALK)
-                        && validPair.isNominated()))
+                    && request.containsAttribute(Attribute.USE_CANDIDATE)))
         {
             if(validPair.getParentComponent().getSelectedPair() == null)
             {
@@ -769,8 +678,8 @@ class ConnectivityCheckClient
 
     /**
      * Returns <tt>true</tt> if the {@link Response} in <tt>evt</tt> had a
-     * source or a destination address that did not match those of the
-     * {@link Request}, or <tt>false</tt> otherwise.
+     * source or a destination address that match those of the {@link Request},
+     * or <tt>false</tt> otherwise.<p>
      * RFC 5245: The agent MUST check that the source IP address and port of
      * the response equal the destination IP address and port to which the
      * Binding request was sent, and that the destination IP address and
@@ -784,7 +693,7 @@ class ConnectivityCheckClient
      * Response} we need to examine
      *
      * @return <tt>true</tt> if the {@link Response} in <tt>evt</tt> had a
-     * source or a destination address that did not match those of the
+     * source or a destination address that matched those of the
      * {@link Request}, or <tt>false</tt> otherwise.
      */
     private boolean checkSymmetricAddresses(StunResponseEvent evt)
@@ -837,23 +746,6 @@ class ConnectivityCheckClient
 
             pair.getParentComponent().getParentStream().getCheckList()
                 .scheduleTriggeredCheck(pair);
-        }
-        else if(parentAgent.getCompatibilityMode() == CompatibilityMode.GTALK
-                && cl == 1
-                && co == 0xae) // STALE_CREDENTIALS (430)
-        {
-            // it may be an error due to remote peer that does not processed
-            // our candidates IQ and we start connectivity checks too quickly
-            // (that's why we get a STALE CREDENTIALS because remote peer does
-            // not know the candidate ufrag). So let's send another check for
-            // that pair
-            logger.info("stale credentials for GTalk check for " +
-                pair.toShortString());
-
-            // try again after some delay
-            //startDelayedCheckForPair(pair, 100);
-            startCheckForPair(pair);
-            return;
         }
         else
         {

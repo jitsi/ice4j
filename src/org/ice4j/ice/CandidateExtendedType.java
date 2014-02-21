@@ -21,9 +21,15 @@ public enum CandidateExtendedType
     HOST_CANDIDATE("host"),
 
     /**
-     * There candidate is discovered by using UPNP method.
+     * The candidate is discovered by using UPNP method.
      */
     UPNP_CANDIDATE("upnp"),
+
+    /**
+     * The candidate is discovered through the use of a static mask (probably
+     * obtained through configuration).
+     */
+    STATICALLY_MAPPED_CANDIDATE("statically mapped"),
 
     /**
      * There candidate is discovered by using STUN peer reflexive method (cf.
@@ -32,29 +38,29 @@ public enum CandidateExtendedType
     STUN_PEER_REFLEXIVE_CANDIDATE("stun peer reflexive"),
 
     /**
-     * There candidate is discovered by using STUN server reflexive method (cf.
+     * The candidate is discovered by using STUN server reflexive method (cf.
      * RFC5389).
      */
     STUN_SERVER_REFLEXIVE_CANDIDATE("stun server reflexive"),
 
     /**
-     * There candidate is discovered by using TURN relayed method (cf. RFC5766).
+     * The candidate is discovered by using TURN relayed method (cf. RFC5766).
      */
     TURN_RELAYED_CANDIDATE("turn relayed"),
 
     /**
-     * There candidate is discovered by using TURN relayed method (cf. RFC5766).
+     * The candidate is discovered by using TURN relayed method (cf. RFC5766).
      */
     GOOGLE_TURN_RELAYED_CANDIDATE("google turn relayed"),
 
     /**
-     * There candidate is discovered by using TURN relayed method and using TCP
+     * The candidate is discovered by using TURN relayed method and using TCP
      * (cf. RFC5766).
      */
     GOOGLE_TCP_TURN_RELAYED_CANDIDATE("google tcp turn relayed"),
 
     /**
-     * There candidate is discovered by using JINGLE NODE method (cf. XEP-0278).
+     * The candidate is discovered by using JINGLE NODE method (cf. XEP-0278).
      */
     JINGLE_NODE_CANDIDATE("jingle node");
 

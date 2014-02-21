@@ -151,16 +151,7 @@ public class Component
         agent.getFoundationsRegistry().assignFoundation(candidate);
 
         //compute priority
-        CompatibilityMode compatibilityMode = getParentStream().getParentAgent()
-                .getCompatibilityMode();
-        if(compatibilityMode == CompatibilityMode.GTALK)
-        {
-            candidate.computeGTalkPriority();
-        }
-        else
-        {
-            candidate.computePriority();
-        }
+        candidate.computePriority();
 
         synchronized(localCandidates)
         {
@@ -268,43 +259,6 @@ public class Component
         logger.info("Update remote candidate for " + toShortString() + ": " +
                 candidate.getTransportAddress());
 
-        if(candidate.getTransport() == Transport.TCP &&
-            parentStream.getParentAgent().getCompatibilityMode()
-                == CompatibilityMode.GTALK)
-        {
-            /* for TCP, create a new Candidate to each of remote
-             * TCP candidates
-             */
-            for(LocalCandidate localCnd : getLocalCandidates())
-            {
-                if(localCnd.getTransport() != Transport.TCP
-                   || (localCnd.getType() != CandidateType.LOCAL_CANDIDATE
-                     && localCnd.getType() != CandidateType.HOST_CANDIDATE)
-                   || !(localCnd.getIceSocketWrapper()
-                            instanceof IceTcpServerSocketWrapper)
-                   || !localCnd.getTransportAddress().canReach(
-                            candidate.getTransportAddress())
-                   )
-                {
-                    continue;
-                }
-
-                LocalCandidate newLocalCandidate
-                    = createLocalTcpCandidate4GTalk(candidate, localCnd);
-
-                if (newLocalCandidate == null)
-                {
-                    //sth wen wrong but we've already logged so ...
-                    continue;
-                }
-
-                synchronized(localCandidates)
-                {
-                    localCandidates.add(newLocalCandidate);
-                }
-            }
-        }
-
         synchronized(remoteUpdateCandidates)
         {
             remoteUpdateCandidates.add(candidate);
@@ -411,15 +365,6 @@ public class Component
             {
                 if(localCnd == upnpBase)
                     continue;
-
-                //don't pair local GTalk TCP candidates with the new remote ones
-                if(parentStream.getParentAgent().
-                    getCompatibilityMode() == CompatibilityMode.GTALK &&
-                    localCnd.getIceSocketWrapper() instanceof
-                    IceTcpServerSocketWrapper)
-                {
-                    continue;
-                }
 
                 //pair each of the new remote candidates with each of our locals
                 for(RemoteCandidate remoteCnd : remoteUpdateCandidates)
@@ -629,9 +574,6 @@ public class Component
     {
         synchronized(localCandidates)
         {
-            CompatibilityMode compatibility = getParentStream().getParentAgent()
-                .getCompatibilityMode();
-
             LocalCandidate[] candidates
                 = new LocalCandidate[localCandidates.size()];
 
@@ -640,14 +582,7 @@ public class Component
             //first compute the actual priorities
             for (Candidate<?> cand : candidates)
             {
-                if(compatibility == CompatibilityMode.GTALK)
-                {
-                    cand.computeGTalkPriority();
-                }
-                else
-                {
-                    cand.computePriority();
-                }
+                cand.computePriority();
             }
 
             //sort
