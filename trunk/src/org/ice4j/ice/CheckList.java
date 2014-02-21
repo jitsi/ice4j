@@ -390,11 +390,7 @@ public class CheckList
                      || (pair.getState() == CandidatePairState.IN_PROGRESS
                          && pair.getPriority() < nominatedPair.getPriority())))
             {
-                if(parentStream.getParentAgent().getCompatibilityMode() ==
-                    CompatibilityMode.RFC5245)
-                {
-                    pairsIter.remove();
-                }
+                pairsIter.remove();
             }
         }
 
@@ -550,9 +546,6 @@ public class CheckList
     /**
      * Creates a new {@link PropertyChangeEvent} and delivers it to all
      * currently registered checks listeners.
-     *
-     * @param oldState old state
-     * @param newState new state
      */
     protected void fireEndOfOrdinaryChecks()
     {

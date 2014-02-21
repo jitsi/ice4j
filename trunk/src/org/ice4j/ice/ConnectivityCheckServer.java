@@ -92,8 +92,7 @@ class ConnectivityCheckServer
             .getAttribute(Attribute.USERNAME);
 
         if(   uname == null
-           ||  ( parentAgent.getCompatibilityMode() == CompatibilityMode.RFC5245
-              && !checkLocalUserName(new String(uname.getUsername()))))
+           ||  !checkLocalUserName(new String(uname.getUsername())))
         {
             return;
         }
@@ -116,64 +115,9 @@ class ConnectivityCheckServer
         String remoteUfrag = null;
         String localUFrag = null;
 
-        if(parentAgent.getCompatibilityMode() == CompatibilityMode.GTALK)
-        {
-            /* Google Talk ICE dialect considers every request to have
-             * USE-CANDIDATE behavior.
-             */
-            // it will be set in Agent.incomingCheckReceived
-            useCandidate = false; //true;
-
-            /* Google Talk STUN request does not contains PRIORITY attribute
-             * set it to the peer reflexive value (0.9 * 1000);
-             *
-             * In all cases priority will just be used if a we discover that
-             * effectively the peer is a peer reflexive ones.
-             */
-            priority = 900;
-
-            /* Google Talk uses username of length 16 for local and remote */
-            remoteUfrag = username.substring(0, 16);
-            localUFrag = username.substring(16, 32);
-        }
-        else
-        {
-            priority = extractPriority(request);
-            int colon = username.indexOf(":");
-            remoteUfrag = username.substring(0, colon);
-        }
-
-        if(    parentAgent.getCompatibilityMode() == CompatibilityMode.GTALK
-            && parentAgent.findCandidatePair(localUFrag, remoteUfrag) == null)
-        {
-            logger.info("No candidate pair that match local and remote ufrag");
-
-            // no candidate pair for the moment so do not send response
-            // trigger an error so that other peer try again after some time
-            Response response = MessageFactory.createBindingErrorResponse(
-                ErrorCodeAttribute.STALE_CREDENTIALS);
-            ErrorCodeAttribute err = (ErrorCodeAttribute)response.getAttribute(
-                Attribute.ERROR_CODE);
-            // Gtalk error code is not RFC5389 compliant
-            err.setErrorClass((byte)0x01);
-            err.setErrorNumber((byte)0xae);
-
-            try
-            {
-                stunStack.sendResponse(
-                        evt.getTransactionID().getBytes(),
-                        response,
-                        evt.getLocalAddress(),
-                        evt.getRemoteAddress());
-
-                return;
-            }
-            catch(Exception exc)
-            {
-                //rethrow so that we would send a 500 response instead.
-                throw new RuntimeException("Failed to send a 430", exc);
-            }
-        }
+        priority = extractPriority(request);
+        int colon = username.indexOf(":");
+        remoteUfrag = username.substring(0, colon);
 
         //tell our address handler we saw a new remote address;
         parentAgent.incomingCheckReceived(evt.getRemoteAddress(),
@@ -192,22 +136,10 @@ class ConnectivityCheckServer
             AttributeFactory.createUsernameAttribute(uname.getUsername());
         response.addAttribute(usernameAttribute);
 
-        if(parentAgent.getCompatibilityMode() == CompatibilityMode.GTALK)
-        {
-            /* add Mapped address and remove the XOR_MAPPED_ADDRESS one*/
-            Attribute mappedAddressAttribute =
-                AttributeFactory.createMappedAddressAttribute(
-                        evt.getRemoteAddress());
-            response.addAttribute(mappedAddressAttribute);
-            response.removeAttribute(Attribute.XOR_MAPPED_ADDRESS);
-        }
-        else
-        {
-            Attribute messageIntegrityAttribute =
-                AttributeFactory.createMessageIntegrityAttribute(
-                        new String(uname.getUsername()));
-            response.addAttribute(messageIntegrityAttribute);
-        }
+        Attribute messageIntegrityAttribute =
+            AttributeFactory.createMessageIntegrityAttribute(
+                    new String(uname.getUsername()));
+        response.addAttribute(messageIntegrityAttribute);
 
         try
         {
@@ -398,32 +330,19 @@ class ConnectivityCheckServer
     {
         String ufrag = null;
 
-        if(parentAgent.getCompatibilityMode() == CompatibilityMode.GTALK)
+        int colon = username.indexOf(":");
+
+        if (colon < 0)
         {
-            if(username.length() == 32)
-            {
-                ufrag = username.substring(0, 16);
-            }
-            else
-            {
-                ufrag = username;
-            }
+            //caller gave us a ufrag
+            ufrag = username;
         }
         else
         {
-            int colon = username.indexOf(":");
-
-            if (colon < 0)
-            {
-                //caller gave us a ufrag
-                ufrag = username;
-            }
-            else
-            {
-                //caller gave us the entire username.
-                ufrag = username.substring(0, colon);
-            }
+            //caller gave us the entire username.
+            ufrag = username.substring(0, colon);
         }
+
         return ufrag.equals(parentAgent.getLocalUfrag());
     }
 

@@ -834,23 +834,8 @@ public abstract class Message
         validateAttributePresentity();
 
         final char dataLength;
-        if(stunStack.getCompatibilityMode() == CompatibilityMode.GTALK)
-        {
-            /* Google Talk will return error response if it sees unknown
-             * attributes (typically attributes introduced in RFC5349 and
-             */
-            if(getAttribute(Attribute.SOFTWARE) != null)
-                removeAttribute(Attribute.SOFTWARE);
 
-            if(getAttribute(Attribute.FINGERPRINT) != null)
-                removeAttribute(Attribute.FINGERPRINT);
-
-            dataLength = getDataLengthWithoutPadding();
-        }
-        else
-        {
-            dataLength = getDataLength();
-        }
+        dataLength = getDataLength();
 
         byte binMsg[] = new byte[HEADER_LENGTH + dataLength];
         int offset    = 0;

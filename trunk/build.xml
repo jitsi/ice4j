@@ -28,6 +28,7 @@
     <patternset id="dest.exclude">
         <exclude name="package cache/"/>
         <exclude name="dependency cache/"/>
+        <exclude name="test/"/>
     </patternset>
 
     <!--  ANT TARGETS -->
@@ -41,12 +42,16 @@
                nowarn="false"
                optimize="true"
                target="1.5"
-               source="1.5">
+               source="1.5"
+               includeantruntime="false">
             <src path="${src}"/>
             <compilerarg value="-Xlint"/>
         </javac>
     </target>
-    <target name="compile-test">
+
+
+    <!-- compiles all tests -->
+    <target name="compile-tests" depends="init">
         <javac classpathref="test.class.path"
                debug="true"
                deprecation="true"
@@ -113,7 +118,7 @@
     </target>
 
     <!-- make everything -->
-    <target name="make" depends="compile,resource,jar,compile-test"/>
+    <target name="make" depends="compile,compile-tests,resource,jar"/>
 
     <!-- clean and make everything -->
     <target name="rebuild" depends="clean,make" />
@@ -153,7 +158,7 @@
     </target>
 
     <!-- Run the tests-->
-    <target name="test">
+    <target name="test" depends="compile-tests">
         <junit haltonfailure="true" fork="true" forkmode="once">
             <formatter type="xml"/>
             <formatter type="brief" usefile="false"/>
@@ -189,7 +194,7 @@
     </target>
     
     <!-- Run pseudotcp sample application -->
-    <target name="run-pseudotcp">
+    <target name="run-pseudotcp" depends="compile">
         <java fork="true"
               classname="test.IcePseudoTcp"
               classpathref="test.class.path">
@@ -199,8 +204,9 @@
                          value="lib/logging.properties"/>
         </java>
     </target>
+
     <!-- Debug pseudotcp example on port 5005 -->
-    <target name="debug-pseudotcp">
+    <target name="debug-pseudotcp" depends="compile">
         <java fork="true"
               classname="test.IcePseudoTcp"
               classpathref="test.class.path">
@@ -214,12 +220,12 @@
     </target>
 
     <!-- Debug pseudotcp example with netbeans -->
-    <target name="nb-debug-pseudotcp">
+    <target name="nb-debug-pseudotcp" depends="compile">
         <nbjpdastart addressproperty="jpda.address" name="ice4j" transport="dt_socket">
             <classpath refid="test.class.path"/>
         </nbjpdastart>
         <java classname="test.IcePseudoTcp" fork="true">
-            <classpath refid="project.class.path"/>
+            <classpath refid="test.class.path"/>
             <jvmarg value="-Xdebug"/>
             <jvmarg value="-Xnoagent"/>
             <jvmarg value="-Djava.compiler=none"/>
@@ -266,6 +272,17 @@
         </java>
     </target>
 
+    <!-- runs our sample aws application -->
+    <target name="run-aws">
+        <java fork="true"
+              classname="test.AwsTest"
+              classpathref="test.class.path">
+
+            <!-- Tell java.util.logging about our logging preferences -->
+            <sysproperty key="java.util.logging.config.file"
+                         value="lib/logging.properties"/>
+        </java>
+    </target>
 
     <!-- Cruise Control Target-->
     <target name="cc-buildloop" depends="rebuild,test"/>

@@ -7,6 +7,8 @@
  */
 package org.ice4j.ice;
 
+import org.ice4j.*;
+
 import java.util.*;
 
 /**
@@ -54,7 +56,10 @@ public class FoundationsRegistry
         switch (candidateType)
         {
         case SERVER_REFLEXIVE_CANDIDATE:
-            server = candidate.getStunServerAddress().getHostAddress();
+            TransportAddress serverAddress = candidate.getStunServerAddress();
+            server = (serverAddress == null)
+                        ? ""
+                        : serverAddress.getHostAddress();
             break;
         case RELAYED_CANDIDATE:
             server = candidate.getRelayServerAddress().getHostAddress();

@@ -98,11 +98,6 @@ public class StunStack
     private static PacketLogger packetLogger;
 
     /**
-     * Compatibility mode.
-     */
-    private final CompatibilityMode mode;
-
-    /**
      * Sets the number of Message processors running in the same time.
      *
      * @param threadPoolSize the number of message process threads to run.
@@ -291,16 +286,6 @@ public class StunStack
      */
     public StunStack()
     {
-        this(CompatibilityMode.RFC5245);
-    }
-
-    /**
-     * Initializes a new <tt>StunStack</tt> instance.
-     *
-     * @param mode compatibility mode
-     */
-    public StunStack(CompatibilityMode mode)
-    {
         /*
          * The Mac instantiation used in MessageIntegrityAttribute could take
          * several hundred milliseconds so we don't want it instantiated only
@@ -323,13 +308,7 @@ public class StunStack
                 }
             }
         }
-        this.mode = mode;
         netAccessManager = new NetAccessManager(this);
-
-        if(mode == CompatibilityMode.GTALK)
-        {
-            netAccessManager.setThreadPoolSize(1);
-        }
     }
 
     /**
@@ -462,7 +441,7 @@ public class StunStack
      * @param transactionID the ID that we'd like the new transaction to use
      * in case the application created it in order to use it for application
      * data correlation.
-     * @param originalWiatIterval
+     * @param originalWaitInterval
      * @param maxWaitInterval
      * @param maxRetransmissions
      * @return the <tt>TransactionID</tt> of the <tt>StunClientTransaction</tt>
@@ -946,11 +925,6 @@ public class StunStack
     private void validateRequestAttributes(StunMessageEvent evt)
         throws IllegalArgumentException, StunException, IOException
     {
-        if(mode != CompatibilityMode.RFC5245)
-        {
-            return;
-        }
-
         Message request = evt.getMessage();
 
         //assert valid username
@@ -1251,16 +1225,6 @@ public class StunStack
     public static boolean isPacketLoggerEnabled()
     {
         return packetLogger != null && packetLogger.isEnabled();
-    }
-
-    /**
-     * Returns compatibility mode.
-     *
-     * @return compatibility mode
-     */
-    public CompatibilityMode getCompatibilityMode()
-    {
-        return mode;
     }
 
     /**

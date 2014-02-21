@@ -380,55 +380,6 @@ public class IceMediaStream
             {
                 if(localCnd.canReach(remoteCnd))
                 {
-                    if(localCnd.getTransport() == Transport.TCP
-                            && parentAgent.getCompatibilityMode()
-                                    == CompatibilityMode.GTALK)
-                    {
-                        final LocalCandidate loc = localCnd;
-                        final RemoteCandidate remot = remoteCnd;
-
-                        new Thread()
-                        {
-                            public void run()
-                            {
-                                /* for TCP, create a new Candidate (a new
-                                 * connection) to each of remote TCP candidates
-                                 */
-                                try
-                                {
-                                    Socket sock = new MultiplexingSocket();
-                                    int timeout = sock.getSoTimeout();
-                                    sock.setSoTimeout(1000);
-
-                                    sock.connect(new InetSocketAddress(
-                                        remot.getTransportAddress().
-                                            getAddress(),
-                                        remot.getTransportAddress().
-                                            getPort()),
-                                        1000);
-
-                                    sock.setSoTimeout(timeout);
-                                    LocalCandidate tmp =
-                                        new HostCandidate(
-                                            new IceTcpSocketWrapper(sock),
-                                            component);
-                                    tmp.setUfrag(loc.getUfrag());
-
-                                    CandidatePair pair = new CandidatePair(tmp,
-                                        remot);
-                                    checkList.add(pair);
-                                }
-                                catch (IOException e)
-                                {
-                                    logger.info("Failed to TCP connect to " +
-                                        remot.getTransportAddress());
-                                    return;
-                                }
-                            }
-                        }.start();
-                        continue;
-                    }
-
                     CandidatePair pair = new CandidatePair(localCnd,
                         remoteCnd);
                     checkList.add(pair);
@@ -483,22 +434,19 @@ public class IceMediaStream
                 continue;
             }
 
-            if(parentAgent.getCompatibilityMode() == CompatibilityMode.RFC5245)
+            //replace local server reflexive candidates with their base.
+            LocalCandidate localCnd = pair.getLocalCandidate();
+            if( localCnd.getType()
+                        == CandidateType.SERVER_REFLEXIVE_CANDIDATE)
             {
-                //replace local server reflexive candidates with their base.
-                LocalCandidate localCnd = pair.getLocalCandidate();
-                if( localCnd.getType()
-                            == CandidateType.SERVER_REFLEXIVE_CANDIDATE)
-                {
-                    pair.setLocalCandidate(localCnd.getBase());
+                pair.setLocalCandidate(localCnd.getBase());
 
-                    //if the new pair corresponds to another one with a higher
-                    //priority, then remove it.
-                    if(tmpCheckList.contains(pair))
-                    {
-                        ckListIter.remove();
-                        continue;
-                    }
+                //if the new pair corresponds to another one with a higher
+                //priority, then remove it.
+                if(tmpCheckList.contains(pair))
+                {
+                    ckListIter.remove();
+                    continue;
                 }
             }
 
