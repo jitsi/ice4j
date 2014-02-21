@@ -272,6 +272,18 @@
         </java>
     </target>
 
+    <!-- runs our sample NAT mapping application -->
+    <target name="run-map">
+        <java fork="true"
+              classname="test.MappingTest"
+              classpathref="test.class.path">
+
+            <!-- Tell java.util.logging about our logging preferences -->
+            <sysproperty key="java.util.logging.config.file"
+                         value="lib/logging.properties"/>
+        </java>
+    </target>
+
     <!-- runs our sample aws application -->
     <target name="run-aws">
         <java fork="true"
