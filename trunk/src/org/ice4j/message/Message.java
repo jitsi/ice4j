@@ -11,7 +11,6 @@ import java.util.logging.*;
 
 import org.ice4j.*;
 import org.ice4j.attribute.*;
-import org.ice4j.ice.*;
 import org.ice4j.stack.*;
 
 /**

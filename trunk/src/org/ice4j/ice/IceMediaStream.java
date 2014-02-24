@@ -8,13 +8,10 @@
 package org.ice4j.ice;
 
 import java.beans.*;
-import java.io.*;
-import java.net.*;
 import java.util.*;
 import java.util.logging.*;
 
 import org.ice4j.*;
-import org.ice4j.socket.*;
 
 /**
  * The class represents a media stream from the ICE perspective, i.e. a

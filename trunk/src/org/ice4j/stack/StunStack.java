@@ -16,7 +16,6 @@ import javax.crypto.*;
 
 import org.ice4j.*;
 import org.ice4j.attribute.*;
-import org.ice4j.ice.*;
 import org.ice4j.message.*;
 import org.ice4j.security.*;
 import org.ice4j.socket.*;

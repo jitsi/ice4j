@@ -9,12 +9,9 @@ package test;
 import java.util.*;
 import java.util.logging.*;
 
-import javax.sdp.*;
-
 import org.ice4j.*;
 import org.ice4j.ice.*;
 import org.ice4j.ice.harvest.*;
-import org.ice4j.ice.sdp.*;
 
 /**
  * An example of using the AWS Harvester.
