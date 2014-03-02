@@ -179,7 +179,11 @@ public class AwsCandidateHarvester
     {
         try
         {
-            Runtime.getRuntime().exec("ec2metadata");
+            if(new File("/usr/bin/ec2metadata").exists())
+                return true;
+
+            //the command below seems to be freezing on some systems.
+            //Runtime.getRuntime().exec("ec2metadata --help");
 
             //if this is an AWS EC2 we would throw an exception above and not
             //get here, so ... be happy
