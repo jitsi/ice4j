@@ -84,6 +84,15 @@ public class MultiplexingSocket
     private final Object socketsSyncRoot = new Object();
 
     /**
+     * Buffer variable for storing the SO_TIMEOUT value set by the
+     * last <tt>setSoTimeout()</tt> call. Altough not strictly needed,
+     * getting the locally stored value as opposed to retrieving it
+     * from a parent <tt>getSoTimeout()</tt> call seems to
+     * significantly improve efficiency, at least on some platforms.
+     */
+    private int soTimeout = 0;
+
+    /**
      * Initializes a new <tt>MultiplexingSocket</tt> instance.
      *
      * @see Socket#Socket()
@@ -256,7 +265,7 @@ public class MultiplexingSocket
      */
     @Override
     public void receive(DatagramPacket p)
-        throws IOException
+        throws SocketTimeoutException, IOException
     {
         try
         {
@@ -265,7 +274,7 @@ public class MultiplexingSocket
         catch(Exception e)
         {
         }
-        receive(received, p);
+        receive(received, p, soTimeout);
     }
 
     /**
@@ -277,10 +286,8 @@ public class MultiplexingSocket
      * @param p the <tt>DatagramPacket</tt> to receive the data from the network
      * @throws IOException if an I/O error occurs
      */
-    void receive(
-            MultiplexedSocket multiplexed,
-            DatagramPacket p)
-        throws IOException
+    void receive(MultiplexedSocket multiplexed, DatagramPacket p)
+        throws SocketTimeoutException, IOException
     {
         try
         {
@@ -289,7 +296,7 @@ public class MultiplexingSocket
         catch(Exception e)
         {
         }
-        receive(multiplexed.received, p);
+        receive(multiplexed.received, p, multiplexed.getSoTimeout());
     }
 
     /**
@@ -304,15 +311,25 @@ public class MultiplexingSocket
      * from which the first is to be removed and returned if available
      * @param p the <tt>DatagramPacket</tt> into which to place the incoming
      * data
+     * @param timeout the maximum time in milliseconds to wait for a
+     * packet.  A timeout of zero is interpreted as an infinite
+     * timeout
+     * @throws SocketTimeoutException if the timeout has expired
      * @throws IOException if an I/O error occurs
      */
-    private void receive(List<DatagramPacket> received, DatagramPacket p)
-        throws IOException
+    private void receive(List<DatagramPacket> received, DatagramPacket p,
+			 int timeout)
+        throws SocketTimeoutException, IOException
     {
+	long now, start = System.currentTimeMillis();
         DatagramPacket r = null;
 
         do
         {
+	    now = System.currentTimeMillis();
+	    if (timeout > 0 && now - start >= timeout)
+		throw new SocketTimeoutException("Socket timeout");
+
             boolean doReceive;
 
             synchronized (receiveSyncRoot)
@@ -324,7 +341,10 @@ public class MultiplexingSocket
                         doReceive = false;
                         try
                         {
-                            receiveSyncRoot.wait();
+			    if (timeout > 0)
+				receiveSyncRoot.wait(timeout - (now - start));
+			    else
+				receiveSyncRoot.wait();
                         }
                         catch (InterruptedException iex)
                         {
@@ -555,4 +575,25 @@ public class MultiplexingSocket
     {
         return super.getOutputStream();
     }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public void setSoTimeout(int timeout)
+    	throws SocketException
+    {
+    	super.setSoTimeout(timeout);
+    	soTimeout = timeout;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public int getSoTimeout()
+    {
+    	return soTimeout;
+    }
+
 }
