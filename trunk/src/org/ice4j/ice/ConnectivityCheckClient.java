@@ -756,7 +756,8 @@ class ConnectivityCheckClient
                     " will mark the pair as FAILED.");
             logger.info(
                     "Error response for pair: " + pair.toShortString() +
-                    ", failing.  Code = " + code);
+                    ", failing.  Code = " + code +
+                    "(class=" + cl + "; number=" + co + ")");
             pair.setStateFailed();
         }
     }
