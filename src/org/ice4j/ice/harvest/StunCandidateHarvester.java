@@ -124,8 +124,8 @@ public class StunCandidateHarvester
         {
             startedHarvests.remove(harvest);
 
-            //if this was the last candidate, we are done with the STUN
-            //resolution and need to notify the waiters.
+            // If this was the last candidate, we are done with the STUN
+            // resolution and need to notify the waiters.
             if (startedHarvests.isEmpty())
                 doNotify = true;
         }
@@ -254,13 +254,11 @@ public class StunCandidateHarvester
                 LocalCandidate[] completedHarvestCandidates
                     = completedHarvest.getCandidates();
 
-                if (completedHarvestCandidates != null)
+                if ((completedHarvestCandidates != null)
+                        && (completedHarvestCandidates.length != 0))
                 {
-                    if(completedHarvestCandidates.length != 0)
-                    {
-                        candidates.addAll(
+                    candidates.addAll(
                             Arrays.asList(completedHarvestCandidates));
-                    }
                 }
             }
 
@@ -268,10 +266,9 @@ public class StunCandidateHarvester
         }
 
         logger.finest(
-            "Completed " + component.toShortString() + " harvest: " + toString()
-            + ". Found " + candidates.size()
-            + " candidates: " + listCandidates(candidates));
-
+                "Completed " + component.toShortString() + " harvest: "
+                    + toString() + ". Found " + candidates.size()
+                    + " candidates: " + listCandidates(candidates));
 
         return candidates;
     }
@@ -304,8 +301,9 @@ public class StunCandidateHarvester
 
         if(cand == null)
         {
-            logger.info("server/candidate address type mismatch, skipping " +
-                    "candidate in this harvester");
+            logger.info(
+                    "server/candidate address type mismatch,"
+                        + " skipping candidate in this harvester");
             return;
         }
 
@@ -343,9 +341,26 @@ public class StunCandidateHarvester
             {
                 if (!started)
                 {
-                    startedHarvests.remove(harvest);
-                    logger.warning("harvest did not start, removed: " +
-                        harvest);
+                    try
+                    {
+                        startedHarvests.remove(harvest);
+                        logger.warning(
+                                "harvest did not start, removed: " + harvest);
+                    }
+                    finally
+                    {
+                        /*
+                         * For the sake of completeness, explicitly close the
+                         * harvest.
+                         */
+                        try
+                        {
+                            harvest.close();
+                        }
+                        catch (Exception ex)
+                        {
+                        }
+                    }
                 }
             }
         }
@@ -363,6 +378,7 @@ public class StunCandidateHarvester
 
             // Handle spurious wakeups.
             while (!startedHarvests.isEmpty())
+            {
                 try
                 {
                     startedHarvests.wait();
@@ -370,10 +386,12 @@ public class StunCandidateHarvester
                 catch (InterruptedException iex)
                 {
                     logger.info(
-                        "interrupted waiting for harvests to complete, no. " +
-                        "startedHarvests = " + startedHarvests.size());
+                            "interrupted waiting for harvests to complete,"
+                                + " no. startedHarvests = "
+                                + startedHarvests.size());
                     interrupted = true;
                 }
+            }
             // Restore the interrupted status.
             if (interrupted)
                 Thread.currentThread().interrupt();

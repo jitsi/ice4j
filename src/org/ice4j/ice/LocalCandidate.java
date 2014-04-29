@@ -320,6 +320,7 @@ public abstract class LocalCandidate
      *
      * @return local ufrag
      */
+    @Override
     public String getUfrag()
     {
         return ufrag;
@@ -374,6 +375,7 @@ public abstract class LocalCandidate
      * - null for a peer reflexive candidate : there is no way to know the
      * related address.
      */
+    @Override
     protected LocalCandidate findRelatedCandidate(
             TransportAddress relatedAddress)
     {

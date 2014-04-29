@@ -105,10 +105,8 @@ public class GoogleTurnSSLCandidateHarvester
     protected GoogleTurnCandidateHarvest createHarvest(
             HostCandidate hostCandidate)
     {
-        return new GoogleTurnCandidateHarvest(
-                this,
-                hostCandidate,
-                this.getPassword());
+        return
+            new GoogleTurnCandidateHarvest(this, hostCandidate, getPassword());
     }
 
     /**

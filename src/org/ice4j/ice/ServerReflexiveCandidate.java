@@ -100,6 +100,7 @@ public class ServerReflexiveCandidate
      * <tt>Candidate</tt>
      * @see LocalCandidate#getIceSocketWrapper()
      */
+    @Override
     public IceSocketWrapper getIceSocketWrapper()
     {
         return getBase().getIceSocketWrapper();
@@ -111,13 +112,12 @@ public class ServerReflexiveCandidate
      * <tt>LocalCandidate</tt> is closed only if it is not the <tt>socket</tt>
      * of the <tt>base</tt> of this <tt>LocalCandidate</tt>.
      */
-    protected void free()
+    @Override
+    public void free()
     {
         super.free();
 
         if(stunHarvest != null)
-        {
             stunHarvest.close();
-        }
     }
 }
