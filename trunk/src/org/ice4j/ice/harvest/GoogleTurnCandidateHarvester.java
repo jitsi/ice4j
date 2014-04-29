@@ -72,10 +72,8 @@ public class GoogleTurnCandidateHarvester
     protected GoogleTurnCandidateHarvest createHarvest(
             HostCandidate hostCandidate)
     {
-        return new GoogleTurnCandidateHarvest(
-                this,
-                hostCandidate,
-                this.password);
+        return
+            new GoogleTurnCandidateHarvest(this, hostCandidate, getPassword());
     }
 
     /**

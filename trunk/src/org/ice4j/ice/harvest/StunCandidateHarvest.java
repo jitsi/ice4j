@@ -8,6 +8,7 @@
 package org.ice4j.ice.harvest;
 
 import java.io.*;
+import java.lang.ref.*;
 import java.util.*;
 import java.util.logging.*;
 
@@ -121,12 +122,12 @@ public class StunCandidateHarvest
     private Thread sendKeepAliveMessageThread;
 
     /**
-     * The time stamp of the last call to {@link #sendKeepAliveMessage()} which
-     * completed without throwing an exception (note: it doesn't mean that the
-     * keep-alive message was a STUN <tt>Request</tt> and it received a success
-     * STUN <tt>Response</tt>).
+     * The time (stamp) in milliseconds of the last call to
+     * {@link #sendKeepAliveMessage()} which completed without throwing an
+     * exception. <b>Note</b>: It doesn't mean that the keep-alive message was a
+     * STUN <tt>Request</tt> and it received a success STUN <tt>Response</tt>.
      */
-    private long sendKeepAliveMessageTimeStamp = -1;
+    private long sendKeepAliveMessageTime = -1;
 
     /**
      * Initializes a new <tt>StunCandidateHarvest</tt> which is to represent the
@@ -155,18 +156,26 @@ public class StunCandidateHarvest
      * @param candidate the <tt>LocalCandidate</tt> to be added to the list of
      * <tt>LocalCandidate</tt>s harvested for {@link #hostCandidate} by this
      * harvest
+     * @return <tt>true</tt> if the list of <tt>LocalCandidate</tt>s changed as
+     * a result of the method invocation; otherwise, <tt>false</tt>
      */
-    protected void addCandidate(LocalCandidate candidate)
+    protected boolean addCandidate(LocalCandidate candidate)
     {
-        if (!candidates.contains(candidate))
+        boolean added;
+
+        //try to add the candidate to the component and then only add it to the
+        //harvest if it wasn't deemed redundant
+        if (!candidates.contains(candidate)
+                && hostCandidate.getParentComponent().addLocalCandidate(
+                        candidate))
         {
-            //try to add the candidate to the component and then only add it to
-            //the harvest if it wasn't deemed redundant
-            if( hostCandidate.getParentComponent().addLocalCandidate(candidate))
-            {
-                candidates.add(candidate);
-            }
+            added = candidates.add(candidate);
         }
+        else
+        {
+            added = false;
+        }
+        return added;
     }
 
     /**
@@ -243,6 +252,35 @@ public class StunCandidateHarvest
             }
         }
         return completedResolvingCandidate;
+    }
+
+    /**
+     * Determines whether a specific <tt>LocalCandidate</tt> is contained in the
+     * list of <tt>LocalCandidate</tt>s harvested for {@link #hostCandidate} by
+     * this harvest.
+     *
+     * @param candidate the <tt>LocalCandidate</tt> to look for in the list of
+     * <tt>LocalCandidate</tt>s harvested for {@link #hostCandidate} by this
+     * harvest
+     * @return <tt>true</tt> if the list of <tt>LocalCandidate</tt>s contains
+     * the specified <tt>candidate</tt>; otherwise, <tt>false</tt>
+     */
+    protected boolean containsCandidate(LocalCandidate candidate)
+    {
+        if (candidate != null)
+        {
+            LocalCandidate[] candidates = getCandidates();
+
+            if ((candidates != null) && (candidates.length != 0))
+            {
+                for (LocalCandidate c : candidates)
+                {
+                    if (candidate.equals(c))
+                        return true;
+                }
+            }
+        }
+        return false;
     }
 
     /**
@@ -338,16 +376,25 @@ public class StunCandidateHarvest
     {
         synchronized (sendKeepAliveMessageSyncRoot)
         {
-            sendKeepAliveMessageThread
-                = new Thread()
-                        {
-                            @Override
-                            public void run()
-                            {
-                                runInSendKeepAliveMessageThread();
-                            }
-                        };
-            sendKeepAliveMessageThread.start();
+            Thread t = new SendKeepAliveMessageThread(this);
+            t.setDaemon(true);
+            t.setName(
+                    getClass().getName() + ".sendKeepAliveMessageThread: "
+                        + hostCandidate);
+
+            boolean started = false;
+
+            sendKeepAliveMessageThread = t;
+            try
+            {
+                t.start();
+                started = true;
+            }
+            finally
+            {
+                if (!started && (sendKeepAliveMessageThread == t))
+                    sendKeepAliveMessageThread = null;
+            }
         }
     }
 
@@ -371,7 +418,35 @@ public class StunCandidateHarvest
                 = createServerReflexiveCandidate(addr);
 
             if (srvrRflxCand != null)
-                addCandidate(srvrRflxCand);
+            {
+                try
+                {
+                    addCandidate(srvrRflxCand);
+                }
+                finally
+                {
+                    // Free srvrRflxCand if it has not been consumed.
+                    if (!containsCandidate(srvrRflxCand))
+                    {
+                        try
+                        {
+                            srvrRflxCand.free();
+                        }
+                        catch (Exception ex)
+                        {
+                            if (logger.isLoggable(Level.FINE))
+                            {
+                                logger.log(
+                                        Level.FINE,
+                                        "Failed to free"
+                                            + " ServerReflexiveCandidate: "
+                                            + srvrRflxCand,
+                                        ex);
+                            }
+                        }
+                    }
+                }
+            }
         }
     }
 
@@ -397,6 +472,32 @@ public class StunCandidateHarvest
                     hostCandidate,
                     harvester.stunServer,
                     CandidateExtendedType.STUN_SERVER_REFLEXIVE_CANDIDATE);
+    }
+
+    /**
+     * Runs in {@link #sendKeepAliveMessageThread} to notify this instance that
+     * <tt>sendKeepAliveMessageThread</tt> is about to exit.
+     */
+    private void exitSendKeepAliveMessageThread()
+    {
+        synchronized (sendKeepAliveMessageSyncRoot)
+        {
+            if (sendKeepAliveMessageThread == Thread.currentThread())
+                sendKeepAliveMessageThread = null;
+
+            /*
+             * Well, if the currentThread is finishing and this instance is
+             * still to send keep-alive messages, we'd better start another
+             * Thread for the purpose to continue the work that the
+             * currentThread was supposed to carry out.
+             */
+            if ((sendKeepAliveMessageThread == null)
+                    && (sendKeepAliveMessageInterval
+                         != SEND_KEEP_ALIVE_MESSAGE_INTERVAL_NOT_SPECIFIED))
+            {
+                createSendKeepAliveMessageThread();
+            }
+        }
     }
 
     /**
@@ -708,6 +809,7 @@ public class StunCandidateHarvest
      * transaction and the runtime type of which specifies the failure reason
      * @see AbstractResponseCollector#processFailure(BaseStunMessageEvent)
      */
+    @Override
     protected void processFailure(BaseStunMessageEvent event)
     {
         TransactionID transactionID = event.getTransactionID();
@@ -754,6 +856,7 @@ public class StunCandidateHarvest
      * STUN response
      * @see ResponseCollector#processResponse(StunResponseEvent)
      */
+    @Override
     public void processResponse(StunResponseEvent event)
     {
         TransactionID transactionID = event.getTransactionID();
@@ -1007,97 +1110,74 @@ public class StunCandidateHarvest
     /**
      * Runs in {@link #sendKeepAliveMessageThread} and sends STUN
      * keep-alive <tt>Message</tt>s to the STUN server associated with the
-     * <tt>StunCandidateHarvester</tt> of this instance
+     * <tt>StunCandidateHarvester</tt> of this instance.
+     *
+     * @return <tt>true</tt> if the method is to be invoked again; otherwise,
+     * <tt>false</tt>
      */
-    private void runInSendKeepAliveMessageThread()
+    private boolean runInSendKeepAliveMessageThread()
     {
-        try
+        synchronized (sendKeepAliveMessageSyncRoot)
         {
-            while (true)
+            // Since we're going to #wait, make sure we're not canceled yet.
+            if (sendKeepAliveMessageThread != Thread.currentThread())
+                return false;
+            if (sendKeepAliveMessageInterval
+                    == SEND_KEEP_ALIVE_MESSAGE_INTERVAL_NOT_SPECIFIED)
             {
-                synchronized (sendKeepAliveMessageSyncRoot)
-                {
-                    /*
-                     * Since we're going to #wait, make sure we're not canceled
-                     * yet.
-                     */
-                    if (sendKeepAliveMessageInterval
-                            == SEND_KEEP_ALIVE_MESSAGE_INTERVAL_NOT_SPECIFIED)
-                        break;
+                return false;
+            }
 
-                    /*
-                     * Determine the amount of milliseconds that we'll have to
-                     * #wait.
-                     */
-                    long timeout;
+            // Determine the amount of milliseconds that we'll have to #wait.
+            long timeout;
 
-                    if (sendKeepAliveMessageTimeStamp == -1)
-                    {
-                        /*
-                         * If we're just starting, don't just go and send a new
-                         * STUN keep-alive message but rather wait for the whole
-                         * interval.
-                         */
-                        timeout = sendKeepAliveMessageInterval;
-                    }
-                    else
-                    {
-                        timeout
-                            = sendKeepAliveMessageTimeStamp
-                                + sendKeepAliveMessageInterval
-                                - System.currentTimeMillis();
-                    }
-                    // At long last, #wait if necessary.
-                    if (timeout > 0)
-                    {
-                        try
-                        {
-                            sendKeepAliveMessageSyncRoot.wait(timeout);
-                        }
-                        catch (InterruptedException iex)
-                        {
-                        }
-                        /*
-                         * Apart from being the time to send the STUN keep-alive
-                         * message, it could be that we've experienced a
-                         * spurious wake-up or that we've been canceled.
-                         */
-                        continue;
-                    }
-                }
-
-                sendKeepAliveMessageTimeStamp = System.currentTimeMillis();
+            if (sendKeepAliveMessageTime == -1)
+            {
+                /*
+                 * If we're just starting, don't just go and send a new STUN
+                 * keep-alive message but rather wait for the whole interval.
+                 */
+                timeout = sendKeepAliveMessageInterval;
+            }
+            else
+            {
+                timeout
+                    = sendKeepAliveMessageTime
+                        + sendKeepAliveMessageInterval
+                        - System.currentTimeMillis();
+            }
+            // At long last, #wait if necessary.
+            if (timeout > 0)
+            {
                 try
                 {
-                    sendKeepAliveMessage();
+                    sendKeepAliveMessageSyncRoot.wait(timeout);
                 }
-                catch (StunException sex)
+                catch (InterruptedException iex)
                 {
-                    logger.log(
-                            Level.INFO,
-                            "Failed to send STUN keep-alive message.",
-                            sex);
                 }
-            }
-        }
-        finally
-        {
-            synchronized (sendKeepAliveMessageSyncRoot)
-            {
-                if (sendKeepAliveMessageThread == Thread.currentThread())
-                    sendKeepAliveMessageThread = null;
                 /*
-                 * Well, if the currentThread is finishing and this instance is
-                 * still to send keep-alive messages, we'd better start another
-                 * Thread for the purpose to continue the work that the
-                 * currentThread was supposed to carry out.
+                 * Apart from being the time to send the STUN keep-alive
+                 * message, it could be that we've experienced a spurious
+                 * wake-up or that we've been canceled.
                  */
-                if ((sendKeepAliveMessageThread == null)
-                        && (sendKeepAliveMessageInterval
-                             != SEND_KEEP_ALIVE_MESSAGE_INTERVAL_NOT_SPECIFIED))
-                    createSendKeepAliveMessageThread();
+                return true;
             }
         }
+
+        sendKeepAliveMessageTime = System.currentTimeMillis();
+        try
+        {
+            sendKeepAliveMessage();
+        }
+        catch (StunException sex)
+        {
+            logger.log(
+                    Level.INFO,
+                    "Failed to send STUN keep-alive message.",
+                    sex);
+        }
+        return true;
     }
 
     /**
@@ -1141,19 +1221,19 @@ public class StunCandidateHarvest
          * not be utilized.
          */
         if (keepAliveMessage == null)
+        {
             return false;
-        if (keepAliveMessage instanceof Request)
+        }
+        else if (keepAliveMessage instanceof Request)
         {
             return
                 (sendRequest((Request) keepAliveMessage, false, null) != null);
         }
         else
         {
-            throw
-                new StunException(
-                        StunException.ILLEGAL_ARGUMENT,
-                        "Failed to create keep-alive STUN message "
-                            + "for candidate: "
+            throw new StunException(
+                    StunException.ILLEGAL_ARGUMENT,
+                    "Failed to create keep-alive STUN message for candidate: "
                             + candidate);
         }
     }
@@ -1329,5 +1409,62 @@ public class StunCandidateHarvest
         // stop keep alive thread
         setSendKeepAliveMessageInterval(
             SEND_KEEP_ALIVE_MESSAGE_INTERVAL_NOT_SPECIFIED);
+    }
+
+    /**
+     * Sends STUN keep-alive <tt>Message</tt>s to the STUN server associated
+     * with the <tt>StunCandidateHarvester</tt> of this instance.
+     *
+     * @author Lyubomir Marinov
+     */
+    private static class SendKeepAliveMessageThread
+        extends Thread
+    {
+        /**
+         * The <tt>StunCandidateHarvest</tt> which has initialized this
+         * instance. The <tt>StunCandidateHarvest</tt> is referenced by a
+         * <tt>WeakReference</tt> in an attempt to reduce the risk that the
+         * <tt>Thread</tt> may live regardless of the fact that the specified
+         * <tt>StunCandidateHarvest<tt> may no longer be reachable.
+         */
+        private final WeakReference<StunCandidateHarvest> harvest;
+
+        /**
+         * Initializes a new <tt>SendKeepAliveMessageThread</tt> instance with a
+         * specific <tt>StunCandidateHarvest</tt>.
+         *
+         * @param harvest the <tt>StunCandidateHarvest</tt> to initialize the
+         * new instance with
+         */
+        public SendKeepAliveMessageThread(StunCandidateHarvest harvest)
+        {
+            this.harvest = new WeakReference<StunCandidateHarvest>(harvest);
+        }
+
+        @Override
+        public void run()
+        {
+            try
+            {
+                do
+                {
+                    StunCandidateHarvest harvest = this.harvest.get();
+
+                    if ((harvest == null)
+                            || !harvest.runInSendKeepAliveMessageThread())
+                    {
+                        break;
+                    }
+                }
+                while (true);
+            }
+            finally
+            {
+                StunCandidateHarvest harvest = this.harvest.get();
+
+                if (harvest != null)
+                    harvest.exitSendKeepAliveMessageThread();
+            }
+        }
     }
 }
