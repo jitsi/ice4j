@@ -43,6 +43,17 @@ public class AwsCandidateHarvester
         = "http://169.254.169.254/latest/meta-data/local-ipv4";
 
     /**
+     * The URL to use to test whether we are running on Amazon EC2.
+     */
+    private static final String EC2_TEST_URL
+        = "http://169.254.169.254/latest/meta-data/";
+
+    /**
+     * Whether we are running on Amazon EC2.
+     */
+    private static Boolean RUNNING_ON_EC2 = null;
+
+    /**
      * The addresses that we will use as a mask
      */
     private static TransportAddress mask;
@@ -166,27 +177,34 @@ public class AwsCandidateHarvester
     /**
      * Determines if there is a decent chance for the box executing this
      * application to be an AWS EC2 instance and returns <tt>true</tt> if so.
-     * Note that this method does not provide any guarantees. It just tries
-     * to provide a way to quickly determine if we are unlikely to be running
-     * an EC2 so as to avoid the GET queries during harvesting. Running those
-     * queries on a non-EC2 machine takes them a while to expire.
      *
      * @return <tt>true</tt> if there appear to be decent chances for this
-     * machine to be an AWS EC2 (i.e. ec2metadata executes) and <tt>false</tt>
-     * otherwise.
+     * machine to be an AWS EC2 and <tt>false</tt> otherwise.
      */
     public static boolean smellsLikeAnEC2()
     {
+        if (RUNNING_ON_EC2 == null)
+        {
+            RUNNING_ON_EC2 = doTestEc2();
+        }
+        return RUNNING_ON_EC2;
+    }
+
+    /**
+     * Tries to connect to an Amazon EC2-specific URL in order to determine
+     * whether we are running on EC2.
+     *
+     * @return <tt>true</tt> if the connection succeeded, <tt>false</tt>
+     * otherwise.
+     */
+    private static boolean doTestEc2()
+    {
         try
         {
-            if(new File("/usr/bin/ec2metadata").exists())
-                return true;
+            URLConnection conn = new URL(EC2_TEST_URL).openConnection();
+            conn.setConnectTimeout(500); //don't hang for too long
+            conn.getContent();
 
-            //the command below seems to be freezing on some systems.
-            //Runtime.getRuntime().exec("ec2metadata --help");
-
-            //if this is an AWS EC2 we would throw an exception above and not
-            //get here, so ... be happy
             return true;
         }
         catch(Exception exc)
@@ -210,7 +228,7 @@ public class AwsCandidateHarvester
     {
         URLConnection conn = new URL(url).openConnection();
         BufferedReader in = new BufferedReader(new InputStreamReader(
-                    conn.getInputStream(),  "UTF-8"));
+                    conn.getInputStream(), "UTF-8"));
 
         String retString = in.readLine();
 
