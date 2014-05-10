@@ -23,6 +23,7 @@ import org.ice4j.stack.*;
  * @author Emil Ivov
  * @author Sebastien Vincent
  * @author Lyubomir Marinov
+ * @author Aakash Garg
  */
 public abstract class Message
 {
@@ -129,7 +130,22 @@ public abstract class Message
      * TURN ChannelBind method code.
      */
     public static final char TURN_METHOD_CHANNELBIND  = 0x0009;
-
+    
+    /**
+     * TURN Connect method code.
+     */
+    public static final char TURN_METHOD_CONNECT = 0X000a;
+    
+    /**
+     * TURN ConnectionBind method code.
+     */
+    public static final char TURN_METHOD_CONNECTION_BIND = 0X000b;
+    
+    /**
+     * TURN ConnectionAttempt method code.
+     */
+    public static final char TURN_METHOD_CONNECTION_ATTEMPT = 0X000c;
+    
     /**
      * TURN allocate request code.
      */
@@ -213,6 +229,49 @@ public abstract class Message
      */
     public static final char DATA_INDICATION =
         (TURN_METHOD_DATA | STUN_INDICATION);
+    
+    /**
+     * TURN Connect Request code.
+     */
+    public static final char CONNECT_REQUEST = 
+	    (TURN_METHOD_CONNECT | STUN_REQUEST);
+    
+    /**
+     * TURN Connect Success Response code.
+     */
+    public static final char CONNECT_RESPONSE = 
+	    (TURN_METHOD_CONNECT | STUN_SUCCESS_RESP);
+    
+    /**
+     * TURN Connect Error Response code.
+     */
+    public static final char CONNECT_ERROR_RESPONSE = 
+	    (TURN_METHOD_CONNECT | STUN_ERROR_RESP);
+    
+    /**
+     * TURN Connection Bind Request code.
+     */
+    public static final char CONNECTION_BIND_REQUEST = 
+	    (TURN_METHOD_CONNECTION_BIND | STUN_REQUEST);
+    
+    /**
+     * TURN Connection Bind Success Response code.
+     */
+    public static final char CONNECTION_BIND_SUCCESS_RESPONSE = 
+	    (TURN_METHOD_CONNECTION_BIND | STUN_SUCCESS_RESP);
+	    
+    /**
+     * TURN Connection Bind error code. 
+     */
+    public static final char CONNECTION_BIND_ERROR_RESPONSE = 
+	    (TURN_METHOD_CONNECTION_BIND | STUN_ERROR_RESP);
+    
+    
+    /**
+     * TURN Connection Attempt Indication code.
+     */
+    public static final char CONNECTION_ATTEMPT_INDICATION = 
+	    (TURN_METHOD_CONNECTION_ATTEMPT | STUN_INDICATION);
 
     /* Old TURN method */
     /**
@@ -789,6 +848,7 @@ public abstract class Message
      *
      * @return true if the messages are equal and false otherwise.
      */
+    @Override
     public boolean equals(Object obj)
     {
         if(!(obj instanceof Message)
