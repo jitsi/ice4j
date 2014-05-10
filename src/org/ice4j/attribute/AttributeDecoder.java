@@ -14,6 +14,7 @@ import org.ice4j.*;
  *
  * @author Emil Ivov
  * @author Sebastien Vincent
+ * @author Aakash Garg
  */
 public class AttributeDecoder
 {
@@ -117,7 +118,10 @@ public class AttributeDecoder
                 decodedAttribute = new IceControlledAttribute(); break;
             case Attribute.USE_CANDIDATE:
                 decodedAttribute = new UseCandidateAttribute(); break;
-
+            case Attribute.REQUESTED_ADDRESS_FAMILY:
+        	    decodedAttribute = new RequestedAddressFamilyAttribute(); break;
+            case Attribute.CONNECTION_ID:
+        	    decodedAttribute = new ConnectionIdAttribute(); break;
             //According to rfc3489 we should silently ignore unknown attributes.
             default: decodedAttribute
                 = new OptionalAttribute( Attribute.UNKNOWN_OPTIONAL_ATTRIBUTE);
