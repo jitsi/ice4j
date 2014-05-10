@@ -70,6 +70,7 @@ package org.ice4j.attribute;
  *      The client should not retry.
  *
  * @author Emil Ivov
+ * @author Aakash Garg
  */
 public class ErrorCodeAttribute extends Attribute
 {
@@ -79,6 +80,11 @@ public class ErrorCodeAttribute extends Attribute
     public static final String NAME = "ERROR-CODE";
 
     // Common error codes
+   /** 
+    * Try Alternate error code.
+    */
+   public static final char TRY_ALTERNATE  = 300;
+   
     /**
      * Bad request error code.
      */
@@ -88,6 +94,11 @@ public class ErrorCodeAttribute extends Attribute
      * Unauthorized error code.
      */
     public static final char UNAUTHORIZED  = 401;
+
+    /**
+     * Forbidden error code.
+     */
+    public static final char FORBIDDEN = 403;
 
     /**
      * Unknown attribute error code.
@@ -115,6 +126,51 @@ public class ErrorCodeAttribute extends Attribute
     public static final char USE_TLS = 433;
 
     /**
+     * Allocation Mismatch error code.
+     */
+    public static final char ALLOCATION_MISMATCH  = 437;
+   
+   /**
+    * Stale Nonce error code.
+    */
+   public static final char STALE_NONCE  = 438;
+   
+    /**
+     * Address Family not Supported error code.
+     */
+    public static final char ADDRESS_FAMILY_NOT_SUPPORTED = 440;
+
+    /**
+     * Wrong Credentials error code.
+     */
+    public static final char WRONG_CREDENTIALS  = 441;
+
+    /**
+     * Unsupported Transport Protocol error code.
+     */
+    public static final char UNSUPPORTED_TRANSPORT_PROTOCOL = 442;
+
+    /**
+     * Peer Address Family Mismatch error code.
+     */
+    public static final char PEER_ADDRESS_FAMILY_MISMATCH = 443;
+    
+    /**
+     * Connection Already Exists error code.
+     */
+    public static final char CONNECTION_ALREADY_EXISTS = 446;
+    
+    /**
+     * Connection Timeout or Failure error code.
+     */
+    public static final char CONNECTION_TIMEOUT_OR_FAILURE = 447;
+    
+    /**
+     * Allocation Quota reached error code.
+     */
+    public static final char ALLOCATION_QUOTA_REACHED  = 486;
+
+    /**
      * Role conflict error code.
      */
     public static final char ROLE_CONFLICT   = 487;
@@ -125,10 +181,15 @@ public class ErrorCodeAttribute extends Attribute
     public static final char SERVER_ERROR = 500;
 
     /**
+     * Insufficient Capacity error code.
+     */
+    public static final char INSUFFICIENT_CAPACITY  = 508;
+
+    /**
      * Global failure error code.
      */
     public static final char GLOBAL_FAILURE = 600;
-
+    
     /**
      * The class represents the hundreds digit of the response code.  The
      * value MUST be between 1 and 6.
@@ -243,30 +304,81 @@ public class ErrorCodeAttribute extends Attribute
     {
         switch(errorCode)
         {
-            case 400: return  "(Bad Request): The request was malformed.  The client should not "
-                             +"retry the request without modification from the previous attempt.";
-            case 401: return  "(Unauthorized): The Binding Request did not contain a MESSAGE-"
-                             +"INTEGRITY attribute.";
-            case 420: return  "(Unknown Attribute): The server did not understand a mandatory "
-                             +"attribute in the request.";
-            case 430: return  "(Stale Credentials): The Binding Request did contain a MESSAGE-"
-                             +"INTEGRITY attribute, but it used a shared secret that has "
-                             +"expired.  The client should obtain a new shared secret and try"
-                             +"again";
-            case 431: return  "(Integrity Check Failure): The Binding Request contained a "
-                             +"MESSAGE-INTEGRITY attribute, but the HMAC failed verification. "
-                             +"This could be a sign of a potential attack, or client "
-                             +"implementation error.";
-            case 432: return  "(Missing Username): The Binding Request contained a MESSAGE-"
-                             +"INTEGRITY attribute, but not a USERNAME attribute.  Both must be"
-                             +"present for integrity checks.";
-            case 433: return  "(Use TLS): The Shared Secret request has to be sent over TLS, but"
-                             +"was not received over TLS.";
-            case 500: return  "(Server Error): The server has suffered a temporary error. The"
-                             +"client should try again.";
-            case 600: return "(Global Failure:) The server is refusing to fulfill the request."
-                             +"The client should not retry.";
-
+            case 300:
+                return "(Try Alternate): The server would like the client to"
+                    + " use the server specified in the ALTERNATE-SERVER"
+                    + " attribute instead.";
+            case 400:
+                return "(Bad Request): The request was malformed.  The client"
+                    + " should not retry the request without modification from"
+                    + " the previous attempt.";
+            case 401:
+                return "(Unauthorized): The Binding Request did not contain"
+                    + " a MESSAGE-INTEGRITY attribute.";
+            case 403:
+                return "(Forbidden): The request was valid but cannot be"
+                    + " performed due to administrative or similar"
+                    + " restrictions.";
+            case 420:
+                return "(Unknown Attribute): The server did not understand"
+                    + " a mandatory attribute in the request.";
+            case 430:
+                return "(Stale Credentials): The Binding Request did contain"
+                    + " a MESSAGE-INTEGRITY attribute, but it used a shared"
+                    + " secret that has expired.";
+            case 431:
+                return "(Integrity Check Failure): The Binding Request"
+                    + " contained a MESSAGE-INTEGRITY attribute, but the HMAC"
+                    + " failed verification.";
+            case 432:
+                return "(Missing Username): The Binding Request contained"
+                    + " a MESSAGE-INTEGRITY attribute, but not a USERNAME"
+                    + " attribute.";
+            case 433:
+                return "(Use TLS): The Shared Secret request has to be sent"
+                    + " over TLS, but was not received over TLS.";
+            case 437:
+                return "(Allocation Mismatch): A request was received by the"
+                    + " server that requires an allocation to be in place,"
+                    + " but no allocation exists, or a request was received"
+                    + " that requires no allocation, but an allocation exists.";
+            case 438:
+                return "(Stale Nonce): See the procedures for the long-term"
+                    + " credential mechanism.";
+            case 440:
+                return "(Address Family not Supported):  The server does not"
+                    + " support the address family requested by the client.";
+            case 441:
+                return "(Wrong Credentials): The credentials in the"
+                    + " (non-Allocate) request do not match those used"
+                    + " to create the allocation.";
+            case 442:
+                return "(Unsupported Transport Protocol): The Allocate request"
+                    + " asked the server to use a transport protocol between"
+                    + " the server and the peer that the server does not"
+                    + " support.";
+            case 443:
+                return "Peer Address Family Mismatch):  A peer address was of"
+                    + " a different address family than that of the relayed"
+                    + " transport address of the allocation.";
+            case 446:
+                return  "Connection Already Exists";
+            case 447:
+                return  "Connection Timeout or Failure";
+            case 486:
+                return "(Allocation Quota Reached): No more allocations using"
+                    + " this username can be created at the present time.";
+            case 500:
+                return  "(Server Error): The server has suffered a temporary"
+                    + " error. The client should try again.";
+            case 508:
+                return "(Insufficient Capacity): The server is unable to carry"
+                    + " out the request due to some capacity limit being"
+                    + " reached.";
+            case 600:
+                return "(Global Failure:) The server is refusing to fulfill"
+                    + " the request. The client should not retry.";
+            
             default:  return "Unknown Error";
         }
     }
@@ -304,6 +416,7 @@ public class ErrorCodeAttribute extends Attribute
      * for debugging and readability.
      * @return this attribute's name.
      */
+    @Override
     public String getName()
     {
         return NAME;
@@ -313,6 +426,7 @@ public class ErrorCodeAttribute extends Attribute
      * Returns the length of this attribute's body.
      * @return the length of this attribute's value.
      */
+    @Override
     public char getDataLength()
     {
         char len = (char)(4 //error code numbers
@@ -325,6 +439,7 @@ public class ErrorCodeAttribute extends Attribute
      * Returns a binary representation of this attribute.
      * @return a binary representation of this attribute.
      */
+    @Override
     public byte[] encode()
     {
         byte binValue[] =  new byte[HEADER_LENGTH + getDataLength()
@@ -359,7 +474,8 @@ public class ErrorCodeAttribute extends Attribute
      * @param obj the object to compare this attribute with.
      * @return true if the attributes are equal and false otherwise.
      */
-     public boolean equals(Object obj)
+     @Override
+    public boolean equals(Object obj)
      {
          if (! (obj instanceof ErrorCodeAttribute)
              || obj == null)
@@ -392,6 +508,7 @@ public class ErrorCodeAttribute extends Attribute
      *                  length)
      * @param length the length of the binary array.
      */
+    @Override
     void decodeAttributeBody(byte[] attributeValue, char offset, char length)
     {
 
