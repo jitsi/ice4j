@@ -14,11 +14,12 @@ import org.ice4j.attribute.*;
 
 /**
  * This class provides factory methods to allow an application to create STUN
- * Messages from a particular implementation.
+ * and TURN messages from a particular implementation.
  *
  * @author Emil Ivov
  * @author Sebastien Vincent
  * @author Lubomir Marinov
+ * @author Aakash Garg
  */
 public class MessageFactory
 {
@@ -393,6 +394,143 @@ public class MessageFactory
     }
 
     /**
+     * Creates a AllocationResponse in a 5389 compliant manner containing at
+     * most 4 attributes
+     *<br><tt>XOR-RELAYED-ADDRESS</tt> attribute
+     *<br><tt>LIFETIME</tt> attribute
+     *<br><tt>XOR-MAPPED-ADDRESS</tt> attribute
+     *
+     * @param request the request that created the transaction that this
+     * response will belong to.
+     * @param mappedAddress the address to assign the mappedAddressAttribute
+     * @param relayedAddress the address to assign the relayedAddressAttribute
+     * @param lifetime the address to assign the lifetimeAttribute
+     * @return a AllocationResponse assigning the specified values to mandatory
+     * headers.
+     * @throws IllegalArgumentException if there was something wrong with the
+     * way we are trying to create the response.
+     */
+    public static Response createAllocationResponse(
+            Request request,
+            TransportAddress mappedAddress,
+            TransportAddress relayedAddress,
+            int lifetime )
+        throws IllegalArgumentException
+    {
+	    return createAllocationResponse(
+            request, mappedAddress, relayedAddress, null ,lifetime);
+    }
+    
+    /**
+     * Creates a AllocationResponse in a 5389 compliant manner containing at most 4 attributes
+     *<br><tt>XOR-RELAYED-ADDRESS</tt> attribute
+     *<br><tt>LIFETIME</tt> attribute
+     *<br><tt>RESERVATION-TOKEN</tt> attribute
+     *<br><tt>XOR-MAPPED-ADDRESS</tt> attribute
+     *
+     * @param request the request that created the transaction that this
+     * response will belong to.
+     * @param mappedAddress the address to assign the mappedAddressAttribute
+     * @param relayedAddress the address to assign the relayedAddressAttribute
+     * @param token the address to assign the reservationTokenAttribute
+     * @param lifetime the address to assign the lifetimeAttribute
+     * @return a AllocationResponse assigning the specified values to mandatory
+     * headers.
+     * @throws IllegalArgumentException if there was something wrong with the
+     * way we are trying to create the response.
+     */
+    public static Response createAllocationResponse(
+            Request request,
+            TransportAddress mappedAddress,
+            TransportAddress relayedAddress,
+            byte[] token,
+            int lifetime)
+        throws IllegalArgumentException
+    {
+        Response allocationSuccessResponse = new Response();
+
+        allocationSuccessResponse.setMessageType(Message.ALLOCATE_RESPONSE);
+
+        // xor mapped address
+        XorMappedAddressAttribute xorMappedAddressAttribute
+            = AttributeFactory
+                .createXorMappedAddressAttribute(
+                        mappedAddress, request.getTransactionID());
+
+        allocationSuccessResponse.addAttribute(xorMappedAddressAttribute);
+
+        //xor relayed address
+        XorRelayedAddressAttribute xorRelayedAddressAttribute
+            = AttributeFactory
+        		.createXorRelayedAddressAttribute(relayedAddress,
+        				request.getTransactionID());
+
+        allocationSuccessResponse.addAttribute(xorRelayedAddressAttribute);
+
+        //lifetime
+        LifetimeAttribute lifetimeAttribute
+            = AttributeFactory.createLifetimeAttribute(lifetime);
+
+        allocationSuccessResponse.addAttribute(lifetimeAttribute);
+        
+        if(token != null)
+        {
+            //reservation token
+            ReservationTokenAttribute reservationTokenAttribute
+                = AttributeFactory
+            		.createReservationTokenAttribute(token);
+
+            allocationSuccessResponse.addAttribute(reservationTokenAttribute);
+        }
+        
+        return allocationSuccessResponse;
+    }
+    
+    /**
+     * Creates a allocation error response according to the specified error
+     * code.
+     *
+     * @param errorCode the error code to encapsulate in this message attributes
+     * that had not been recognised.
+     *
+     * @return a allocation error response message containing an error code.
+     */
+    public static Response createAllocationErrorResponse(char errorCode)
+    {
+	    return createAllocationErrorResponse(errorCode,null);
+    }
+       
+    /**
+     * Creates a allocation error response according to the specified error
+     * code.
+     *
+     * @param errorCode the error code to encapsulate in this message
+     * @param reasonPhrase a human readable description of the error
+     * attributes that had not been recognised.
+     * @throws IllegalArgumentException INVALID_ARGUMENTS if one or more of the
+     * given parameters had an invalid value.
+     *
+     * @return a allocation error response message containing an error code.
+     */
+    public static Response createAllocationErrorResponse(char errorCode,
+	    				String reasonPhrase)
+    {
+        Response allocationErrorResponse = new Response();
+
+        allocationErrorResponse.setMessageType(Message.ALLOCATE_ERROR_RESPONSE);
+
+        //error code attribute
+        ErrorCodeAttribute errorCodeAttribute
+            = AttributeFactory
+                .createErrorCodeAttribute(errorCode,
+                                          reasonPhrase);
+
+        allocationErrorResponse.addAttribute(errorCodeAttribute);
+
+        return allocationErrorResponse;
+    }
+    
+    /**
      * Create an allocate request for a Google TURN relay (old TURN protocol
      * modified).
      *
@@ -527,6 +665,64 @@ public class MessageFactory
 
         return refreshRequest;
     }
+    
+    /**
+     * Creates a refresh success response with given lifetime.
+     * 
+     * @param lifetime the lifetime value to be used.
+     * @return refresh error response including the error code attribute.
+     */
+    public static Response createRefreshResponse(int lifetime)
+    {
+        Response refreshSuccessResponse = new Response();
+
+        try
+        {
+            refreshSuccessResponse.setMessageType(Message.REFRESH_RESPONSE);
+
+            //lifetime attribute
+            LifetimeAttribute lifetimeAttribute
+                = AttributeFactory
+                        .createLifetimeAttribute(lifetime);
+
+            refreshSuccessResponse.addAttribute(lifetimeAttribute);
+        }
+        catch(IllegalArgumentException ex)
+        {
+            logger.log(Level.FINE, "Failed to set message type.", ex);
+        }
+        return refreshSuccessResponse;
+    }
+    
+    /**
+     * Creates a refresh error response.
+     * @param errorCode the error code to encapsulate in this message.
+     * @param reasonPhrase a human readable description of the error.
+     * @return refresh error response including the error code attribute.
+     */
+    public static Response createRefreshErrorResponse(
+            char errorCode, String reasonPhrase)
+    {
+        Response refreshErrorResponse = new Response();
+
+        try
+        {
+            refreshErrorResponse.setMessageType(
+                Message.REFRESH_ERROR_RESPONSE);
+
+            ErrorCodeAttribute errorCodeAttribute
+                = AttributeFactory
+                        .createErrorCodeAttribute(
+                            errorCode, reasonPhrase);
+
+            refreshErrorResponse.addAttribute(errorCodeAttribute);
+        }
+        catch(IllegalArgumentException ex)
+        {
+             logger.log(Level.FINE, "Failed to set message type.", ex);
+        }
+        return refreshErrorResponse;
+    }
 
     /**
      * Create a ChannelBind request.
@@ -565,7 +761,56 @@ public class MessageFactory
 
         return channelBindRequest;
     }
+    
+    /**
+     * Creates a Channel Bind Success Response.
+     * @return Channel Bind Success Response.
+     */
+    public static Response createChannelBindResponse()
+    {
+        Response channelBindSuccessResponse = new Response();
 
+        channelBindSuccessResponse.setMessageType(
+            Message.CHANNELBIND_RESPONSE);
+
+        return channelBindSuccessResponse;
+    }
+    
+    /**
+     * Creates a Channel Bind Error Response with given error code.
+     * 
+     * @param errorCode the error code to encapsulate in this message.
+     * @return Channel Bind Error Response including the error code attribute.
+     */
+    public static Response createChannelBindErrorResponse(char errorCode)
+    {
+	    return createChannelBindErrorResponse(errorCode);
+    }
+    
+    /**
+     * Creates a Channel Bind Error Response with given error code
+     * and reasonPhrase.
+     * @param errorCode the error code to encapsulate in this message.
+     * @param reasonPhrase a human readable description of the error.
+     * @return Channel Bind Error Response including the error code attribute.
+     */
+    public static Response createChannelBindErrorResponse(
+            char errorCode, String reasonPhrase)
+    {
+        Response channelBindErrorResponse = new Response();
+
+        channelBindErrorResponse
+            .setMessageType(Message.CHANNELBIND_ERROR_RESPONSE);
+
+        ErrorCodeAttribute errorCodeAttribute
+            = AttributeFactory
+                .createErrorCodeAttribute(errorCode,reasonPhrase);
+
+        channelBindErrorResponse.addAttribute(errorCodeAttribute);
+
+        return channelBindErrorResponse;
+    }
+    
     /**
      * Creates a new TURN CreatePermission <tt>Request</tt> with a specific
      * value for its XOR-PEER-ADDRESS attribute.
@@ -600,6 +845,46 @@ public class MessageFactory
         return createPermissionRequest;
     }
 
+    /**
+     * Creates a create permission success response.
+     * 
+     * @return CreatePermission Response 
+     */
+    public static Response createPermissionResponse()
+    {
+        Response permissionSuccessResponse = new Response();
+
+        permissionSuccessResponse.setMessageType(
+            Message.CREATEPERMISSION_RESPONSE);
+
+        return permissionSuccessResponse;
+    }
+    
+    /**
+     * Creates a create permission error response.
+     * 
+     * @param errorCode the error code to encapsulate in this message.
+     * @param reasonPhrase a human readable description of the error.
+     * @return CreatePermission Error Response with error code attribute.
+     */
+    public static Response createPermissionErrorResponse(
+            char errorCode, String reasonPhrase)
+    {
+        Response createPermissionErrorResponse = new Response();
+
+        createPermissionErrorResponse.setMessageType(
+            Message.CREATEPERMISSION_ERROR_RESPONSE);
+
+        ErrorCodeAttribute errorCodeAttribute
+            = AttributeFactory
+                .createErrorCodeAttribute(
+                        errorCode,reasonPhrase);
+
+        createPermissionErrorResponse.addAttribute(errorCodeAttribute);
+
+        return createPermissionErrorResponse;
+    }
+    
     /**
      * Create a Send Indication.
      *
@@ -719,4 +1004,237 @@ public class MessageFactory
         throw new UnsupportedOperationException(
                         "Shared Secret Support is not currently implemented");
     }
+    
+    /**
+     * Creates a ConnectRequest in a 6062 compliant manner containing only
+     *<br><tt>XOR-PEER-ADDRESS</tt> attribute
+     *
+     * @param request the request that created the transaction that this
+     * response will belong to.
+     * @param peerAddress the address to assign the xorPeerAddressAttribute
+     * @return a ConnectRequest assigning the specified values to mandatory
+     * headers.
+     * @throws IllegalArgumentException if there was something wrong with the
+     * way we are trying to create the response.
+     */
+    public static Request createConnectRequest(
+            TransportAddress peerAddress, Request request)
+        throws IllegalArgumentException
+    {
+        Request connectRequest = new Request();
+
+        connectRequest.setMessageType(Message.CONNECT_REQUEST);
+
+        //xor peer address
+        XorPeerAddressAttribute xorPeerAddressAttribute
+            = AttributeFactory
+                .createXorPeerAddressAttribute(
+                    peerAddress, request.getTransactionID());
+
+        connectRequest.addAttribute(xorPeerAddressAttribute);
+
+        return connectRequest;
+    }
+    
+    /**
+     * Creates a Connect Response in a 6062 compliant manner containing a single
+     * <tt>CONNECTION-ID-ATTRIBUTE</tt> attribute
+     * @param connectionIdValue the address to assign the connectionIdAttribute
+     * @return a ConnectResponse assigning the specified values to mandatory
+     * headers.
+     * @throws IllegalArgumentException if there was something wrong with the
+     * way we are trying to create the response.
+     */
+        
+    public static Response createConnectResponse(
+            int connectionIdValue)
+        throws IllegalArgumentException
+    {
+        Response connectSuccessResponse = new Response();
+
+        connectSuccessResponse.setMessageType(Message.CONNECT_RESPONSE);
+
+        //connection id
+        ConnectionIdAttribute connectionIdAttribute
+            = AttributeFactory
+                .createConnectionIdAttribute(connectionIdValue);
+
+        connectSuccessResponse.addAttribute(connectionIdAttribute);
+
+        return connectSuccessResponse;
+    }
+    
+    /**
+     * Creates a Connect error response according to the specified error code.
+     *
+     * @param errorCode the error code to encapsulate in this message
+     * @throws IllegalArgumentException INVALID_ARGUMENTS if one or more of the
+     * given parameters had an invalid value.
+     * @return a Connect error response message containing an error code.
+     */
+    
+    public static Response createConnectErrorResponse(char errorCode)
+        throws IllegalArgumentException
+    {
+	    return createConnectErrorResponse(errorCode, null);
+    }
+    
+    /**
+     * Creates a Connect error response according to the specified error code.
+     *
+     * @param errorCode the error code to encapsulate in this message
+     * @param reasonPhrase a human readable description of the error
+     * @throws IllegalArgumentException INVALID_ARGUMENTS if one or more of the
+     * given parameters had an invalid value.
+     * @return a Connect error response message containing an error code.
+     */
+    public static Response createConnectErrorResponse(
+            char  errorCode, String reasonPhrase )
+        throws IllegalArgumentException
+    {
+        Response connectionErrorResponse = new Response();
+
+        connectionErrorResponse.setMessageType(Message.CONNECT_ERROR_RESPONSE);
+
+        //error code attribute
+        ErrorCodeAttribute errorCodeAttribute
+            = AttributeFactory
+                .createErrorCodeAttribute(errorCode, reasonPhrase);
+
+        connectionErrorResponse.addAttribute(errorCodeAttribute);
+
+        return connectionErrorResponse;
+    }
+
+    
+    /**
+     * Creates a ConnectionBindRequest in a 6062 compliant manner containing
+     * only <tt>CONECTION-ID-ATTRIBUTE</tt> attribute.
+     *
+     * @param connectionIdValue the value to assign the connectionIdAtribute
+     * @return a ConnectionBind Request assigning the specified values
+     *         to mandatory headers.
+     * @throws IllegalArgumentException if there was something wrong with the
+     *         way we are trying to create the Request.
+     */
+    public static Request createConnectionBindRequest(int connectionIdValue)
+        throws IllegalArgumentException
+    {
+        Request connectionBindRequest = new Request();
+
+        connectionBindRequest.setMessageType(Message.CONNECTION_BIND_REQUEST);
+
+        //connection id
+        ConnectionIdAttribute connectionIdAttribute
+            = AttributeFactory
+                .createConnectionIdAttribute(connectionIdValue);
+
+        connectionBindRequest.addAttribute(connectionIdAttribute);
+
+        return connectionBindRequest;
+    }
+    
+    /**
+     * Creates a ConnectionBind Response in a 6062 compliant manner.
+     *
+     * @return a ConnectionBind Response assigning the specified values to
+     *         mandatory headers.
+     * @throws IllegalArgumentException if there was something wrong with the
+     * way we are trying to create the response.
+     */ 
+    public static Response createConnectionBindResponse()
+        throws IllegalArgumentException
+    {
+        Response connectSuccessResponse = new Response();
+
+        connectSuccessResponse.setMessageType(
+            Message.CONNECTION_BIND_SUCCESS_RESPONSE);
+
+        return connectSuccessResponse;
+    }
+    
+    /**
+     * Creates a ConnectionBind error response according to the specified error
+     * code.
+     *
+     * @param errorCode the error code to encapsulate in this message
+     * @throws IllegalArgumentException INVALID_ARGUMENTS if one or more of the
+     * given parameters had an invalid value.
+     * @return a ConnectionBind error response message containing an error code.
+     */
+    
+    public static Response createConnectionBindErrorResponse(char errorCode)
+        throws IllegalArgumentException
+    {
+	    return createConnectionBindErrorResponse(errorCode,null);
+    }
+    
+    /**
+     * Creates a ConnectionBind error response according to the specified error
+     * code.
+     *
+     * @param errorCode the error code to encapsulate in this message
+     * @param reasonPhrase a human readable description of the error
+     * @throws IllegalArgumentException INVALID_ARGUMENTS if one or more of the
+     * given parameters had an invalid value.
+     * @return a ConnectionBind error response message containing an error code.
+     */
+    public static Response createConnectionBindErrorResponse(
+            char  errorCode, String reasonPhrase)
+        throws IllegalArgumentException
+    {
+        Response connectionBindErrorResponse = new Response();
+
+        connectionBindErrorResponse.setMessageType(
+            Message.CONNECTION_BIND_ERROR_RESPONSE);
+
+        //error code attribute
+        ErrorCodeAttribute errorCodeAttribute
+            = AttributeFactory
+                .createErrorCodeAttribute(errorCode, reasonPhrase);
+
+        connectionBindErrorResponse.addAttribute(errorCodeAttribute);
+
+        return connectionBindErrorResponse;
+    }
+
+    /**
+     * Creates a ConnectionAttempt Indication in a 6062 compliant manner
+     * containing only <tt>CONECTION-ID-ATTRIBUTE</tt> attribute and
+     * <tt>XOR-PPER-ADDRESS</tt> attribute.
+     *
+     * @param connectionIdValue the value to assign the connectionidAtribute
+     * @param peerAddress the value to assign the xorPeerAddress
+     * @return a ConnectionAttempt Indication assigning the specified values to
+     *         mandatory headers.
+     * @throws IllegalArgumentException if there was something wrong with the
+     * way we are trying to create the Request.
+     */
+    public static Indication createConnectionAttemptIndication(
+            int connectionIdValue, TransportAddress peerAddress)
+        throws IllegalArgumentException
+    {
+        Indication connectionAttemptIndication = new Indication();
+
+        connectionAttemptIndication.setMessageType(
+            Message.CONNECTION_ATTEMPT_INDICATION);
+
+        //connection id attribute
+        ConnectionIdAttribute connectionIdAttribute
+            = AttributeFactory
+                .createConnectionIdAttribute(connectionIdValue);
+
+        connectionAttemptIndication.addAttribute(connectionIdAttribute);
+
+        //xor peer address attribute
+        XorPeerAddressAttribute xorPeerAddressAttribute
+            = AttributeFactory
+                .createXorPeerAddressAttribute(peerAddress,
+                    connectionAttemptIndication.getTransactionID());
+
+        connectionAttemptIndication.addAttribute(xorPeerAddressAttribute);
+
+        return connectionAttemptIndication;
+   }
+    
 }
