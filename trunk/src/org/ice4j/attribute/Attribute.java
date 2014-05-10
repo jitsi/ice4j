@@ -61,6 +61,7 @@ import org.ice4j.*;
  * @author Emil Ivov
  * @author Sebastien Vincent
  * @author Namal Senarathne
+ * @author Aakash Garg
  */
 public abstract class Attribute
 {
@@ -149,7 +150,7 @@ public abstract class Attribute
      * Alternate server attribute.
      */
     public static final char ALTERNATE_SERVER = 0x8023;
-
+    
     /**
      * Fingerprint attribute.
      */
@@ -185,6 +186,11 @@ public abstract class Attribute
      * XOR relayed address attribute.
      */
     public static final char XOR_RELAYED_ADDRESS = 0x0016;
+    
+    /**
+     * Requested Address Family attribute.
+     */
+    public static final char REQUESTED_ADDRESS_FAMILY = 0X0017;
 
     /**
      * Even port attribute.
@@ -205,6 +211,12 @@ public abstract class Attribute
      * Reservation token attribute.
      */
     public static final char RESERVATION_TOKEN = 0x0022;
+   
+    /**
+     * Connection Id attribute.
+     * TURN TCP support attribute
+     */
+    public static final char CONNECTION_ID = 0x002a;
 
     /* Old TURN attributes */
     /**
@@ -249,7 +261,7 @@ public abstract class Attribute
     protected char attributeType = 0;
 
     /**
-     * The size of an atribute header in bytes = len(TYPE) + len(LENGTH) = 4
+     * The size of an attribute header in bytes = len(TYPE) + len(LENGTH) = 4
      */
     public static final char HEADER_LENGTH = 4;
 
@@ -315,6 +327,7 @@ public abstract class Attribute
     * @return true if the attributes are equal and false otherwise.
     */
 
+    @Override
     public abstract boolean equals(Object obj);
 
     /**

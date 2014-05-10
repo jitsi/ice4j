@@ -18,6 +18,7 @@ import org.ice4j.*;
  * @author Emil Ivov
  * @author Sebastien Vincent
  * @author Namal Senarathne
+ * @author Aakash Garg
  */
 public class AttributeFactory
 {
@@ -597,6 +598,44 @@ public class AttributeFactory
             new DestinationAddressAttribute();
 
         attribute.setAddress(address);
+
+        return attribute;
+    }
+    
+    /**
+     * Creates a new RequestedAddressFamilyAttribute of the specified family
+     * 
+     * @param family address family value as specified in the RFC
+     * @return the newly created RequestedAddressFamily attribute if family is
+     *         IPv4/IPv6 otherwise <tt>null</tt>.
+     */
+    public static RequestedAddressFamilyAttribute
+        createRequestedAddressFamilyAttribute(char family)
+    {
+		RequestedAddressFamilyAttribute attribute
+            = new RequestedAddressFamilyAttribute();
+
+        boolean isSet = attribute.setFamily(family);
+		if(!isSet)
+        {
+			attribute = null;
+		}
+
+        return attribute;
+    }
+    
+    /**
+     * Creates a new ConnectionIdAttribute of the specified connectionIdValue
+     * 
+     * @param connectionIdValue the connection ID value.
+     * @return the newly created ConnectionId attribute. 
+     */
+    public static ConnectionIdAttribute createConnectionIdAttribute(
+        int connectionIdValue)
+	{
+		ConnectionIdAttribute attribute = new ConnectionIdAttribute();
+
+        attribute.setConnectionIdValue(connectionIdValue);
 
         return attribute;
     }
