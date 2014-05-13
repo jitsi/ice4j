@@ -695,6 +695,17 @@ public class MessageFactory
     }
     
     /**
+     * Creates a refresh error response
+     * 
+     * @param errorCode the error code to encapsulate in this message.
+     * @return refresh error response including the error code attribute.
+     */
+    public static Response createRefreshErrorResponse(char errorCode)
+    {
+        return createRefreshErrorResponse(errorCode, null);
+    }
+    
+    /**
      * Creates a refresh error response.
      * @param errorCode the error code to encapsulate in this message.
      * @param reasonPhrase a human readable description of the error.
@@ -858,6 +869,18 @@ public class MessageFactory
             Message.CREATEPERMISSION_RESPONSE);
 
         return permissionSuccessResponse;
+    }
+    
+    /**
+     * Creates a create permission error response.
+     * 
+     * @param errorCode the error code to encapsulate in this message.
+     * @return CreatePermission Error Response with error code attribute.
+     */
+    public static Response createCreatePermissionErrorResponse(char errorCode)
+    {
+        return createPermissionErrorResponse(
+            errorCode, null);
     }
     
     /**
