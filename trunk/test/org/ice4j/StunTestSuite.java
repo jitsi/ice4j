@@ -52,6 +52,10 @@ public class StunTestSuite
                            SoftwareAttributeTest.class);
         suite.addTestSuite(org.ice4j.attribute.
                            OptionalAttributeAttributeTest.class);
+        suite.addTestSuite(org.ice4j.attribute.
+                           ConnectionIdAttributeTest.class);
+        suite.addTestSuite(org.ice4j.attribute.
+                           RequestedAddressFamilyAttributeTest.class);
         suite.addTestSuite(org.ice4j.attribute.UsernameAttributeTest.class);
         suite.addTestSuite(org.ice4j.attribute.NonceAttributeTest.class);
         suite.addTestSuite(org.ice4j.attribute.RealmAttributeTest.class);

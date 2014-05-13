@@ -119,6 +119,25 @@ public class MsgFixture
     };
 
 
+    public static final char REQUESTED_ADDRESS_FAMILY_ATTRIBUTE_V4 = 0X01;
+    public static final char REQUESTED_ADDRESS_FAMILY_ATTRIBUTE_V6 = 0X02;
+    
+    public byte[] requestedAddressFamilyV4 = new byte[]
+        {0x00,       0x17,       0x00,       0x01, //Type, Length
+         0x01}; //family
+
+    public byte[] requestedAddressFamilyV6 = new byte[]
+        {0x00,       0x17,       0x00,       0x01, //Type, Length
+         0x02}; //family
+    
+    public static final int CONNECTION_ID = 0x5555; 
+    public static final int CONNECTION_ID_2 = 0x2222; 
+    
+    public byte[] connectionId = new byte[]
+        {0x00,       0x2a,       0x00,       0x04, //Type, Length
+         0x00,       0x00,       0x55,       0x55}; //connectionId
+
+    
     //--------------------------- Messages ----------------------------------------
     public static final byte[] TRANSACTION_ID =
             new byte[]{
