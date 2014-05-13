@@ -126,15 +126,21 @@ public class ConnectionIdAttribute
     void decodeAttributeBody(byte[] attributeValue, char offset, char length) 
 	    throws StunException
     {
-	    if(length != 4)
+	    if(length != DATA_LENGTH)
         {
-            throw new StunException("length invalid");
+            throw new StunException("length invalid: " + length);
         }
 
-        connectionIdValue = attributeValue[0] & 0xff;
-        connectionIdValue = connectionIdValue*256 + (attributeValue[1] & 0xff);
-        connectionIdValue = connectionIdValue*256 + (attributeValue[2] & 0xff);
-        connectionIdValue = connectionIdValue*256 + (attributeValue[3] & 0xff);
+        connectionIdValue = attributeValue[offset] & 0xff;
+
+        connectionIdValue = connectionIdValue << 8 |
+            (attributeValue[offset+1] & 0xff);
+
+        connectionIdValue = connectionIdValue << 8 |
+            (attributeValue[offset+2] & 0xff);
+
+        connectionIdValue = connectionIdValue << 8 |
+            (attributeValue[offset+3] & 0xff);
     }
 
     /**

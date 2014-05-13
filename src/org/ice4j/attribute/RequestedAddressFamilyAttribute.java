@@ -133,17 +133,17 @@ public class RequestedAddressFamilyAttribute extends Attribute
     void decodeAttributeBody(byte[] attributeValue, char offset, char length) 
 	    throws StunException
     {
-	    if(length != 4)
+	    if(length != DATA_LENGTH)
         {
-            throw new StunException("length invalid");
+            throw new StunException("length invalid: " + length);
         }
 
-        family = (char)(attributeValue[0] & 0xff);
+        family = (char)(attributeValue[offset] & 0xff);
 
         if(family != IPv4 && family != IPv6)
         {
             // instead throw TurnException
-            throw new StunException("invalid family value");
+            throw new StunException("invalid family value: " + family);
         }
     }
 
