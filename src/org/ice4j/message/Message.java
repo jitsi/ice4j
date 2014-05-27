@@ -538,15 +538,15 @@ public abstract class Message
     }
 
     /**
-     * Adds the specified attribute to this message. If an attribute with that
+     * Puts the specified attribute into this message. If an attribute with that
      * name was already added, it would be replaced.
      *
-     * @param attribute the attribute to add to this message.
+     * @param attribute the attribute to put into this message.
      *
      * @throws IllegalArgumentException if the message cannot contain
      * such an attribute.
      */
-    public void addAttribute(Attribute attribute)
+    public void putAttribute(Attribute attribute)
         throws IllegalArgumentException
     {
         if (getAttributePresentity(attribute.getAttributeType()) == N_A)
@@ -1004,14 +1004,14 @@ public abstract class Message
         if (getAttribute(Attribute.SOFTWARE) == null
             && software != null && software.length() > 0)
         {
-            addAttribute(AttributeFactory
+            putAttribute(AttributeFactory
                             .createSoftwareAttribute(software.getBytes()));
         }
 
         //re-add MESSAGE-INTEGRITY if there was one.
         if (msgIntAttr != null)
         {
-            addAttribute(msgIntAttr);
+            putAttribute(msgIntAttr);
         }
 
         //add FINGERPRINT if there was one or if user told us to add it
@@ -1024,7 +1024,7 @@ public abstract class Message
 
         if (fingerprint != null)
         {
-            addAttribute(fingerprint);
+            putAttribute(fingerprint);
         }
     }
 
@@ -1128,7 +1128,7 @@ public abstract class Message
             performAttributeSpecificActions(att, binMessage,
                 originalOffset, offset);
 
-            message.addAttribute(att);
+            message.putAttribute(att);
             offset += att.getDataLength() + Attribute.HEADER_LENGTH;
 
             //now also skip any potential padding that might have come with

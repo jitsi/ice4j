@@ -54,7 +54,7 @@ public class MessageFactory
          * //add a change request attribute ChangeRequestAttribute attribute =
          * AttributeFactory.createChangeRequestAttribute();
          *
-         * try { bindingRequest.addAttribute(attribute); } catch (StunException
+         * try { bindingRequest.putAttribute(attribute); } catch (StunException
          * ex) { //shouldn't happen throw new
          * RuntimeException("Failed to add a change request "
          * +"attribute to a binding request!"); }
@@ -78,7 +78,7 @@ public class MessageFactory
 
         PriorityAttribute attribute = AttributeFactory
                         .createPriorityAttribute(priority);
-        bindingRequest.addAttribute(attribute);
+        bindingRequest.putAttribute(attribute);
 
         return bindingRequest;
     }
@@ -104,18 +104,18 @@ public class MessageFactory
 
         PriorityAttribute attribute = AttributeFactory
                         .createPriorityAttribute(priority);
-        bindingRequest.addAttribute(attribute);
+        bindingRequest.putAttribute(attribute);
 
         if (controlling)
         {
             IceControllingAttribute iceControllingAttribute = AttributeFactory
                             .createIceControllingAttribute(tieBreaker);
-            bindingRequest.addAttribute(iceControllingAttribute);
+            bindingRequest.putAttribute(iceControllingAttribute);
         } else
         {
             IceControlledAttribute iceControlledAttribute = AttributeFactory
                             .createIceControlledAttribute(tieBreaker);
-            bindingRequest.addAttribute(iceControlledAttribute);
+            bindingRequest.putAttribute(iceControlledAttribute);
         }
 
         return bindingRequest;
@@ -163,16 +163,16 @@ public class MessageFactory
             changedAddressAttribute = AttributeFactory
                             .createChangedAddressAttribute(changedAddress);
 
-        bindingResponse.addAttribute(mappedAddressAttribute);
+        bindingResponse.putAttribute(mappedAddressAttribute);
 
         // the changed address and source address attribute were removed in
         // RFC 5389 so we should be prepared to go without them.
 
         if (sourceAddressAttribute != null)
-            bindingResponse.addAttribute(sourceAddressAttribute);
+            bindingResponse.putAttribute(sourceAddressAttribute);
 
         if (changedAddressAttribute != null)
-            bindingResponse.addAttribute(changedAddressAttribute);
+            bindingResponse.putAttribute(changedAddressAttribute);
 
         return bindingResponse;
     }
@@ -201,7 +201,7 @@ public class MessageFactory
                         .createXorMappedAddressAttribute(mappedAddress,
                                         request.getTransactionID());
 
-        bindingResponse.addAttribute(xorMappedAddressAttribute);
+        bindingResponse.putAttribute(xorMappedAddressAttribute);
 
         return bindingResponse;
     }
@@ -233,7 +233,7 @@ public class MessageFactory
                         .createErrorCodeAttribute(errorCode,
                                         reasonPhrase);
 
-        bindingErrorResponse.addAttribute(errorCodeAttribute);
+        bindingErrorResponse.putAttribute(errorCodeAttribute);
 
         if (unknownAttributes != null)
         {
@@ -245,7 +245,7 @@ public class MessageFactory
                                 .addAttributeID(unknownAttributes[i]);
             }
             bindingErrorResponse
-                            .addAttribute(unknownAttributesAttribute);
+                            .putAttribute(unknownAttributesAttribute);
         }
 
         return bindingErrorResponse;
@@ -375,14 +375,14 @@ public class MessageFactory
                 throw new StunException("Protocol not valid!");
 
             // REQUESTED-TRANSPORT
-            allocateRequest.addAttribute(
+            allocateRequest.putAttribute(
                     AttributeFactory.createRequestedTransportAttribute(
                             protocol));
 
             // EVEN-PORT
             if (rFlag)
             {
-                allocateRequest.addAttribute(
+                allocateRequest.putAttribute(
                         AttributeFactory.createEvenPortAttribute(rFlag));
             }
         }
@@ -457,7 +457,7 @@ public class MessageFactory
                 .createXorMappedAddressAttribute(
                         mappedAddress, request.getTransactionID());
 
-        allocationSuccessResponse.addAttribute(xorMappedAddressAttribute);
+        allocationSuccessResponse.putAttribute(xorMappedAddressAttribute);
 
         //xor relayed address
         XorRelayedAddressAttribute xorRelayedAddressAttribute
@@ -465,13 +465,13 @@ public class MessageFactory
         		.createXorRelayedAddressAttribute(relayedAddress,
         				request.getTransactionID());
 
-        allocationSuccessResponse.addAttribute(xorRelayedAddressAttribute);
+        allocationSuccessResponse.putAttribute(xorRelayedAddressAttribute);
 
         //lifetime
         LifetimeAttribute lifetimeAttribute
             = AttributeFactory.createLifetimeAttribute(lifetime);
 
-        allocationSuccessResponse.addAttribute(lifetimeAttribute);
+        allocationSuccessResponse.putAttribute(lifetimeAttribute);
         
         if(token != null)
         {
@@ -480,7 +480,7 @@ public class MessageFactory
                 = AttributeFactory
             		.createReservationTokenAttribute(token);
 
-            allocationSuccessResponse.addAttribute(reservationTokenAttribute);
+            allocationSuccessResponse.putAttribute(reservationTokenAttribute);
         }
         
         return allocationSuccessResponse;
@@ -525,7 +525,7 @@ public class MessageFactory
                 .createErrorCodeAttribute(errorCode,
                                           reasonPhrase);
 
-        allocationErrorResponse.addAttribute(errorCodeAttribute);
+        allocationErrorResponse.putAttribute(errorCodeAttribute);
 
         return allocationErrorResponse;
     }
@@ -547,8 +547,8 @@ public class MessageFactory
 
         allocateRequest.setMessageType(Message.ALLOCATE_REQUEST);
         // first attribute is MAGIC-COOKIE
-        allocateRequest.addAttribute(magicCookieAttr);
-        allocateRequest.addAttribute(usernameAttr);
+        allocateRequest.putAttribute(magicCookieAttr);
+        allocateRequest.putAttribute(usernameAttr);
 
         return allocateRequest;
     }
@@ -589,9 +589,9 @@ public class MessageFactory
         NonceAttribute nonceAttribute
             = AttributeFactory.createNonceAttribute(nonce);
 
-        request.addAttribute(usernameAttribute);
-        request.addAttribute(realmAttribute);
-        request.addAttribute(nonceAttribute);
+        request.putAttribute(usernameAttribute);
+        request.putAttribute(realmAttribute);
+        request.putAttribute(nonceAttribute);
 
         // MESSAGE-INTEGRITY
         MessageIntegrityAttribute messageIntegrityAttribute;
@@ -611,7 +611,7 @@ public class MessageFactory
         {
             throw new StunException("username", ueex);
         }
-        request.addAttribute(messageIntegrityAttribute);
+        request.putAttribute(messageIntegrityAttribute);
     }
 
     /**
@@ -657,7 +657,7 @@ public class MessageFactory
             /* add a LIFETIME attribute */
             LifetimeAttribute lifetimeReq = AttributeFactory
                             .createLifetimeAttribute(lifetime);
-            refreshRequest.addAttribute(lifetimeReq);
+            refreshRequest.putAttribute(lifetimeReq);
         } catch (IllegalArgumentException ex)
         {
             logger.log(Level.FINE, "Failed to set message type.", ex);
@@ -685,7 +685,7 @@ public class MessageFactory
                 = AttributeFactory
                         .createLifetimeAttribute(lifetime);
 
-            refreshSuccessResponse.addAttribute(lifetimeAttribute);
+            refreshSuccessResponse.putAttribute(lifetimeAttribute);
         }
         catch(IllegalArgumentException ex)
         {
@@ -726,7 +726,7 @@ public class MessageFactory
                         .createErrorCodeAttribute(
                             errorCode, reasonPhrase);
 
-            refreshErrorResponse.addAttribute(errorCodeAttribute);
+            refreshErrorResponse.putAttribute(errorCodeAttribute);
         }
         catch(IllegalArgumentException ex)
         {
@@ -757,14 +757,14 @@ public class MessageFactory
             // add a CHANNEL-NUMBER attribute
             ChannelNumberAttribute channelNumberAttribute = AttributeFactory
                             .createChannelNumberAttribute(channelNumber);
-            channelBindRequest.addAttribute(channelNumberAttribute);
+            channelBindRequest.putAttribute(channelNumberAttribute);
 
             // add a XOR-PEER-ADDRESS
             XorPeerAddressAttribute peerAddressAttribute = AttributeFactory
                             .createXorPeerAddressAttribute(peerAddress,
                                             tranID);
 
-            channelBindRequest.addAttribute(peerAddressAttribute);
+            channelBindRequest.putAttribute(peerAddressAttribute);
         } catch (IllegalArgumentException ex)
         {
             logger.log(Level.FINE, "Failed to set message type.", ex);
@@ -817,7 +817,7 @@ public class MessageFactory
             = AttributeFactory
                 .createErrorCodeAttribute(errorCode,reasonPhrase);
 
-        channelBindErrorResponse.addAttribute(errorCodeAttribute);
+        channelBindErrorResponse.putAttribute(errorCodeAttribute);
 
         return channelBindErrorResponse;
     }
@@ -849,7 +849,7 @@ public class MessageFactory
             // Expected to not happen because we are the creators.
             logger.log(Level.FINE, "Failed to set message type.", iaex);
         }
-        createPermissionRequest.addAttribute(
+        createPermissionRequest.putAttribute(
                 AttributeFactory.createXorPeerAddressAttribute(
                         peerAddress,
                         transactionID));
@@ -903,7 +903,7 @@ public class MessageFactory
                 .createErrorCodeAttribute(
                         errorCode,reasonPhrase);
 
-        createPermissionErrorResponse.addAttribute(errorCodeAttribute);
+        createPermissionErrorResponse.putAttribute(errorCodeAttribute);
 
         return createPermissionErrorResponse;
     }
@@ -929,14 +929,14 @@ public class MessageFactory
             /* add XOR-PEER-ADDRESS attribute */
             XorPeerAddressAttribute peerAddressAttribute = AttributeFactory
                             .createXorPeerAddressAttribute(peerAddress, tranID);
-            sendIndication.addAttribute(peerAddressAttribute);
+            sendIndication.putAttribute(peerAddressAttribute);
 
             /* add DATA if data */
             if (data != null && data.length > 0)
             {
                 DataAttribute dataAttribute = AttributeFactory
                                 .createDataAttribute(data);
-                sendIndication.addAttribute(dataAttribute);
+                sendIndication.putAttribute(dataAttribute);
             }
         } catch (IllegalArgumentException ex)
         {
@@ -963,24 +963,24 @@ public class MessageFactory
             sendRequest.setMessageType(Message.SEND_REQUEST);
 
             /* add MAGIC-COOKIE attribute */
-            sendRequest.addAttribute(
+            sendRequest.putAttribute(
                     AttributeFactory.createMagicCookieAttribute());
 
             /* add USERNAME attribute */
-            sendRequest.addAttribute(
+            sendRequest.putAttribute(
                     AttributeFactory.createUsernameAttribute(username));
 
             /* add DESTINATION-ADDRESS attribute */
             DestinationAddressAttribute peerAddressAttribute = AttributeFactory
                             .createDestinationAddressAttribute(peerAddress);
-            sendRequest.addAttribute(peerAddressAttribute);
+            sendRequest.putAttribute(peerAddressAttribute);
 
             /* add DATA if data */
             if (data != null && data.length > 0)
             {
                 DataAttribute dataAttribute = AttributeFactory
                                 .createDataAttributeWithoutPadding(data);
-                sendRequest.addAttribute(dataAttribute);
+                sendRequest.putAttribute(dataAttribute);
             }
         }
         catch (IllegalArgumentException ex)
@@ -1054,7 +1054,7 @@ public class MessageFactory
                 .createXorPeerAddressAttribute(
                     peerAddress, request.getTransactionID());
 
-        connectRequest.addAttribute(xorPeerAddressAttribute);
+        connectRequest.putAttribute(xorPeerAddressAttribute);
 
         return connectRequest;
     }
@@ -1082,7 +1082,7 @@ public class MessageFactory
             = AttributeFactory
                 .createConnectionIdAttribute(connectionIdValue);
 
-        connectSuccessResponse.addAttribute(connectionIdAttribute);
+        connectSuccessResponse.putAttribute(connectionIdAttribute);
 
         return connectSuccessResponse;
     }
@@ -1124,7 +1124,7 @@ public class MessageFactory
             = AttributeFactory
                 .createErrorCodeAttribute(errorCode, reasonPhrase);
 
-        connectionErrorResponse.addAttribute(errorCodeAttribute);
+        connectionErrorResponse.putAttribute(errorCodeAttribute);
 
         return connectionErrorResponse;
     }
@@ -1152,7 +1152,7 @@ public class MessageFactory
             = AttributeFactory
                 .createConnectionIdAttribute(connectionIdValue);
 
-        connectionBindRequest.addAttribute(connectionIdAttribute);
+        connectionBindRequest.putAttribute(connectionIdAttribute);
 
         return connectionBindRequest;
     }
@@ -1216,7 +1216,7 @@ public class MessageFactory
             = AttributeFactory
                 .createErrorCodeAttribute(errorCode, reasonPhrase);
 
-        connectionBindErrorResponse.addAttribute(errorCodeAttribute);
+        connectionBindErrorResponse.putAttribute(errorCodeAttribute);
 
         return connectionBindErrorResponse;
     }
@@ -1247,7 +1247,7 @@ public class MessageFactory
             = AttributeFactory
                 .createConnectionIdAttribute(connectionIdValue);
 
-        connectionAttemptIndication.addAttribute(connectionIdAttribute);
+        connectionAttemptIndication.putAttribute(connectionIdAttribute);
 
         //xor peer address attribute
         XorPeerAddressAttribute xorPeerAddressAttribute
@@ -1255,7 +1255,7 @@ public class MessageFactory
                 .createXorPeerAddressAttribute(peerAddress,
                     connectionAttemptIndication.getTransactionID());
 
-        connectionAttemptIndication.addAttribute(xorPeerAddressAttribute);
+        connectionAttemptIndication.putAttribute(xorPeerAddressAttribute);
 
         return connectionAttemptIndication;
    }

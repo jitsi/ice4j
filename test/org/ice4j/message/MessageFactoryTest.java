@@ -45,7 +45,7 @@ public class MessageFactoryTest extends TestCase
 
         Attribute errorCodeAtt
             = AttributeFactory.createErrorCodeAttribute(errorCode);
-        expectedReturn.addAttribute(errorCodeAtt);
+        expectedReturn.putAttribute(errorCodeAtt);
 
         Message actualReturn
             = MessageFactory.createBindingErrorResponse(errorCode);
@@ -62,7 +62,7 @@ public class MessageFactoryTest extends TestCase
 
         Attribute errorCodeAtt = AttributeFactory
             .createErrorCodeAttribute(errorCode, reasonPhrase);
-        expectedReturn.addAttribute(errorCodeAtt);
+        expectedReturn.putAttribute(errorCodeAtt);
 
         Message actualReturn = MessageFactory
             .createBindingErrorResponse(errorCode, reasonPhrase);
@@ -84,7 +84,7 @@ public class MessageFactoryTest extends TestCase
             .createErrorCodeAttribute(errorCode);
         ((ErrorCodeAttribute)errorCodeAtt).setReasonPhrase(
                         ErrorCodeAttribute.getDefaultReasonPhrase(errorCode));
-        expectedReturn.addAttribute(errorCodeAtt);
+        expectedReturn.putAttribute(errorCodeAtt);
 
         UnknownAttributesAttribute unknownAtts =
                         AttributeFactory.createUnknownAttributesAttribute();
@@ -92,7 +92,7 @@ public class MessageFactoryTest extends TestCase
         for (int i = 0; i < unknownAttributes.length; i++) {
             unknownAtts.addAttributeID(unknownAttributes[i]);
         }
-        expectedReturn.addAttribute(unknownAtts);
+        expectedReturn.putAttribute(unknownAtts);
 
         //create the same message using the factory
         Message actualReturn = MessageFactory
@@ -113,7 +113,7 @@ public class MessageFactoryTest extends TestCase
 
         Attribute errorCodeAtt = AttributeFactory.createErrorCodeAttribute(
             errorCode, reasonPhrase);
-        expectedReturn.addAttribute(errorCodeAtt);
+        expectedReturn.putAttribute(errorCodeAtt);
 
         UnknownAttributesAttribute unknownAtts =
             AttributeFactory.createUnknownAttributesAttribute();
@@ -122,7 +122,7 @@ public class MessageFactoryTest extends TestCase
         {
             unknownAtts.addAttributeID(unknownAttributes[i]);
         }
-        expectedReturn.addAttribute(unknownAtts);
+        expectedReturn.putAttribute(unknownAtts);
 
         Message actualReturn = MessageFactory
             .createBindingErrorResponseUnknownAttributes(
@@ -138,7 +138,7 @@ public class MessageFactoryTest extends TestCase
 /*
         Attribute changeRequest = AttributeFactory.createChangeRequestAttribute(
                     msgFixture.CHANGE_IP_FLAG_1, msgFixture.CHANGE_PORT_FLAG_1);
-        bindingRequest.addAttribute(changeRequest);
+        bindingRequest.putAttribute(changeRequest);
 */
         Request actualReturn = MessageFactory.createBindingRequest();
         assertEquals("return value", expectedReturn, actualReturn);
@@ -155,14 +155,14 @@ public class MessageFactoryTest extends TestCase
                                   MsgFixture.ADDRESS_ATTRIBUTE_PORT,
                                   Transport.UDP));
 
-        bindingResponse.addAttribute(mappedAddress);
+        bindingResponse.putAttribute(mappedAddress);
 
         Attribute sourceAddress = AttributeFactory.createSourceAddressAttribute(
             new TransportAddress( MsgFixture.ADDRESS_ATTRIBUTE_ADDRESS_2,
                                   MsgFixture.ADDRESS_ATTRIBUTE_PORT_2,
                                   Transport.UDP));
 
-        bindingResponse.addAttribute(sourceAddress);
+        bindingResponse.putAttribute(sourceAddress);
 
         Attribute changedAddress = AttributeFactory.
             createChangedAddressAttribute(
@@ -170,7 +170,7 @@ public class MessageFactoryTest extends TestCase
                                       MsgFixture.ADDRESS_ATTRIBUTE_PORT_3,
                                       Transport.UDP));
 
-        bindingResponse.addAttribute(changedAddress);
+        bindingResponse.putAttribute(changedAddress);
 
         Message expectedReturn = bindingResponse;
         Message actualReturn = MessageFactory.create3489BindingResponse(

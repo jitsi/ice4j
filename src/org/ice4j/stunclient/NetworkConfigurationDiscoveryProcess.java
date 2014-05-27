@@ -321,7 +321,7 @@ public class NetworkConfigurationDiscoveryProcess
             = AttributeFactory.createChangeRequestAttribute();
         changeRequest.setChangeIpFlag(false);
         changeRequest.setChangePortFlag(false);
-        request.addAttribute(changeRequest);
+        request.putAttribute(changeRequest);
 
         StunMessageEvent evt = null;
         try
@@ -369,7 +369,7 @@ public class NetworkConfigurationDiscoveryProcess
         ChangeRequestAttribute changeRequest = AttributeFactory.createChangeRequestAttribute();
         changeRequest.setChangeIpFlag(true);
         changeRequest.setChangePortFlag(true);
-        request.addAttribute(changeRequest);
+        request.putAttribute(changeRequest);
 
         StunMessageEvent evt
             = requestSender.sendRequestAndWaitForResponse(request,
@@ -403,7 +403,7 @@ public class NetworkConfigurationDiscoveryProcess
         ChangeRequestAttribute changeRequest = AttributeFactory.createChangeRequestAttribute();
         changeRequest.setChangeIpFlag(false);
         changeRequest.setChangePortFlag(true);
-        request.addAttribute(changeRequest);
+        request.putAttribute(changeRequest);
 
         StunMessageEvent evt = requestSender.sendRequestAndWaitForResponse(
             request, serverAddress);
