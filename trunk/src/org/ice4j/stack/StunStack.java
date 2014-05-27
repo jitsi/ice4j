@@ -241,6 +241,8 @@ public class StunStack
      */
     private void cancelTransactionsForAddress(TransportAddress localAddr)
     {
+        List<StunClientTransaction> clientTransactionsToCancel = null;
+
         synchronized (clientTransactions)
         {
             Iterator<StunClientTransaction> clientTransactionsIter
@@ -253,10 +255,33 @@ public class StunStack
                 if (tran.getLocalAddress().equals(localAddr))
                 {
                     clientTransactionsIter.remove();
-                    tran.cancel();
+
+                    /*
+                     * Invoke StunClientTransaction.cancel() outside the
+                     * clientTransactions-synchronized block in order to avoid a
+                     * deadlock. Reported by Carl Hasselskog.
+                     */
+                    if (clientTransactionsToCancel == null)
+                    {
+                        clientTransactionsToCancel
+                            = new LinkedList<StunClientTransaction>();
+                    }
+                    clientTransactionsToCancel.add(tran);
                 }
             }
         }
+        /*
+         * Invoke StunClientTransaction.cancel() outside the
+         * clientTransactions-synchronized block in order to avoid a deadlock.
+         * Reported by Carl Hasselskog.
+         */
+        if (clientTransactionsToCancel != null)
+        {
+            for (StunClientTransaction tran : clientTransactionsToCancel)
+                tran.cancel();
+        }
+
+        List<StunServerTransaction> serverTransactionsToExpire = null;
 
         synchronized (serverTransactions)
         {
@@ -274,9 +299,20 @@ public class StunStack
                                 && sendingAddr.equals(localAddr)))
                 {
                     serverTransactionsIter.remove();
-                    tran.expire();
+
+                    if (serverTransactionsToExpire == null)
+                    {
+                        serverTransactionsToExpire
+                            = new LinkedList<StunServerTransaction>();
+                    }
+                    serverTransactionsToExpire.add(tran);
                 }
             }
+        }
+        if (serverTransactionsToExpire != null)
+        {
+            for (StunServerTransaction tran : serverTransactionsToExpire)
+                tran.expire();
         }
     }
 
@@ -388,7 +424,7 @@ public class StunStack
     public TransactionID sendRequest(  Request           request,
                                        TransportAddress  sendTo,
                                        TransportAddress  sendThrough,
-                                       ResponseCollector collector )
+                                       ResponseCollector collector)
         throws IOException, IllegalArgumentException
     {
         return sendRequest(request, sendTo, sendThrough, collector,
@@ -658,8 +694,10 @@ public class StunStack
     }
 
     /**
-     * Removes a client transaction from this providers client transactions list.
-     * Method is used by StunClientTransaction-s themselves when a timeout occurs.
+     * Removes a client transaction from this providers client transactions
+     * list. The method is used by <tt>StunClientTransaction</tt>s themselves
+     * when a timeout occurs.
+     *
      * @param tran the transaction to remove.
      */
     void removeClientTransaction(StunClientTransaction tran)
@@ -876,33 +914,36 @@ public class StunStack
     {
         eventDispatcher.removeAllListeners();
 
+        // clientTransactions
+        Collection<StunClientTransaction> clientTransactionsToCancel;
+
         synchronized (clientTransactions)
         {
-            for (Iterator<StunClientTransaction> i
-                        = clientTransactions.values().iterator();
-                    i.hasNext();)
-            {
-                StunClientTransaction tran = i.next();
-
-                i.remove();
-                if (tran != null)
-                    tran.cancel();
-            }
+            clientTransactionsToCancel
+                = new ArrayList<StunClientTransaction>(
+                        clientTransactions.values());
+            clientTransactions.clear();
         }
+        /*
+         * Invoke StunClientTransaction.cancel() outside the
+         * clientTransactions-synchronized block in order to avoid a deadlock.
+         * Reported by Carl Hasselskog.
+         */
+        for (StunClientTransaction tran : clientTransactionsToCancel)
+            tran.cancel();
+
+        // serverTransactions
+        Collection<StunServerTransaction> serverTransactionsToExpire;
 
         synchronized (serverTransactions)
         {
-            for (Iterator<StunServerTransaction> i
-                        = serverTransactions.values().iterator();
-                    i.hasNext();)
-            {
-                StunServerTransaction tran = i.next();
-
-                i.remove();
-                if (tran != null)
-                    tran.expire();
-            }
+            serverTransactionsToExpire
+                = new ArrayList<StunServerTransaction>(
+                        serverTransactions.values());
+            serverTransactions.clear();
         }
+        for (StunServerTransaction tran : serverTransactionsToExpire)
+            tran.expire();
 
         netAccessManager.stop();
     }
