@@ -123,16 +123,6 @@ class StunClientTransaction
     public int maxWaitInterval = DEFAULT_MAX_WAIT_INTERVAL;
 
     /**
-     * Indicates how many times we have retransmitted so fat.
-     */
-    private int retransmissionCounter = 0;
-
-    /**
-     * How much did we wait after our last retransmission.
-     */
-    private int nextWaitInterval = originalWaitInterval;
-
-    /**
      * The <tt>StunStack</tt> that created us.
      */
     private final StunStack stackCallback;
@@ -249,7 +239,10 @@ class StunClientTransaction
      */
     public void run()
     {
-        nextWaitInterval = originalWaitInterval;
+        // Indicates how many times we have retransmitted so far.
+        int retransmissionCounter = 0;
+        // How much did we wait after our last retransmission?
+        int nextWaitInterval = originalWaitInterval;
 
         synchronized(this)
         {
@@ -269,12 +262,12 @@ class StunClientTransaction
 
                 try
                 {
-                    logger.fine("retrying STUN "
-                                + " tid " + transactionID
+                    logger.fine(
+                            "retrying STUN tid " + transactionID
                                 + " from " + localAddress
                                 + " to " + requestDestination
                                 + " waited " + curWaitInterval
-                                + " ms retrans " + (retransmissionCounter+1)
+                                + " ms retrans " + (retransmissionCounter + 1)
                                 + " of " + maxRetransmissions);
                     sendRequest0();
                 }
@@ -282,9 +275,10 @@ class StunClientTransaction
                 {
                     //I wonder whether we should notify anyone that a
                     //retransmission has failed
-                    logger.log(Level.INFO,
-                               "A client tran retransmission failed",
-                               ex);
+                    logger.log(
+                            Level.INFO,
+                            "A client tran retransmission failed",
+                            ex);
                 }
             }
 
@@ -374,7 +368,7 @@ class StunClientTransaction
         }
         catch (InterruptedException ex)
         {
-        	throw new RuntimeException(ex);
+            throw new RuntimeException(ex);
         }
     }
 
@@ -423,17 +417,19 @@ class StunClientTransaction
      */
     synchronized void handleResponse(StunMessageEvent evt)
     {
-    	logger.log(Level.FINE, "handleResponse tid " + getTransactionID());
-        if( !Boolean.getBoolean(StackProperties.KEEP_CRANS_AFTER_A_RESPONSE) )
-            this.cancel();
+        TransactionID transactionID = getTransactionID();
 
-        this.responseCollector.processResponse(
+    	logger.log(Level.FINE, "handleResponse tid " + transactionID);
+        if( !Boolean.getBoolean(StackProperties.KEEP_CRANS_AFTER_A_RESPONSE) )
+            cancel();
+
+        responseCollector.processResponse(
                 new StunResponseEvent(
                         stackCallback,
                         evt.getRawMessage(),
                         (Response) evt.getMessage(),
-                        this.request,
-                        getTransactionID()));
+                        request,
+                        transactionID));
     }
 
     /**
