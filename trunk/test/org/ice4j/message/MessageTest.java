@@ -47,7 +47,7 @@ public class MessageTest extends TestCase
 
         changeRequest = AttributeFactory.createChangeRequestAttribute(
                    MsgFixture.CHANGE_IP_FLAG_1, MsgFixture.CHANGE_PORT_FLAG_1);
-        bindingRequest.addAttribute(changeRequest);
+        bindingRequest.putAttribute(changeRequest);
         bindingRequest.setTransactionID(MsgFixture.TRANSACTION_ID);
 
         //binding response
@@ -60,7 +60,7 @@ public class MessageTest extends TestCase
                             MsgFixture.ADDRESS_ATTRIBUTE_PORT,
                             Transport.UDP));
 
-        bindingResponse.addAttribute(mappedAddress);
+        bindingResponse.putAttribute(mappedAddress);
 
         sourceAddress = AttributeFactory.createSourceAddressAttribute(
             new TransportAddress(
@@ -68,13 +68,13 @@ public class MessageTest extends TestCase
                             MsgFixture.ADDRESS_ATTRIBUTE_PORT_2,
                             Transport.UDP));
 
-        bindingResponse.addAttribute(sourceAddress);
+        bindingResponse.putAttribute(sourceAddress);
 
         changedAddress = AttributeFactory.createChangedAddressAttribute(
             new TransportAddress( MsgFixture.ADDRESS_ATTRIBUTE_ADDRESS_3,
                         MsgFixture.ADDRESS_ATTRIBUTE_PORT_3, Transport.UDP));
 
-        bindingResponse.addAttribute(changedAddress);
+        bindingResponse.putAttribute(changedAddress);
         bindingResponse.setTransactionID(MsgFixture.TRANSACTION_ID);
     }
 
@@ -108,7 +108,7 @@ public class MessageTest extends TestCase
 
         Response   message = new Response();
         message.setMessageType(Message.BINDING_SUCCESS_RESPONSE);
-        message.addAttribute(mappedAddress);
+        message.putAttribute(mappedAddress);
 
         Attribute getResult = null;
 
@@ -120,7 +120,7 @@ public class MessageTest extends TestCase
                      getResult);
 
         //do it again
-        message.addAttribute(sourceAddress);
+        message.putAttribute(sourceAddress);
 
         getResult = message.getAttribute(sourceAddress.getAttributeType());
 
@@ -220,7 +220,7 @@ public class MessageTest extends TestCase
         //this.bindingRequest
         Request binReqTarget = new Request();
         binReqTarget.setMessageType(Message.BINDING_REQUEST);
-        binReqTarget.addAttribute(changeRequest);
+        binReqTarget.putAttribute(changeRequest);
         actualReturn = bindingRequest.equals(binReqTarget);
         assertEquals("Equals failed against an equal target",
                         expectedReturn, actualReturn);
@@ -229,9 +229,9 @@ public class MessageTest extends TestCase
         //this.bindingRequest
         Response binResTarget = new Response();
         binResTarget.setMessageType(Message.BINDING_SUCCESS_RESPONSE);
-        binResTarget.addAttribute(mappedAddress);
-        binResTarget.addAttribute(sourceAddress);
-        binResTarget.addAttribute(changedAddress);
+        binResTarget.putAttribute(mappedAddress);
+        binResTarget.putAttribute(sourceAddress);
+        binResTarget.putAttribute(changedAddress);
         actualReturn = bindingResponse.equals(binResTarget);
         assertEquals("Equals failed against a different target",
                         expectedReturn, actualReturn);

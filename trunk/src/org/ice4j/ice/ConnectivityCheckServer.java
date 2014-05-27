@@ -134,12 +134,12 @@ class ConnectivityCheckServer
          */
         Attribute usernameAttribute =
             AttributeFactory.createUsernameAttribute(uname.getUsername());
-        response.addAttribute(usernameAttribute);
+        response.putAttribute(usernameAttribute);
 
         Attribute messageIntegrityAttribute =
             AttributeFactory.createMessageIntegrityAttribute(
                     new String(uname.getUsername()));
-        response.addAttribute(messageIntegrityAttribute);
+        response.putAttribute(messageIntegrityAttribute);
 
         try
         {

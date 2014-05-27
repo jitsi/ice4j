@@ -199,10 +199,10 @@ public class StunCandidateHarvest
 
         if (shortTermCredentialUsername != null)
         {
-            request.addAttribute(
+            request.putAttribute(
                     AttributeFactory.createUsernameAttribute(
                             shortTermCredentialUsername));
-            request.addAttribute(
+            request.putAttribute(
                     AttributeFactory.createMessageIntegrityAttribute(
                             shortTermCredentialUsername));
             return true;

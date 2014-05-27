@@ -196,12 +196,12 @@ class ConnectivityCheckClient
                     localCandidate.computePriorityForType(
                             CandidateType.PEER_REFLEXIVE_CANDIDATE));
 
-        request.addAttribute(priority);
+        request.putAttribute(priority);
 
         //controlling controlled
         if (parentAgent.isControlling())
         {
-            request.addAttribute(
+            request.putAttribute(
                     AttributeFactory.createIceControllingAttribute(
                             parentAgent.getTieBreaker()));
 
@@ -212,13 +212,13 @@ class ConnectivityCheckClient
                 logger.fine(
                         "Add USE-CANDIDATE in check for: "
                             + candidatePair.toShortString());
-                request.addAttribute(
+                request.putAttribute(
                         AttributeFactory.createUseCandidateAttribute());
             }
         }
         else
         {
-            request.addAttribute(
+            request.putAttribute(
                     AttributeFactory.createIceControlledAttribute(
                             parentAgent.getTieBreaker()));
         }
@@ -235,7 +235,7 @@ class ConnectivityCheckClient
         UsernameAttribute unameAttr
             = AttributeFactory.createUsernameAttribute(localUserName);
 
-        request.addAttribute(unameAttr);
+        request.putAttribute(unameAttr);
 
         // TODO Also implement SASL prepare
         MessageIntegrityAttribute msgIntegrity
@@ -247,7 +247,7 @@ class ConnectivityCheckClient
         // remote key of the current stream, that why we pass the media
         // name.
         msgIntegrity.setMedia(media);
-        request.addAttribute(msgIntegrity);
+        request.putAttribute(msgIntegrity);
 
         TransactionID tran = TransactionID.createNewTransactionID();
 
