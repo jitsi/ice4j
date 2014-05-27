@@ -303,8 +303,6 @@ public class Component
 
         try
         {
-
-
             if(remoteCandidate.getTransportAddress().getPort() == 443)
             {
                 //SSL/TCP handshake

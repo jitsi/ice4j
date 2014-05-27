@@ -825,14 +825,11 @@ public class Agent
     public String generateRemoteUserName(String media)
     {
         IceMediaStream stream = getStream(media);
-        String ret = null;
 
-        if(stream == null)
-        {
-            return null;
-        }
-
-        return getLocalUfrag() + ":" + stream.getRemoteUfrag();
+        return
+            (stream == null)
+                ? null
+                : (getLocalUfrag() + ":" + stream.getRemoteUfrag());
     }
 
     /**
@@ -880,11 +877,15 @@ public class Agent
             Candidate<?> candidate1,
             Candidate<?> candidate2)
     {
-        String ret = null;
-        String ufrag1 = candidate1.getUfrag();
-        String ufrag2 = candidate2.getUfrag();
+        /*
+         * FIXME Are the invocations of Candidate.getUfrag() necessary for their
+         * side effects alone? For example, to make sure that neither of the
+         * Candidates is null?
+         */
+        candidate1.getUfrag();
+        candidate2.getUfrag();
 
-        return ret;
+        return null;
     }
 
     /**
