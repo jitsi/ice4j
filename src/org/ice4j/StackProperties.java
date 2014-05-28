@@ -7,8 +7,8 @@
  */
 package org.ice4j;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.net.*;
+import java.util.*;
 import java.util.logging.*;
 
 /**
@@ -139,6 +139,36 @@ public class StackProperties
     public static final String DISABLE_IPv6 = "org.ice4j.ipv6.DISABLED";
 
     /**
+     * The name of the allowed interfaces property which specifies the allowed
+     * interfaces for host candidate allocations.
+     */
+    public static final String ALLOWED_INTERFACES
+            = "org.ice4j.ice.harvest.ALLOWED_INTERFACES";
+
+    /**
+     * The name of the allowed interfaces property which specifies the blocked
+     * interfaces for host candidate allocations.
+     */
+    public static final String BLOCKED_INTERFACES
+            = "org.ice4j.ice.harvest.BLOCKED_INTERFACES";
+
+    /**
+     * Holds the list of allowed interfaces. It's either a non-empty array or null.
+     */
+    private static String[] allowedInterfaces;
+
+    /**
+     * Holds the list of blocked interfaces. It's either a non-empty array or null.
+     */
+    private static String[] blockedInterfaces;
+
+    /**
+     * A boolean value that indicates whether the StackProperties class has been
+     * initialized or not.
+     */
+    private static boolean initialized = false;
+
+    /**
      * Returns the String value of the specified property (minus all
      * encompassing whitespaces)and null in case no property value was mapped
      * against the specified propertyName, or in case the returned property
@@ -179,7 +209,7 @@ public class StackProperties
      * @return  the array of strings computed by splitting the specified
      * property value around matches of the given regular expression
      */
-    public static String[] getStringArray(String propertyName, String regex)
+    private static String[] getStringArray(String propertyName, String regex)
     {
         String str = getString(propertyName);
         if (str == null)
@@ -197,6 +227,32 @@ public class StackProperties
             return null;
 
         return res.toArray(new String[res.size()]);
+    }
+
+    /**
+     * Gets the array of allowed interfaces.
+     *
+     * @return the non-empty String array of allowed interfaces or null.
+     */
+    public static String[] getAllowedInterfaces(){
+        if (!initialized)
+            throw new IllegalStateException("The StackProperties class has " +
+                    "not been initialized.");
+
+        return allowedInterfaces;
+    }
+
+    /**
+     * Gets the array of blocked interfaces.
+     *
+     * @return the non-empty String array of blocked interfaces or null.
+     */
+    public static String[] getBlockedInterfaces() {
+        if (!initialized)
+            throw new IllegalStateException("The StackProperties class has " +
+                    "not been initialized.");
+
+        return blockedInterfaces;
     }
 
     /**
@@ -261,5 +317,74 @@ public class StackProperties
         String str = getString(propertyName);
 
         return (str == null) ? defaultValue : Boolean.parseBoolean(str);
+    }
+
+    public static void initialize()
+    {
+        // Initialize the allowed interfaces array.
+        allowedInterfaces = StackProperties
+                .getStringArray(ALLOWED_INTERFACES, ";");
+
+        if (allowedInterfaces != null) // getStringArray returns null if the array is empty.
+        {
+            // Validate the allowed interfaces array.
+
+            // 1. Make sure the allowedInterfaces list contains interfaces that exist
+            // on the system.
+            for (String iface : allowedInterfaces)
+                try {
+                    NetworkInterface.getByName(iface);
+                } catch (SocketException e) {
+                    throw new IllegalStateException("there is no network interface " +
+                            "with the name " + iface, e);
+                }
+
+            // the allowedInterfaces array is not empty and its items represent valid
+            // interfaces => there's at least one listening interface.
+        }
+        else
+        {
+            // NOTE The blocked interfaces list is taken into account only if the allowed
+            // interfaces list is not defined => initialize the blocked interfaces
+            // only if the allowed interfaces list is not defined.
+
+            // Initialize the blocked interfaces array.
+            blockedInterfaces = StackProperties
+                    .getStringArray(BLOCKED_INTERFACES, ";");
+
+            if (blockedInterfaces != null) // getStringArray returns null if the array is empty.
+            {
+                // Validate the blocked interfaces array.
+
+                // 1. Make sure the blockedInterfaces list contains interfaces that exist
+                // on the system.
+                for (String iface : blockedInterfaces)
+                    try {
+                        NetworkInterface.getByName(iface);
+                    } catch (SocketException e) {
+                        throw new IllegalStateException("there is no network interface " +
+                                "with the name " + iface, e);
+                    }
+
+                // 2. Make sure there's at least one allowed interface.
+                Enumeration<NetworkInterface> allInterfaces;
+                try {
+                    allInterfaces = NetworkInterface.getNetworkInterfaces();
+                } catch (SocketException e) {
+                    throw new IllegalStateException("could not get the list of the available " +
+                            "network interfaces", e);
+                }
+
+                int count = 0;
+                while (allInterfaces.hasMoreElements()) {
+                    allInterfaces.nextElement();
+                    count++;
+                }
+                if (blockedInterfaces.length >= count)
+                    throw new IllegalStateException("all network interfaces are blocked");
+            }
+        }
+
+        initialized = true;
     }
 }

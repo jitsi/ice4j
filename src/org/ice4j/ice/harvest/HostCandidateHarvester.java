@@ -28,20 +28,6 @@ import org.ice4j.socket.*;
 public class HostCandidateHarvester
 {
     /**
-     * The name of the allowed interfaces property which specifies the allowed
-     * interfaces for host candidate allocations.
-     */
-    public static final String ALLOWED_INTERFACES
-            = "org.ice4j.ice.harvest.ALLOWED_INTERFACES";
-
-    /**
-     * The name of the allowed interfaces property which specifies the blocked
-     * interfaces for host candidate allocations.
-     */
-    public static final String BLOCKED_INTERFACES
-            = "org.ice4j.ice.harvest.BLOCKED_INTERFACES";
-
-    /**
      * Our class logger.
      */
     private static final Logger logger
@@ -214,7 +200,8 @@ public class HostCandidateHarvester
      * <tt>org.ice4j.ice.harvest.BLOCKED_INTERFACES</tt> list. It returns
      * <tt>false</tt> otherwise.
      */
-    private boolean isInterfaceAllowed(NetworkInterface iface) {
+    private boolean isInterfaceAllowed(NetworkInterface iface)
+    {
         if (iface == null)
             throw new IllegalArgumentException("iface cannot be null");
 
@@ -226,8 +213,12 @@ public class HostCandidateHarvester
                 : iface.getName();
 
         String[] allowedInterfaces = StackProperties
-                .getStringArray(ALLOWED_INTERFACES, ";");
+                .getAllowedInterfaces();
 
+        // NOTE The blocked interfaces list is taken into account only if the allowed
+        // interfaces list is not defined.
+
+        // getAllowedInterfaces returns null if the array is empty.
         if (allowedInterfaces != null)
         {
             // A list of allowed interfaces exists.
@@ -237,8 +228,9 @@ public class HostCandidateHarvester
         {
             // A list of allowed interfaces does not exist.
             String[] blockedInterfaces = StackProperties
-                    .getStringArray(BLOCKED_INTERFACES, ";");
+                    .getBlockedInterfaces();
 
+            // getBlockedInterfaces returns null if the array is empty.
             if (blockedInterfaces != null)
             {
                 // but a list of blocked interfaces exists.
