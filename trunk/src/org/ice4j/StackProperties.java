@@ -7,6 +7,8 @@
  */
 package org.ice4j;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.logging.*;
 
 /**
@@ -165,6 +167,36 @@ public class StackProperties
                 str = null;
         }
         return str;
+    }
+
+    /**
+     * Returns the String array of the specified property, or null in case
+     * the returned property string array had zero length.
+     *
+     * @param propertyName the name of the property that is being queried.
+     * @param  regex the delimiting regular expression
+     *
+     * @return  the array of strings computed by splitting the specified
+     * property value around matches of the given regular expression
+     */
+    public static String[] getStringArray(String propertyName, String regex)
+    {
+        String str = getString(propertyName);
+        if (str == null)
+            return null;
+
+        String[] parts = str.split(regex);
+
+        // Remove mal-formatted entries.
+        List<String> res = new ArrayList<String>();
+        for (String s : parts)
+            if (s != null && s.trim().length() != 0)
+                res.add(s);
+
+        if (res.size() == 0)
+            return null;
+
+        return res.toArray(new String[res.size()]);
     }
 
     /**

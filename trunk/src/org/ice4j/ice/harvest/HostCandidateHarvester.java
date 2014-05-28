@@ -28,6 +28,20 @@ import org.ice4j.socket.*;
 public class HostCandidateHarvester
 {
     /**
+     * The name of the allowed interfaces property which specifies the allowed
+     * interfaces for host candidate allocations.
+     */
+    public static final String ALLOWED_INTERFACES
+            = "org.ice4j.ice.harvest.ALLOWED_INTERFACES";
+
+    /**
+     * The name of the allowed interfaces property which specifies the blocked
+     * interfaces for host candidate allocations.
+     */
+    public static final String BLOCKED_INTERFACES
+            = "org.ice4j.ice.harvest.BLOCKED_INTERFACES";
+
+    /**
      * Our class logger.
      */
     private static final Logger logger
@@ -90,7 +104,8 @@ public class HostCandidateHarvester
             NetworkInterface iface = interfaces.nextElement();
 
             if (NetworkUtils.isInterfaceLoopback(iface)
-                || !NetworkUtils.isInterfaceUp(iface))
+                || !NetworkUtils.isInterfaceUp(iface)
+                || !isInterfaceAllowed(iface))
             {
                 //this one is obviously not going to do
                 continue;
@@ -185,6 +200,53 @@ public class HostCandidateHarvester
 
         this.harvestStatistics
             .stopHarvestTiming(component.getLocalCandidateCount());
+    }
+
+    /**
+     * Returns a boolean value indicating whether ice4j should allocate a host
+     * candidate for the specified interface.
+     *
+     * @param iface The {@link NetworkInterface}.
+     *
+     * @return <tt>true</tt> if the {@link NetworkInterface} is listed in the
+     * <tt>org.ice4j.ice.harvest.ALLOWED_INTERFACES</tt> list. If that list
+     * isn't defined, returns <tt>true</tt> if it's not listed in the
+     * <tt>org.ice4j.ice.harvest.BLOCKED_INTERFACES</tt> list. It returns
+     * <tt>false</tt> otherwise.
+     */
+    private boolean isInterfaceAllowed(NetworkInterface iface) {
+        if (iface == null)
+            throw new IllegalArgumentException("iface cannot be null");
+
+        // gp: use getDisplayName() on Windows and getName() on Linux. Also
+        // see NetworkAddressManagementServiceImpl in Jitsi.
+        String ifName = (System.getProperty("os.name") == null
+                || System.getProperty("os.name").startsWith("Windows"))
+                ? iface.getDisplayName()
+                : iface.getName();
+
+        String[] allowedInterfaces = StackProperties
+                .getStringArray(ALLOWED_INTERFACES, ";");
+
+        if (allowedInterfaces != null)
+        {
+            // A list of allowed interfaces exists.
+            return Arrays.asList(allowedInterfaces).contains(ifName);
+        }
+        else
+        {
+            // A list of allowed interfaces does not exist.
+            String[] blockedInterfaces = StackProperties
+                    .getStringArray(BLOCKED_INTERFACES, ";");
+
+            if (blockedInterfaces != null)
+            {
+                // but a list of blocked interfaces exists.
+                return !Arrays.asList(blockedInterfaces).contains(ifName);
+            }
+        }
+
+        return true;
     }
 
     /**
