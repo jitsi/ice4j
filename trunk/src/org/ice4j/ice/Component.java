@@ -46,7 +46,7 @@ public class Component
      * mapping of components to component IDs. See Section 14 for additional
      * discussion on extending ICE to new media streams.
      */
-    private int componentID = -1;
+    private final int componentID;
 
     /**
      * The component ID to use with RTP streams.

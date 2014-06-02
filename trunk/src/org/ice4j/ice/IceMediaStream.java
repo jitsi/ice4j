@@ -65,8 +65,8 @@ public class IceMediaStream
      * address; a media stream may require multiple components, each of which
      * has to work for the media stream as a whole to work.
      */
-    private final LinkedHashMap<Integer, Component> components
-                                    = new LinkedHashMap<Integer, Component>();
+    private final Map<Integer, Component> components
+        = new LinkedHashMap<Integer, Component>();
 
     /**
      * An ordered set of candidate pairs for a media stream that have been
@@ -150,13 +150,14 @@ public class IceMediaStream
      */
     protected Component createComponent(Transport transport)
     {
-        lastComponentID ++;
-
         Component component;
-        synchronized( components )
+
+        synchronized (components)
         {
-            component = new Component(lastComponentID, transport, this);
-            components.put(new Integer(lastComponentID), component);
+            component = new Component(++lastComponentID, transport, this);
+            components.put(
+                    Integer.valueOf(component.getComponentID()),
+                    component);
         }
 
         return component;
@@ -222,7 +223,7 @@ public class IceMediaStream
     {
         synchronized(components)
         {
-            return new LinkedList<Component>(components.values());
+            return new ArrayList<Component>(components.values());
         }
     }
 
@@ -252,7 +253,7 @@ public class IceMediaStream
     {
         synchronized(components)
         {
-            return new LinkedList<Integer>(components.keySet());
+            return new ArrayList<Integer>(components.keySet());
         }
     }
 
@@ -265,10 +266,7 @@ public class IceMediaStream
      */
     public int getStreamCount()
     {
-        synchronized(components)
-        {
-            return components.size();
-        }
+        return getComponentCount();
     }
 
     /**
@@ -287,17 +285,23 @@ public class IceMediaStream
      */
     protected void free()
     {
-        synchronized (components)
-        {
-            for (Iterator<Component> i = components.values().iterator();
-                    i.hasNext();)
-            {
-                Component component = i.next();
+        List<Component> components;
 
-                i.remove();
-                component.free();
-            }
+        synchronized (this.components)
+        {
+            components = getComponents();
+            this.components.clear();
         }
+        /*
+         * Free the components outside the synchronized block because a deadlock
+         * has been reported (by Carl Hasselskog). The execution flow is not the
+         * same as when freeing the components inside the synchronized block
+         * because in the latter case an exception thrown by Component#free()
+         * will leave subsequent components in IceMediaStream#componenets. But
+         * there is no idication that such behaviour is expected.
+         */
+        for (Component component : components)
+            component.free();
     }
 
     /**
@@ -312,8 +316,15 @@ public class IceMediaStream
         synchronized (components)
         {
             components.remove(component.getComponentID());
-            component.free();
         }
+        /*
+         * There is no known reason why the component should be freed with
+         * synchronization by components. However, the freeing outside the
+         * synchronization block will surely decrease the chances of a deadlock.
+         * Besides, Component#free() has really been reported involved in a
+         * deadlock.
+         */
+        component.free();
     }
 
     /**
