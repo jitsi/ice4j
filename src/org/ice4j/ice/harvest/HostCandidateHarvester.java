@@ -24,6 +24,7 @@ import org.ice4j.socket.*;
  * harvest the type of addresses that they are responsible for.
  *
  * @author Emil Ivov
+ * @author George Politis
  */
 public class HostCandidateHarvester
 {
