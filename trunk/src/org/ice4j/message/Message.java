@@ -169,7 +169,13 @@ public abstract class Message
      */
     public static final char REFRESH_REQUEST =
         (TURN_METHOD_REFRESH | STUN_REQUEST);
-
+    
+    /**
+     * TURN allocate refresh request code.
+     */
+    public static final char ALLOCATE_REFRESH_REQUEST = 
+        (TURN_METHOD_ALLOCATE | REFRESH_REQUEST);
+    
     /**
      * TURN refresh response code.
      */
