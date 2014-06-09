@@ -760,12 +760,12 @@ public class MessageFactory
             channelBindRequest.putAttribute(channelNumberAttribute);
 
             // add a XOR-PEER-ADDRESS
-            XorPeerAddressAttribute peerAddressAttribute = AttributeFactory
-                            .createXorPeerAddressAttribute(peerAddress,
-                                            tranID);
-
+            XorPeerAddressAttribute peerAddressAttribute
+                = AttributeFactory
+                        .createXorPeerAddressAttribute(peerAddress, tranID);
             channelBindRequest.putAttribute(peerAddressAttribute);
-        } catch (IllegalArgumentException ex)
+        }
+        catch (IllegalArgumentException ex)
         {
             logger.log(Level.FINE, "Failed to set message type.", ex);
         }
@@ -795,7 +795,7 @@ public class MessageFactory
      */
     public static Response createChannelBindErrorResponse(char errorCode)
     {
-	    return createChannelBindErrorResponse(errorCode);
+	    return createChannelBindErrorResponse(errorCode, null);
     }
     
     /**
@@ -861,7 +861,7 @@ public class MessageFactory
      * 
      * @return CreatePermission Response 
      */
-    public static Response createPermissionResponse()
+    public static Response createCreatePermissionResponse()
     {
         Response permissionSuccessResponse = new Response();
 
