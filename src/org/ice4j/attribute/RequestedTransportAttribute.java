@@ -16,6 +16,7 @@ import org.ice4j.*;
  * Support of TCP is detailed in draft-ietf-behave-turn-tcp-07.
  *
  * @author Sebastien Vincent
+ * @author Aakash Garg
  */
 public class RequestedTransportAttribute extends Attribute
 {
@@ -29,14 +30,18 @@ public class RequestedTransportAttribute extends Attribute
      */
     public static final char DATA_LENGTH = 4;
 
+    public static final byte UDP = 17;
+
+    public static final byte TCP = 6;
+
     /**
      * Transport protocol.
      *
      * 17 = UDP;
      * 6 = TCP.
      */
-    byte transportProtocol = 17;
-
+    byte transportProtocol = UDP;
+    
     /**
      * Constructor.
      */
@@ -51,6 +56,7 @@ public class RequestedTransportAttribute extends Attribute
      * @param obj the object to compare this attribute with.
      * @return true if the attributes are equal and false otherwise.
      */
+    @Override
     public boolean equals(Object obj)
     {
         if (! (obj instanceof RequestedTransportAttribute)
@@ -77,6 +83,7 @@ public class RequestedTransportAttribute extends Attribute
      * for debugging and readability.
      * @return this attribute's name.
      */
+    @Override
     public String getName()
     {
         return NAME;
@@ -86,6 +93,7 @@ public class RequestedTransportAttribute extends Attribute
      * Returns the length of this attribute's body.
      * @return the length of this attribute's value (8 bytes).
      */
+    @Override
     public char getDataLength()
     {
         return DATA_LENGTH;
@@ -95,6 +103,7 @@ public class RequestedTransportAttribute extends Attribute
      * Returns a binary representation of this attribute.
      * @return a binary representation of this attribute.
      */
+    @Override
     public byte[] encode()
     {
         byte binValue[] = new byte[HEADER_LENGTH + DATA_LENGTH];
@@ -124,6 +133,7 @@ public class RequestedTransportAttribute extends Attribute
      * @param length the length of the binary array.
      * @throws StunException if attrubteValue contains invalid data.
      */
+    @Override
     void decodeAttributeBody(byte[] attributeValue, char offset, char length)
         throws StunException
     {
@@ -132,7 +142,7 @@ public class RequestedTransportAttribute extends Attribute
             throw new StunException("length invalid");
         }
 
-        transportProtocol = attributeValue[0];
+        transportProtocol = attributeValue[offset];
     }
 
     /**
