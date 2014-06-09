@@ -32,8 +32,9 @@ import org.ice4j.stack.*;
  *
  * @author Emil Ivov
  * @author Lubomir Marinov
+ * @author Aakash Garg
  */
-class BlockingRequestSender
+public class BlockingRequestSender
     extends AbstractResponseCollector
 {
     /**
@@ -75,7 +76,7 @@ class BlockingRequestSender
      * @param localAddress the <tt>TransportAddress</tt> that requests should be
      * leaving from.
      */
-    BlockingRequestSender(StunStack        stunStack,
+    public BlockingRequestSender(StunStack stunStack,
                           TransportAddress localAddress)
     {
         this.stunStack = stunStack;
@@ -92,6 +93,7 @@ class BlockingRequestSender
      * transaction and the runtime type of which specifies the failure reason
      * @see AbstractResponseCollector#processFailure(BaseStunMessageEvent)
      */
+    @Override
     protected synchronized void processFailure(BaseStunMessageEvent event)
     {
         synchronized(sendLock)
@@ -106,6 +108,7 @@ class BlockingRequestSender
      * it may resume.
      * @param evt the newly arrived message event.
      */
+    @Override
     public synchronized void processResponse(StunResponseEvent evt)
     {
         synchronized(sendLock)
@@ -140,6 +143,55 @@ class BlockingRequestSender
         {
             stunStack.sendRequest(request, serverAddress, localAddress,
                                      BlockingRequestSender.this);
+        }
+
+        ended = false;
+        while(!ended)
+        {
+            try
+            {
+                wait();
+            }
+            catch (InterruptedException ex)
+            {
+                logger.log(Level.WARNING, "Interrupted", ex);
+            }
+        }
+        StunMessageEvent res = responseEvent;
+        responseEvent = null; //prepare for next message
+
+        return res;
+    }
+    
+
+    /**
+     * Sends the specified request and blocks until a response has been
+     * received or the request transaction has timed out with given 
+     * transactionID.
+     * @param request the request to send
+     * @param serverAddress the request destination address
+     * @param tranID the TransactionID to set for this reuest.
+     * @return the event encapsulating the response or null if no response
+     * has been received.
+     *
+     * @throws IOException  if an error occurs while sending message bytes
+     * through the network socket.
+     * @throws IllegalArgumentException if the apDescriptor references an
+     * access point that had not been installed,
+     * @throws StunException if message encoding fails,
+     */
+    @SuppressWarnings("unused")
+    public synchronized StunMessageEvent sendRequestAndWaitForResponse(
+                                                Request request,
+                                                TransportAddress serverAddress,
+                                                TransactionID tranID)
+            throws StunException,
+                   IOException
+    {
+        synchronized(sendLock)
+        {
+            stunStack.sendRequest(request, serverAddress, localAddress,
+                                     BlockingRequestSender.this,tranID);
         }
 
         ended = false;
