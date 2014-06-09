@@ -13,6 +13,7 @@ import org.ice4j.*;
  * channel the TURN client want to send data.
  *
  * @author Sebastien Vincent
+ * @author Aakash Garg
  */
 public class ChannelNumberAttribute extends Attribute
 {
@@ -45,6 +46,7 @@ public class ChannelNumberAttribute extends Attribute
      * @param obj the object to compare this attribute with.
      * @return true if the attributes are equal and false otherwise.
      */
+    @Override
     public boolean equals(Object obj)
     {
         if (! (obj instanceof ChannelNumberAttribute)
@@ -71,6 +73,7 @@ public class ChannelNumberAttribute extends Attribute
      * for debugging and readability.
      * @return this attribute's name.
      */
+    @Override
     public String getName()
     {
         return NAME;
@@ -80,6 +83,7 @@ public class ChannelNumberAttribute extends Attribute
      * Returns the length of this attribute's body.
      * @return the length of this attribute's value (8 bytes).
      */
+    @Override
     public char getDataLength()
     {
         return DATA_LENGTH;
@@ -89,6 +93,7 @@ public class ChannelNumberAttribute extends Attribute
      * Returns a binary representation of this attribute.
      * @return a binary representation of this attribute.
      */
+    @Override
     public byte[] encode()
     {
         byte binValue[] = new byte[HEADER_LENGTH + DATA_LENGTH];
@@ -118,6 +123,7 @@ public class ChannelNumberAttribute extends Attribute
      * @param length the length of the binary array.
      * @throws StunException if attrubteValue contains invalid data.
      */
+    @Override
     void decodeAttributeBody(byte[] attributeValue, char offset, char length)
         throws StunException
     {
@@ -127,7 +133,8 @@ public class ChannelNumberAttribute extends Attribute
         }
 
         channelNumber =
-            ((char)((attributeValue[0] << 8 ) | (attributeValue[1] & 0xFF) ));
+            ((char) ((attributeValue[offset] << 8) 
+                | (attributeValue[offset + 1] & 0xFF)));
     }
 
     /**
@@ -146,5 +153,19 @@ public class ChannelNumberAttribute extends Attribute
     public char getChannelNumber()
     {
         return channelNumber;
+    }
+    
+    /**
+     * Determines if the channelNo is in valid range.
+     * @param channelNo the channelNo to validate.
+     * @return true if channnelNo is >= 0x4000.
+     */
+    public static boolean isValidRange(char channelNo)
+    {
+        if(channelNo >= 0x4000)
+        {
+            return true;
+        }
+        return false;
     }
 }
