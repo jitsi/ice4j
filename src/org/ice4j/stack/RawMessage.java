@@ -74,7 +74,7 @@ public class RawMessage
      *
      * @return a binary array containing the message data.
      */
-    byte[] getBytes()
+    public byte[] getBytes()
     {
         return messageBytes;
     }
@@ -84,7 +84,7 @@ public class RawMessage
      *
      * @return a the length of the message.
      */
-    int getMessageLength()
+    public int getMessageLength()
     {
         return messageLength;
     }
