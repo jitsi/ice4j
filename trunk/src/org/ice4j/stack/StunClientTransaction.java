@@ -35,7 +35,7 @@ import org.ice4j.message.*;
  * @author Pascal Mogeri (contributed configuration of client transactions).
  * @author Lyubomir Marinov
  */
-class StunClientTransaction
+public class StunClientTransaction
     implements Runnable
 {
     /**
@@ -259,6 +259,7 @@ class StunClientTransaction
      * The method acquires {@link #lock} and invokes {@link #runLocked()}.
      * </p>
      */
+    @Override
     public void run()
     {
         lock.lock();
@@ -477,7 +478,7 @@ class StunClientTransaction
      *
      * @param evt the event that contains the newly received message
      */
-    void handleResponse(StunMessageEvent evt)
+    public void handleResponse(StunMessageEvent evt)
     {
         lock.lock();
         try
