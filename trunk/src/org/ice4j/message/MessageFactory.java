@@ -947,6 +947,48 @@ public class MessageFactory
     }
 
     /**
+     * Create a Data Indication.
+     *
+     * @param peerAddress peer address
+     * @param data data (could be 0 byte)
+     * @param tranID the ID of the transaction that we should be using
+     *
+     * @return data indication message
+     */
+    @SuppressWarnings("unused")
+    public static Indication createDataIndication(
+            TransportAddress peerAddress, byte[] data, byte[] tranID)
+    {
+        Indication dataIndication = new Indication();
+
+        try
+        {
+            dataIndication.setMessageType(Message.DATA_INDICATION);
+
+            /* add XOR-PEER-ADDRESS attribute */
+            XorPeerAddressAttribute peerAddressAttribute
+                = AttributeFactory
+                        .createXorPeerAddressAttribute(peerAddress, tranID);
+            dataIndication.putAttribute(peerAddressAttribute);
+
+            /* add DATA if data */
+            if (data != null && data.length > 0)
+            {
+                DataAttribute dataAttribute
+                    = AttributeFactory
+                            .createDataAttribute(data);
+                dataIndication.putAttribute(dataAttribute);
+            }
+        }
+        catch (IllegalArgumentException ex)
+        {
+            logger.log(Level.FINE, "Failed to set message type.", ex);
+        }
+
+        return dataIndication;
+    }
+    
+    /**
      * Create a old Send Request.
      * @param username the username
      * @param peerAddress peer address
