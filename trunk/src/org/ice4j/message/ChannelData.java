@@ -26,6 +26,7 @@ import org.ice4j.*;
  *  +-------------------------------+
  *
  * @author Sebastien Vincent
+ * @author Aakash Garg
  */
 public class ChannelData
 {
@@ -197,6 +198,18 @@ public class ChannelData
         channelData.setChannelNumber(channelNumber);
 
         return channelData;
+    }
+    
+    /**
+     * Checks if the given binary message is a ChannelData Message. Every
+     * ChannelData message has first two bits as 01.
+     * 
+     * @param binMessage binary message to check.
+     * @return true is given binary message is a ChannelData Message.
+     */
+    public static boolean isChannelDataMessage(byte[] binMessage)
+    {
+        return (binMessage[0] >> 6 == 0x1);
     }
 }
 
