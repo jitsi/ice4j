@@ -26,6 +26,7 @@ import org.ice4j.socket.*;
  *
  * @author Emil Ivov
  * @author Lyubomir Marinov
+ * @author Aakash Garg.
  */
 public class StunStack
     implements MessageEventHandler
@@ -317,9 +318,11 @@ public class StunStack
     }
 
     /**
-     * Initializes a new <tt>StunStack</tt> instance.
+     * Initializes a new <tt>StunStack</tt> instance with given
+     * peerUdpMessageEventHandler and channelDataEventHandler.
      */
-    public StunStack()
+    public StunStack(PeerUdpMessageEventHandler peerUdpMessageEventHandler,
+            ChannelDataEventHandler channelDataEventHandler)
     {
         /*
          * The Mac instantiation used in MessageIntegrityAttribute could take
@@ -343,9 +346,19 @@ public class StunStack
                 }
             }
         }
-        netAccessManager = new NetAccessManager(this);
+        netAccessManager =
+            new NetAccessManager(this, peerUdpMessageEventHandler,
+                channelDataEventHandler);
     }
-
+    
+    /**
+     * Initializes a new <tt>StunStack</tt> instance.
+     */
+    public StunStack()
+    {
+        this(null,null);
+    }
+    
     /**
      * Returns the currently active instance of NetAccessManager.
      * @return the currently active instance of NetAccessManager.
@@ -354,6 +367,105 @@ public class StunStack
     {
         return netAccessManager;
     }
+
+    /**
+     * Sends a specific STUN <tt>Indication</tt> to a specific destination
+     * <tt>TransportAddress</tt> through a socket registered with this
+     * <tt>StunStack</tt> using a specific <tt>TransportAddress</tt>.
+     *
+     * @param channelData the STUN <tt>Indication</tt> to be sent to the
+     * specified destination <tt>TransportAddress</tt> through the socket with
+     * the specified <tt>TransportAddress</tt>
+     * @param sendTo the <tt>TransportAddress</tt> of the destination to which
+     * the specified <tt>indication</tt> is to be sent
+     * @param sendThrough the <tt>TransportAddress</tt> of the socket registered
+     * with this <tt>StunStack</tt> through which the specified
+     * <tt>indication</tt> is to be sent
+     * @throws StunException if anything goes wrong while sending the specified
+     * <tt>indication</tt> to the destination <tt>sendTo</tt> through the socket
+     * identified by <tt>sendThrough</tt>
+     */
+    public void sendChannelData(
+            ChannelData channelData,
+            TransportAddress sendTo,
+            TransportAddress sendThrough)
+        throws StunException
+    {
+        try
+        {
+            getNetAccessManager().sendMessage(channelData, sendThrough, sendTo);
+        }
+        catch (StunException stex)
+        {
+            throw stex;
+        }
+        catch (IllegalArgumentException iaex)
+        {
+            throw new StunException(
+                    StunException.ILLEGAL_ARGUMENT,
+                    "Failed to send STUN indication: " + channelData,
+                    iaex);
+        }
+        catch (IOException ioex)
+        {
+            throw new StunException(
+                    StunException.NETWORK_ERROR,
+                    "Failed to send STUN indication: " + channelData,
+                    ioex);
+        }
+    }
+    
+
+    /**
+     * Sends a specific STUN <tt>Indication</tt> to a specific destination
+     * <tt>TransportAddress</tt> through a socket registered with this
+     * <tt>StunStack</tt> using a specific <tt>TransportAddress</tt>.
+     *
+     * @param udpMessage the <tt>RawMessage</tt> to be sent to the
+     * specified destination <tt>TransportAddress</tt> through the socket with
+     * the specified <tt>TransportAddress</tt>
+     * @param sendTo the <tt>TransportAddress</tt> of the destination to which
+     * the specified <tt>indication</tt> is to be sent
+     * @param sendThrough the <tt>TransportAddress</tt> of the socket registered
+     * with this <tt>StunStack</tt> through which the specified
+     * <tt>indication</tt> is to be sent
+     * @throws StunException if anything goes wrong while sending the specified
+     * <tt>indication</tt> to the destination <tt>sendTo</tt> through the socket
+     * identified by <tt>sendThrough</tt>
+     */
+    public void sendUdpMessage(
+            RawMessage udpMessage,
+            TransportAddress sendTo,
+            TransportAddress sendThrough)
+        throws StunException
+    {
+        
+        try
+        {
+            getNetAccessManager().sendMessage(
+                udpMessage.getBytes(), sendThrough, sendTo);
+        }
+        catch (StunException stex)
+        {
+            throw stex;
+        }
+        catch (IllegalArgumentException iaex)
+        {
+            throw new StunException(
+                    StunException.ILLEGAL_ARGUMENT,
+                    "Failed to send STUN indication: " + udpMessage,
+                    iaex);
+        }
+        catch (IOException ioex)
+        {
+            throw new StunException(
+                    StunException.NETWORK_ERROR,
+                    "Failed to send STUN indication: " + udpMessage,
+                    ioex);
+        }
+    }
+    
+    /**
 
     /**
      * Sends a specific STUN <tt>Indication</tt> to a specific destination
@@ -727,6 +839,7 @@ public class StunStack
      *
      * @param ev the event object that contains the new message.
      */
+    @Override
     public void handleMessageEvent(StunMessageEvent ev)
     {
         Message msg = ev.getMessage();
@@ -841,14 +954,16 @@ public class StunStack
                 if(t instanceof IllegalArgumentException)
                 {
                     error
-                        = MessageFactory.createBindingErrorResponse(
+                        = createCorrespondingErrorResponse(
+                                msg.getMessageType(),
                                 ErrorCodeAttribute.BAD_REQUEST,
                                 t.getMessage());
                 }
                 else
                 {
                     error
-                        = MessageFactory.createBindingErrorResponse(
+                        = createCorrespondingErrorResponse(
+                                msg.getMessageType(),
                                 ErrorCodeAttribute.SERVER_ERROR,
                                 "Oops! Something went wrong on our side :(");
                 }
@@ -977,7 +1092,8 @@ public class StunStack
             username = LongTermCredential.toString(unameAttr.getUsername());
             if (!validateUsername(username))
             {
-                Response error = MessageFactory.createBindingErrorResponse(
+                Response error = createCorrespondingErrorResponse(
+                                request.getMessageType(),
                                 ErrorCodeAttribute.UNAUTHORIZED,
                                 "unknown user " + username);
 
@@ -1000,7 +1116,8 @@ public class StunStack
             //we should complain if we have msg integrity and no username.
             if (unameAttr == null)
             {
-                Response error = MessageFactory.createBindingErrorResponse(
+                Response error = createCorrespondingErrorResponse(
+                                request.getMessageType(),
                                 ErrorCodeAttribute.BAD_REQUEST,
                                 "missing username");
 
@@ -1018,7 +1135,8 @@ public class StunStack
                     true,
                     evt.getRawMessage()))
             {
-                Response error = MessageFactory.createBindingErrorResponse(
+                Response error = createCorrespondingErrorResponse(
+                                request.getMessageType(),
                                 ErrorCodeAttribute.UNAUTHORIZED,
                                 "Wrong MESSAGE-INTEGRITY value");
 
@@ -1033,7 +1151,8 @@ public class StunStack
         else if(Boolean.getBoolean(StackProperties.REQUIRE_MESSAGE_INTEGRITY))
         {
             // no message integrity
-            Response error = MessageFactory.createBindingErrorResponse(
+            Response error = createCorrespondingErrorResponse(
+                            request.getMessageType(),
                             ErrorCodeAttribute.UNAUTHORIZED,
                             "Missing MESSAGE-INTEGRITY.");
 
@@ -1057,7 +1176,8 @@ public class StunStack
 
         if (sBuff.length() > 0)
         {
-            Response error = MessageFactory.createBindingErrorResponse(
+            Response error = createCorrespondingErrorResponse(
+                    request.getMessageType(),
                     ErrorCodeAttribute.UNKNOWN_ATTRIBUTE,
                     "unknown attribute ", sBuff.toString().toCharArray());
 
@@ -1393,6 +1513,37 @@ public class StunStack
                 if (serverTransactionExpireThread == null)
                     maybeStartServerTransactionExpireThread();
             }
+        }
+    }
+    
+    /**
+     * Returns the Error Response object with specified errorCode and
+     * reasonPhrase corresponding to input type.
+     * 
+     * @param requestType the message type of Request.
+     * @param errorCode the errorCode for Error Response object.
+     * @param reasonPhrase the reasonPhrase for the Error Response object.
+     * @return corresponding Error Response object.
+     */
+    public Response createCorrespondingErrorResponse(char requestType,
+        char errorCode, String reasonPhrase,char... unknownAttributes)
+    {
+        if (requestType == Message.BINDING_REQUEST)
+        {
+            if (unknownAttributes != null)
+            {
+                return MessageFactory.createBindingErrorResponse(
+                    errorCode, reasonPhrase, unknownAttributes);
+            }
+            else
+            {
+                return MessageFactory.createBindingErrorResponse(
+                    errorCode, reasonPhrase);
+            }
+        }
+        else
+        {
+            return null;
         }
     }
 }

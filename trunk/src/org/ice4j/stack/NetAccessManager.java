@@ -1,7 +1,7 @@
 /*
  * ice4j, the OpenSource Java Solution for NAT and Firewall Traversal.
  * Maintained by the SIP Communicator community (http://sip-communicator.org).
- *
+ * 
  * Distributable under LGPL license. See terms of license at gnu.org.
  */
 package org.ice4j.stack;
@@ -20,8 +20,9 @@ import org.ice4j.socket.*;
  * abstractions. Instances that operate with the NetAccessManager are only
  * supposed to understand STUN talk and shouldn't be aware of datagrams sockets,
  * and etc.
- *
+ * 
  * @author Emil Ivov
+ * @author Aakash Garg
  */
 class NetAccessManager
     implements ErrorHandler
@@ -74,6 +75,18 @@ class NetAccessManager
     private final MessageEventHandler messageEventHandler;
 
     /**
+     * The instance that should be notified when an incoming UDP message has
+     * been processed and ready for delivery
+     */
+    private final PeerUdpMessageEventHandler peerUdpMessageEventHandler;
+
+    /**
+     * The instance that should be notified when an incoming ChannelData message
+     * has been processed and ready for delivery
+     */
+    private final ChannelDataEventHandler channelDataEventHandler;
+
+    /**
      * The size of the thread pool to start with.
      */
     private int initialThreadPoolSize = StunStack.DEFAULT_THREAD_POOL_SIZE;
@@ -93,9 +106,31 @@ class NetAccessManager
      */
     NetAccessManager(StunStack stunStack)
     {
+        this(stunStack, null, null);
+    }
+
+    /**
+     * Constructs a NetAccessManager with given peerUdpMessageEventHandler and
+     * channelDataEventHandler.
+     * 
+     * @param stunStack the <tt>StunStack</tt> which is creating the new
+     *            instance, is going to be its owner and is the handler that
+     *            incoming message requests should be passed to
+     * @param peerUdpMessageEventHandler the <tt>PeerUdpMessageEventHandler</tt>
+     *            that will handle incoming UDP messages which are not STUN
+     *            messages and ChannelData messages.
+     * @param channelDataEventHandler the <tt>ChannelDataEventHandler</tt> that
+     *            will handle incoming UDP messages which are ChannelData
+     *            messages.
+     */
+    NetAccessManager(StunStack stunStack,
+        PeerUdpMessageEventHandler peerUdpMessageEventHandler,
+        ChannelDataEventHandler channelDataEventHandler)
+    {
         this.stunStack = stunStack;
         this.messageEventHandler = stunStack;
-
+        this.peerUdpMessageEventHandler = peerUdpMessageEventHandler;
+        this.channelDataEventHandler = channelDataEventHandler;
         initThreadPool();
     }
 
@@ -111,6 +146,35 @@ class NetAccessManager
     MessageEventHandler getMessageEventHandler()
     {
         return messageEventHandler;
+    }
+
+    /**
+     * Gets the <tt>PeerUdpMessageEventHandler</tt> of this
+     * <tt>NetAccessManager</tt> which is to be notified when incoming UDP
+     * messages have been processed and are ready for delivery.
+     * 
+     * @return the <tt>PeerUdpMessageEventHandler</tt> of this
+     *         <tt>NetAccessManager</tt> which is to be notified when incoming
+     *         UDP messages have been processed and are ready for delivery
+     */
+    public PeerUdpMessageEventHandler getUdpMessageEventHandler()
+    {
+        return peerUdpMessageEventHandler;
+    }
+
+    /**
+     * Gets the <tt>ChannelDataEventHandler</tt> of this
+     * <tt>NetAccessManager</tt> which is to be notified when incoming
+     * ChannelData messages have been processed and are ready for delivery.
+     * 
+     * @return the <tt>ChannelDataEventHandler</tt> of this
+     *         <tt>NetAccessManager</tt> which is to be notified when incoming
+     *         ChannelData messages have been processed and are ready for
+     *         delivery
+     */
+    public ChannelDataEventHandler getChannelDataMessageEventHandler()
+    {
+        return channelDataEventHandler;
     }
 
     /**
@@ -142,6 +206,7 @@ class NetAccessManager
      * @param message a description of the error
      * @param error   the error that has occurred
      */
+    @Override
     public void handleError(String message, Throwable error)
     {
         /**
@@ -160,6 +225,7 @@ class NetAccessManager
      * @param message       A description of the error
      * @param error         The error itself
      */
+    @Override
     public void handleFatalError(Runnable callingThread,
                                  String message,
                                  Throwable error)
@@ -372,6 +438,76 @@ class NetAccessManager
                     "No socket has been added for source address: " + srcAddr);
         }
 
+        ap.sendMessage(bytes, remoteAddr);
+    }
+    
+    /**
+     * Sends the specified stun message through the specified access point.
+     *
+     * @param channelData the message to send
+     * @param srcAddr the access point to use to send the message
+     * @param remoteAddr the destination of the message.
+     *
+     * @throws IllegalArgumentException if the apDescriptor references an
+     * access point that had not been installed,
+     * @throws IOException  if an error occurs while sending message bytes
+     * through the network socket.
+     * @throws StunException 
+     */
+    void sendMessage(
+            ChannelData channelData,
+            TransportAddress srcAddr,
+            TransportAddress remoteAddr)
+        throws IllegalArgumentException,
+               IOException, StunException
+    {
+        byte[] bytes = channelData.encode();
+
+        Connector ap = null;
+
+        if (srcAddr.getTransport() == Transport.UDP)
+            ap = netUDPAccessPoints.get(srcAddr);
+        else if (srcAddr.getTransport() == Transport.TCP)
+            ap = netTCPAccessPoints.get(srcAddr);
+        if (ap == null)
+        {
+            throw new IllegalArgumentException(
+                    "No socket has been added for source address: " + srcAddr);
+        }
+
+        ap.sendMessage(bytes, remoteAddr);
+    }
+
+    /**
+     * Sends the specified bytes through the specified access point.
+     *
+     * @param bytes the bytes to send.
+     * @param srcAddr the access point to use to send the bytes.
+     * @param remoteAddr the destination of the message.
+     *
+     * @throws IllegalArgumentException if the apDescriptor references an
+     * access point that had not been installed,
+     * @throws IOException  if an error occurs while sending message bytes
+     * through the network socket.
+     * @throws StunException 
+     */
+    void sendMessage(
+            byte[] bytes,
+            TransportAddress srcAddr,
+            TransportAddress remoteAddr)
+        throws IllegalArgumentException,
+               IOException, StunException
+    {
+        Connector ap = null;
+        if (srcAddr.getTransport() == Transport.UDP)
+            ap = netUDPAccessPoints.get(srcAddr);
+        else if (srcAddr.getTransport() == Transport.TCP)
+            ap = netTCPAccessPoints.get(srcAddr);
+        if (ap == null)
+        {
+            throw new IllegalArgumentException(
+                    "No socket has been added for source address: " + srcAddr);
+        }
         ap.sendMessage(bytes, remoteAddr);
     }
 }
