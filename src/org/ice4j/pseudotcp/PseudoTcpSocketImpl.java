@@ -10,6 +10,7 @@ package org.ice4j.pseudotcp;
 import java.io.*;
 import java.net.*;
 import java.util.*;
+import java.util.concurrent.*;
 import java.util.logging.*;
 
 class PseudoTcpSocketImpl 
@@ -52,13 +53,7 @@ class PseudoTcpSocketImpl
      * Monitor object used to block thread waiting for change of TCP state.
      */
     private final Object state_notify = new Object();
-    /**
-     * Monitor object used by clock thread. Clock thread sleeps for some
-     * intervals given by pseudotcp logic, but sometimes it is required to
-     * finish this sleep earlier. In that case notify method of this monitor is
-     * called.
-     */
-    private final Object clock_notify = new Object();
+
     /**
      * Exception which occurred in pseudotcp logic and must be propagated to
      * threads blocked on any operations.
@@ -448,10 +443,7 @@ class PseudoTcpSocketImpl
      */
     private void updateClock()
     {
-        synchronized (clock_notify)
-        {
-            clock_notify.notifyAll();
-        }
+		scheduleClockTask(0);
     }
 
     /**
@@ -467,17 +459,11 @@ class PseudoTcpSocketImpl
                 receivePackets();
             }
         }, "PseudoTcpReceiveThread");
-        clockThread = new Thread(new Runnable()
-        {
-            public void run()
-            {
-                runClock();
-            }
-        }, "PseudoTcpClockThread");
+
         runReceive = true;
         runClock = true;
         receiveThread.start();
-        clockThread.start();
+        scheduleClockTask(0);
     }
 
     /**
@@ -564,6 +550,8 @@ class PseudoTcpSocketImpl
         runClock = false;
         this.exception = e;
         releaseAllLocks();
+		cancelClockTask(true);
+
     }
 
     /**
@@ -586,7 +574,6 @@ class PseudoTcpSocketImpl
         }
         //this interrupt won't work for DatagramSocket read packet operation
         //receiveThread.interrupt();
-        clockThread.interrupt();
     }
 
     /**
@@ -596,7 +583,6 @@ class PseudoTcpSocketImpl
      */
     private void joinAllThreads() throws InterruptedException
     {
-        clockThread.join();
         receiveThread.join();
     }
 
@@ -700,7 +686,12 @@ class PseudoTcpSocketImpl
      * The run flag for clock thread
      */
     private boolean runClock = false;
-    private Thread clockThread;
+
+    // FIXME: consider larger thread pool and/or making it configurable
+    private final static ScheduledThreadPoolExecutor clockExecutor
+        = new ScheduledThreadPoolExecutor(1);
+
+    private volatile ScheduledFuture currentlyScheduledClockTask = null;
 
     /**
      * Method runs cyclic notification about time progress for TCP logic class
@@ -708,46 +699,70 @@ class PseudoTcpSocketImpl
      */
     private void runClock()
     {
+		if(!runClock)
+		{
+			return;
+		}
         long sleep;
-        while (runClock)
-        {
-            synchronized (pseudoTcp)
-            {
-                pseudoTcp.notifyClock(PseudoTCPBase.now());
-                sleep = pseudoTcp.getNextClock(PseudoTCPBase.now());
-            }
 
-            //there might be negative interval even if there's no error
-            if (sleep == -1)
-            {
-                releaseAllLocks();
-                if (exception != null)
-                {
-                    logger.log(Level.SEVERE,
-                               "STATE: " + pseudoTcp.getState()
-                        + " ERROR: " + exception.getMessage());
-                }
-                break;
-            }
-            synchronized (clock_notify)
-            {
-                try
-                {
-                    //logger.log(Level.FINEST, "Clock sleep for " + sleep);
-                    clock_notify.wait(sleep);
-                }
-                catch (InterruptedException ex)
-                {
-                    //interruption means end of task, as in normal operation 
-                    //notify will be called
-                    break;
-                }
-            }
+		synchronized (pseudoTcp)
+		{
+			pseudoTcp.notifyClock(PseudoTCPBase.now());
+			sleep = pseudoTcp.getNextClock(PseudoTCPBase.now());
+		}
 
-        }
+		//there might be negative interval even if there's no error
+		if (sleep == -1)
+		{
+			releaseAllLocks();
+			if (exception != null)
+			{
+				logger.log(Level.SEVERE,
+						   "STATE: " + pseudoTcp.getState()
+					       + " ERROR: " + exception.getMessage());
+			}
+		}
+		else
+		{
+			//logger.log(Level.FINEST, "Clock sleep for " + sleep);
+			scheduleClockTask(sleep);
+		}
     }
-    
-    /**
+
+	private Runnable clockTaskRunner = new Runnable()
+	{
+		@Override
+		public void run() {
+			runClock();
+		}
+	};
+
+	private void scheduleClockTask(long sleep)
+	{
+		synchronized (clockTaskRunner)
+		{
+			// Cancel any existing tasks, to make sure we don't run duplicates.
+			cancelClockTask(false);
+			if(runClock)
+			{
+				currentlyScheduledClockTask
+                    = clockExecutor.schedule(
+                            clockTaskRunner, sleep, TimeUnit.MILLISECONDS);
+			}
+		}
+	}
+
+	private void cancelClockTask(boolean interruptIfRunning)
+	{
+		// Copy the reference, in case it changes.
+		ScheduledFuture taskToCancel = this.currentlyScheduledClockTask;
+		if(taskToCancel != null)
+		{
+			taskToCancel.cancel(interruptIfRunning);
+		}
+	}
+
+	/**
      * Returns an output stream for this socket.
      * @return an output stream for writing to this socket.
      * @throws IOException if an I/O error occurs when creating the output stream.
@@ -973,7 +988,7 @@ class PseudoTcpSocketImpl
         @Override
         public long skip(long n) throws IOException
         {
-            throw new UnsupportedOperationException("skip");
+            return super.skip(n);
         }
 
         /**

@@ -1741,7 +1741,11 @@ public class PseudoTCPBase
                 else
                 {
                     m_t_ack = now();
-                    logger.log(Level.FINER, "Delayed ack, m_t_ack: " + m_t_ack);
+					if (logger.isLoggable(Level.FINER))
+					{
+                    	logger.log(
+                            Level.FINER, "Delayed ack, m_t_ack: " + m_t_ack);
+					}
                 }
                 return;
             }
