@@ -270,8 +270,14 @@ public class Agent
         if (StackProperties.getString(StackProperties.SOFTWARE) == null)
             System.setProperty(StackProperties.SOFTWARE, "ice4j.org");
 
-        ufrag = new BigInteger(24, random).toString(32);
-        password = new BigInteger(128, random).toString(32);
+        ufrag
+            = ensureIceAttributeLength(
+                    new BigInteger(24, random).toString(32),
+                    /* min */ 4, /* max */ 256);
+        password
+            = ensureIceAttributeLength(
+                    new BigInteger(128, random).toString(32),
+                    /* min */ 22, /* max */ 256);
 
         tieBreaker = Math.abs(random.nextLong());
         nominator = new DefaultNominator(this);
@@ -1964,6 +1970,57 @@ public class Agent
         //connCheckServer.stop();
 
         setState(terminationState);
+    }
+
+    /**
+     * Adds or removes ICE characters (i.e. ALPHA, DIGIT, +, or /) to or from a
+     * specific <tt>String</tt> in order to produce a <tt>String</tt> with a
+     * length within a specific range.
+     *
+     * @param s the <tt>String</tt> to add or remove characters to or from in
+     * case its length is less than <tt>min</tt> or greater than <tt>max</tt>
+     * @param min the minimum length in (ICE) characters of the returned
+     * <tt>String</tt>
+     * @param max the maximum length in (ICE) characters of the returned
+     * <tt>String</tt>
+     * @return <tt>s</tt> if its length is greater than or equal to
+     * <tt>min</tt> and less than or equal to <tt>max</tt>; a new
+     * <tt>String</tt> which is equal to <tt>s</tt> with prepended ICE
+     * characters if the length of <tt>s</tt> is less than <tt>min</tt>; a new
+     * <tt>String</tt> which is composed of the first <tt>max</tt> characters of
+     * <tt>s</tt> if the length of <tt>s</tt> is greater than <tt>max</tt>
+     * @throws IllegalArgumentException if <tt>min</tt> is negative or
+     * <tt>max</tt> is less than <tt>min</tt>
+     * @throws NullPointerException if <tt>s</tt> is equal to <tt>null</tt>
+     */
+    private String ensureIceAttributeLength(String s, int min, int max)
+    {
+        if (s == null)
+            throw new NullPointerException("s");
+        if (min < 0)
+            throw new IllegalArgumentException("min " + min);
+        if (max < min)
+            throw new IllegalArgumentException("max " + max);
+
+        int length = s.length();
+        int numberOfIceCharsToAdd = min - length;
+
+        if (numberOfIceCharsToAdd > 0)
+        {
+            StringBuilder sb = new StringBuilder(min);
+
+            for (; numberOfIceCharsToAdd > 0; --numberOfIceCharsToAdd)
+            {
+                sb.append('0');
+            }
+            sb.append(s);
+            s = sb.toString();
+        }
+        else if (max < length)
+        {
+            s = s.substring(0, max);
+        }
+        return s;
     }
 
     /**
