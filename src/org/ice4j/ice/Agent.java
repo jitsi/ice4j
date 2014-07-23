@@ -2311,13 +2311,14 @@ public class Agent
     }
 
     /**
-     * Returns the number of harvesting time for the harvester given in
-     * parameter.
+     * Returns the number of harvests that a harvester with a specific class
+     * name has completed so far.
      *
-     * @param harvesterName The class name if the harvester.
-     *
-     * @return The number of harvesting time for the harvester given in
-     * parameter.
+     * @param harvesterName the class name of the harvester for which the
+     * number of completed harvests is to be returned
+     * @return the number of harvests that the harvester with the specified
+     * <tt>harvesterName</tt> has completed so far if such a harvester exists
+     * and has completed at least one harvest; otherwise, zero
      */
     public int getHarvestCount(String harvesterName)
     {
@@ -2360,12 +2361,12 @@ public class Agent
     }
 
     /**
-     * Returns the total number of harvests completed by this agent. Normally
-     * this number should be equal to NB_HARVESTERS*NB_COMPONENTS but could be
-     * less if some harvesters were disabled for inefficiency or more ... if
-     * there's a bug ;).
+     * Returns the total number of harvests completed by this agent. Normally,
+     * this number should be equal to <tt>NB_HARVESTERS * NB_COMPONENTS</tt> but
+     * could be less, for example, if some harvesters were disabled for
+     * inefficiency.
      *
-     * @return the number of harvest this agent has completed.
+     * @return the number of harvests this agent has completed.
      */
     public int getHarvestCount()
     {
@@ -2373,8 +2374,7 @@ public class Agent
 
         for(CandidateHarvester harvester : harvesters)
         {
-            harvestCount
-                += harvester.getHarvestStatistics().getHarvestDuration();
+            harvestCount += harvester.getHarvestStatistics().getHarvestCount();
         }
 
         return harvestCount;
