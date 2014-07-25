@@ -194,14 +194,40 @@ public class GoogleRelayedCandidateDelegate
 
         try
         {
-            packetToReceive =
-                new DatagramPacket(data, 0, data.length, peerAddress);
+            packetToReceive
+                = new DatagramPacket(data, 0, data.length, peerAddress);
         }
-        catch (SocketException sex)
+        catch (Throwable t)
         {
-            packetToReceive = null;
+            /*
+             * The signature of the DatagramPacket constructor was changed
+             * in JDK 8 to not declare that it may throw a SocketException.
+             */
+            if (t instanceof SocketException)
+            {
+                packetToReceive = null;
+            }
+            else if (t instanceof Error)
+            {
+                throw (Error) t;
+            }
+            else if (t instanceof RuntimeException)
+            {
+                throw (RuntimeException) t;
+            }
+            else
+            {
+                /*
+                 * Unfortunately, we cannot re-throw it. Anyway, it was
+                 * unlikely to occur on JDK 7.
+                 */
+                if (t instanceof InterruptedException)
+                {
+                    Thread.currentThread().interrupt();
+                }
+                packetToReceive = null;
+            }
         }
-
         if (packetToReceive != null)
         {
             synchronized (packetsToReceive)
