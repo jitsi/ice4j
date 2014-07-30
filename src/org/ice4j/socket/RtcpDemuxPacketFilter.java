@@ -13,13 +13,9 @@ import java.net.*;
  * Implements a <tt>DatagramPacketFilter</tt> which only accepts
  * <tt>DatagramPacket</tt>s which represent RTCP messages according to the rules
  * described in RFC5761.
- * <p>
- * This filter would only be able to demultiplex between RTP and RTCP packets.
- * Other protocols such as STUN/TURN, DTLS or ZRTP are not taken into account
- * and may produce false positives if left to this filter. They should hence
- * be handled by lower layers/demuxers.
  *
  * @author Emil Ivov
+ * @author Boris Grozev
  */
 public class RtcpDemuxPacketFilter
     implements DatagramPacketFilter
@@ -28,6 +24,23 @@ public class RtcpDemuxPacketFilter
      * Determines whether a specific <tt>DatagramPacket</tt> is an RTCP.
      * <tt>DatagramPacket</tt> in a selection based on this filter.
      *
+     * RTP/RTCP packets are distinguished from other packets (such as STUN,
+     * DTLS or ZRTP) by the value of their first byte. See
+     * {@link "http://tools.ietf.org/html/rfc5764#section-5.1.2"} and
+     * {@link "http://tools.ietf.org/html/rfc6189#section-5"}.
+     *
+     * RTCP packets are distinguished from RTP packet based on the second byte
+     * (either Packet Type (RTCP) or M-bit and Payload Type (RTP). See
+     * {@link "http://tools.ietf.org/html/rfc5761#section-4"}
+     *
+     * We assume that RTCP packets have a packet type in [200, 211]. This means
+     * that RTP packets with Payload Types in [72, 83] (which should not
+     * appear, because these PTs are reserved or unassigned by IANA, see
+     * {@link "http://www.iana.org/assignments/rtp-parameters/rtp-parameters.xhtml"}
+     * ) with the M-bit set will be misidentified as RTCP packets.
+     * Also, any RTCP packets with Packet Types not in [200, 211] will be
+     * misidentified as RTP packets.
+     *
      * @param p the <tt>DatagramPacket</tt> whose protocol we'd like to
      * determine.
      * @return <tt>true</tt> if <tt>p</tt> is an RTCP and this filter accepts it
@@ -35,6 +48,19 @@ public class RtcpDemuxPacketFilter
      */
     public boolean accept(DatagramPacket p)
     {
+        int len = p.getLength();
+        if (len >= 4) //minimum RTCP message length
+        {
+            byte[] data = p.getData();
+            int off = p.getOffset();
+
+            if (((data[off + 0] & 0xc0) >> 6) == 2) //RTP/RTCP version field
+            {
+                int pt = data[off + 1] & 0xff;
+                return (200 <= pt && pt <= 211);
+            }
+        }
+
         return false;
     }
 }
