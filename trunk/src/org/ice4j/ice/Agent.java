@@ -131,7 +131,7 @@ public class Agent
                                             = "IceProcessingState";
 
     /**
-     * the value of <tt>Ta</tt> as specified by the application or <tt>-1</tt>
+     * The value of <tt>Ta</tt> as specified by the application or <tt>-1</tt>
      * if non was specified and we should calculate one ourselves.
      */
     private long taValue = -1;
