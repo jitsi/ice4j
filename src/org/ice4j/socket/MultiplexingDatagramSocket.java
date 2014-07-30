@@ -42,7 +42,7 @@ public class MultiplexingDatagramSocket
 
     /**
      * The indicator which determines whether this <tt>DatagramSocket</tt> is
-     * currently reading from the network  using
+     * currently reading from the network using
      * {@link DatagramSocket#receive(DatagramPacket)}. When <tt>true</tt>,
      * subsequent requests to read from the network will be blocked until the
      * current read is finished.
@@ -89,7 +89,7 @@ public class MultiplexingDatagramSocket
 
     /**
      * Buffer variable for storing the SO_TIMEOUT value set by the
-     * last <tt>setSoTimeout()</tt> call. Altough not strictly needed,
+     * last <tt>setSoTimeout()</tt> call. Although not strictly needed,
      * getting the locally stored value as opposed to retrieving it
      * from a parent <tt>getSoTimeout()</tt> call seems to
      * significantly improve efficiency, at least on some platforms.
@@ -99,7 +99,7 @@ public class MultiplexingDatagramSocket
     /**
      * Initializes a new <tt>MultiplexingDatagramSocket</tt> instance which is
      * to enable <tt>DatagramPacket</tt> filtering and binds it to any available
-     * port on the local host machine.  The socket will be bound to the wildcard
+     * port on the local host machine. The socket will be bound to the wildcard
      * address, an IP address chosen by the kernel.
      *
      * @throws SocketException if the socket could not be opened, or the socket
@@ -131,7 +131,7 @@ public class MultiplexingDatagramSocket
     /**
      * Initializes a new <tt>MultiplexingDatagramSocket</tt> instance which is
      * to enable <tt>DatagramPacket</tt> filtering and binds it to the specified
-     * port on the local host machine.  The socket will be bound to the wildcard
+     * port on the local host machine. The socket will be bound to the wildcard
      * address, an IP address chosen by the kernel.
      *
      * @param port the port to bind the new socket to
@@ -148,7 +148,7 @@ public class MultiplexingDatagramSocket
     /**
      * Initializes a new <tt>MultiplexingDatagramSocket</tt> instance which is
      * to enable <tt>DatagramPacket</tt> filtering, bound to the specified local
-     * address.  The local port must be between 0 and 65535 inclusive. If the IP
+     * address. The local port must be between 0 and 65535 inclusive. If the IP
      * address is 0.0.0.0, the socket will be bound to the wildcard address, an
      * IP address chosen by the kernel.
      *
@@ -386,7 +386,7 @@ public class MultiplexingDatagramSocket
     public void receive(DatagramPacket p)
         throws SocketTimeoutException, IOException
     {
-	receive(received, p, soTimeout);
+        receive(received, p, soTimeout);
     }
 
     /**
@@ -402,23 +402,25 @@ public class MultiplexingDatagramSocket
      * @param p the <tt>DatagramPacket</tt> into which to place the incoming
      * data
      * @param timeout the maximum time in milliseconds to wait for a
-     * packet.  A timeout of zero is interpreted as an infinite
+     * packet. A timeout of zero is interpreted as an infinite
      * timeout
      * @throws SocketTimeoutException if the timeout has expired
      * @throws IOException if an I/O error occurs
      */
-    private void receive(List<DatagramPacket> received, DatagramPacket p,
-			 int timeout)
+    private void receive(
+            List<DatagramPacket> received,
+            DatagramPacket p,
+            int timeout)
         throws SocketTimeoutException, IOException
     {
-	long now, start = System.currentTimeMillis();
+        long now, start = System.currentTimeMillis();
         DatagramPacket r = null;
 
         do
         {
-	    now = System.currentTimeMillis();
-	    if (timeout > 0 && now - start >= timeout)
-		throw new SocketTimeoutException("Socket timeout");
+            now = System.currentTimeMillis();
+            if (timeout > 0 && now - start >= timeout)
+                throw new SocketTimeoutException("Socket timeout");
 
             synchronized (received)
             {
@@ -455,9 +457,10 @@ public class MultiplexingDatagramSocket
                         {
                             try
                             {
-                                received.wait((timeout > 0 ?
-					       timeout - (now - start) :
-					       1000));
+                                received.wait(
+                                        timeout > 0
+                                        ? timeout - (now - start)
+                                        : 1000);
                             }
                             catch (InterruptedException ie)
                             {
@@ -583,10 +586,10 @@ public class MultiplexingDatagramSocket
      */
     @Override
     public void setSoTimeout(int timeout)
-    	throws SocketException
+        throws SocketException
     {
-    	super.setSoTimeout(timeout);
-    	soTimeout = timeout;
+        super.setSoTimeout(timeout);
+        soTimeout = timeout;
     }
 
     /**

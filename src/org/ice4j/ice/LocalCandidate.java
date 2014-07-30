@@ -122,7 +122,7 @@ public abstract class LocalCandidate
     {
         IceSocketWrapper hostSocket = getIceSocketWrapper();
 
-        if(hostSocket.getTCPSocket() != null)
+        if (hostSocket.getTCPSocket() != null)
         {
             Socket tcpSocket = hostSocket.getTCPSocket();
             Socket tcpStunSocket = null;
@@ -178,7 +178,7 @@ public abstract class LocalCandidate
 
             return stunSocket;
         }
-        else if(hostSocket.getUDPSocket() != null)
+        else if (hostSocket.getUDPSocket() != null)
         {
             DatagramSocket udpSocket = hostSocket.getUDPSocket();
             DatagramSocket udpStunSocket = null;
