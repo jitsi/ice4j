@@ -320,6 +320,32 @@ public class MultiplexingDatagramSocket
      * fails
      */
     public MultiplexedDatagramSocket getSocket(DatagramPacketFilter filter)
+            throws SocketException
+    {
+        return getSocket(filter, true);
+    }
+
+    /**
+     * Gets a <tt>MultiplexedDatagramSocket</tt> which filters
+     * <tt>DatagramPacket</tt>s away from this <tt>DatagramSocket</tt> using a
+     * specific <tt>DatagramPacketFilter</tt>. If <tt>create</tt> is true and
+     * such a <tt>MultiplexedDatagramSocket</tt> does not exist in this
+     * instance, it is created.
+     *
+     * @param filter the <tt>DatagramPacketFilter</tt> to get a
+     * <tt>MultiplexedDatagramSocket</tt> for
+     * @param create whether or not to create a <tt>MultiplexedDatagramSocket</tt>
+     * if this instance does not already have a socket for the given
+     * <tt>filter</tt>.
+     * @return a <tt>MultiplexedDatagramSocket</tt> which filters
+     * <tt>DatagramPacket</tt>s away from this <tt>DatagramSocket</tt> using the
+     * specified <tt>filter</tt>
+     * @throws SocketException if creating the
+     * <tt>MultiplexedDatagramSocket</tt> for the specified <tt>filter</tt>
+     * fails.
+     */
+    public MultiplexedDatagramSocket getSocket(DatagramPacketFilter filter,
+                                               boolean create)
         throws SocketException
     {
         if (filter == null)
@@ -336,6 +362,9 @@ public class MultiplexingDatagramSocket
                 if (filter.equals(socket.getFilter()))
                     return socket;
             }
+
+            if (!create)
+                return null;
 
             // Create a new socket for the specified filter.
             MultiplexedDatagramSocket socket
