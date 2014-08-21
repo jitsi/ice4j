@@ -84,6 +84,17 @@ public class BlockingRequestSender
     }
 
     /**
+     * Returns the local Address on which this Blocking Request Sender is bound
+     * to.
+     *
+     * @return the localAddress of this RequestSender.
+     */
+    public TransportAddress getLocalAddress()
+    {
+        return localAddress;
+    }
+
+    /**
      * Notifies this <tt>ResponseCollector</tt> that a transaction described by
      * the specified <tt>BaseStunMessageEvent</tt> has failed. The possible
      * reasons for the failure include timeouts, unreachable destination, etc.
