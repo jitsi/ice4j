@@ -13,6 +13,7 @@ import org.ice4j.*;
  * of TURN allocations.
  *
  * @author Sebastien Vincent
+ * @author Aakash Garg
  */
 public class LifetimeAttribute
     extends Attribute
@@ -46,6 +47,7 @@ public class LifetimeAttribute
      * @param obj the object to compare this attribute with.
      * @return true if the attributes are equal and false otherwise.
      */
+    @Override
     public boolean equals(Object obj)
     {
         if (! (obj instanceof LifetimeAttribute)
@@ -72,6 +74,7 @@ public class LifetimeAttribute
      * for debugging and readability.
      * @return this attribute's name.
      */
+    @Override
     public String getName()
     {
         return NAME;
@@ -81,6 +84,7 @@ public class LifetimeAttribute
      * Returns the length of this attribute's body.
      * @return the length of this attribute's value (8 bytes).
      */
+    @Override
     public char getDataLength()
     {
         return DATA_LENGTH;
@@ -90,6 +94,7 @@ public class LifetimeAttribute
      * Returns a binary representation of this attribute.
      * @return a binary representation of this attribute.
      */
+    @Override
     public byte[] encode()
     {
         byte binValue[] = new byte[HEADER_LENGTH + DATA_LENGTH];
@@ -119,6 +124,7 @@ public class LifetimeAttribute
      * @param length the length of the binary array.
      * @throws StunException if attrubteValue contains invalid data.
      */
+    @Override
     void decodeAttributeBody(byte[] attributeValue, char offset, char length)
         throws StunException
     {
@@ -127,10 +133,10 @@ public class LifetimeAttribute
             throw new StunException("length invalid");
         }
 
-        lifetime = ((attributeValue[0] << 24) & 0xff000000) +
-            ((attributeValue[1] << 16) & 0x00ff0000) +
-            ((attributeValue[2] << 8) & 0x0000ff00) +
-            (attributeValue[3] & 0x000000ff);
+        lifetime = ((attributeValue[offset + 0] << 24) & 0xff000000) +
+            ((attributeValue[offset + 1] << 16) & 0x00ff0000) +
+            ((attributeValue[offset + 2] << 8) & 0x0000ff00) +
+            (attributeValue[offset + 3] & 0x000000ff);
     }
 
     /**
