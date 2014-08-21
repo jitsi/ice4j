@@ -38,6 +38,7 @@ import org.ice4j.stack.*;
  * @author Emil Ivov
  * @author Lyubomir Marinov
  * @author Sebastien Vincent
+ * @author Aakash Garg
  */
 public class Agent
 {
@@ -1018,6 +1019,17 @@ public class Agent
         if (stunStack == null)
             stunStack = new StunStack();
         return stunStack;
+    }
+    
+    /**
+     * Sets the <tt>StunStack</tt> used by this <tt>Agent</tt>.
+     * 
+     * @param stunStack the stunStack to be used by this Agent.
+     * 
+     */
+    public void setStunStack(StunStack stunStack)
+    {
+        this.stunStack = stunStack;
     }
 
     /**
