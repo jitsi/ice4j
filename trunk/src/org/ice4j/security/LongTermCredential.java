@@ -9,11 +9,13 @@ package org.ice4j.security;
 
 import java.io.*;
 import java.lang.reflect.*;
+import java.util.*;
 
 /**
  * Represents a STUN long-term credential.
  *
  * @author Lubomir Marinov
+ * @author Aakash Garg
  */
 public class LongTermCredential
 {
@@ -138,4 +140,31 @@ public class LongTermCredential
     {
         return (username == null) ? null : username.clone();
     }
+
+    @Override
+    public int hashCode()
+    {
+        final int prime = 31;
+        int result = 1;
+        result = prime * result + Arrays.hashCode(password);
+        result = prime * result + Arrays.hashCode(username);
+        return result;
+    }
+
+    @Override
+    public boolean equals(Object o)
+    {
+        if (o instanceof LongTermCredential)
+        {
+            LongTermCredential ltc = (LongTermCredential) o;
+            if (Arrays.equals(
+                this.username, ltc.username) && Arrays.equals(
+                this.password, ltc.password))
+            {
+                return true;
+            }
+        }
+        return false;
+    }
+    
 }
