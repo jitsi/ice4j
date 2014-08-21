@@ -639,4 +639,20 @@ public class AttributeFactory
 
         return attribute;
     }
+    
+    /**
+     * Creates a new ConnectionIdAttribute. The connectionId value is set as the
+     * hashcode value of the object.
+     * 
+     * @return the newly created ConnectionId attribute.
+     */
+    public static ConnectionIdAttribute createConnectionIdAttribute()
+    {
+        ConnectionIdAttribute attribute = new ConnectionIdAttribute();
+        int connectionIdValue = attribute.hashCode();
+        attribute.setConnectionIdValue(connectionIdValue);
+
+        return attribute;
+    }
+
 }
