@@ -440,7 +440,7 @@ public class Agent
     }
 
     /**
-     * Starts an asynchronous harvest across all components and reports newly
+     * Starts an asynchronous(?) harvest across all components and reports newly
      * discovered candidates to <tt>trickleCallback</tt>.
      *
      * @param trickleCallback the callback that will be notified for all newly
