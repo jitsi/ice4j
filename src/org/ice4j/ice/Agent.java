@@ -1400,13 +1400,11 @@ public class Agent
 
         if (knownPair != null)
         {
-            boolean useCand = false;
-
-            useCand = triggerPair.useCandidateReceived();
+            boolean useCand = triggerPair.useCandidateReceived();
 
             //if the incoming request contained a USE-CANDIDATE attribute then
             //make sure we don't lose this piece of info.
-            if (triggerPair.useCandidateReceived())
+            if (useCand)
                 knownPair.setUseCandidateReceived();
 
             triggerPair = knownPair;
