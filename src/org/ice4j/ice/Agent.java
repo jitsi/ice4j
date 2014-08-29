@@ -273,7 +273,9 @@ public class Agent
 
         ufrag
             = ensureIceAttributeLength(
-                    new BigInteger(24, random).toString(32),
+                    new BigInteger(24, random).toString(32)
+                        + BigInteger.valueOf(
+                            System.currentTimeMillis()).toString(32),
                     /* min */ 4, /* max */ 256);
         password
             = ensureIceAttributeLength(
