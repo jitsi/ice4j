@@ -352,7 +352,7 @@ public class Agent
                         + transport);
         }
 
-        Component component = stream.createComponent(transport);
+        Component component = stream.createComponent();
 
         gatherCandidates(component, preferredPort, minPort, maxPort);
 
