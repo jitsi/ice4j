@@ -263,7 +263,7 @@ public class HostCandidateHarvester
      * <tt>org.ice4j.ice.harvest.BLOCKED_INTERFACES</tt> list. It returns
      * <tt>false</tt> otherwise.
      */
-    private boolean isInterfaceAllowed(NetworkInterface iface)
+    static boolean isInterfaceAllowed(NetworkInterface iface)
     {
         if (iface == null)
             throw new IllegalArgumentException("iface cannot be null");
