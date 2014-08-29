@@ -143,18 +143,16 @@ public class IceMediaStream
      * when creating the component so make sure you keep that in mind in case
      * assigning a specific component ID is important to you.
      *
-     * @param transport the transport protocol used by the component
-     *
      * @return the newly created stream <tt>Component</tt> after adding it to
      * the stream first.
      */
-    protected Component createComponent(Transport transport)
+    protected Component createComponent()
     {
         Component component;
 
         synchronized (components)
         {
-            component = new Component(++lastComponentID, transport, this);
+            component = new Component(++lastComponentID, this);
             components.put(
                     Integer.valueOf(component.getComponentID()),
                     component);
@@ -609,7 +607,7 @@ public class IceMediaStream
         synchronized (components)
         {
             for(Component cmp : components.values())
-                num += cmp.coundHostCandidates();
+                num += cmp.countLocalHostCandidates();
         }
 
         return num;

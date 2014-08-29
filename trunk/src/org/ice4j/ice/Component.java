@@ -26,6 +26,7 @@ import org.ice4j.socket.*;
  *
  * @author Emil Ivov
  * @author Sebastien Vincent
+ * @author Boris Grozev
  */
 public class Component
 {
@@ -34,19 +35,6 @@ public class Component
      */
     private static final Logger logger
         = Logger.getLogger(Component.class.getName());
-
-    /**
-     * A component id is a positive integer between 1 and 256 which identifies
-     * the specific component of the media stream for which this is a candidate.
-     * It MUST start at 1 and MUST increment by 1 for each component of a
-     * particular candidate. For media streams based on RTP, candidates for the
-     * actual RTP media MUST have a component ID of 1, and candidates for RTCP
-     * MUST have a component ID of 2. Other types of media streams which
-     * require multiple components MUST develop specifications which define the
-     * mapping of components to component IDs. See Section 14 for additional
-     * discussion on extending ICE to new media streams.
-     */
-    private final int componentID;
 
     /**
      * The component ID to use with RTP streams.
@@ -59,9 +47,17 @@ public class Component
     public static final int RTCP = 2;
 
     /**
-     * The transport that this component is using.
+     * A component id is a positive integer between 1 and 256 which identifies
+     * the specific component of the media stream for which this is a candidate.
+     * It MUST start at 1 and MUST increment by 1 for each component of a
+     * particular candidate. For media streams based on RTP, candidates for the
+     * actual RTP media MUST have a component ID of 1, and candidates for RTCP
+     * MUST have a component ID of 2. Other types of media streams which
+     * require multiple components MUST develop specifications which define the
+     * mapping of components to component IDs. See Section 14 of RFC5245 for
+     * additional discussion on extending ICE to new media streams.
      */
-    private final Transport transport;
+    private final int componentID;
 
     /**
      * The <tt>IceMediaStream</tt> that this <tt>Component</tt> belongs to.
@@ -77,14 +73,14 @@ public class Component
     /**
      * The list of candidates that the peer agent sent for this stream.
      */
-    private List<RemoteCandidate> remoteCandidates
+    private final List<RemoteCandidate> remoteCandidates
         = new LinkedList<RemoteCandidate>();
 
     /**
      * The list of candidates that the peer agent sent for this stream after
      * connectivity establishment.
      */
-    private List<RemoteCandidate> remoteUpdateCandidates =
+    private final List<RemoteCandidate> remoteUpdateCandidates =
         new LinkedList<RemoteCandidate>();
 
     /**
@@ -114,21 +110,17 @@ public class Component
 
     /**
      * Creates a new <tt>Component</tt> with the specified <tt>componentID</tt>
-     * as a child of the specified <tt>MediaStream</tt>.
+     * as a child of the specified <tt>IceMediaStream</tt>.
      *
      * @param componentID the id of this component.
-     * @param transport the protocol that this component will be using (e.g.
-     * TCP/UDP/TLS/DTLS).
      * @param mediaStream the {@link IceMediaStream} instance that would be the
      * parent of this component.
      */
     protected Component(int            componentID,
-                        Transport      transport,
                         IceMediaStream mediaStream)
     {
         // the max value for componentID is 256
         this.componentID = componentID;
-        this.transport = transport;
         this.parentStream = mediaStream;
     }
 
@@ -479,17 +471,6 @@ public class Component
     }
 
     /**
-     * Returns the transport protocol of this component
-     *
-     * @return a {@link Transport} instance representing the the transport
-     * protocol that this media stream <tt>Component</tt> uses.
-     */
-    public Transport getTransport()
-    {
-        return transport;
-    }
-
-    /**
      * Returns a <tt>String</tt> representation of this <tt>Component</tt>
      * containing its ID, parent stream name and any existing candidates.
      *
@@ -683,7 +664,6 @@ public class Component
         return null;
     }
 
-
     /**
      * Returns the <tt>Candidate</tt> that has been selected as the default
      * for this <tt>Component</tt> or <tt>null</tt> if no such
@@ -702,7 +682,7 @@ public class Component
     /**
      * Returns the <tt>Candidate</tt> that the remote party has reported as
      * default for this <tt>Component</tt> or <tt>null</tt> if no such
-     * <tt>Candidate</tt> has reported yet. A candidate is said to be
+     * <tt>Candidate</tt> has been reported yet. A candidate is said to be
      * default if it would be the target of media from a non-ICE peer;
      *
      * @return the <tt>Candidate</tt> that the remote party has reported as
@@ -877,8 +857,8 @@ public class Component
      *
      * @param remoteAddress the {@link TransportAddress} we are looking for.
      *
-     * @return  the local <tt>LocalCandidate</tt> with the specified
-     * <tt>localAddress</tt> if it belongs to this component or <tt>null</tt>
+     * @return the remote <tt>RemoteCandidate</tt> with the specified
+     * <tt>remoteAddress</tt> if it belongs to this component or <tt>null</tt>
      * if it doesn't.
      */
     public RemoteCandidate findRemoteCandidate(TransportAddress remoteAddress)
@@ -890,26 +870,6 @@ public class Component
         }
 
         return null;
-    }
-
-    /**
-     * Returns the number of host {@link Candidate}s in this <tt>Component</tt>.
-     *
-     * @return the number of host {@link Candidate}s in this <tt>Component</tt>.
-     */
-    protected int coundHostCandidates()
-    {
-        int num = 0;
-        synchronized (localCandidates)
-        {
-            for(LocalCandidate cand : localCandidates)
-            {
-                if (cand.getType() == CandidateType.HOST_CANDIDATE)
-                    num++;
-            }
-        }
-
-        return num;
     }
 
     /**
