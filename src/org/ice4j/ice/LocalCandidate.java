@@ -33,7 +33,7 @@ public abstract class LocalCandidate
     private CandidateExtendedType extendedType = null;
 
     /**
-     * Ufrag for the local candidat
+     * Ufrag for the local candidate.
      */
     private String ufrag = null;
 
@@ -78,10 +78,16 @@ public abstract class LocalCandidate
      *
      * @return the <tt>DatagramSocket</tt> associated with this
      * <tt>Candidate</tt>
+     *
+     * @deprecated This should be used by the library only. Users of ice4j
+     * should use {@link org.ice4j.ice.CandidatePair#getDatagramSocket()}
+     * on the appropriate <tt>CandidatePair</tt> instead.
      */
+    @Deprecated
     public DatagramSocket getDatagramSocket()
     {
-        return getIceSocketWrapper().getUDPSocket();
+        IceSocketWrapper wrapper = getIceSocketWrapper();
+        return wrapper == null ? null : wrapper.getUDPSocket();
     }
 
     /**
@@ -90,10 +96,16 @@ public abstract class LocalCandidate
      *
      * @return the <tt>Socket</tt> associated with this
      * <tt>Candidate</tt>
+     *
+     * @deprecated This should be used by the library only. Users of ice4j
+     * should use {@link org.ice4j.ice.CandidatePair#getSocket()} on the
+     * appropriate <tt>CandidatePair</tt> instead.
      */
+    @Deprecated
     public Socket getSocket()
     {
-        return getIceSocketWrapper().getTCPSocket();
+        IceSocketWrapper wrapper = getIceSocketWrapper();
+        return wrapper == null ? null : wrapper.getTCPSocket();
     }
 
     /**
@@ -122,7 +134,8 @@ public abstract class LocalCandidate
     {
         IceSocketWrapper hostSocket = getIceSocketWrapper();
 
-        if (hostSocket.getTCPSocket() != null)
+        if (hostSocket != null
+              && hostSocket.getTCPSocket() != null)
         {
             Socket tcpSocket = hostSocket.getTCPSocket();
             Socket tcpStunSocket = null;
@@ -178,7 +191,8 @@ public abstract class LocalCandidate
 
             return stunSocket;
         }
-        else if (hostSocket.getUDPSocket() != null)
+        else if (hostSocket != null
+                   && hostSocket.getUDPSocket() != null)
         {
             DatagramSocket udpSocket = hostSocket.getUDPSocket();
             DatagramSocket udpStunSocket = null;
@@ -281,7 +295,7 @@ public abstract class LocalCandidate
                 getStunStack().removeSocket(getTransportAddress());
 
                 /*
-                 * Allow this LocalCandiate implementation to not create a
+                 * Allow this LocalCandidate implementation to not create a
                  * socket if it still hasn't created one.
                  */
                 socket.close();
