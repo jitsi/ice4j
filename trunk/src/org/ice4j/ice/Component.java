@@ -251,8 +251,32 @@ public class Component
         logger.info("Update remote candidate for " + toShortString() + ": " +
                 candidate.getTransportAddress());
 
+        List<RemoteCandidate> existingCandidates
+                = new LinkedList<RemoteCandidate>();
+        synchronized (remoteCandidates)
+        {
+            existingCandidates.addAll(remoteCandidates);
+        }
+
         synchronized(remoteUpdateCandidates)
         {
+            existingCandidates.addAll(remoteUpdateCandidates);
+
+            // Make sure we add no duplicates
+            TransportAddress transportAddress = candidate.getTransportAddress();
+            CandidateType type = candidate.getType();
+            for (RemoteCandidate existingCandidate : existingCandidates)
+            {
+                if (transportAddress
+                        .equals(existingCandidate.getTransportAddress())
+                    && type == existingCandidate.getType())
+                {
+                    logger.info("Not adding duplicate remote candidate: "
+                                    + candidate.getTransportAddress());
+                    return;
+                }
+            }
+
             remoteUpdateCandidates.add(candidate);
         }
     }
@@ -331,11 +355,15 @@ public class Component
     public void updateRemoteCandidates()
     {
         List<CandidatePair> checkList = null;
+        List<RemoteCandidate> newRemoteCandidates;
 
         synchronized(remoteUpdateCandidates)
         {
             if(remoteUpdateCandidates.size() == 0)
                 return;
+
+            newRemoteCandidates
+                    = new LinkedList<RemoteCandidate>(remoteUpdateCandidates);
 
             List<LocalCandidate> localCnds = getLocalCandidates();
 
@@ -386,6 +414,11 @@ public class Component
                 }
             }
             remoteUpdateCandidates.clear();
+        }
+
+        synchronized (remoteCandidates)
+        {
+            remoteCandidates.addAll(newRemoteCandidates);
         }
 
         //sort and prune update checklist
