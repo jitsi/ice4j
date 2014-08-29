@@ -46,7 +46,7 @@ public class RtcpDemuxPacketFilter
      * @return <tt>true</tt> if <tt>p</tt> is an RTCP and this filter accepts it
      * and <tt>false</tt> otherwise.
      */
-    public boolean accept(DatagramPacket p)
+    public static boolean isRtcpPacket(DatagramPacket p)
     {
         int len = p.getLength();
         if (len >= 4) //minimum RTCP message length
@@ -63,4 +63,16 @@ public class RtcpDemuxPacketFilter
 
         return false;
     }
+
+    /**
+     * Returns <tt>true</tt> if this <tt>RtcpDemuxPacketFilter</tt> should
+     * accept <tt>p</tt>, that is, if <tt>p</tt> looks like an RTCP packet.
+     * See {@link #isRtcpPacket(java.net.DatagramPacket)}
+     * @return <tt>true</tt> if <tt>p</tt> looks like an RTCP packet.
+     */
+    public boolean accept(DatagramPacket p)
+    {
+        return isRtcpPacket(p);
+    }
+
 }
