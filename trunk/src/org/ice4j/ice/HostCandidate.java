@@ -46,14 +46,29 @@ public class HostCandidate extends LocalCandidate
     public HostCandidate(IceSocketWrapper socket,
                          Component        parentComponent)
     {
-        super(new TransportAddress(socket.getLocalAddress(),
-                        socket.getLocalPort(), Transport.UDP),
+        this(socket,
+             parentComponent,
+             Transport.UDP);
+    }
+
+    /**
+     * Creates a HostCandidate for the specified transport address.
+     *
+     * @param transportAddress the transport address for the new
+     * <tt>HostCandidate</tt>.
+     * @param parentComponent the <tt>Component</tt> that this candidate
+     * belongs to.
+     */
+    HostCandidate(TransportAddress transportAddress,
+                  Component parentComponent)
+    {
+        super(transportAddress,
               parentComponent,
               CandidateType.HOST_CANDIDATE,
               CandidateExtendedType.HOST_CANDIDATE,
               null);
 
-        this.socket = socket;
+        this.socket = null;
         setBase(this);
     }
 

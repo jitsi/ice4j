@@ -6,8 +6,10 @@
  */
 package org.ice4j.ice;
 
+import java.net.*;
 import java.util.*;
 
+import org.ice4j.socket.*;
 import org.ice4j.stack.*;
 
 /**
@@ -21,6 +23,7 @@ import org.ice4j.stack.*;
  *
  * @author Emil Ivov
  * @author Lyubomir Marinov
+ * @author Boris Grozev
  */
 public class CandidatePair
     implements Comparable<CandidatePair>
@@ -37,6 +40,12 @@ public class CandidatePair
      * optimizing performance.
      */
     private static final long MATH_POW_2_32 = 1L << 32;
+
+    /**
+     * A <tt>Comparator</tt> using the <tt>compareTo</tt> method of the
+     * <tt>CandidatePair</tt>.
+     */
+    public static final PairComparator comparator = new PairComparator();
 
     /**
      * The local candidate of this pair.
@@ -68,7 +77,7 @@ public class CandidatePair
 
     /**
      * Indicates whether this <tt>CandidatePair</tt> is on any of this agent's
-     *  valid pair lists.
+     * valid pair lists.
      */
     private boolean isValid = false;
 
@@ -77,12 +86,6 @@ public class CandidatePair
      * may be selected by ICE for sending and receiving media.
      */
     private boolean isNominated = false;
-
-    /**
-     * A <tt>Comparator</tt> using the <tt>compareTo</tt> method of the
-     * <tt>CandidatePair</tt>.
-     */
-    public static final PairComparator comparator = new PairComparator();
 
     /**
      * Each candidate pair has a state that is assigned once the check list
@@ -607,9 +610,9 @@ public class CandidatePair
     }
 
     /**
-     * Returns the value of this pair's nominated flag to <tt>true</tt>. If a
-     * valid candidate pair has its nominated flag set, it means that it may be
-     * selected by ICE for sending and receiving media.
+     * Returns the value of this pair's nominated flag. If a valid candidate
+     * pair has its nominated flag set, it means that it may be selected by ICE
+     * for sending and receiving media.
      *
      * @return <tt>true</tt> if this pair has already been nominated for
      * selection and <tt>false</tt> otherwise.
@@ -688,5 +691,67 @@ public class CandidatePair
                     oldValue,
                     newValue);
         }
+    }
+
+    /**
+     * Returns the UDP <tt>DatagramSocket</tt> (if any) for this
+     * <tt>CandidatePair</tt>.
+     * @return the UDP <tt>DatagramSocket</tt> (if any) for this
+     * <tt>CandidatePair</tt>.
+     */
+    public DatagramSocket getDatagramSocket()
+    {
+        IceSocketWrapper wrapper = getIceSocketWrapper();
+        return wrapper == null ? null : wrapper.getUDPSocket();
+    }
+
+    /**
+     * Returns the TCP <tt>Socket</tt> (if any) for this <tt>CandidatePair</tt>.
+     * @return the TCP <tt>Socket</tt> (if any) for this <tt>CandidatePair</tt>.
+     */
+    public Socket getSocket()
+    {
+        IceSocketWrapper wrapper = getIceSocketWrapper();
+        return wrapper == null ? null : wrapper.getTCPSocket();
+    }
+
+    /**
+     * Returns the <tt>IceSocketWrapper</tt> for this <tt>CandidatePair</tt>.
+     * @return  the <tt>IceSocketWrapper</tt> for this <tt>CandidatePair</tt>.
+     */
+    public IceSocketWrapper getIceSocketWrapper()
+    {
+        LocalCandidate localCandidate = getLocalCandidate();
+        if (localCandidate == null)
+        {
+            return null;
+        }
+        else if (localCandidate instanceof TcpHostCandidate)
+        {
+            /*
+             * TcpHostCandidates can have multiple sockets, and the one
+             * to be used by this specific CandidatePair has to have the
+             * same remote socket address as the pair's remote candidate.
+             */
+            RemoteCandidate remoteCandidate = getRemoteCandidate();
+            if (remoteCandidate == null)
+                return null;
+
+            SocketAddress remoteSocketAddress
+                    = remoteCandidate.getTransportAddress();
+            for (IceSocketWrapper socket
+                  : ((TcpHostCandidate) localCandidate).getIceSocketWrappers())
+            {
+                if (socket.getTCPSocket()
+                        .getRemoteSocketAddress().equals(remoteSocketAddress))
+                    return socket;
+            }
+        }
+        else
+        {
+            return localCandidate.getIceSocketWrapper();
+        }
+
+        return null;
     }
 }

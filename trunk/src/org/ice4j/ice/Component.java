@@ -361,6 +361,10 @@ public class Component
                 {
                     if(localCnd.canReach(remoteCnd))
                     {
+                        // A single LocalCandidate might be/become connected
+                        // to more more than one remote address, and that's ok
+                        // (that is, we need to form pairs with them all).
+                        /*
                         if(localCnd.getTransport() == Transport.TCP &&
                             localCnd.getIceSocketWrapper().getTCPSocket().
                                 isConnected())
@@ -372,6 +376,7 @@ public class Component
                                 continue;
                             }
                         }
+                        */
 
                         CandidatePair pair
                             = new CandidatePair(localCnd, remoteCnd);
