@@ -86,6 +86,13 @@ public class Agent
         = Logger.getLogger(Agent.class.getName());
 
     /**
+     * The name of the {@link PropertyChangeEvent} that we use to deliver
+     * events on changes in the state of ICE processing in this agent.
+     */
+    public static final String PROPERTY_ICE_PROCESSING_STATE
+                                            = "IceProcessingState";
+
+    /**
      * The LinkedHashMap used to store the media streams
      * This map preserves the insertion order of the media streams.
      */
@@ -125,13 +132,6 @@ public class Agent
     private final DefaultNominator nominator;
 
     /**
-     * The name of the {@link PropertyChangeEvent} that we use to deliver
-     * events on changes in the state of ICE processing in this agent.
-     */
-    public static final String PROPERTY_ICE_PROCESSING_STATE
-                                            = "IceProcessingState";
-
-    /**
      * The value of <tt>Ta</tt> as specified by the application or <tt>-1</tt>
      * if non was specified and we should calculate one ourselves.
      */
@@ -141,7 +141,7 @@ public class Agent
      * The <tt>List</tt> of remote addresses that we have discovered through
      * incoming connectivity checks, before actually receiving a session
      * description from the peer and that may potentially contain peer reflexive
-     * addresses. This list is stored and only if and while connectivity checks
+     * addresses. This list is stored only if and while connectivity checks
      * are not running. Once they start, we are able to determine whether the
      * addresses in here are actually peer-reflexive or not, and schedule
      * the necessary triggered checks.
@@ -241,7 +241,7 @@ public class Agent
     private boolean shutdown = false;
 
     /**
-     * Indicates that harvesting has been started at least ones. Used to warn
+     * Indicates that harvesting has been started at least once. Used to warn
      * users who are trying to trickle, that they have already completed a
      * harvest. We may use it to throw an exception at some point if it's ever
      * a problem.
@@ -301,8 +301,8 @@ public class Agent
 
         // Since we add a new stream, we must wait to add the component and the
         // remote candidates before starting to "RUN" this Agent.
-        // This is usefull if this Agent is already in COMPLETED state
-        // (isStarted() == true) due to a previous successful ICE preocedure:
+        // This is useful if this Agent is already in COMPLETED state
+        // (isStarted() == true) due to a previous successful ICE procedure:
         // this way incoming connectivity checks are registered in the
         // preDiscoveredPairsQueue until this Agent is in RUNNING state.
         this.setState(IceProcessingState.WAITING);
@@ -322,7 +322,7 @@ public class Agent
      * @param minPort the port number where we should first try to bind before
      * moving to the next one (i.e. <tt>minPort + 1</tt>)
      * @param maxPort the maximum port number where we should try binding
-     * before giving up and throwinG an exception.
+     * before giving up and throwing an exception.
      *
      * @return the newly created {@link Component} and with a list containing
      * all and only local candidates.
@@ -364,10 +364,10 @@ public class Agent
 
         /*
          * Lyubomir: After we've gathered the LocalCandidate for a Component and
-         * before we've make them available to the caller, we have to make sure
+         * before we've made them available to the caller, we have to make sure
          * that the ConnectivityCheckServer is started. If there's been a
          * previous connectivity establishment which has completed, it has
-         * stopped the ConnectivityCheckServer. If the ConnectivtyCheckServer is
+         * stopped the ConnectivityCheckServer. If the ConnectivityCheckServer is
          * not started after we've made the gathered LocalCandidates available
          * to the caller, the caller may send them and a connectivity check may
          * arrive from the remote Agent.
@@ -1388,9 +1388,8 @@ public class Agent
     {
         //first check whether we already know about the remote address in case
         //we've just discovered a peer-reflexive candidate.
-        CandidatePair knownPair = null;
-
-        knownPair = this.findCandidatePair(
+        CandidatePair knownPair
+            = findCandidatePair(
                 triggerPair.getLocalCandidate().getTransportAddress(),
                 triggerPair.getRemoteCandidate().getTransportAddress());
 

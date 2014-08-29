@@ -35,7 +35,7 @@ public class HostCandidateHarvester
         = Logger.getLogger(HostCandidateHarvester.class.getName());
 
     /**
-     * Manages statisics about harvesting time.
+     * Manages statistics about harvesting time.
      */
     private HarvestStatistics harvestStatistics = new HarvestStatistics();
 
@@ -312,7 +312,7 @@ public class HostCandidateHarvester
      * @param minPort the port number where we should first try to bind before
      * moving to the next one (i.e. <tt>minPort + 1</tt>)
      * @param maxPort the maximum port number where we should try binding
-     * before giving up and throwinG an exception.
+     * before giving up and throwing an exception.
      *
      * @return the newly created <tt>DatagramSocket</tt>.
      *
@@ -488,7 +488,7 @@ public class HostCandidateHarvester
      * @param minPort the port number where we should first try to bind before
      * moving to the next one (i.e. <tt>minPort + 1</tt>)
      * @param maxPort the maximum port number where we should try binding
-     * before giving up and throwinG an exception.
+     * before giving up and throwing an exception.
      *
      * @throws IllegalArgumentException if either <tt>minPort</tt> or
      * <tt>maxPort</tt> is not a valid port number or if <tt>minPort</tt> is

@@ -19,11 +19,11 @@ public abstract class IceSocketWrapper
     /**
      * Sends a <tt>DatagramPacket</tt> from this socket
      * It is a utility method to provide a common way to send for both
-     * UDP and TCP socket. If the underlying socket is a TCP ones, it is still
+     * UDP and TCP socket. If the underlying socket is a TCP one, it is still
      * possible to get the <tt>OutputStream</tt> and do stuff with it.
      *
      *
-     * @param p <tt>DatagramPacket</tt> to sent
+     * @param p <tt>DatagramPacket</tt> to send
      * @throws IOException if something goes wrong
      */
     public abstract void send(DatagramPacket p)
@@ -32,7 +32,7 @@ public abstract class IceSocketWrapper
     /**
      * Receives a <tt>DatagramPacket</tt> from this socket.
      * It is a utility method to provide a common way to receive for both
-     * UDP and TCP socket. If the underlying socket is a TCP ones, it is still
+     * UDP and TCP socket. If the underlying socket is a TCP one, it is still
      * possible to get the <tt>InputStream</tt> and do stuff with it.
      *
      * @param p <tt>DatagramPacket</tt>
@@ -68,20 +68,20 @@ public abstract class IceSocketWrapper
     public abstract SocketAddress getLocalSocketAddress();
 
     /**
-     * Returns Socket object if the delegate socket is a TCP ones, null
+     * Returns Socket object if the delegate socket is a TCP one, null
      * otherwise.
      *
-     * @return Socket object if the delegate socket is a TCP ones, null
-     * otherwise
+     * @return Socket object if the delegate socket is a TCP one, null
+     * otherwise.
      */
     public abstract Socket getTCPSocket();
 
     /**
-     * Returns DatagramSocket object if the delegate socket is a TCP ones, null
+     * Returns DatagramSocket object if the delegate socket is a UDP one, null
      * otherwise.
      *
-     * @return DatagramSocket object if the delegate socket is a TCP ones, null
-     * otherwise
+     * @return DatagramSocket object if the delegate socket is a UDP one, null
+     * otherwise.
      */
     public abstract DatagramSocket getUDPSocket();
 }

@@ -317,18 +317,19 @@ public class MultiplexingSocket
      * @throws SocketTimeoutException if the timeout has expired
      * @throws IOException if an I/O error occurs
      */
-    private void receive(List<DatagramPacket> received, DatagramPacket p,
-			 int timeout)
+    private void receive(List<DatagramPacket> received,
+                         DatagramPacket p,
+                         int timeout)
         throws SocketTimeoutException, IOException
     {
-	long now, start = System.currentTimeMillis();
+        long now, start = System.currentTimeMillis();
         DatagramPacket r = null;
 
         do
         {
-	    now = System.currentTimeMillis();
-	    if (timeout > 0 && now - start >= timeout)
-		throw new SocketTimeoutException("Socket timeout");
+            now = System.currentTimeMillis();
+            if (timeout > 0 && now - start >= timeout)
+                throw new SocketTimeoutException("Socket timeout");
 
             boolean doReceive;
 
@@ -341,10 +342,10 @@ public class MultiplexingSocket
                         doReceive = false;
                         try
                         {
-			    if (timeout > 0)
-				receiveSyncRoot.wait(timeout - (now - start));
-			    else
-				receiveSyncRoot.wait();
+                            if (timeout > 0)
+                                receiveSyncRoot.wait(timeout - (now - start));
+                            else
+                                receiveSyncRoot.wait();
                         }
                         catch (InterruptedException iex)
                         {

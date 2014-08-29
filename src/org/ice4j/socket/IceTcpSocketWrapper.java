@@ -135,24 +135,18 @@ public class IceTcpSocketWrapper
     }
 
     /**
-     * Returns Socket object if the delegate socket is a TCP ones, null
-     * otherwise.
-     *
-     * @return Socket object if the delegate socket is a TCP ones, null
-     * otherwise
+     * {@inheritDoc}
      */
+    @Override
     public Socket getTCPSocket()
     {
         return socket;
     }
 
     /**
-     * Returns DatagramSocket object if the delegate socket is a TCP ones, null
-     * otherwise.
-     *
-     * @return DatagramSocket object if the delegate socket is a TCP ones, null
-     * otherwise
+     * {@inheritDoc}
      */
+    @Override
     public DatagramSocket getUDPSocket()
     {
         return null;
