@@ -56,7 +56,7 @@ public class StunStack
     /**
      * Our network gateway.
      */
-    private NetAccessManager netAccessManager = null;
+    private final NetAccessManager netAccessManager;
 
     /**
      * The {@link CredentialsManager} that we are using for retrieving
@@ -464,8 +464,6 @@ public class StunStack
                     ioex);
         }
     }
-    
-    /**
 
     /**
      * Sends a specific STUN <tt>Indication</tt> to a specific destination
