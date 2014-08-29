@@ -640,7 +640,7 @@ public class DelegatingDatagramSocket
 
             // no exception packet is successfully received, log it.
             // If this is not a STUN/TURN packet, then this is a RTP packet.
-            if(!StunDatagramPacketFilter.isStunPacket(p))
+            if(isRtpPacket(p))
             {
                 ++nbReceivedRtpPackets;
             }
@@ -980,7 +980,7 @@ public class DelegatingDatagramSocket
     public void updateRtpLosses(DatagramPacket p)
     {
         // If this is not a STUN/TURN packet, then this is a RTP packet.
-        if(!StunDatagramPacketFilter.isStunPacket(p))
+        if(isRtpPacket(p))
         {
             long newSeq = getRtpSequenceNumber(p);
             if(this.lastRtpSequenceNumber != -1)
@@ -1004,7 +1004,7 @@ public class DelegatingDatagramSocket
      * @param totalNbLost The total number of lost packet since the beginning of
      * this stream.
      * @param totalNbReceived The total number of received packet since the
-     * begnining of this tream.
+     * beginning of this stream.
      * @param lastLogTime The last time we have logged information about RTP
      * losses.
      *
@@ -1082,7 +1082,7 @@ public class DelegatingDatagramSocket
      * DelegatingDatagramSocket#setDefaultReceiveBufferSize() won't
      * automatically be applied to sockets obtain from the factory.
      * 
-     * @param factory The factory asigned to generates the new DatagramSocket
+     * @param factory The factory assigned to generates the new DatagramSocket
      * for each new DelegatingDatagramSocket which do not use a delegate socket.
      */
     public static void setDefaultDelegateFactory(DatagramSocketFactory factory)
@@ -1125,5 +1125,29 @@ public class DelegatingDatagramSocket
         {
             super.setReceiveBufferSize(defaultReceiveBufferSize);
         }
+    }
+
+    /**
+     * Determines whether <tt>p</tt> is an RTP packet (and something else, like,
+     * a STUN, RTCP or DTLS packet).
+     * @param p the packet.
+     * @return <tt>true</tt> if <tt>p</tt> appears to be an RTP packet.
+     */
+    private boolean isRtpPacket(DatagramPacket p)
+    {
+        byte[] data = p.getData();
+        int off = p.getOffset();
+        int len = p.getLength();
+
+        if (len >= 4)
+        {
+            if (((data[off + 0] & 0xc0) >> 6) == 2)
+            {
+                //Either RTP or RTCP
+                return !RtcpDemuxPacketFilter.isRtcpPacket(p);
+            }
+        }
+
+        return false;
     }
 }
