@@ -122,15 +122,32 @@ public class StunStack
 
     /**
      * Stops and deletes the connector listening on the specified local address.
+     * Note this removes connectors with UDP sockets only, use
+     * {@link #removeSocket(org.ice4j.TransportAddress, org.ice4j.TransportAddress)}
+     * with the appropriate remote address for TCP.
      *
-     * @param localAddr the access  point to remove
+     * @param localAddr the local address of the socket to remove.
      */
     public void removeSocket(TransportAddress localAddr)
     {
-        //first cancel all transactions using this address.
-        cancelTransactionsForAddress(localAddr);
+        removeSocket(localAddr, null);
+    }
 
-        netAccessManager.removeSocket(localAddr);
+    /**
+     * Stops and deletes the connector listening on the specified local address
+     * and remote address.
+     *
+     * @param localAddr the local address of the socket to remove.
+     * @param remoteAddr the remote address of the socket to remove. Use
+     * <tt>null</tt> for UDP.
+     */
+    public void removeSocket(TransportAddress localAddr,
+                             TransportAddress remoteAddr)
+    {
+        //first cancel all transactions using this address.
+        cancelTransactionsForAddress(localAddr, remoteAddr);
+
+        netAccessManager.removeSocket(localAddr, remoteAddr);
     }
 
     /**
@@ -239,8 +256,13 @@ public class StunStack
      *
      * @param localAddr the <tt>TransportAddress</tt> that we'd like to remove
      * transactions for.
+     * @param remoteAddr the remote <tt>TransportAddress</tt> that we'd like to
+     * remove transactions for. If <tt>null</tt>, then it will not be taken
+     * into account (that is, all transactions with for <tt>localAddr</tt> will
+     * be cancelled).
      */
-    private void cancelTransactionsForAddress(TransportAddress localAddr)
+    private void cancelTransactionsForAddress(TransportAddress localAddr,
+                                              TransportAddress remoteAddr)
     {
         List<StunClientTransaction> clientTransactionsToCancel = null;
 
@@ -253,7 +275,9 @@ public class StunStack
             {
                 StunClientTransaction tran = clientTransactionsIter.next();
 
-                if (tran.getLocalAddress().equals(localAddr))
+                if (tran.getLocalAddress().equals(localAddr)
+                        && (remoteAddr == null
+                                || remoteAddr.equals(tran.getRemoteAddress())))
                 {
                     clientTransactionsIter.remove();
 
@@ -299,14 +323,18 @@ public class StunStack
                         || (sendingAddr != null
                                 && sendingAddr.equals(localAddr)))
                 {
-                    serverTransactionsIter.remove();
-
-                    if (serverTransactionsToExpire == null)
+                    if (remoteAddr == null
+                          || remoteAddr.equals(tran.getRequestSourceAddress()))
                     {
-                        serverTransactionsToExpire
-                            = new LinkedList<StunServerTransaction>();
+                        serverTransactionsIter.remove();
+
+                        if (serverTransactionsToExpire == null)
+                        {
+                            serverTransactionsToExpire
+                                    = new LinkedList<StunServerTransaction>();
+                        }
+                        serverTransactionsToExpire.add(tran);
                     }
-                    serverTransactionsToExpire.add(tran);
                 }
             }
         }
