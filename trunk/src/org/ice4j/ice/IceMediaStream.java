@@ -344,8 +344,8 @@ public class IceMediaStream
     }
 
     /**
-     * Creates, initializes and orders the list of candidate pairs that would
-     * be used for the connectivity checks for all components in this stream.
+     * Creates and adds to <tt>checkList</tt> all the <tt>CandidatePair</tt>s
+     * in all <tt>Component</tt>s of this stream.
      *
      * @param checkList the list that we need to update with the new pairs.
      */
@@ -372,6 +372,7 @@ public class IceMediaStream
 
         for(LocalCandidate lc : localCnds)
         {
+            // XXX do we assume a single UPNPCandidate here?
             if(lc instanceof UPNPCandidate)
                 upnpBase = lc.getBase();
         }

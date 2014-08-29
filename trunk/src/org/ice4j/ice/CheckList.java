@@ -182,8 +182,8 @@ public class CheckList
         if(highestPriorityPair != null)
             return highestPriorityPair;
 
-       for (CandidatePair pair : this)
-       {
+        for (CandidatePair pair : this)
+        {
             if (pair.getState() == CandidatePairState.FROZEN)
             {
                 if(highestPriorityPair == null

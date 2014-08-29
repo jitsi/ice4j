@@ -169,7 +169,7 @@ class ConnectivityCheckClient
      *
      * @param candidatePair that {@link CandidatePair} that we'd like to start
      * a check for.
-     * @param originalWiatInterval
+     * @param originalWaitInterval
      * @param maxWaitInterval
      * @param maxRetransmissions
      * @return a reference to the {@link TransactionID} used in the connectivity
@@ -178,7 +178,7 @@ class ConnectivityCheckClient
      */
     protected TransactionID startCheckForPair(
             CandidatePair candidatePair,
-            int originalWiatInterval,
+            int originalWaitInterval,
             int maxWaitInterval,
             int maxRetransmissions)
     {
@@ -266,7 +266,7 @@ class ConnectivityCheckClient
                         localCandidate.getBase().getTransportAddress(),
                         this,
                         tran,
-                        originalWiatInterval,
+                        originalWaitInterval,
                         maxWaitInterval,
                         maxRetransmissions);
             if(logger.isLoggable(Level.FINEST))
