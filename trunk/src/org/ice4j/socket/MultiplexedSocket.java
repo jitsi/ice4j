@@ -47,6 +47,11 @@ public class MultiplexedSocket
     final List<DatagramPacket> received = new LinkedList<DatagramPacket>();
 
     /**
+     * The custom <tt>InputStream</tt> for this <tt>MultiplexedSocket</tt>.
+     */
+    private final InputStreamImpl inputStream = new InputStreamImpl();
+
+    /**
      * Initializes a new <tt>MultiplexedSocket</tt> which is unbound and
      * filters <tt>DatagramPacket</tt>s away from a specific
      * <tt>MultiplexingSocket</tt> using a specific
@@ -70,7 +75,7 @@ public class MultiplexedSocket
          * Even if MultiplexingSocket allows MultiplexedSocket
          * to perform bind, binding in the super will not execute correctly this
          * early in the construction because the multiplexing field is not set
-         * yet. That is why MultiplexeSocket does not currently support
+         * yet. That is why MultiplexedSocket does not currently support
          * bind at construction time.
          */
         super(multiplexing);
@@ -95,6 +100,15 @@ public class MultiplexedSocket
     public void close()
     {
         multiplexing.close(this);
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public InputStream getInputStream()
+    {
+        return inputStream;
     }
 
     /**
@@ -133,5 +147,122 @@ public class MultiplexedSocket
         throws IOException
     {
         multiplexing.receive(this, p);
+    }
+
+    /**
+     * Implements an <tt>InputStream</tt> for this <tt>MultiplexedSocket</tt>,
+     * reading data using {@link #receive(java.net.DatagramPacket)}.
+     */
+    private class InputStreamImpl
+        extends InputStream
+    {
+        /**
+         * A buffer to receive data into.
+         */
+        private final byte[] buf = new byte[1500];
+
+        /**
+         * A <tt>DatagramPacket</tt> instance to receive data into.
+         */
+        private final DatagramPacket packet = new DatagramPacket(buf, 1500);
+
+        /**
+         * Synchronization object for read operation.
+         */
+        private final Object readSyncRoot = new Object();
+
+        /**
+         * Initializes a new <tt>TCPInputStream</tt>.
+         */
+        public InputStreamImpl()
+        {
+        }
+
+        /**
+         * {@inheritDoc}
+         */
+        @Override
+        public int available()
+        {
+            return 0;
+        }
+
+        /**
+         * {@inheritDoc}
+         */
+        @Override
+        public boolean markSupported()
+        {
+            return false;
+        }
+
+        /**
+         * {@inheritDoc}
+         */
+        @Override
+        public int read(byte[] b)
+                throws IOException
+        {
+            return read(b, 0, b.length);
+        }
+
+        /**
+         * {@inheritDoc}
+         */
+        @Override
+        public int read(byte[] b, int off, int len)
+            throws IOException
+        {
+            synchronized(readSyncRoot)
+            {
+                receive(packet);
+
+                byte[] packetData = packet.getData();
+                int packetOff = packet.getOffset();
+                int packetLen = packet.getLength();
+
+                int lengthRead = Math.min(len, packetLen);
+                System.arraycopy(
+                        packetData, packetOff,
+                        b, off,
+                        lengthRead);
+
+                return lengthRead;
+            }
+        }
+
+        /**
+         * {@inheritDoc}
+         */
+        @Override
+        public void reset()
+                throws IOException
+        {
+            if(!markSupported())
+            {
+                throw new IOException("InputStreamImpl does not support reset()");
+            }
+        }
+
+        /**
+         * {@inheritDoc}
+         */
+        @Override
+        public long skip(long n)
+            throws IOException
+        {
+            throw new IOException("InputStreamImpl does not support skip.");
+        }
+
+        /**
+         * {@inheritDoc}
+         */
+        @Override
+        public int read()
+                throws IOException
+        {
+            //We don't support reading a single byte
+            return 0;
+        }
     }
 }
