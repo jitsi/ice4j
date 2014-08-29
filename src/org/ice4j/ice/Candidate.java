@@ -30,6 +30,26 @@ public abstract class Candidate<T extends Candidate<?>>
     implements Comparable<T>
 {
     /**
+     * The maximum value for a candidate's type preference.
+     */
+    public static final int MAX_TYPE_PREFERENCE = 126;
+
+    /**
+     * The minimum value for a candidate's type preference.
+     */
+    public static final int MIN_TYPE_PREFERENCE = 0;
+
+    /**
+     * The maximum value for a candidate's local preference.
+     */
+    public static final int MAX_LOCAL_PREFERENCE = 65535;
+
+    /**
+     * The minimum value for a candidate's local preference.
+     */
+    public static final int MIN_LOCAL_PREFERENCE = 0;
+
+    /**
      * The transport address represented by this candidate.
      */
     private TransportAddress transportAddress = null;
@@ -116,24 +136,9 @@ public abstract class Candidate<T extends Candidate<?>>
     private T relatedCandidate = null;
 
     /**
-     * The maximum value for a candidate's type preference.
+     * The <tt>CandidateTcpType</tt> for this <tt>Candidate</tt>.
      */
-    public static final int MAX_TYPE_PREFERENCE = 126;
-
-    /**
-     * The minimum value for a candidate's type preference.
-     */
-    public static final int MIN_TYPE_PREFERENCE = 0;
-
-    /**
-     * The maximum value for a candidate's local preference.
-     */
-    public static final int MAX_LOCAL_PREFERENCE = 65535;
-
-    /**
-     * The minimum value for a candidate's local preference.
-     */
-    public static final int MIN_LOCAL_PREFERENCE = 0;
+    private CandidateTcpType tcpType = null;
 
     /**
      * Creates a candidate for the specified transport address and properties.
@@ -965,5 +970,23 @@ public abstract class Candidate<T extends Candidate<?>>
     public int compareTo(T candidate)
     {
         return CandidatePrioritizer.compareCandidates(this, candidate);
+    }
+
+    /**
+     * Gets the <tt>CandidateTcpType</tt> for this <tt>Candidate</tt>.
+     * @return the <tt>CandidateTcpType</tt> for this <tt>Candidate</tt>.
+     */
+    public CandidateTcpType getTcpType()
+    {
+        return tcpType;
+    }
+
+    /**
+     * Sets the <tt>CandidateTcpType</tt> for this <tt>Candidate</tt>.
+     * @param tcpType the <tt>CandidateTcpType</tt> to set.
+     */
+    public void setTcpType(CandidateTcpType tcpType)
+    {
+        this.tcpType = tcpType;
     }
 }

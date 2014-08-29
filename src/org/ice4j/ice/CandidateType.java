@@ -89,8 +89,8 @@ public enum CandidateType
      * Returns the name of this <tt>CandidateType</tt> (e.g. "host", "prflx",
      * "srflx", or "relay").
      *
-     * @return the name of this <tt>Transport</tt> (e.g. "udp" or
-     * "tcp").
+     * @return the name of this <tt>CandidateType</tt> (e.g. "host", "prflx",
+     * "srflx", or "relay").
      */
     @Override
     public String toString()

@@ -8,6 +8,7 @@ package org.ice4j.ice;
 
 import org.ice4j.*;
 import org.ice4j.socket.*;
+import org.ice4j.stack.*;
 
 import java.util.*;
 
@@ -55,11 +56,21 @@ public class TcpHostCandidate
     @Override
     protected void free()
     {
-        super.free();
+        StunStack stunStack = getStunStack();
+        TransportAddress localAddr = getTransportAddress();
         for (IceSocketWrapper socket : sockets)
         {
-            socket.close();
+            //remove our sockets from the stack.
+            stunStack.removeSocket(
+                    localAddr,
+                    new TransportAddress(
+                            socket.getTCPSocket().getInetAddress(),
+                            socket.getTCPSocket().getPort(),
+                            Transport.TCP));
+
+                    socket.close();
         }
 
+        super.free();
     }
 }
