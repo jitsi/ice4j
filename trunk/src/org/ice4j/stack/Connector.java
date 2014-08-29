@@ -63,6 +63,12 @@ class Connector
     private final TransportAddress listenAddress;
 
     /**
+     * The remote address of the socket of this <tt>Connector</tt> if it is
+     * a TCP socket, or <tt>null</tt> if it is UDP.
+     */
+    private final TransportAddress remoteAddress;
+
+    /**
      * Creates a network access point.
      * @param socket the socket that this access point is supposed to use for
      * communication.
@@ -76,9 +82,19 @@ class Connector
         this.sock = socket;
         this.messageQueue = messageQueue;
         this.errorHandler = errorHandler;
-        this.listenAddress = new TransportAddress(socket.getLocalAddress(),
-                        socket.getLocalPort(), socket.getUDPSocket() != null ?
-                            Transport.UDP : Transport.TCP);
+
+        Transport transport
+                = socket.getUDPSocket() != null ? Transport.UDP : Transport.TCP;
+        this.listenAddress
+                = new TransportAddress(socket.getLocalAddress(),
+                                       socket.getLocalPort(),
+                                       transport);
+        this.remoteAddress
+                = transport == Transport.UDP
+                ? null
+                : new TransportAddress(socket.getTCPSocket().getInetAddress(),
+                                       socket.getTCPSocket().getPort(),
+                                       transport);
     }
 
     /**
@@ -198,7 +214,8 @@ class Connector
                 {
                     logger.log(
                             Level.WARNING,
-                            "Connector died: " + listenAddress,
+                            "Connector died: " + listenAddress + " -> "
+                                    + remoteAddress,
                             ex);
 
                     stop();
@@ -292,4 +309,16 @@ class Connector
      {
          return listenAddress;
      }
+
+    /**
+     * Returns the remote <tt>TransportAddress</tt> in case of TCP, or
+     * <tt>null</tt> in case of UDP.
+     *
+     * @return  the remote <tt>TransportAddress</tt> in case of TCP, or
+     * <tt>null</tt> in case of UDP.
+     */
+    TransportAddress getRemoteAddress()
+    {
+        return remoteAddress;
+    }
 }

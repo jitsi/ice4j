@@ -7,6 +7,7 @@
 package org.ice4j.stack;
 
 import java.io.*;
+import java.net.*;
 import java.util.*;
 import java.util.logging.*;
 
@@ -23,6 +24,7 @@ import org.ice4j.socket.*;
  * 
  * @author Emil Ivov
  * @author Aakash Garg
+ * @author Boris Grozev
  */
 class NetAccessManager
     implements ErrorHandler
@@ -34,7 +36,14 @@ class NetAccessManager
         = Logger.getLogger(NetAccessManager.class.getName());
 
     /**
-     * All access points currently in use with UDP. The table maps
+     * Synchronization root for access to {@link #netUDPAccessPoints} and
+     * {@link #netTCPAccessPoints} and the lists contained in
+     * {@link #netTCPAccessPoints}.
+     */
+    private final Object connectorsSyncRoot = new Object();
+
+    /**
+     * All access points currently in use with UDP. The table maps local
      * <tt>TransportAddress</tt>es to <tt>Connector</tt>s.
      *
      * Due to the final hashCode() method of InetSocketAddress, TransportAddress
@@ -46,16 +55,18 @@ class NetAccessManager
             = new Hashtable<TransportAddress, Connector>();
 
     /**
-     * All access points currently in use with TCP. The table maps
-     * <tt>TransportAddress</tt>es to <tt>Connector</tt>s.
+     * All access points currently in use with TCP. The table maps local
+     * <tt>TransportAddress</tt>es to a list of <tt>Connector</tt>s with that
+     * local address. To find the required <tt>Connector</tt> in the list, the
+     * remote address needs to be used.
      *
      * Due to the final hashCode() method of InetSocketAddress, TransportAddress
      * cannot override and it causes problem to store both UDP and TCP address
      * (i.e. 192.168.0.3:5000/tcp has the same hashcode as 192.168.0.3:5000/udp
      * because InetSocketAddress does not take into account transport).
      */
-    private Map<TransportAddress, Connector> netTCPAccessPoints
-            = new Hashtable<TransportAddress, Connector>();
+    private Map<TransportAddress, List<Connector>> netTCPAccessPoints
+            = new Hashtable<TransportAddress, List<Connector>>();
 
     /**
      * A synchronized FIFO where incoming messages are stocked for processing.
@@ -235,7 +246,8 @@ class NetAccessManager
             Connector ap = (Connector)callingThread;
 
             //make sure nothing's left and notify user
-            removeSocket(ap.getListenAddress());
+            removeSocket(ap.getListenAddress(),
+                         ap.getRemoteAddress());
             logger.log(Level.WARNING, "Removing connector:" + ap, error);
         }
         else if( callingThread instanceof MessageProcessor )
@@ -265,56 +277,119 @@ class NetAccessManager
     protected void addSocket(IceSocketWrapper socket)
     {
         //no null check - let it through as a NullPointerException
+        Transport transport
+                = socket.getUDPSocket() != null ? Transport.UDP : Transport.TCP;
         TransportAddress localAddr
             = new TransportAddress(
                     socket.getLocalAddress(),
                     socket.getLocalPort(),
-                    socket.getUDPSocket() != null ? Transport.UDP :
-                        Transport.TCP);
+                    transport);
 
-        if (socket.getUDPSocket() != null &&
-            !netUDPAccessPoints.containsKey(localAddr))
+        synchronized (connectorsSyncRoot)
         {
-            Connector ap = new Connector(socket, messageQueue, this);
+            switch (transport)
+            {
+            case UDP:
+                if (!netUDPAccessPoints.containsKey(localAddr))
+                {
+                    Connector connector
+                            = new Connector(socket, messageQueue, this);
 
-            netUDPAccessPoints.put(localAddr, ap);
-            ap.start();
+                    netUDPAccessPoints.put(localAddr, connector);
+                    connector.start();
+                }
+                break;
+            case TCP:
+                List<Connector> connectors = netTCPAccessPoints.get(localAddr);
+                if (connectors == null)
+                {
+                    connectors = new LinkedList<Connector>();
+                    netTCPAccessPoints.put(localAddr, connectors);
+                }
+
+                Connector connector
+                    = findTCPConnectorByRemoteAddress(
+                        connectors,
+                        new TransportAddress(
+                            socket.getTCPSocket().getInetAddress(),
+                            socket.getTCPSocket().getPort(),
+                            Transport.TCP));
+                if (connector == null)
+                {
+                    connector = new Connector(socket, messageQueue, this);
+
+                    connectors.add(connector);
+                    connector.start();
+                }
+            }
+        }
+    }
+
+    /**
+     * From a list of <tt>Connector</tt>s with TCP sockets finds the one with
+     * remote address equal to <tt>dst</tt>.
+     * @param list the list of <tt>Connector</tt>s to search.
+     * @param dst the remote address of the connector to search for.
+     * @return the first <tt>Connector</tt> in <tt>list</tt> with a remote
+     * address equal to <tt>dst</tt>.
+     */
+    private Connector findTCPConnectorByRemoteAddress(
+            List<Connector> list,
+            TransportAddress dst)
+    {
+        if (dst == null)
+            return null;
+
+        for (Connector connector : list)
+        {
+            if (dst.equals(connector.getRemoteAddress()))
+            {
+                return connector;
+            }
         }
 
-        if (socket.getTCPSocket() != null &&
-            !netTCPAccessPoints.containsKey(localAddr))
-        {
-            Connector ap = new Connector(socket, messageQueue, this);
-
-            netTCPAccessPoints.put(localAddr, ap);
-            ap.start();
-        }
+        return null;
     }
 
     /**
      * Stops and deletes the specified access point.
      *
-     * @param address the address of the connector to remove.
+     * @param src the local address of the connector to remove.
+     * @param dst the remote address of the connector to remote. For TCP only,
+     * use <tt>null</tt> for UDP.
      */
-    protected void removeSocket(TransportAddress address)
+    protected void removeSocket(TransportAddress src,
+                                TransportAddress dst)
     {
-        Connector ap;
+        Connector connector = null;
 
-        switch (address.getTransport())
+        synchronized (connectorsSyncRoot)
         {
-        case TCP:
-            ap = netTCPAccessPoints.remove(address);
-            break;
-        case UDP:
-            ap = netUDPAccessPoints.remove(address);
-            break;
-        default:
-            ap = null;
-            break;
+            switch (src.getTransport())
+            {
+                case UDP:
+                    connector = netUDPAccessPoints.remove(src);
+                    break;
+                case TCP:
+                    List<Connector> connectors = netTCPAccessPoints.remove(src);
+                    if (connectors != null)
+                    {
+                        connector
+                            = findTCPConnectorByRemoteAddress(connectors, dst);
+
+                        if (connector != null)
+                        {
+                            connectors.remove(connector);
+                            if (connectors.isEmpty())
+                                netTCPAccessPoints.remove(src);
+                        }
+                    }
+                    break;
+            }
         }
 
-        if(ap != null)
-            ap.stop();
+        if(connector != null)
+            connector.stop();
     }
 
     /**
@@ -404,6 +479,37 @@ class NetAccessManager
         }
     }
 
+    /**
+     * Returns the <tt>Connector</tt> responsible for a particular source
+     * address and a particular destination address.
+     *
+     * @param src the source address.
+     * @param dst the destination address.
+     * Returns the <tt>Connector</tt> responsible for a particular source
+     * address and a particular destination address, or <tt>null</tt> if there's
+     * none.
+     */
+    private Connector getConnector(TransportAddress src,
+                                   TransportAddress dst)
+    {
+        synchronized (connectorsSyncRoot)
+        {
+            switch (src.getTransport())
+            {
+            case UDP:
+                return netUDPAccessPoints.get(src);
+            case TCP:
+                List<Connector> connectors = netTCPAccessPoints.get(src);
+                if (connectors != null)
+                {
+                    return findTCPConnectorByRemoteAddress(connectors, dst);
+                }
+            }
+        }
+
+        return null;
+    }
+
     //--------------- SENDING MESSAGES -----------------------------------------
     /**
      * Sends the specified stun message through the specified access point.
@@ -426,16 +532,11 @@ class NetAccessManager
     {
         byte[] bytes = stunMessage.encode(stunStack);
 
-        Connector ap = null;
-
-        if (srcAddr.getTransport() == Transport.UDP)
-            ap = netUDPAccessPoints.get(srcAddr);
-        else if (srcAddr.getTransport() == Transport.TCP)
-            ap = netTCPAccessPoints.get(srcAddr);
+        Connector ap = getConnector(srcAddr, remoteAddr);
         if (ap == null)
         {
             throw new IllegalArgumentException(
-                    "No socket has been added for source address: " + srcAddr);
+                    "No socket has been added for: " + srcAddr + " <-> " + remoteAddr);
         }
 
         ap.sendMessage(bytes, remoteAddr);
@@ -463,12 +564,7 @@ class NetAccessManager
     {
         byte[] bytes = channelData.encode();
 
-        Connector ap = null;
-
-        if (srcAddr.getTransport() == Transport.UDP)
-            ap = netUDPAccessPoints.get(srcAddr);
-        else if (srcAddr.getTransport() == Transport.TCP)
-            ap = netTCPAccessPoints.get(srcAddr);
+        Connector ap = getConnector(srcAddr, remoteAddr);
         if (ap == null)
         {
             throw new IllegalArgumentException(
@@ -498,11 +594,7 @@ class NetAccessManager
         throws IllegalArgumentException,
                IOException, StunException
     {
-        Connector ap = null;
-        if (srcAddr.getTransport() == Transport.UDP)
-            ap = netUDPAccessPoints.get(srcAddr);
-        else if (srcAddr.getTransport() == Transport.TCP)
-            ap = netTCPAccessPoints.get(srcAddr);
+        Connector ap = getConnector(srcAddr, remoteAddr);
         if (ap == null)
         {
             throw new IllegalArgumentException(
