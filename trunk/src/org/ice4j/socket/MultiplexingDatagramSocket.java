@@ -19,12 +19,11 @@ import java.util.logging.*;
  * get received through it but through associated
  * <tt>MultiplexedDatagramSocket</tt>s.
  *
- * @author Lubomir Marinov
+ * @author Lyubomir Marinov
  */
 public class MultiplexingDatagramSocket
     extends SafeCloseDatagramSocket
 {
-
     /**
      * The <tt>Logger</tt> used by the <tt>MultiplexingDatagramSocket</tt> class
      * and its instances for logging output.
@@ -41,6 +40,94 @@ public class MultiplexingDatagramSocket
         = new MultiplexedDatagramSocket[0];
 
     /**
+     * Initializes a new <tt>DatagramPacket</tt> instance which is a clone of a
+     * specific <tt>DatagramPacket</tt> i.e. the properties of the clone
+     * <tt>DatagramPacket</tt> are clones of the specified
+     * <tt>DatagramPacket</tt>.
+     *
+     * @param p the <tt>DatagramPacket</tt> to clone
+     * @return a new <tt>DatagramPacket</tt> instance which is a clone of the
+     * specified <tt>DatagramPacket</tt>
+     */
+    public static DatagramPacket clone(DatagramPacket p)
+    {
+        synchronized (p)
+        {
+            byte[] data = p.getData().clone();
+            InetAddress address = p.getAddress();
+            int port = p.getPort();
+
+            if ((address == null) || (port < 0))
+            {
+                return new DatagramPacket(data, p.getOffset(), p.getLength());
+            }
+            else
+            {
+                return
+                    new DatagramPacket(
+                            data, p.getOffset(), p.getLength(),
+                            address, port);
+            }
+        }
+    }
+
+    /**
+     * Copies the properties of a specific <tt>DatagramPacket</tt> to another
+     * <tt>DatagramPacket</tt>. The property values are not cloned.
+     *
+     * @param src the <tt>DatagramPacket</tt> which is to have its properties
+     * copied to <tt>dest</tt>
+     * @param dest the <tt>DatagramPacket</tt> which is to have its properties
+     * set to the value of the respective properties of <tt>src</tt>
+     */
+    public static void copy(DatagramPacket src, DatagramPacket dest)
+    {
+        synchronized (dest)
+        {
+            dest.setAddress(src.getAddress());
+            dest.setPort(src.getPort());
+
+            byte[] srcData = src.getData();
+
+            if (srcData == null)
+            {
+                dest.setLength(0);
+            }
+            else
+            {
+                byte[] destData = dest.getData();
+
+                if (destData == null)
+                {
+                    dest.setLength(0);
+                }
+                else
+                {
+                    int destOffset = dest.getOffset();
+                    int destLength = destData.length - destOffset;
+                    int srcLength = src.getLength();
+
+                    if (destLength >= srcLength)
+                    {
+                        destLength = srcLength;
+                    }
+                    else if (logger.isLoggable(Level.WARNING))
+                    {
+                        logger.log(
+                                Level.WARNING,
+                                "Truncating received DatagramPacket data!");
+                    }
+                    System.arraycopy(
+                            srcData, src.getOffset(),
+                            destData, destOffset,
+                            destLength);
+                    dest.setLength(destLength);
+                }
+            }
+        }
+    }
+
+    /**
      * The indicator which determines whether this <tt>DatagramSocket</tt> is
      * currently reading from the network using
      * {@link DatagramSocket#receive(DatagramPacket)}. When <tt>true</tt>,
@@ -50,18 +137,18 @@ public class MultiplexingDatagramSocket
     private boolean inReceive = false;
 
     /**
+     * The value with which {@link DatagramSocket#setReceiveBufferSize(int)} is
+     * to be invoked if {@link #setReceiveBufferSize} is <tt>true</tt>. 
+     */
+    private int receiveBufferSize;
+
+    /**
      * The list of <tt>DatagramPacket</tt>s to be received through this
      * <tt>DatagramSocket</tt> i.e. not accepted by the <tt>DatagramFilter</tt>s
      * of {@link #sockets} at the time of the reading from the network.
      */
     private final List<DatagramPacket> received
         = new LinkedList<DatagramPacket>();
-
-    /**
-     * The value with which {@link DatagramSocket#setReceiveBufferSize(int)} is
-     * to be invoked if {@link #setReceiveBufferSize} is <tt>true</tt>. 
-     */
-    private int receiveBufferSize;
 
     /**
      * The <tt>Object</tt> which synchronizes the access to {@link #inReceive}.
@@ -186,38 +273,6 @@ public class MultiplexingDatagramSocket
     }
 
     /**
-     * Initializes a new <tt>DatagramPacket</tt> instance which is a clone of a
-     * specific <tt>DatagramPacket</tt> i.e. the properties of the clone
-     * <tt>DatagramPacket</tt> are clones of the specified
-     * <tt>DatagramPacket</tt>.
-     *
-     * @param p the <tt>DatagramPacket</tt> to clone
-     * @return a new <tt>DatagramPacket</tt> instance which is a clone of the
-     * specified <tt>DatagramPacket</tt>
-     */
-    public static DatagramPacket clone(DatagramPacket p)
-    {
-        synchronized (p)
-        {
-            byte[] data = p.getData().clone();
-            InetAddress address = p.getAddress();
-            int port = p.getPort();
-
-            if ((address == null) || (port < 0))
-            {
-                return new DatagramPacket(data, p.getOffset(), p.getLength());
-            }
-            else
-            {
-                return
-                    new DatagramPacket(
-                            data, p.getOffset(), p.getLength(),
-                            address, port);
-            }
-        }
-    }
-
-    /**
      * Closes a specific <tt>MultiplexedDatagramSocket</tt> which filters
      * <tt>DatagramPacket</tt>s away from this <tt>DatagramSocket</tt>.
      *
@@ -234,7 +289,9 @@ public class MultiplexingDatagramSocket
                 if (sockets[i].equals(multiplexed))
                 {
                     if (socketCount == 1)
+                    {
                         sockets = NO_SOCKETS;
+                    }
                     else
                     {
                         MultiplexedDatagramSocket[] newSockets
@@ -248,56 +305,6 @@ public class MultiplexingDatagramSocket
                         sockets = newSockets;
                     }
                     break;
-                }
-            }
-        }
-    }
-
-    /**
-     * Copies the properties of a specific <tt>DatagramPacket</tt> to another
-     * <tt>DatagramPacket</tt>. The property values are not cloned.
-     *
-     * @param src the <tt>DatagramPacket</tt> which is to have its properties
-     * copied to <tt>dest</tt>
-     * @param dest the <tt>DatagramPacket</tt> which is to have its properties
-     * set to the value of the respective properties of <tt>src</tt>
-     */
-    public static void copy(DatagramPacket src, DatagramPacket dest)
-    {
-        synchronized (dest)
-        {
-            dest.setAddress(src.getAddress());
-            dest.setPort(src.getPort());
-
-            byte[] srcData = src.getData();
-
-            if (srcData == null)
-                dest.setLength(0);
-            else
-            {
-                byte[] destData = dest.getData();
-
-                if (destData == null)
-                    dest.setLength(0);
-                else
-                {
-                    int destOffset = dest.getOffset();
-                    int destLength = destData.length - destOffset;
-                    int srcLength = src.getLength();
-
-                    if (destLength >= srcLength)
-                        destLength = srcLength;
-                    else if (logger.isLoggable(Level.WARNING))
-                    {
-                        logger.log(
-                                Level.WARNING,
-                                "Truncating received DatagramPacket data!");
-                    }
-                    System.arraycopy(
-                            srcData, src.getOffset(),
-                            destData, destOffset,
-                            destLength);
-                    dest.setLength(destLength);
                 }
             }
         }
@@ -374,7 +381,9 @@ public class MultiplexingDatagramSocket
             int socketCount = sockets.length;
 
             if (socketCount == 0)
+            {
                 sockets = new MultiplexedDatagramSocket[] { socket };
+            }
             else
             {
                 MultiplexedDatagramSocket[] newSockets
@@ -387,6 +396,15 @@ public class MultiplexingDatagramSocket
 
             return socket;
         }
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public int getSoTimeout()
+    {
+    	return soTimeout;
     }
 
     /**
@@ -406,14 +424,14 @@ public class MultiplexingDatagramSocket
      *
      * @param p the <tt>DatagramPacket</tt> into which to place the incoming
      * data
-     * @throws SocketTimeoutException if <tt>setSoTimeout</tt> was
-     * previously called and the timeout has expired
      * @throws IOException if an I/O error occurs
+     * @throws SocketTimeoutException if <tt>setSoTimeout(int)</tt> was
+     * previously called and the timeout has expired
      * @see DatagramSocket#receive(DatagramPacket)
      */
     @Override
     public void receive(DatagramPacket p)
-        throws SocketTimeoutException, IOException
+        throws IOException
     {
         receive(received, p, soTimeout);
     }
@@ -433,24 +451,27 @@ public class MultiplexingDatagramSocket
      * @param timeout the maximum time in milliseconds to wait for a
      * packet. A timeout of zero is interpreted as an infinite
      * timeout
-     * @throws SocketTimeoutException if the timeout has expired
      * @throws IOException if an I/O error occurs
+     * @throws SocketTimeoutException if <tt>timeout</tt> is positive and has
+     * expired
      */
     private void receive(
             List<DatagramPacket> received,
             DatagramPacket p,
             int timeout)
-        throws SocketTimeoutException, IOException
+        throws IOException
     {
-        long now, start = System.currentTimeMillis();
+        long startTime = System.currentTimeMillis();
         DatagramPacket r = null;
 
         do
         {
-            now = System.currentTimeMillis();
-            if (timeout > 0 && now - start >= timeout)
-                throw new SocketTimeoutException("Socket timeout");
+            long now = System.currentTimeMillis();
 
+            // If there is a packet which has been received from the network and
+            // is to merely be received from the list of received
+            // DatagramPackets, then let it be received and do not throw a
+            // SocketTimeoutException.
             synchronized (received)
             {
                 if (!received.isEmpty())
@@ -461,6 +482,25 @@ public class MultiplexingDatagramSocket
                 }
             }
 
+            // Throw a SocketTimeoutException if the timeout is over/up.
+            long remainingTimeout;
+
+            if (timeout > 0)
+            {
+                remainingTimeout = timeout - (now - startTime);
+                if (remainingTimeout <= 0L)
+                {
+                    throw new SocketTimeoutException(
+                            Long.toString(remainingTimeout));
+                }
+            }
+            else
+            {
+                remainingTimeout = 1000L;
+            }
+
+            // Determine whether the caller will receive from the network or
+            // will wait for a previous caller to receive from the network.
             boolean wait;
 
             synchronized (receiveSyncRoot)
@@ -475,21 +515,19 @@ public class MultiplexingDatagramSocket
                     inReceive = true;
                 }
             }
-
             try
             {
                 if (wait)
                 {
+                    // The caller will wait for a previous caller to receive
+                    // from the network.
                     synchronized (received)
                     {
                         if (received.isEmpty())
                         {
                             try
                             {
-                                received.wait(
-                                        timeout > 0
-                                        ? timeout - (now - start)
-                                        : 1000);
+                                received.wait(remainingTimeout);
                             }
                             catch (InterruptedException ie)
                             {
@@ -503,6 +541,7 @@ public class MultiplexingDatagramSocket
                     continue;
                 }
 
+                // The caller will receive from the network.
                 DatagramPacket c = clone(p);
 
                 synchronized (receiveSyncRoot)
@@ -523,6 +562,8 @@ public class MultiplexingDatagramSocket
                 }
                 super.receive(c);
 
+                // The caller received from the network. Copy/add the packet to
+                // the receive list of the sockets which accept it.
                 synchronized (socketsSyncRoot)
                 {
                     boolean accepted = false;
@@ -538,14 +579,10 @@ public class MultiplexingDatagramSocket
                             }
                             accepted = true;
 
-                            /*
-                             * Emil: Don't break because we want all filtering
-                             * sockets to get the received packet.
-                             */
-                            //break;
+                            // Emil: Don't break because we want all filtering
+                            // sockets to get the received packet.
                         }
                     }
-
                     if (!accepted)
                     {
                         synchronized (this.received)
@@ -577,12 +614,12 @@ public class MultiplexingDatagramSocket
      * @param multiplexed the <tt>MultiplexedDatagramSocket</tt> which requests
      * the receipt of a <tt>DatagramPacket</tt> from the network
      * @param p the <tt>DatagramPacket</tt> to receive the data from the network
-     * @throws SocketTimeoutException if <tt>setSoTimeout</tt> was
-     * previously called and the timeout has expired
      * @throws IOException if an I/O error occurs
+     * @throws SocketTimeoutException if <tt>setSoTimeout(int)</tt> was
+     * previously called on <tt>multiplexed</tt> and the timeout has expired
      */
     void receive(MultiplexedDatagramSocket multiplexed, DatagramPacket p)
-        throws SocketTimeoutException, IOException
+        throws IOException
     {
         receive(multiplexed.received, p, multiplexed.getSoTimeout());
     }
@@ -605,6 +642,7 @@ public class MultiplexingDatagramSocket
             else
             {
                 super.setReceiveBufferSize(receiveBufferSize);
+
                 setReceiveBufferSize = false;
             }
         }
@@ -618,15 +656,7 @@ public class MultiplexingDatagramSocket
         throws SocketException
     {
         super.setSoTimeout(timeout);
-        soTimeout = timeout;
-    }
 
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public int getSoTimeout()
-    {
-    	return soTimeout;
+        soTimeout = timeout;
     }
 }
