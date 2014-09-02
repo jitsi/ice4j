@@ -7,7 +7,6 @@
 package org.ice4j.stack;
 
 import java.io.*;
-import java.net.*;
 import java.util.*;
 import java.util.logging.*;
 
@@ -278,7 +277,7 @@ class NetAccessManager
     {
         //no null check - let it through as a NullPointerException
         Transport transport
-                = socket.getUDPSocket() != null ? Transport.UDP : Transport.TCP;
+            = socket.getUDPSocket() != null ? Transport.UDP : Transport.TCP;
         TransportAddress localAddr
             = new TransportAddress(
                     socket.getLocalAddress(),
@@ -299,6 +298,7 @@ class NetAccessManager
                     connector.start();
                 }
                 break;
+
             case TCP:
                 List<Connector> connectors = netTCPAccessPoints.get(localAddr);
                 if (connectors == null)
@@ -321,6 +321,7 @@ class NetAccessManager
                     connectors.add(connector);
                     connector.start();
                 }
+                break;
             }
         }
     }
@@ -358,8 +359,7 @@ class NetAccessManager
      * @param dst the remote address of the connector to remote. For TCP only,
      * use <tt>null</tt> for UDP.
      */
-    protected void removeSocket(TransportAddress src,
-                                TransportAddress dst)
+    protected void removeSocket(TransportAddress src, TransportAddress dst)
     {
         Connector connector = null;
 
@@ -367,24 +367,24 @@ class NetAccessManager
         {
             switch (src.getTransport())
             {
-                case UDP:
-                    connector = netUDPAccessPoints.remove(src);
-                    break;
-                case TCP:
-                    List<Connector> connectors = netTCPAccessPoints.remove(src);
-                    if (connectors != null)
-                    {
-                        connector
-                            = findTCPConnectorByRemoteAddress(connectors, dst);
+            case UDP:
+                connector = netUDPAccessPoints.remove(src);
+                break;
 
-                        if (connector != null)
-                        {
-                            connectors.remove(connector);
-                            if (connectors.isEmpty())
-                                netTCPAccessPoints.remove(src);
-                        }
+            case TCP:
+                List<Connector> connectors = netTCPAccessPoints.remove(src);
+                if (connectors != null)
+                {
+                    connector
+                        = findTCPConnectorByRemoteAddress(connectors, dst);
+                    if (connector != null)
+                    {
+                        connectors.remove(connector);
+                        if (connectors.isEmpty())
+                            netTCPAccessPoints.remove(src);
                     }
-                    break;
+                }
+                break;
             }
         }
 
@@ -489,8 +489,7 @@ class NetAccessManager
      * address and a particular destination address, or <tt>null</tt> if there's
      * none.
      */
-    private Connector getConnector(TransportAddress src,
-                                   TransportAddress dst)
+    private Connector getConnector(TransportAddress src, TransportAddress dst)
     {
         synchronized (connectorsSyncRoot)
         {

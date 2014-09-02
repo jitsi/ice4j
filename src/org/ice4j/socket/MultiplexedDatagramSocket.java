@@ -21,12 +21,11 @@ import java.util.*;
  * <tt>MultiplexedDatagramSocket</tt> will not be received through the
  * associated <tt>MultiplexingDatagramSocket</tt>.
  *
- * @author Lubomir Marinov
+ * @author Lyubomir Marinov
  */
 public class MultiplexedDatagramSocket
     extends DelegatingDatagramSocket
 {
-
     /**
      * The <tt>DatagramPacketFilter</tt> which determines which
      * <tt>DatagramPacket</tt>s read from the network by {@link #multiplexing}
@@ -45,8 +44,7 @@ public class MultiplexedDatagramSocket
      * The list of <tt>DatagramPacket</tt>s to be received through this
      * <tt>DatagramSocket</tt> i.e. accepted by {@link #filter}.
      */
-    final List<DatagramPacket> received
-        = new LinkedList<DatagramPacket>();
+    final List<DatagramPacket> received = new LinkedList<DatagramPacket>();
 
     /**
      * Initializes a new <tt>MultiplexedDatagramSocket</tt> which is unbound and
