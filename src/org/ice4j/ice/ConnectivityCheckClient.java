@@ -304,7 +304,7 @@ class ConnectivityCheckClient
     /**
      * Handles the <tt>response</tt> as per the procedures described in RFC 5245
      * or in other words, by either changing the state of the corresponding pair
-     * to FAILED, or SUCCEDED, or rescheduling a check in case of a role
+     * to FAILED, or SUCCEEDED, or rescheduling a check in case of a role
      * conflict.
      *
      * @param ev the {@link StunResponseEvent} that contains the newly received
@@ -318,10 +318,8 @@ class ConnectivityCheckClient
         //make sure that the response came from the right place.
         if (!checkSymmetricAddresses(ev))
         {
-            logger.fine("Received a non-symmetric response for pair: "
-                        + checkedPair.toShortString() + ". Failing");
-            logger.info("non-symmetric response for pair: "
-                        + checkedPair.toShortString() + ", failing");
+            logger.info("Received a non-symmetric response for pair: "
+                        + checkedPair.toShortString() + ". Failing.");
             checkedPair.setStateFailed();
         }
         else
