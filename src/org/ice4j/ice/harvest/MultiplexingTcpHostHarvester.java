@@ -112,7 +112,7 @@ public class MultiplexingTcpHostHarvester
     public MultiplexingTcpHostHarvester(int port)
         throws IOException
     {
-        this(port, NetworkInterface.getNetworkInterfaces());
+        this(port, Collections.list(NetworkInterface.getNetworkInterfaces()));
     }
 
     /**
@@ -138,7 +138,7 @@ public class MultiplexingTcpHostHarvester
      * @param interfaces the interfaces to listen on.
      */
     public MultiplexingTcpHostHarvester(int port,
-                                        Enumeration<NetworkInterface> interfaces)
+                                        List<NetworkInterface> interfaces)
         throws IOException
     {
         initializeLocalAddresses(port, interfaces);
@@ -179,16 +179,16 @@ public class MultiplexingTcpHostHarvester
      */
     private void initializeLocalAddresses(
             int port,
-            Enumeration<NetworkInterface> interfaces)
+            List<NetworkInterface> interfaces)
         throws IOException
+
     {
         boolean useIPv6 = !StackProperties.getBoolean(
                 StackProperties.DISABLE_IPv6,
                 false);
 
-        while (interfaces.hasMoreElements())
+        for (NetworkInterface iface : interfaces)
         {
-            NetworkInterface iface = interfaces.nextElement();
             if (NetworkUtils.isInterfaceLoopback(iface)
                     || !NetworkUtils.isInterfaceUp(iface)
                     || !HostCandidateHarvester.isInterfaceAllowed(iface))
