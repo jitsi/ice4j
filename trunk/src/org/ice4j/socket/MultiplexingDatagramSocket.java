@@ -404,7 +404,7 @@ public class MultiplexingDatagramSocket
     @Override
     public int getSoTimeout()
     {
-    	return soTimeout;
+        return soTimeout;
     }
 
     /**
