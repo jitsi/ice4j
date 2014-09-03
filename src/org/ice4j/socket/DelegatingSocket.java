@@ -7,6 +7,7 @@
 package org.ice4j.socket;
 
 import java.io.*;
+import java.nio.*;
 import java.nio.channels.*;
 import java.net.*;
 
@@ -58,6 +59,13 @@ public class DelegatingSocket
      * The last time an information about packet lost has been logged.
      */
     private long lastLostPacketLogTime = 0;
+
+    /**
+     * A <tt>ByteBuffer</tt> instance used in
+     * {@link #receiveFromChannel(java.nio.channels.SocketChannel, java.net.DatagramPacket)}
+     * to read the 2-byte length field into.
+     */
+    private final ByteBuffer byteBufferLen = ByteBuffer.allocate(2);
 
     /**
      * Initializes a new <tt>DelegatingSocket</tt>.
@@ -826,40 +834,53 @@ public class DelegatingSocket
         }
         else
         {
-            if (inputStream == null)
+            SocketChannel channel = getChannel();
+            if (channel == null)
             {
-                inputStream = this.getInputStream();
-            }
+                // Read from our InputStream
+                if (inputStream == null)
+                {
+                    inputStream = this.getInputStream();
+                }
 
-            DelegatingSocket.receiveFromNetwork(
-                    p,
-                    inputStream,
-                    this.getInetAddress(),
-                    this.getPort());
+                DelegatingSocket.receiveFromNetwork(
+                        p,
+                        inputStream,
+                        this.getInetAddress(),
+                        this.getPort());
+            }
+            else
+            {
+                // For nio SocketChannel-s, the read() from the InputStream and
+                // the write() to the OutputStream both lock on the same object.
+                // So, read from the Channel directly in order to avoid
+                // preventing any writing threads from proceeding.
+                receiveFromChannel(channel, p);
+            }
 
             // no exception packet is successfully received, log it.
             // If this is not a STUN/TURN packet, then this is a RTP packet.
-            if(!StunDatagramPacketFilter.isStunPacket(p))
+            if (!StunDatagramPacketFilter.isStunPacket(p))
             {
                 ++nbReceivedRtpPackets;
             }
             InetSocketAddress localAddress
-                = (InetSocketAddress) super.getLocalSocketAddress();
+                    = (InetSocketAddress) super.getLocalSocketAddress();
             DelegatingDatagramSocket.logPacketToPcap(
                     p,
                     this.nbReceivedRtpPackets,
                     false,
                     localAddress.getAddress(),
                     localAddress.getPort());
-            // Log RTP losses if > 5%.
-            updateRtpLosses(p);
+                    // Log RTP losses if > 5%.
+                    updateRtpLosses(p);
         }
-
     }
 
     /**
-     * Reads TCP stream and fit corresponding bytes to the datagram given in
-     * parameter.
+     * Receives an RFC4571-formatted frame from <tt>inputStream</tt> into
+     * <tt>p</tt>, and sets <tt>p</tt>'s port and address to <tt>port</tt> and
+     * <tt>inetAddress</tt>.
      *
      * @param p the <tt>DatagramPacket</tt> into which to place the incoming
      * data.
@@ -916,8 +937,48 @@ public class DelegatingSocket
         {
             throw new SocketException("Failed to receive data from socket");
         }
+    }
 
-        data = null;
+    /**
+     * Receives an RFC4571-formatted frame from <tt>channel</tt> into
+     * <tt>p</tt>, and sets <tt>p</tt>'s port and address to the remote port
+     * and address of this <tt>Socket</tt>.
+     */
+    private synchronized void receiveFromChannel(SocketChannel channel,
+                                                 DatagramPacket p)
+        throws IOException
+    {
+        int ret;
+        while (byteBufferLen.hasRemaining())
+        {
+            ret = channel.read(byteBufferLen);
+            if (ret == -1)
+                throw new SocketException("Failed to receive data from socket.");
+        }
+
+        byteBufferLen.flip();
+        int fb = byteBufferLen.get();
+        int sb = byteBufferLen.get();
+        int frameLength = (((fb & 0xff) << 8) | (sb & 0xff));
+        byteBufferLen.flip();
+
+        byte[] data = p.getData();
+        if (data == null || data.length < frameLength)
+            data = new byte[frameLength];
+
+        ByteBuffer byteBuffer = ByteBuffer.wrap(data, 0, frameLength);
+
+        while (byteBuffer.hasRemaining())
+        {
+            ret = channel.read(byteBuffer);
+            if (ret == -1)
+                throw new SocketException("Failed to receive data from socket.");
+        }
+
+        p.setData(data);
+        p.setLength(frameLength);
+        p.setAddress(getInetAddress());
+        p.setPort(getPort());
     }
 
     /**

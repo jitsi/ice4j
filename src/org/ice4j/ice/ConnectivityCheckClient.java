@@ -319,7 +319,7 @@ class ConnectivityCheckClient
         if (!checkSymmetricAddresses(ev))
         {
             logger.info("Received a non-symmetric response for pair: "
-                        + checkedPair.toShortString() + ". Failing.");
+                                + checkedPair.toShortString() + ". Failing.");
             checkedPair.setStateFailed();
         }
         else
@@ -328,7 +328,7 @@ class ConnectivityCheckClient
             char messageType = response.getMessageType();
 
             //handle error responses.
-            if(messageType== Response.BINDING_ERROR_RESPONSE)
+            if(messageType == Response.BINDING_ERROR_RESPONSE)
             {
                 if(!response.containsAttribute(Attribute.ERROR_CODE))
                 {
@@ -748,10 +748,6 @@ class ConnectivityCheckClient
         else
         {
             int code = cl * 100 + co;
-            logger.fine(
-                    "Received an unrecoverable error response (code = " + code
-                    + ") for pair " + pair.toShortString() +
-                    " will mark the pair as FAILED.");
             logger.info(
                     "Error response for pair: " + pair.toShortString() +
                     ", failing.  Code = " + code +
