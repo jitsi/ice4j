@@ -859,6 +859,11 @@ public class MultiplexingTcpHostHarvester
         }
     }
 
+    /**
+     * An exception used internally by
+     * {@link org.ice4j.ice.harvest.MultiplexingTcpHostHarvester.ReadThread}.
+     */
+    @SuppressWarnings("serial")
     private class ReadThreadException
         extends Exception
     {
