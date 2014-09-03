@@ -10,6 +10,7 @@ package org.ice4j.socket;
 import java.io.*;
 import java.net.*;
 import java.util.*;
+import java.util.logging.*;
 
 /**
  * Represents a <tt>Socket</tt> which receives <tt>DatagramPacket</tt>s
@@ -26,6 +27,12 @@ import java.util.*;
 public class MultiplexedSocket
     extends DelegatingSocket
 {
+    /**
+     * The <tt>Logger</tt> used by the <tt>MultiplexedSocket</tt> class
+     * and its instances for logging output.
+     */
+    private static final Logger logger
+            = Logger.getLogger(MultiplexedSocket.class.getName());
     /**
      * The <tt>DatagramPacketFilter</tt> which determines which
      * <tt>DatagramPacket</tt>s read from the network by {@link #multiplexing}
@@ -167,11 +174,6 @@ public class MultiplexedSocket
         private final DatagramPacket packet = new DatagramPacket(buf, 1500);
 
         /**
-         * Synchronization object for read operation.
-         */
-        private final Object readSyncRoot = new Object();
-
-        /**
          * Initializes a new <tt>TCPInputStream</tt>.
          */
         public InputStreamImpl()
@@ -213,22 +215,35 @@ public class MultiplexedSocket
         public int read(byte[] b, int off, int len)
             throws IOException
         {
-            synchronized(readSyncRoot)
+            if (off == 0) // optimization: avoid copy to b
             {
+                packet.setData(b);
                 receive(packet);
 
-                byte[] packetData = packet.getData();
-                int packetOff = packet.getOffset();
-                int packetLen = packet.getLength();
-
-                int lengthRead = Math.min(len, packetLen);
-                System.arraycopy(
-                        packetData, packetOff,
-                        b, off,
-                        lengthRead);
-
-                return lengthRead;
+                int lengthRead = packet.getLength();
+                if (packet.getData() == b && lengthRead <= len)
+                    return lengthRead;
+                else
+                    logger.warning("Failed to read directly into the provided"
+                                       + " buffer, len=" + len + " lengthRead="
+                                       + lengthRead + " (packet.getData() == b)="
+                                       + (packet.getData() == b));
             }
+
+            // either there's an offset to take into account, or receiving
+            // directly in 'b' failed.
+
+            packet.setData(buf);
+            receive(packet);
+
+            int packetLen = packet.getLength();
+            int lengthRead = Math.min(len, packetLen);
+            System.arraycopy(
+                    packet.getData(), packet.getOffset(),
+                    b, off,
+                    lengthRead);
+
+            return lengthRead;
         }
 
         /**
