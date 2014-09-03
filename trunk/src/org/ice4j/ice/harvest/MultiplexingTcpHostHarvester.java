@@ -508,6 +508,7 @@ public class MultiplexingTcpHostHarvester
         {
             selector = Selector.open();
             pipeSource = pipe.source();
+            pipeSource.configureBlocking(false);
             pipeSource.register(selector, SelectionKey.OP_READ);
             buffer = ByteBuffer.allocate(1);
             datagramPacket = new DatagramPacket(new byte[1500], 1500);
