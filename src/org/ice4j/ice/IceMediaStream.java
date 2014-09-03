@@ -385,7 +385,8 @@ public class IceMediaStream
 
             for(RemoteCandidate remoteCnd : remoteCnds)
             {
-                if(localCnd.canReach(remoteCnd))
+                if(localCnd.canReach(remoteCnd)
+                        && remoteCnd.getTransportAddress().getPort() != 0)
                 {
                     CandidatePair pair = new CandidatePair(localCnd,
                         remoteCnd);

@@ -387,7 +387,8 @@ public class Component
                 //pair each of the new remote candidates with each of our locals
                 for(RemoteCandidate remoteCnd : remoteUpdateCandidates)
                 {
-                    if(localCnd.canReach(remoteCnd))
+                    if(localCnd.canReach(remoteCnd)
+                            && remoteCnd.getTransportAddress().getPort() != 0)
                     {
                         // A single LocalCandidate might be/become connected
                         // to more more than one remote address, and that's ok
