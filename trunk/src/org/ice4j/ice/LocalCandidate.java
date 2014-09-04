@@ -38,6 +38,11 @@ public abstract class LocalCandidate
     private String ufrag = null;
 
     /**
+     * Whether this <tt>LocalCandidate</tt> uses SSL.
+     */
+    private boolean isSSL = false;
+
+    /**
      * The <tt>Logger</tt> used by the <tt>LocalCandidate</tt> class and its
      * instances for logging output.
      */
@@ -394,5 +399,23 @@ public abstract class LocalCandidate
             TransportAddress relatedAddress)
     {
         return getParentComponent().findLocalCandidate(relatedAddress);
+    }
+
+    /**
+     * Gets the value of the 'ssl' flag.
+     * @return the value of the 'ssl' flag.
+     */
+    public boolean isSSL()
+    {
+        return isSSL;
+    }
+
+    /**
+     * Sets the value of the 'ssl' flag.
+     * @param isSSL the value to set.
+     */
+    public void setSSL(boolean isSSL)
+    {
+        this.isSSL = isSSL;
     }
 }

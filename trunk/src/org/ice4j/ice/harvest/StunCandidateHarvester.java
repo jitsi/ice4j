@@ -416,7 +416,7 @@ public class StunCandidateHarvester
 
     /**
      * Returns the host candidate.
-     * For UDP it simply returns the candidate passed as paramter
+     * For UDP it simply returns the candidate passed as a parameter.
      *
      * However for TCP, we cannot return the same hostCandidate because in Java
      * a  "server" socket cannot connect to a destination with the same local

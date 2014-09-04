@@ -25,9 +25,9 @@ public class GoogleTurnSSLCandidateHarvester
     extends GoogleTurnCandidateHarvester
 {
     /**
-     * Data for the SSL server handshake.
+     * Data for the SSL message sent by the server.
      */
-    private static final byte SSL_SERVER_HANDSHAKE[] =
+    static final byte SSL_SERVER_HANDSHAKE[] =
     {
         0x16, 0x03, 0x01, 0x00, 0x4a, 0x02, 0x00, 0x00,
         0x46, 0x03, 0x01, 0x42, (byte)0x85, 0x45, (byte)0xa7, 0x27,
@@ -43,9 +43,9 @@ public class GoogleTurnSSLCandidateHarvester
     };
 
     /**
-     * Data for the SSL client handshake.
+     * Data for the SSL message sent by the client.
      */
-    private static final byte SSL_CLIENT_HANDSHAKE[] =
+    static final byte SSL_CLIENT_HANDSHAKE[] =
     {
         (byte)0x80, 0x46, 0x01, 0x03, 0x01, 0x00, 0x2d, 0x00,
         0x00, 0x00, 0x10, 0x01, 0x00, (byte)0x80, 0x03, 0x00,

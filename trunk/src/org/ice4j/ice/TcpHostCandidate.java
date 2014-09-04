@@ -37,7 +37,8 @@ public class TcpHostCandidate
      * @param parentComponent the <tt>Component</tt> that this candidate
      * belongs to.
      */
-    public TcpHostCandidate(TransportAddress transportAddress, Component parentComponent)
+    public TcpHostCandidate(TransportAddress transportAddress,
+                            Component parentComponent)
     {
         super(transportAddress,
               parentComponent);
