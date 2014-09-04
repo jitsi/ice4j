@@ -80,6 +80,11 @@ public class MultiplexingTcpHostHarvester
     private boolean close = false;
 
     /**
+     * Whether or not to use ssltcp.
+     */
+    private boolean ssltcp = false;
+
+    /**
      * Channels pending to be added to the list that {@link #readThread} reads
      * from.
      */
@@ -112,7 +117,42 @@ public class MultiplexingTcpHostHarvester
     public MultiplexingTcpHostHarvester(int port)
         throws IOException
     {
-        this(port, Collections.list(NetworkInterface.getNetworkInterfaces()));
+        this(port,
+             Collections.list(NetworkInterface.getNetworkInterfaces()),
+             false);
+    }
+
+    /**
+     * Initializes a new <tt>MultiplexingTcpHostHarvester</tt>, which is to
+     * listen on port number <tt>port</tt> on all IP addresses on all
+     * available interfaces.
+     *
+     * @param port the port to listen on.
+     * @param ssltcp whether to use ssltcp or not.
+     */
+    public MultiplexingTcpHostHarvester(int port, boolean ssltcp)
+            throws IOException
+    {
+        this(port,
+             Collections.list(NetworkInterface.getNetworkInterfaces()),
+             ssltcp);
+    }
+
+    /**
+     * Initializes a new <tt>MultiplexingTcpHostHarvester</tt>, which is to
+     * listen on the specified list of <tt>TransportAddress</tt>es.
+     *
+     * @param transportAddresses the transport addresses to listen on.
+     * @param ssltcp whether to use ssltcp or not.
+     */
+    public MultiplexingTcpHostHarvester(
+            List<TransportAddress> transportAddresses,
+            boolean ssltcp)
+        throws IOException
+    {
+        this.ssltcp = ssltcp;
+        this.localAddresses.addAll(transportAddresses);
+        init();
     }
 
     /**
@@ -123,10 +163,9 @@ public class MultiplexingTcpHostHarvester
      */
     public MultiplexingTcpHostHarvester(
             List<TransportAddress> transportAddresses)
-        throws IOException
+            throws IOException
     {
-        this.localAddresses.addAll(transportAddresses);
-        init();
+        this(transportAddresses, false);
     }
 
     /**
@@ -138,9 +177,11 @@ public class MultiplexingTcpHostHarvester
      * @param interfaces the interfaces to listen on.
      */
     public MultiplexingTcpHostHarvester(int port,
-                                        List<NetworkInterface> interfaces)
+                                        List<NetworkInterface> interfaces,
+                                        boolean ssltcp)
         throws IOException
     {
+        this.ssltcp = ssltcp;
         initializeLocalAddresses(port, interfaces);
         init();
     }
@@ -212,7 +253,9 @@ public class MultiplexingTcpHostHarvester
                 if((addr instanceof Inet4Address) || useIPv6)
                 {
                      TransportAddress transportAddress
-                        = new TransportAddress(addr, port, Transport.TCP);
+                        = new TransportAddress(addr,
+                                               port,
+                                               Transport.TCP);
                     localAddresses.add(transportAddress);
                 }
             }
@@ -292,8 +335,10 @@ public class MultiplexingTcpHostHarvester
             TcpHostCandidate candidate
                     = new TcpHostCandidate(transportAddress, component);
             candidate.setTcpType(CandidateTcpType.PASSIVE);
+            if (ssltcp)
+                candidate.setSSL(true);
 
-            candidates.add(new TcpHostCandidate(transportAddress, component));
+            candidates.add(candidate);
         }
         return candidates;
     }
@@ -675,11 +720,36 @@ public class MultiplexingTcpHostHarvester
                 // socket's input stream
                 channel.configureBlocking(true);
 
-                // read an RFC4571 frame into datagramPacket
                 Socket socket = channel.socket();
+                InputStream inputStream = socket.getInputStream();
+
+                // If we use ssltcp we wait for a pseudo-ssl handshake from the
+                // client.
+                if (ssltcp)
+                {
+                    byte[] buf
+                            = new byte[GoogleTurnSSLCandidateHarvester
+                                            .SSL_CLIENT_HANDSHAKE.length];
+
+                    socket.getInputStream().read(buf);
+                    if (Arrays.equals(buf,
+                                      GoogleTurnSSLCandidateHarvester
+                                          .SSL_CLIENT_HANDSHAKE))
+                    {
+                        socket.getOutputStream().write(
+                            GoogleTurnSSLCandidateHarvester
+                                .SSL_SERVER_HANDSHAKE);
+                    }
+                    else
+                    {
+                        throw new ReadThreadException(
+                            "Expected a pseudo ssl handshake, didn't get one.");
+                    }
+                }
+                // read an RFC4571 frame into datagramPacket
                 DelegatingSocket.receiveFromNetwork(
                         datagramPacket,
-                        socket.getInputStream(),
+                        inputStream,
                         socket.getLocalAddress(),
                         socket.getLocalPort());
 

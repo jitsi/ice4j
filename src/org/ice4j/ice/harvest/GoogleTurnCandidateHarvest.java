@@ -100,7 +100,7 @@ public class GoogleTurnCandidateHarvest
             TransportAddress relayedAddress
                 = ((MappedAddressAttribute) attribute).getAddress();
 
-            if(harvester.stunServer.getTransport() == Transport.TCP)
+            if (harvester.stunServer.getTransport() == Transport.TCP)
             {
                 relayedAddress = new TransportAddress(
                     relayedAddress.getAddress(),
