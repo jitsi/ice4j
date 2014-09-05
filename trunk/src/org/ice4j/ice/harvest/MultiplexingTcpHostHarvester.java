@@ -511,12 +511,6 @@ public class MultiplexingTcpHostHarvester
                 = new LinkedList<SocketChannel>();
 
         /**
-         * A <tt>DatagramPacket</tt> into which we will try to read STUN
-         * messages.
-         */
-        private final DatagramPacket datagramPacket;
-
-        /**
          * Initializes a new <tt>ReadThread</tt>.
          * @throws IOException if the selector to be used fails to open.
          */
@@ -524,7 +518,6 @@ public class MultiplexingTcpHostHarvester
                 throws IOException
         {
             selector = MultiplexingTcpHostHarvester.this.readSelector;
-            datagramPacket = new DatagramPacket(new byte[1500], 1500);
         }
 
         /**
@@ -676,7 +669,7 @@ public class MultiplexingTcpHostHarvester
                             = new byte[GoogleTurnSSLCandidateHarvester
                                             .SSL_CLIENT_HANDSHAKE.length];
 
-                    socket.getInputStream().read(buf);
+                    inputStream.read(buf);
                     if (Arrays.equals(buf,
                                       GoogleTurnSSLCandidateHarvester
                                           .SSL_CLIENT_HANDSHAKE))
@@ -691,12 +684,19 @@ public class MultiplexingTcpHostHarvester
                             "Expected a pseudo ssl handshake, didn't get one.");
                     }
                 }
+
                 // read an RFC4571 frame into datagramPacket
+
+                // TODO refactor so that:
+                // 1. We don't block
+                // 2. We know the length of the buffer to allocate
+                DatagramPacket datagramPacket
+                        = new DatagramPacket(new byte[1500],1500);
                 DelegatingSocket.receiveFromNetwork(
                         datagramPacket,
                         inputStream,
-                        socket.getLocalAddress(),
-                        socket.getLocalPort());
+                        socket.getInetAddress(),
+                        socket.getPort());
 
                 // Does this look like a STUN binding request?
                 // What's the username?
@@ -724,7 +724,7 @@ public class MultiplexingTcpHostHarvester
 
 
                 //phew, finally
-                handSocketToComponent(socket, component);
+                handSocketToComponent(socket, component, datagramPacket);
             }
             catch (IOException e)
             {
@@ -745,11 +745,15 @@ public class MultiplexingTcpHostHarvester
         }
 
         /**
-         * Makes <tt>socket</tt> available to <tt>component</tt>.
+         * Makes <tt>socket</tt> available to <tt>component</tt> and pushes
+         * back <tt>datagramPacket</tt> into the STUN socket.
          * @param socket the <tt>Socket</tt>.
          * @param component the <tt>Component</tt>.
+         * @param datagramPacket the <tt>DatagramPacket</tt> to push back.
          */
-        private void handSocketToComponent(Socket socket, Component component)
+        private void handSocketToComponent(Socket socket,
+                                           Component component,
+                                           DatagramPacket datagramPacket)
         {
             IceProcessingState state
                     = component.getParentStream().getParentAgent().getState();
@@ -775,6 +779,8 @@ public class MultiplexingTcpHostHarvester
                 stunSocket
                     = new IceTcpSocketWrapper(
                         multiplexing.getSocket(new StunDatagramPacketFilter()));
+                stunSocket
+                    = new PushBackIceSocketWrapper(stunSocket, datagramPacket);
             }
             catch (IOException ioe)
             {
@@ -887,4 +893,131 @@ public class MultiplexingTcpHostHarvester
             super(s);
         }
     }
+
+    /**
+     * An <tt>IceSocketWrapper</tt> implementation which allows a
+     * <tt>DatagramPacket</tt> to be pushed back and received on the first
+     * call to {@link #receive(java.net.DatagramPacket)}
+     */
+    private static class PushBackIceSocketWrapper
+        extends IceSocketWrapper
+    {
+        /**
+         * The <tt>IceSocketWrapper</tt> that this instance wraps around.
+         */
+        private IceSocketWrapper wrapped;
+
+        /**
+         * The <tt>DatagramPacket</tt> which will be used on the first call
+         * to {@link #receive(java.net.DatagramPacket)}.
+         */
+        private DatagramPacket datagramPacket;
+
+        /**
+         * Initializes a new <tt>PushBackIceSocketWrapper</tt> instance that
+         * wraps around <tt>wrappedWrapper</tt> and reads from
+         * <tt>datagramSocket</tt> on the first call to
+         * {@link #receive(java.net.DatagramPacket)}
+         *
+         * @param wrappedWrapper the <tt>IceSocketWrapper</tt> instance that we
+         * wrap around.
+         * @param datagramPacket the <tt>DatagramPacket</tt> which will be used
+         * on the first call to {@link #receive(java.net.DatagramPacket)}
+         */
+        private PushBackIceSocketWrapper(IceSocketWrapper wrappedWrapper,
+                                         DatagramPacket datagramPacket)
+        {
+            this.wrapped = wrappedWrapper;
+            this.datagramPacket = datagramPacket;
+        }
+
+        /**
+         * {@inheritDoc}
+         */
+        @Override
+        public void send(DatagramPacket p) throws IOException
+        {
+            wrapped.send(p);
+        }
+
+        /**
+         * {@inheritDoc}
+         *
+         * On the first call to this instance reads from {@link #datagramPacket},
+         * on subsequent calls delegates to {@link #wrapped}.
+         */
+        @Override
+        public void receive(DatagramPacket p) throws IOException
+        {
+            if (datagramPacket != null)
+            {
+                int len = Math.min(p.getLength(), datagramPacket.getLength());
+                System.arraycopy(datagramPacket.getData(), 0,
+                                 p.getData(), 0,
+                                 len);
+                p.setAddress(datagramPacket.getAddress());
+                p.setPort(datagramPacket.getPort());
+                datagramPacket = null;
+            }
+            else
+            {
+                wrapped.receive(p);
+            }
+        }
+
+        /**
+         * {@inheritDoc}
+         */
+        @Override
+        public void close()
+        {
+            wrapped.close();
+        }
+
+        /**
+         * {@inheritDoc}
+         */
+        @Override
+        public InetAddress getLocalAddress()
+        {
+            return wrapped.getLocalAddress();
+        }
+
+        /**
+         * {@inheritDoc}
+         */
+        @Override
+        public int getLocalPort()
+        {
+            return wrapped.getLocalPort();
+        }
+
+        /**
+         * {@inheritDoc}
+         */
+        @Override
+        public SocketAddress getLocalSocketAddress()
+        {
+            return wrapped.getLocalSocketAddress();
+        }
+
+        /**
+         * {@inheritDoc}
+         */
+        @Override
+        public Socket getTCPSocket()
+        {
+            return wrapped.getTCPSocket();
+        }
+
+        /**
+         * {@inheritDoc}
+         */
+        @Override
+        public DatagramSocket getUDPSocket()
+        {
+            return wrapped.getUDPSocket();
+        }
+    }
+
 }
