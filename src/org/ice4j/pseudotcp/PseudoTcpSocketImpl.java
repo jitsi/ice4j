@@ -691,7 +691,7 @@ class PseudoTcpSocketImpl
     private final static ScheduledThreadPoolExecutor clockExecutor
         = new ScheduledThreadPoolExecutor(1);
 
-    private volatile ScheduledFuture currentlyScheduledClockTask = null;
+    private volatile ScheduledFuture<?> currentlyScheduledClockTask = null;
 
     /**
      * Method runs cyclic notification about time progress for TCP logic class
@@ -755,7 +755,7 @@ class PseudoTcpSocketImpl
 	private void cancelClockTask(boolean interruptIfRunning)
 	{
 		// Copy the reference, in case it changes.
-		ScheduledFuture taskToCancel = this.currentlyScheduledClockTask;
+		ScheduledFuture<?> taskToCancel = this.currentlyScheduledClockTask;
 		if(taskToCancel != null)
 		{
 			taskToCancel.cancel(interruptIfRunning);

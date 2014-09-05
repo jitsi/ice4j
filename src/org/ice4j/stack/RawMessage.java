@@ -20,22 +20,22 @@ public class RawMessage
     /**
      * The message itself.
      */
-    private byte[] messageBytes = null;
+    private final byte[] messageBytes;
 
     /**
      * The length of the message.
      */
-    private int messageLength = -1;
+    private final int messageLength;
 
     /**
      * The address and port where the message was sent from.
      */
-    private TransportAddress remoteAddress = null;
+    private final TransportAddress remoteAddress;
 
     /**
      * The address that this message was received on.
      */
-    private TransportAddress localAddress = null;
+    private final TransportAddress localAddress;
 
     /**
      * Constructs a raw message with the specified field values. All parameters
