@@ -51,24 +51,64 @@ public class MultiplexingDatagramSocket
      */
     public static DatagramPacket clone(DatagramPacket p)
     {
+        byte[] data;
+        int off;
+        int len;
+        InetAddress address;
+        int port;
+
         synchronized (p)
         {
-            byte[] data = p.getData().clone();
-            InetAddress address = p.getAddress();
-            int port = p.getPort();
+            data = p.getData();
+            off = p.getOffset();
+            len = p.getLength();
 
-            if ((address == null) || (port < 0))
+            // Clone the data.
             {
-                return new DatagramPacket(data, p.getOffset(), p.getLength());
+                // The capacity of the specified p is preserved.
+                byte[] dataClone = new byte[data.length];
+
+                // However, only copy the range of data starting with off and
+                // spanning len number of bytes. Of course, preserve off and len
+                // in addition to the capacity.
+                if (len > 0)
+                {
+                    int arraycopyOff, arraycopyLen;
+
+                    // If off and/or len are going to cause an exception though,
+                    // copy the whole data.
+                    if ((off >= 0)
+                            && (off < data.length)
+                            && (off + len <= data.length))
+                    {
+                        arraycopyOff = off;
+                        arraycopyLen = len;
+                    }
+                    else
+                    {
+                        arraycopyOff = 0;
+                        arraycopyLen = data.length;
+                    }
+                    System.arraycopy(
+                            data, arraycopyOff,
+                            dataClone, arraycopyOff,
+                            arraycopyLen);
+                }
+                data = dataClone;
             }
-            else
-            {
-                return
-                    new DatagramPacket(
-                            data, p.getOffset(), p.getLength(),
-                            address, port);
-            }
+
+            address = p.getAddress();
+            port = p.getPort();
         }
+
+        DatagramPacket c = new DatagramPacket(data, off, len);
+
+        if (address != null)
+            c.setAddress(address);
+        if (port >= 0)
+            c.setPort(port);
+
+        return c;
     }
 
     /**
