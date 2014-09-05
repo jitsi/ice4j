@@ -1063,7 +1063,6 @@ public class RelayedCandidateDatagramSocket
             else
             {
                 packetsToSend.add(MultiplexingDatagramSocket.clone(p));
-
                 if (sendThread == null)
                     createSendThread();
                 else
