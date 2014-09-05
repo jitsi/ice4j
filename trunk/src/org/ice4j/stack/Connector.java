@@ -84,17 +84,25 @@ class Connector
         this.errorHandler = errorHandler;
 
         Transport transport
-                = socket.getUDPSocket() != null ? Transport.UDP : Transport.TCP;
-        this.listenAddress
-                = new TransportAddress(socket.getLocalAddress(),
-                                       socket.getLocalPort(),
+            = socket.getUDPSocket() != null ? Transport.UDP : Transport.TCP;
+
+        listenAddress
+            = new TransportAddress(socket.getLocalAddress(),
+                                   socket.getLocalPort(),
+                                   transport);
+        if (transport == Transport.UDP)
+        {
+            remoteAddress = null;
+        }
+        else
+        {
+            Socket tcpSocket = socket.getTCPSocket();
+
+            remoteAddress
+                = new TransportAddress(tcpSocket.getInetAddress(),
+                                       tcpSocket.getPort(),
                                        transport);
-        this.remoteAddress
-                = transport == Transport.UDP
-                ? null
-                : new TransportAddress(socket.getTCPSocket().getInetAddress(),
-                                       socket.getTCPSocket().getPort(),
-                                       transport);
+        }
     }
 
     /**
@@ -103,7 +111,9 @@ class Connector
     void start()
     {
         this.running = true;
-        Thread thread = new Thread(this, "IceConnector@"+hashCode());
+
+        Thread thread = new Thread(this, "IceConnector@" + hashCode());
+
         thread.setDaemon(true);
         thread.start();
     }
@@ -122,6 +132,7 @@ class Connector
     /**
      * The listening thread's run method.
      */
+    @Override
     public void run()
     {
         DatagramPacket packet = null;
@@ -281,8 +292,8 @@ class Connector
     void sendMessage(byte[] message, TransportAddress address)
         throws IOException
     {
-        DatagramPacket datagramPacket = new DatagramPacket(
-                        message, 0, message.length, address);
+        DatagramPacket datagramPacket
+            = new DatagramPacket(message, 0, message.length, address);
 
         sock.send(datagramPacket);
     }

@@ -7,6 +7,7 @@
 package org.ice4j.stack;
 
 import java.io.*;
+import java.net.*;
 import java.util.*;
 import java.util.logging.*;
 
@@ -292,7 +293,7 @@ class NetAccessManager
                 if (!netUDPAccessPoints.containsKey(localAddr))
                 {
                     Connector connector
-                            = new Connector(socket, messageQueue, this);
+                        = new Connector(socket, messageQueue, this);
 
                     netUDPAccessPoints.put(localAddr, connector);
                     connector.start();
@@ -301,23 +302,25 @@ class NetAccessManager
 
             case TCP:
                 List<Connector> connectors = netTCPAccessPoints.get(localAddr);
+
                 if (connectors == null)
                 {
                     connectors = new LinkedList<Connector>();
                     netTCPAccessPoints.put(localAddr, connectors);
                 }
 
+                Socket tcpSocket = socket.getTCPSocket();
                 Connector connector
                     = findTCPConnectorByRemoteAddress(
-                        connectors,
-                        new TransportAddress(
-                            socket.getTCPSocket().getInetAddress(),
-                            socket.getTCPSocket().getPort(),
-                            Transport.TCP));
+                            connectors,
+                            new TransportAddress(
+                                    tcpSocket.getInetAddress(),
+                                    tcpSocket.getPort(),
+                                    Transport.TCP));
+
                 if (connector == null)
                 {
                     connector = new Connector(socket, messageQueue, this);
-
                     connectors.add(connector);
                     connector.start();
                 }
@@ -373,6 +376,7 @@ class NetAccessManager
 
             case TCP:
                 List<Connector> connectors = netTCPAccessPoints.remove(src);
+
                 if (connectors != null)
                 {
                     connector
@@ -418,9 +422,10 @@ class NetAccessManager
         throws IllegalArgumentException
     {
         if(threadPoolSize < 1)
+        {
             throw new IllegalArgumentException(
-                threadPoolSize
-                + " is not a legal thread pool size value.");
+                    threadPoolSize + " is not a legal thread pool size value.");
+        }
 
         //if we are not running just record the size
         //so that we could init later.
@@ -442,8 +447,8 @@ class NetAccessManager
      */
     private void initThreadPool()
     {
-            //create additional processors
-            fillUpThreadPool(initialThreadPoolSize);
+        //create additional processors
+        fillUpThreadPool(initialThreadPoolSize);
     }
 
     /**
@@ -499,10 +504,9 @@ class NetAccessManager
                 return netUDPAccessPoints.get(src);
             case TCP:
                 List<Connector> connectors = netTCPAccessPoints.get(src);
+
                 if (connectors != null)
-                {
                     return findTCPConnectorByRemoteAddress(connectors, dst);
-                }
             }
         }
 
@@ -532,10 +536,12 @@ class NetAccessManager
         byte[] bytes = stunMessage.encode(stunStack);
 
         Connector ap = getConnector(srcAddr, remoteAddr);
+
         if (ap == null)
         {
             throw new IllegalArgumentException(
-                    "No socket has been added for: " + srcAddr + " <-> " + remoteAddr);
+                    "No socket has been added for: " + srcAddr + " <-> "
+                        + remoteAddr);
         }
 
         ap.sendMessage(bytes, remoteAddr);
@@ -564,6 +570,7 @@ class NetAccessManager
         byte[] bytes = channelData.encode();
 
         Connector ap = getConnector(srcAddr, remoteAddr);
+
         if (ap == null)
         {
             throw new IllegalArgumentException(
@@ -594,11 +601,13 @@ class NetAccessManager
                IOException, StunException
     {
         Connector ap = getConnector(srcAddr, remoteAddr);
+
         if (ap == null)
         {
             throw new IllegalArgumentException(
                     "No socket has been added for source address: " + srcAddr);
         }
+
         ap.sendMessage(bytes, remoteAddr);
     }
 }
