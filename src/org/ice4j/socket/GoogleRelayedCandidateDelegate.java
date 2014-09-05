@@ -362,7 +362,6 @@ public class GoogleRelayedCandidateDelegate
             else
             {
                 packetsToSend.add(MultiplexingDatagramSocket.clone(p));
-
                 if (sendThread == null)
                     createSendThread();
                 else

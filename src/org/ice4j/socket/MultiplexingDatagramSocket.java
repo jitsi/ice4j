@@ -51,6 +51,25 @@ public class MultiplexingDatagramSocket
      */
     public static DatagramPacket clone(DatagramPacket p)
     {
+        return clone(p, /* arraycopy */ true);
+    }
+
+    /**
+     * Initializes a new <tt>DatagramPacket</tt> instance which is a clone of a
+     * specific <tt>DatagramPacket</tt> i.e. the properties of the clone
+     * <tt>DatagramPacket</tt> are clones of the specified
+     * <tt>DatagramPacket</tt>.
+     *
+     * @param p the <tt>DatagramPacket</tt> to clone
+     * @param arraycopy <tt>true</tt> if the actual bytes of the data of
+     * <tt>p</tt> are to be copied into the clone or <tt>false</tt> if only the
+     * capacity of the data of <tt>p</tt> is to be cloned without copying the
+     * actual bytes of the data of <tt>p</tt>
+     * @return a new <tt>DatagramPacket</tt> instance which is a clone of the
+     * specified <tt>DatagramPacket</tt>
+     */
+    public static DatagramPacket clone(DatagramPacket p, boolean arraycopy)
+    {
         byte[] data;
         int off;
         int len;
@@ -71,7 +90,7 @@ public class MultiplexingDatagramSocket
                 // However, only copy the range of data starting with off and
                 // spanning len number of bytes. Of course, preserve off and len
                 // in addition to the capacity.
-                if (len > 0)
+                if (arraycopy && (len > 0))
                 {
                     int arraycopyOff, arraycopyLen;
 
@@ -582,7 +601,7 @@ public class MultiplexingDatagramSocket
                 }
 
                 // The caller will receive from the network.
-                DatagramPacket c = clone(p);
+                DatagramPacket c = clone(p, /* arraycopy */ false);
 
                 synchronized (receiveSyncRoot)
                 {
@@ -614,7 +633,10 @@ public class MultiplexingDatagramSocket
                         {
                             synchronized (socket.received)
                             {
-                                socket.received.add(accepted ? clone(c) : c);
+                                socket.received.add(
+                                        accepted
+                                            ? clone(c, /* arraycopy */ true)
+                                            : c);
                                 socket.received.notifyAll();
                             }
                             accepted = true;
