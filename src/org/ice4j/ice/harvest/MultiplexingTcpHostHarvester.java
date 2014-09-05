@@ -75,6 +75,11 @@ public class MultiplexingTcpHostHarvester
     private ReadThread readThread;
 
     /**
+     * The <tt>Selector</tt> used by {@link #readThread}.
+     */
+    private Selector readSelector = Selector.open();
+
+    /**
      * Triggers the termination of the threads of this instance.
      */
     private boolean close = false;
@@ -100,12 +105,6 @@ public class MultiplexingTcpHostHarvester
      */
     private final Map<String, WeakReference<Component>> components
             = new HashMap<String, WeakReference<Component>>();
-
-    /**
-     * The <tt>Pipe</tt> on which {@link #acceptThread} notifies
-     * {@link #readThread} about the existence of new accepted channels.
-     */
-    private Pipe pipe;
 
     /**
      * Initializes a new <tt>MultiplexingTcpHostHarvester</tt>, which is to
@@ -202,8 +201,6 @@ public class MultiplexingTcpHostHarvester
                                           transportAddress.getPort()));
             serverSocketChannels.add(channel);
         }
-
-        pipe = Pipe.open();
 
         acceptThread = new AcceptThread();
         acceptThread.start();
@@ -361,12 +358,6 @@ public class MultiplexingTcpHostHarvester
          * new socket has been <tt>accept</tt>ed in order to notify
          * {@link #readThread}.
          */
-        private final Pipe.SinkChannel pipeSink;
-
-        /**
-         * A <tt>ByteBuffer</tt> used to write to {@link #pipeSink}.
-         */
-        private final ByteBuffer buffer;
 
         /**
          * Initializes a new <tt>AcceptThread</tt>.
@@ -375,9 +366,6 @@ public class MultiplexingTcpHostHarvester
             throws IOException
         {
             setName("MultiplexingTcpHostHarvester AcceptThread");
-
-            pipeSink = pipe.sink();
-            buffer = ByteBuffer.allocate(1);
 
             selector = Selector.open();
             for (ServerSocketChannel channel : serverSocketChannels)
@@ -393,13 +381,9 @@ public class MultiplexingTcpHostHarvester
         @Override
         public void run()
         {
-            int readyChannels;
-            SocketChannel channel;
-            IOException exception;
-            boolean added;
-
             while (true)
             {
+                int readyChannels;
                 if (close)
                 {
                     break;
@@ -421,42 +405,49 @@ public class MultiplexingTcpHostHarvester
                 {
                     synchronized (newChannels)
                     {
-                        exception = null;
-                        added = false;
+                    }
+                    IOException exception = null;
+                    List<SocketChannel> channelsToAdd
+                            = new LinkedList<SocketChannel>();
 
-                        for (SelectionKey key : selector.selectedKeys())
+                    for (SelectionKey key : selector.selectedKeys())
+                    {
+                        SocketChannel channel;
+                        if (key.isAcceptable())
                         {
-                            if (key.isAcceptable())
+                            try
                             {
-                                try
-                                {
-                                    channel = ((ServerSocketChannel)
-                                        key.channel()).accept();
-                                }
-                                catch (IOException ioe)
-                                {
-                                    exception = ioe;
-                                    break;
-                                }
-
-                                // Add the accepted socket to newChannels, so
-                                // the 'read' thread can pick it up.
-                                newChannels.add(channel);
-                                added = true;
+                                channel = ((ServerSocketChannel)
+                                    key.channel()).accept();
                             }
+                            catch (IOException ioe)
+                            {
+                                exception = ioe;
+                                break;
+                            }
+
+                            // Add the accepted socket to newChannels, so
+                            // the 'read' thread can pick it up.
+                            channelsToAdd.add(channel);
                         }
-                        selector.selectedKeys().clear();
+                    }
+                    selector.selectedKeys().clear();
 
-                        if (added)
-                            notifyReadThread();
-
-                        if (exception != null)
+                    if (!channelsToAdd.isEmpty())
+                    {
+                        synchronized (newChannels)
                         {
-                            logger.info("Failed to accept a socket, which"
-                                            + "should have been ready to accept: "
-                                            + exception);
-                            break;
+                            newChannels.addAll(channelsToAdd);
                         }
+                        notifyReadThread();
+                    }
+
+                    if (exception != null)
+                    {
+                        logger.info("Failed to accept a socket, which"
+                                        + "should have been ready to accept: "
+                                        + exception);
+                        break;
                     }
                 }
             } // while(true)
@@ -484,23 +475,10 @@ public class MultiplexingTcpHostHarvester
 
         /**
          * Notifies {@link #readThread} that new channels have been added to
-         * {@link #newChannels} by writing to {@link #pipe}.
          */
         private void notifyReadThread()
         {
-            try
-            {
-                //XXX do we have to fill it each time?
-                buffer.clear();
-                buffer.put((byte) 0);
-                buffer.flip();
-                pipeSink.write(buffer);
-                buffer.flip();
-            }
-            catch (IOException ioe)
-            {
-                logger.info("Failed to write to pipe.");
-            }
+            readSelector.wakeup();
         }
     }
 
@@ -524,12 +502,6 @@ public class MultiplexingTcpHostHarvester
          * The channel on which we will be notified when new channels are
          * available in {@link #newChannels}.
          */
-        private final Pipe.SourceChannel pipeSource;
-
-        /**
-         * A buffer into which we will read away from {@link #pipeSource}.
-         */
-        private final ByteBuffer buffer;
 
         /**
          * Used in {@link #cleanup()}, defined here to avoid allocating on
@@ -551,11 +523,7 @@ public class MultiplexingTcpHostHarvester
         private ReadThread()
                 throws IOException
         {
-            selector = Selector.open();
-            pipeSource = pipe.source();
-            pipeSource.configureBlocking(false);
-            pipeSource.register(selector, SelectionKey.OP_READ);
-            buffer = ByteBuffer.allocate(1);
+            selector = MultiplexingTcpHostHarvester.this.readSelector;
             datagramPacket = new DatagramPacket(new byte[1500], 1500);
         }
 
@@ -599,38 +567,15 @@ public class MultiplexingTcpHostHarvester
                         if (key.isReadable())
                         {
                             selectedChannel = key.channel();
-                            if (selectedChannel == pipeSource)
-                            {
-                                // That's just the nudge that new channels are
-                                // available. Just read from the pipe, so it
-                                // doesn't get hogged.
-                                try
-                                {
-                                    pipeSource.read(buffer);
-                                }
-                                catch (IOException ioe)
-                                {
-                                    logger.info("Failed to read from pipe.");
-                                }
-                            }
-                            else
-                            {
-                                /*
-                                 * We need this in order to de-register the
-                                 * channel from the selector.
-                                 */
-                                key.cancel();
+                            key.cancel();
 
-                                readFromChannel((SocketChannel) selectedChannel);
-                                channels.remove(selectedChannel);
-                            }
+                            readFromChannel((SocketChannel) selectedChannel);
+                            channels.remove(selectedChannel);
                         }
                     }
                     selectedKeys.clear();
                 }
-
             } //while(true)
-
 
             //we are all done, clean up.
             synchronized (newChannels)
