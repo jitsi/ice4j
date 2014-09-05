@@ -253,6 +253,8 @@ class ConnectivityCheckClient
 
         tran.setApplicationData(candidatePair);
 
+        if (isReliableTransport(candidatePair))
+            maxRetransmissions = 0;
         logger.fine(
                 "start check for " + candidatePair.toShortString() + " tid "
                     + tran);
@@ -705,6 +707,20 @@ class ConnectivityCheckClient
             localAddr.equals(evt.getLocalAddress())
                 && pair.getRemoteCandidate().getTransportAddress().equals(
                         evt.getRemoteAddress());
+    }
+
+    /**
+     * Checks whether the transport protocol used by <tt>pair</tt> is to be
+     * considered reliable for the purposes of <tt>ConnectivityCheckClient</tt>,
+     * that is, if client transactions need to be retransmitted or not.
+     * @param pair the pair to check.
+     * @return <tt>true</tt> iff the transport protocol of <tt>pair</tt> is
+     * to be considered reliable and retransmissions should be disabled for
+     * a client transaction for <tt>pair</tt>.
+     */
+    private boolean isReliableTransport(CandidatePair pair)
+    {
+        return pair.getLocalCandidate().getTransport() == Transport.TCP;
     }
 
     /**
