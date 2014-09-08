@@ -104,6 +104,9 @@ public enum Transport
         if(DTLS.toString().equals(transportName))
             return DTLS;
 
+        if(SSLTCP.toString().equals(transportName))
+            return SSLTCP;
+
         throw new IllegalArgumentException(
             transportName + " is not a currently supported Transport");
     }
