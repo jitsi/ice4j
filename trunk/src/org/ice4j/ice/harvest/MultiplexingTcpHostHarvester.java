@@ -47,7 +47,13 @@ public class MultiplexingTcpHostHarvester
      * <tt>READ_TIMEOUT</tt> milliseconds will be considered failed and will
      * be closed.
      */
-    private static int READ_TIMEOUT = 10000;
+    private static final int READ_TIMEOUT = 10000;
+
+    /**
+     * The constant which specifies how often to perform purging on
+     * {@link #components}.
+     */
+    private static final int PURGE_INTERVAL = 20;
 
     /**
      * The list of <tt>ServerSocketChannel</tt>s that we will <tt>accept</tt> on.
@@ -105,6 +111,23 @@ public class MultiplexingTcpHostHarvester
      */
     private final Map<String, WeakReference<Component>> components
             = new HashMap<String, WeakReference<Component>>();
+
+    /**
+     * A counter used to decide when to purge {@link #components}.
+     */
+    private int purgeCounter = 0;
+
+    /**
+     * Maps a public address to a local address.
+     */
+    private final Map<InetAddress, InetAddress> mappedAddresses
+            = new HashMap<InetAddress, InetAddress>();
+
+    /**
+     * Sets of additional ports, for which server reflexive candidates will be
+     * added.
+     */
+    private Set<Integer> mappedPorts = new HashSet<Integer>();
 
     /**
      * Initializes a new <tt>MultiplexingTcpHostHarvester</tt>, which is to
@@ -272,7 +295,17 @@ public class MultiplexingTcpHostHarvester
         {
             WeakReference<Component> wr = components.get(localUfrag);
 
-            return wr == null ? null : wr.get();
+            if (wr != null)
+            {
+                Component component = wr.get();
+                if (component == null)
+                {
+                    components.remove(localUfrag);
+                }
+
+                return component;
+            }
+            return null;
         }
     }
 
@@ -282,6 +315,9 @@ public class MultiplexingTcpHostHarvester
      * Saves a (weak) reference to <tt>Component</tt>, so that it can be
      * notified if/when a socket for one of it <tt>LocalCandidate</tt>s is
      * accepted.
+     *
+     * This method does not perform any network operations and should return
+     * quickly.
      */
     @Override
     public Collection<LocalCandidate> harvest(Component component)
@@ -309,9 +345,36 @@ public class MultiplexingTcpHostHarvester
         {
             components.put(agent.getLocalUfrag(),
                            new WeakReference<Component>(component));
+            purgeComponents();
         }
 
         return candidates;
+    }
+
+    /**
+     * Removes entries from {@link #components} for which the
+     * <tt>WeakReference</tt> has been cleared.
+     */
+    private void purgeComponents()
+    {
+        purgeCounter += 1;
+        if (purgeCounter % PURGE_INTERVAL == 0)
+        {
+            List<String> toRemove = new LinkedList<String>();
+            synchronized (components)
+            {
+                for (Map.Entry<String, WeakReference<Component>> entry
+                        : components.entrySet())
+                {
+                    WeakReference<Component> wr = entry.getValue();
+                    if (wr == null || wr.get() == null)
+                        toRemove.add(entry.getKey());
+                }
+
+                for (String key : toRemove)
+                    components.remove(key);
+            }
+        }
     }
 
     /**
@@ -326,7 +389,9 @@ public class MultiplexingTcpHostHarvester
      */
     private List<LocalCandidate> createLocalCandidates(Component component)
     {
-        List<LocalCandidate> candidates = new LinkedList<LocalCandidate>();
+        List<TcpHostCandidate> hostCandidates
+                = new LinkedList<TcpHostCandidate>();
+        // Add the host candidates for the addresses we really listen on
         for (TransportAddress transportAddress : localAddresses)
         {
             TcpHostCandidate candidate
@@ -335,9 +400,115 @@ public class MultiplexingTcpHostHarvester
             if (ssltcp)
                 candidate.setSSL(true);
 
-            candidates.add(candidate);
+            hostCandidates.add(candidate);
         }
-        return candidates;
+
+        // Add srflx candidates for any mapped addresses
+        List<LocalCandidate> mappedCandidates
+                = new LinkedList<LocalCandidate>();
+        for (Map.Entry<InetAddress, InetAddress> mapping
+                : mappedAddresses.entrySet())
+        {
+            InetAddress localAddress = mapping.getValue();
+            for (TcpHostCandidate base : hostCandidates)
+            {
+                if (localAddress
+                        .equals(base.getTransportAddress().getAddress()))
+                {
+                    InetAddress publicAddress = mapping.getKey();
+                    ServerReflexiveCandidate mappedCandidate
+                        = new ServerReflexiveCandidate(
+                            new TransportAddress(publicAddress,
+                                                 base.getTransportAddress()
+                                                     .getPort(),
+                                                 Transport.TCP),
+                            base,
+                            base.getStunServerAddress(),
+                            CandidateExtendedType.STATICALLY_MAPPED_CANDIDATE);
+                    if (base.isSSL())
+                        mappedCandidate.setSSL(true);
+
+                    mappedCandidates.add(mappedCandidate);
+                }
+            }
+        }
+
+        // Add srflx candidates for mapped ports
+        List<LocalCandidate> portMappedCandidates
+                = new LinkedList<LocalCandidate>();
+        for (TcpHostCandidate base : hostCandidates)
+        {
+            for (Integer port : mappedPorts)
+            {
+                ServerReflexiveCandidate portMappedCandidate
+                    = new ServerReflexiveCandidate(
+                        new TransportAddress(
+                            base.getTransportAddress().getAddress(),
+                            port,
+                            Transport.TCP),
+                        base,
+                        base.getStunServerAddress(),
+                        CandidateExtendedType.STATICALLY_MAPPED_CANDIDATE);
+                if (base.isSSL())
+                    portMappedCandidate.setSSL(true);
+
+                portMappedCandidates.add(portMappedCandidate);
+            }
+        }
+        // Mapped ports for mapped addresses
+        for (LocalCandidate mappedCandidate : mappedCandidates)
+        {
+            TcpHostCandidate base = (TcpHostCandidate) mappedCandidate.getBase();
+            for (Integer port : mappedPorts)
+            {
+                ServerReflexiveCandidate portMappedCandidate
+                        = new ServerReflexiveCandidate(
+                        new TransportAddress(
+                                mappedCandidate.getTransportAddress()
+                                        .getAddress(),
+                                port,
+                                Transport.TCP),
+                        base,
+                        base.getStunServerAddress(),
+                        CandidateExtendedType.STATICALLY_MAPPED_CANDIDATE);
+                if (base.isSSL())
+                    portMappedCandidate.setSSL(true);
+
+                portMappedCandidates.add(portMappedCandidate);
+            }
+        }
+
+        LinkedList<LocalCandidate> allCandidates
+                = new LinkedList<LocalCandidate>();
+        allCandidates.addAll(hostCandidates);
+        allCandidates.addAll(mappedCandidates);
+        allCandidates.addAll(portMappedCandidates);
+        return allCandidates;
+    }
+
+    /**
+     * Adds port as an additional port. When harvesting, additional server
+     * reflexive candidates will be added with this port.
+     * @param port the port to add.
+     */
+    public void addMappedPort(int port)
+    {
+        mappedPorts.add(port);
+    }
+
+    /**
+     * Adds a mapping between <tt>publicAddress</tt> and <tt>localAddress</tt>.
+     * This means that on harvest, along with any host candidates that have
+     * <tt>publicAddress</tt>, a server reflexive candidate will be added
+     * (with the same port as the host candidate).
+     *
+     * @param publicAddress the public address.
+     * @param localAddress the local address.
+     */
+    public void addMappedAddress(InetAddress publicAddress,
+                                 InetAddress localAddress)
+    {
+        mappedAddresses.put(publicAddress, localAddress);
     }
 
     /**
