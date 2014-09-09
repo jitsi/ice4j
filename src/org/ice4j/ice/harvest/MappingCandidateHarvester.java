@@ -79,22 +79,26 @@ public class MappingCandidateHarvester
         {
             if (!(cand instanceof HostCandidate)
                 || !cand.getTransportAddress().getHostAddress()
-                            .equals(face.getHostAddress()))
+                            .equals(face.getHostAddress())
+                || cand.getTransport() != face.getTransport())
             {
                 continue;
             }
 
+            HostCandidate hostCandidate = (HostCandidate) cand;
             TransportAddress mappedAddress = new TransportAddress(
                 mask.getHostAddress(),
-                cand.getHostAddress().getPort(),
-                cand.getHostAddress().getTransport());
+                hostCandidate.getHostAddress().getPort(),
+                hostCandidate.getHostAddress().getTransport());
 
             ServerReflexiveCandidate mappedCandidate
                 = new ServerReflexiveCandidate(
                     mappedAddress,
-                    (HostCandidate)cand,
-                    cand.getStunServerAddress(),
+                    hostCandidate,
+                    hostCandidate.getStunServerAddress(),
                     CandidateExtendedType.STATICALLY_MAPPED_CANDIDATE);
+            if (hostCandidate.isSSL())
+                mappedCandidate.setSSL(true);
 
             //try to add the candidate to the component and then
             //only add it to the harvest not redundant
