@@ -726,7 +726,12 @@ public class CandidatePair
         {
             return null;
         }
-        else if (localCandidate instanceof TcpHostCandidate)
+
+        LocalCandidate base = localCandidate.getBase();
+        if (base != null)
+            localCandidate = base;
+
+        if (localCandidate instanceof TcpHostCandidate)
         {
             /*
              * TcpHostCandidates can have multiple sockets, and the one
