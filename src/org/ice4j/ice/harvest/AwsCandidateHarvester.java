@@ -71,6 +71,7 @@ public class AwsCandidateHarvester
     {
         super(null, null);
     }
+
     /**
      * Maps all candidates to this harvester's mask and adds them to
      * <tt>component</tt>.
@@ -172,6 +173,34 @@ public class AwsCandidateHarvester
         }
 
         return true;
+    }
+
+    /**
+     * Returns the discovered public (mask) address, or null.
+     * @return the discovered public (mask) address, or null.
+     */
+    public static TransportAddress getMask()
+    {
+        if (smellsLikeAnEC2())
+        {
+            obtainEC2Addresses();
+            return mask;
+        }
+        return null;
+    }
+
+    /**
+     * Returns the discovered local (face) address, or null.
+     * @return the discovered local (face) address, or null.
+     */
+    public static TransportAddress getFace()
+    {
+        if (smellsLikeAnEC2())
+        {
+            obtainEC2Addresses();
+            return face;
+        }
+        return null;
     }
 
     /**
