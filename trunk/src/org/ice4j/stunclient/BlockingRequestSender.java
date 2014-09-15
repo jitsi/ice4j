@@ -191,7 +191,6 @@ public class BlockingRequestSender
      * access point that had not been installed,
      * @throws StunException if message encoding fails,
      */
-    @SuppressWarnings("unused")
     public synchronized StunMessageEvent sendRequestAndWaitForResponse(
                                                 Request request,
                                                 TransportAddress serverAddress,

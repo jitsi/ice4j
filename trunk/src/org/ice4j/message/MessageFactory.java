@@ -955,7 +955,6 @@ public class MessageFactory
      *
      * @return data indication message
      */
-    @SuppressWarnings("unused")
     public static Indication createDataIndication(
             TransportAddress peerAddress, byte[] data, byte[] tranID)
     {

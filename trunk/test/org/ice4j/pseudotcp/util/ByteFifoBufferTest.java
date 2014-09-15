@@ -329,13 +329,13 @@ public class ByteFifoBufferTest
         int len = Alen + Blen + Clen + Dlen;
         ByteFifoBuffer fifo = new ByteFifoBuffer(len);
         byte[] A = getWData(Alen);
-        byte[] B = getWData(Blen);
-        byte[] C = getWData(Clen);
-        byte[] D = getWData(Dlen);
+        /*byte[] B =*/ getWData(Blen);
+        /*byte[] C =*/ getWData(Clen);
+        /*byte[] D =*/ getWData(Dlen);
         byte[] Aread = getWData(Alen);
-        byte[] Bread = getWData(Blen);
-        byte[] Cread = getWData(Clen);
-        byte[] Dread = getWData(Dlen);
+        /*byte[] Bread =*/ getWData(Blen);
+        /*byte[] Cread =*/ getWData(Clen);
+        /*byte[] Dread =*/ getWData(Dlen);
 
         fifo.writeOffset(A, Alen, 0);
         fifo.consumeWriteBuffer(Alen);

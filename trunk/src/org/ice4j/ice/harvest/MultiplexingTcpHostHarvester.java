@@ -6,19 +6,18 @@
  */
 package org.ice4j.ice.harvest;
 
+import java.io.*;
+import java.lang.ref.*;
+import java.net.*;
+import java.nio.channels.*;
+import java.util.*;
+import java.util.logging.*;
+
 import org.ice4j.*;
 import org.ice4j.attribute.*;
 import org.ice4j.ice.*;
 import org.ice4j.message.*;
 import org.ice4j.socket.*;
-
-import java.io.*;
-import java.lang.ref.*;
-import java.net.*;
-import java.nio.*;
-import java.nio.channels.*;
-import java.util.*;
-import java.util.logging.*;
 
 /**
  * A <tt>CandidateHarvester</tt> implementation, which listens on a specified
