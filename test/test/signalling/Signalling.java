@@ -16,13 +16,12 @@ import java.net.*;
  */
 public class Signalling
 {
-
     /**
      * The socket where we send and receive signalling
      */
-    private Socket signallingSocket;
+    private final Socket signallingSocket;
 
-    private SignallingCallback signallingCallback;
+    private final SignallingCallback signallingCallback;
 
     /**
      * Creates a signalling instance over the specified socket.

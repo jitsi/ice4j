@@ -872,8 +872,8 @@ public class DelegatingSocket
                     false,
                     localAddress.getAddress(),
                     localAddress.getPort());
-                    // Log RTP losses if > 5%.
-                    updateRtpLosses(p);
+            // Log RTP losses if > 5%.
+            updateRtpLosses(p);
         }
     }
 
