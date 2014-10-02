@@ -687,6 +687,7 @@ public class MultiplexingTcpHostHarvester
         private ReadThread()
                 throws IOException
         {
+            setName("MultiplexingTcpHostHarvester ReadThread");
             selector = MultiplexingTcpHostHarvester.this.readSelector;
         }
 
