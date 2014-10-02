@@ -398,6 +398,7 @@ class NetAccessManager
 
     /**
      * Stops <tt>NetAccessManager</tt> and all of its <tt>MessageProcessor</tt>.
+     * TODO: close all connectors as well?
      */
     public void stop()
     {

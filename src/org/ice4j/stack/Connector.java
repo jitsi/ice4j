@@ -8,6 +8,7 @@ package org.ice4j.stack;
 
 import java.io.*;
 import java.net.*;
+import java.nio.channels.*;
 import java.util.logging.*;
 
 import org.ice4j.*;
@@ -242,6 +243,18 @@ class Connector
                     //The exception was most probably caused by calling
                     //this.stop().
                 }
+            }
+            catch (ClosedChannelException cce)
+            {
+                logger.log(Level.WARNING,
+                           "A net access point has gone useless:", cce);
+
+                stop();
+                errorHandler.handleFatalError(
+                        this,
+                        "ClosedChannelException occurred while listening"
+                            + " for messages!",
+                        cce);
             }
             catch (IOException ex)
             {
