@@ -141,6 +141,10 @@ public class HostCandidateHarvester
                 StackProperties.DISABLE_IPv6,
                 false);
 
+        boolean isIPv6LinkLocalDisabled = StackProperties.getBoolean(
+                StackProperties.DISABLE_LINK_LOCAL_ADDRESSES,
+                false);
+
         if(transport != Transport.UDP && transport != Transport.TCP)
         {
             throw new IllegalArgumentException(
@@ -169,6 +173,13 @@ public class HostCandidateHarvester
                 if (addr.isLoopbackAddress())
                 {
                     //loopback again
+                    continue;
+                }
+
+                if (isIPv6LinkLocalDisabled
+                        && (addr instanceof Inet6Address)
+                        && addr.isLinkLocalAddress())
+                {
                     continue;
                 }
 

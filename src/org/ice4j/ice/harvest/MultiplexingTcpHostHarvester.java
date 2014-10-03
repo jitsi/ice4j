@@ -289,6 +289,10 @@ public class MultiplexingTcpHostHarvester
                 StackProperties.DISABLE_IPv6,
                 false);
 
+        boolean useIPv6LinkLocal = !StackProperties.getBoolean(
+                StackProperties.DISABLE_LINK_LOCAL_ADDRESSES,
+                false);
+
         // White list from the configuration
         String[] allowedAddressesStr
             = StackProperties.getStringArray(StackProperties.ALLOWED_ADDRESSES,
@@ -331,6 +335,15 @@ public class MultiplexingTcpHostHarvester
 
             if (!useIPv6 && (address instanceof Inet6Address))
                 continue;
+
+            if (!useIPv6LinkLocal
+                    && (address instanceof Inet6Address)
+                    && address.isLinkLocalAddress())
+            {
+                logger.info("Not using link-local address " + address +" for"
+                                    + " TCP candidates.");
+                continue;
+            }
 
             if (allowedAddresses != null)
             {
