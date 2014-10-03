@@ -172,7 +172,7 @@ public class MultiplexingTcpHostHarvester
         throws IOException
     {
         this.ssltcp = ssltcp;
-        this.localAddresses.addAll(transportAddresses);
+        addLocalAddresses(transportAddresses);
         init();
     }
 
@@ -203,7 +203,7 @@ public class MultiplexingTcpHostHarvester
         throws IOException
     {
         this.ssltcp = ssltcp;
-        initializeLocalAddresses(port, interfaces);
+        addLocalAddresses(getLocalAddresses(port, interfaces));
         init();
     }
 
@@ -232,20 +232,21 @@ public class MultiplexingTcpHostHarvester
     }
 
     /**
-     * Initializes {@link #localAddresses}.
+     * Returns a list of all addresses on the interfaces in <tt>interfaces</tt>
+     * which are found suitable for candidate allocations (are not loopback,
+     * are up, and are allowed by the configuration.
      *
      * @param port the port to use.
      * @param interfaces the list of interfaces to use.
      */
-    private void initializeLocalAddresses(
+    private List<TransportAddress> getLocalAddresses(
             int port,
             List<NetworkInterface> interfaces)
         throws IOException
 
     {
-        boolean useIPv6 = !StackProperties.getBoolean(
-                StackProperties.DISABLE_IPv6,
-                false);
+        List<TransportAddress> addresses
+                = new LinkedList<TransportAddress>();
 
         for (NetworkInterface iface : interfaces)
         {
@@ -257,27 +258,122 @@ public class MultiplexingTcpHostHarvester
                 continue;
             }
 
-            Enumeration<InetAddress> addresses = iface.getInetAddresses();
+            Enumeration<InetAddress> ifaceAddresses = iface.getInetAddresses();
 
-            while(addresses.hasMoreElements())
+            while(ifaceAddresses.hasMoreElements())
             {
-                InetAddress addr = addresses.nextElement();
+                InetAddress addr = ifaceAddresses.nextElement();
 
-                if (addr.isLoopbackAddress())
+                TransportAddress transportAddress
+                    = new TransportAddress(addr,
+                                           port,
+                                           Transport.TCP);
+                addresses.add(transportAddress);
+            }
+        }
+
+        return addresses;
+    }
+
+    /**
+     * Adds to {@link #localAddresses} those addresses from
+     * <tt>transportAddresses</tt> which are found suitable for candidate
+     * allocation.
+     *
+     * @param transportAddresses the list of addresses to add.
+     */
+    private void addLocalAddresses(List<TransportAddress> transportAddresses)
+        throws IOException
+    {
+        boolean useIPv6 = !StackProperties.getBoolean(
+                StackProperties.DISABLE_IPv6,
+                false);
+
+        // White list from the configuration
+        String[] allowedAddressesStr
+            = StackProperties.getStringArray(StackProperties.ALLOWED_ADDRESSES,
+                                             ";");
+        InetAddress[] allowedAddresses = null;
+        if (allowedAddressesStr != null)
+        {
+            allowedAddresses = new InetAddress[allowedAddressesStr.length];
+            for (int i = 0; i < allowedAddressesStr.length; i++)
+            {
+                allowedAddresses[i]
+                        = InetAddress.getByName(allowedAddressesStr[i]);
+            }
+        }
+
+        // Black list from the configuration
+        String[] blockedAddressesStr
+            = StackProperties.getStringArray(StackProperties.BLOCKED_ADDRESSES,
+                                             ";");
+        InetAddress[] blockedAddresses = null;
+        if (blockedAddressesStr != null)
+        {
+            blockedAddresses = new InetAddress[blockedAddressesStr.length];
+            for (int i = 0; i < blockedAddressesStr.length; i++)
+            {
+                blockedAddresses[i]
+                        = InetAddress.getByName(blockedAddressesStr[i]);
+            }
+        }
+
+        for (TransportAddress transportAddress : transportAddresses)
+        {
+            InetAddress address = transportAddress.getAddress();
+
+            if (address.isLoopbackAddress())
+            {
+                //loopback again
+                continue;
+            }
+
+            if (!useIPv6 && (address instanceof Inet6Address))
+                continue;
+
+            if (allowedAddresses != null)
+            {
+                boolean found = false;
+                for (InetAddress allowedAddress : allowedAddresses)
                 {
-                    //loopback again
+                    if (allowedAddress.equals(address))
+                    {
+                        found = true;
+                        break;
+                    }
+                }
+
+                if (!found)
+                {
+                    logger.info("Not using " + address +" for TCP candidates, "
+                                + "because it is not in the allowed list.");
                     continue;
                 }
+            }
 
-                if((addr instanceof Inet4Address) || useIPv6)
+            if (blockedAddresses != null)
+            {
+                boolean found = false;
+                for (InetAddress blockedAddress : blockedAddresses)
                 {
-                     TransportAddress transportAddress
-                        = new TransportAddress(addr,
-                                               port,
-                                               Transport.TCP);
-                    localAddresses.add(transportAddress);
+                    if (blockedAddress.equals(address))
+                    {
+                        found = true;
+                        break;
+                    }
+                }
+
+                if (found)
+                {
+                    logger.info("Not using " + address + " for TCP candidates, "
+                                + "because it is in the blocked list.");
+                    continue;
                 }
             }
+
+            // Passed all checks
+            localAddresses.add(transportAddress);
         }
     }
 
