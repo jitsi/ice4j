@@ -70,26 +70,31 @@ public class TCPOutputStream
     public void write(byte[] b, int off, int len)
         throws IOException
     {
-        // GoogleRelayedCandidateSocket will encapsulate data in TURN message
-        // so do not add framing here
-        if(outputStream instanceof GoogleRelayedCandidateSocket.TCPOutputStream)
+        // GoogleRelayedCandidateSocket will encapsulate data in TURN message so
+        // do not add framing here
+        if (outputStream
+                instanceof GoogleRelayedCandidateSocket.TCPOutputStream)
         {
             outputStream.write(b, off, len);
-            return;
         }
+        else
+        {
+            int dataLength = len + 2;
+            byte data[] = new byte[dataLength];
 
-        byte data[] = new byte[len + 2];
-        data[0] = (byte)((len >> 8) & 0xff);
-        data[1] = (byte)(len & 0xff);
-        System.arraycopy(b, off, data, 2, len);
-        outputStream.write(data, 0, len + 2);
+            data[0] = (byte) ((len >> 8) & 0xFF);
+            data[1] = (byte) (len & 0xFF);
+            System.arraycopy(b, off, data, 2, len);
+            outputStream.write(data, 0, dataLength);
+        }
     }
 
     /**
      * {@inheritDoc}
      */
     @Override
-    public void write(int arg0) throws IOException
+    public void write(int b)
+        throws IOException
     {
         // TODO Auto-generated method stub
     }

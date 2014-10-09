@@ -8,56 +8,81 @@
 package org.ice4j.socket;
 
 import java.io.*;
-import java.util.*;
+import java.net.*;
 
 /**
- * TCP input stream for TCP socket. It is used to multiplex sockets and keep
- * the <tt>InputStream</tt> interface to users.
+ * TCP input stream for TCP socket. It is used to multiplex sockets and keep the
+ * <tt>InputStream</tt> interface to users.
  *
  * @author Sebastien Vincent
+ * @author Lyubomir Marinov
  */
 public class TCPInputStream
     extends InputStream
 {
     /**
-     * List of packets.
+     * The default size of the receive buffer of <tt>TCPInputStream</tt> if the
+     * associated <tt>MultiplexingSocket</tt> does not specify a value.
      */
-    private final List<byte[]> packets = new ArrayList<byte[]>();
+    private static final int DEFAULT_RECEIVE_BUFFER_SIZE = 65536;
+
+    /**
+     * The <tt>byte</tt> array with one element which is used by the
+     * implementation of {@link #read()} in order to delegate to the
+     * implementation of {@link #read(byte[], int, int)} for the purposes of
+     * simplicity.
+     */
+    private final byte[] b = new byte[1];
+
+    /**
+     * The indicator which determines whether this <tt>TCPInputStream</tt> is
+     * executing one of its <tt>read</tt> method implementations.
+     */
+    private boolean inRead;
 
     /**
      * Current packet being processed if any.
      */
-    private byte[] currentPacket = null;
+    private DatagramPacket packet;
 
     /**
-     * Current offset.
+     * The <tt>data</tt> of {@link #packet}.
      */
-    private int currentPacketOffset = 0;
+    private byte[] packetData;
 
     /**
      * Current packet length.
      */
-    private int currentPacketLength = 0;
+    private int packetLength;
 
     /**
-     * Synchronization object for read operation.
+     * Current offset.
+     */
+    private int packetOffset;
+
+    /**
+     * The <tt>Object</tt> which synchronizes the access to the read-related
+     * state of this instance.
      */
     private final Object readSyncRoot = new Object();
 
     /**
-     * Initializes a new <tt>TCPInputStream</tt>.
+     * The <tt>MultiplexingSocket</tt> which has initialized this instance and
+     * is using it as its <tt>inputStream</tt>.
      */
-    public TCPInputStream()
-    {
-    }
+    private final MultiplexingSocket socket;
 
     /**
-     * {@inheritDoc}
+     * Initializes a new <tt>TCPInputStream</tt>.
+     *
+     * @param socket
      */
-    @Override
-    public int available()
+    public TCPInputStream(MultiplexingSocket socket)
     {
-        return 0;
+        if (socket == null)
+            throw new NullPointerException("socket");
+
+        this.socket = socket;
     }
 
     /**
@@ -67,111 +92,8 @@ public class TCPInputStream
     public void close()
         throws IOException
     {
-        packets.clear();
-        currentPacket = null;
-        currentPacketOffset = 0;
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public void mark(int readLimit)
-    {
-        /* do nothing */
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public boolean markSupported()
-    {
-        return false;
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public int read(byte[] b)
-    {
-        return read(b, 0, b.length);
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public int read(byte[] b, int off, int len)
-    {
-        synchronized(readSyncRoot)
-        {
-            getNextPacket();
-
-            int length = currentPacketLength;
-
-            if(len < length)
-            {
-                length = len;
-            }
-
-            System.arraycopy(currentPacket, currentPacketOffset, b, off,
-                length);
-
-            currentPacketOffset += length;
-            currentPacketLength -= length;
-
-            if(currentPacketLength <= 0)
-            {
-                currentPacket = null;
-                currentPacketOffset = 0;
-                currentPacketLength = 0;
-            }
-            return length;
-        }
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public void reset()
-        throws IOException
-    {
-        if(!markSupported())
-        {
-            throw new IOException("TCPInputStream does not support reset()");
-        }
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public long skip(long n)
-        throws IOException
-    {
-        synchronized(readSyncRoot)
-        {
-            getNextPacket();
-
-            if(n > currentPacketLength)
-            {
-                n = currentPacketLength;
-            }
-            currentPacketOffset += n;
-            currentPacketLength -= n;
-
-            if(currentPacketLength <= 0)
-            {
-                currentPacket = null;
-                currentPacketOffset = 0;
-                currentPacketLength = 0;
-            }
-
-            return n;
-        }
+        // TODO Auto-generated method stub
+        super.close();
     }
 
     /**
@@ -181,56 +103,151 @@ public class TCPInputStream
     public int read()
         throws IOException
     {
-        getNextPacket();
-        int ret = currentPacket[currentPacketOffset];
-        currentPacketOffset++;
-        currentPacketLength--;
+        synchronized (readSyncRoot)
+        {
+            waitWhileInRead();
+            inRead = true;
+        }
+        try
+        {
+            do
+            {
+                int read = read0(b, 0, 1);
 
-        return ret;
+                if (read == -1)
+                    return read;
+                if (read == 1)
+                    return b[0];
+            }
+            while (true);
+        }
+        finally
+        {
+            synchronized (readSyncRoot)
+            {
+                inRead = false;
+            }
+        }
     }
 
     /**
-     * Get next packet. It blocks if no packets are available.
-     *
-     * @return next packet
+     * {@inheritDoc}
      */
-    private byte[] getNextPacket()
+    @Override
+    public int read(byte[] b, int off, int len)
+        throws IOException
     {
-        synchronized(packets)
+        int read;
+
+        // The javadoc on InputStream.read(byte[], int, int) says that, if len
+        // is zero, no bytes are read and zero is returned.
+        if (len == 0)
         {
-            if(packets.size() == 0)
+            read = 0;
+        }
+        else
+        {
+            synchronized (readSyncRoot)
+            {
+                waitWhileInRead();
+                inRead = true;
+            }
+            try
+            {
+                read = read0(b, off, len);
+            }
+            finally
+            {
+                synchronized (readSyncRoot)
+                {
+                    inRead = false;
+                }
+            }
+        }
+        return read;
+    }
+
+    protected int read0(byte[] b, int off, int len)
+        throws IOException
+    {
+        int read;
+
+        do
+        {
+            if (packetLength > 0)
+            {
+                // Data has already been received from the network.
+                read = Math.min(packetLength, len);
+                System.arraycopy(packetData, packetOffset, b, off, read);
+                packetLength -= read;
+                packetOffset += read;
+                break;
+            }
+
+            // Receive from the network.
+
+            // Make sure that the receive buffer of this InputStream satisfies
+            // the requirements with respect to size of the socket.
+            int receiveBufferSize = socket.getReceiveBufferSize();
+
+            if (receiveBufferSize < 1)
+                receiveBufferSize = DEFAULT_RECEIVE_BUFFER_SIZE;
+            if ((packetData == null) || (packetData.length < receiveBufferSize))
+                packetData = new byte[receiveBufferSize];
+            if (packet == null)
+                packet = new DatagramPacket(packetData, 0, packetData.length);
+            else
+                packet.setData(packetData, 0, packetData.length);
+            packetLength = 0;
+            packetOffset = 0;
+
+            socket.receive(packet);
+
+            packetData = packet.getData();
+            packetLength = packet.getLength();
+            packetOffset = packet.getOffset();
+        }
+        while (true);
+
+        return read;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public long skip(long n)
+        throws IOException
+    {
+        // Optimizing the implementation of InputStream.skip(long) sounds like a
+        // nice idea in general. However, we do not expect the method to be used
+        // a lot. Consequently, we would rather go for simplicity.
+        return super.skip(n);
+    }
+
+    /**
+     * Waits on {@link #readSyncRoot} while {@link #inRead} equals
+     * <tt>true</tt>.
+     */
+    private void waitWhileInRead()
+    {
+        boolean interrupted = false;
+
+        synchronized (readSyncRoot)
+        {
+            while (inRead)
             {
                 try
                 {
-                    packets.wait();
+                    readSyncRoot.wait();
                 }
-                catch (InterruptedException iex)
+                catch (InterruptedException ex)
                 {
+                    interrupted = true;
                 }
             }
-
-            if(currentPacket == null)
-            {
-                currentPacket = packets.remove(0);
-                currentPacketOffset = 0;
-                currentPacketLength = currentPacket.length;
-            }
-
         }
-        return currentPacket;
-    }
-
-    /**
-     * Add packet to this <tt>InputStream</tt>.
-     *
-     * @param p packet bytes
-     */
-    public void addPacket(byte[] p)
-    {
-        synchronized(packets)
-        {
-            this.packets.add(p);
-            packets.notifyAll();
-        }
+        if (interrupted)
+            Thread.currentThread().interrupt();
     }
 }

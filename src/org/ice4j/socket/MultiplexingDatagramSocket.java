@@ -8,6 +8,7 @@
 package org.ice4j.socket;
 
 import java.io.*;
+import java.lang.reflect.*;
 import java.net.*;
 import java.util.*;
 import java.util.logging.*;
@@ -38,6 +39,24 @@ public class MultiplexingDatagramSocket
      */
     private static final MultiplexedDatagramSocket[] NO_SOCKETS
         = new MultiplexedDatagramSocket[0];
+
+    static <T> T[] add(T[] array, T element)
+    {
+        int length = array.length;
+        @SuppressWarnings("unchecked")
+        T[] newArray
+            = (T[])
+                Array.newInstance(
+                        array.getClass().getComponentType(),
+                        length + 1);
+
+        if (length != 0)
+        {
+            System.arraycopy(array, 0, newArray, 0, length);
+        }
+        newArray[length] = element;
+        return newArray;
+    }
 
     /**
      * Initializes a new <tt>DatagramPacket</tt> instance which is a clone of a
@@ -255,7 +274,6 @@ public class MultiplexingDatagramSocket
     public MultiplexingDatagramSocket()
         throws SocketException
     {
-        super();
     }
 
     /**
@@ -419,10 +437,8 @@ public class MultiplexingDatagramSocket
 
         synchronized (socketsSyncRoot)
         {
-            /*
-             * If a socket for the specified filter exists already, do not
-             * create a new one and return the existing.
-             */
+            // If a socket for the specified filter exists already, do not
+            // create a new one and return the existing.
             for (MultiplexedDatagramSocket socket : sockets)
             {
                 if (filter.equals(socket.getFilter()))
@@ -437,21 +453,7 @@ public class MultiplexingDatagramSocket
                 = new MultiplexedDatagramSocket(this, filter);
 
             // Remember the new socket.
-            int socketCount = sockets.length;
-
-            if (socketCount == 0)
-            {
-                sockets = new MultiplexedDatagramSocket[] { socket };
-            }
-            else
-            {
-                MultiplexedDatagramSocket[] newSockets
-                    = new MultiplexedDatagramSocket[socketCount + 1];
-
-                System.arraycopy(sockets, 0, newSockets, 0, socketCount);
-                newSockets[socketCount] = socket;
-                sockets = newSockets;
-            }
+            sockets = add(sockets, socket);
 
             return socket;
         }

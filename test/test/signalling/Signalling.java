@@ -19,9 +19,9 @@ public class Signalling
     /**
      * The socket where we send and receive signalling
      */
-    private final Socket signallingSocket;
+//    private final Socket signallingSocket;
 
-    private final SignallingCallback signallingCallback;
+//    private final SignallingCallback signallingCallback;
 
     /**
      * Creates a signalling instance over the specified socket.
@@ -30,8 +30,8 @@ public class Signalling
      */
     public Signalling(Socket socket, SignallingCallback signallingCallback)
     {
-        this.signallingSocket = socket;
-        this.signallingCallback = signallingCallback;
+//        this.signallingSocket = socket;
+//        this.signallingCallback = signallingCallback;
     }
 
     /**

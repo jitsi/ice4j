@@ -6,11 +6,12 @@
  */
 package org.ice4j.ice;
 
+import java.net.*;
+import java.util.*;
+
 import org.ice4j.*;
 import org.ice4j.socket.*;
 import org.ice4j.stack.*;
-
-import java.util.*;
 
 /**
  * Extends {@link org.ice4j.ice.HostCandidate} allowing the instance to have
@@ -27,7 +28,7 @@ public class TcpHostCandidate
      * List of <tt>accept</tt>ed sockets for this <tt>TcpHostCandidate</tt>.
      */
     private final List<IceSocketWrapper> sockets
-            = new LinkedList<IceSocketWrapper>();
+        = new LinkedList<IceSocketWrapper>();
 
     /**
      * Initializes a new <tt>TcpHostCandidate</tt>.
@@ -40,13 +41,7 @@ public class TcpHostCandidate
     public TcpHostCandidate(TransportAddress transportAddress,
                             Component parentComponent)
     {
-        super(transportAddress,
-              parentComponent);
-    }
-
-    public List<IceSocketWrapper> getIceSocketWrappers()
-    {
-        return sockets;
+        super(transportAddress, parentComponent);
     }
 
     public void addSocket(IceSocketWrapper socket)
@@ -59,19 +54,27 @@ public class TcpHostCandidate
     {
         StunStack stunStack = getStunStack();
         TransportAddress localAddr = getTransportAddress();
+
         for (IceSocketWrapper socket : sockets)
         {
             //remove our sockets from the stack.
+            Socket tcpSocket = socket.getTCPSocket();
+
             stunStack.removeSocket(
                     localAddr,
                     new TransportAddress(
-                            socket.getTCPSocket().getInetAddress(),
-                            socket.getTCPSocket().getPort(),
+                            tcpSocket.getInetAddress(),
+                            tcpSocket.getPort(),
                             Transport.TCP));
 
-                    socket.close();
+            socket.close();
         }
 
         super.free();
+    }
+
+    public List<IceSocketWrapper> getIceSocketWrappers()
+    {
+        return sockets;
     }
 }
