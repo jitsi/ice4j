@@ -15,10 +15,9 @@ import java.util.logging.*;
 /**
  * Represents a <tt>Socket</tt> which receives <tt>DatagramPacket</tt>s
  * selected by a <tt>DatagramPacketFilter</tt> from a
- * <tt>MultiplexingSocket</tt>. The associated
- * <tt>MultiplexingSocket</tt> is the actual <tt>Socket</tt>
- * which reads the <tt>DatagramPacket</tt>s from the network. The
- * <tt>DatagramPacket</tt>s received through the
+ * <tt>MultiplexingSocket</tt>. The associated <tt>MultiplexingSocket</tt> is
+ * the actual <tt>Socket</tt> which reads the <tt>DatagramPacket</tt>s from the
+ * network. The <tt>DatagramPacket</tt>s received through the
  * <tt>MultiplexedSocket</tt> will not be received through the
  * associated <tt>MultiplexingSocket</tt>.
  *
@@ -28,11 +27,12 @@ public class MultiplexedSocket
     extends DelegatingSocket
 {
     /**
-     * The <tt>Logger</tt> used by the <tt>MultiplexedSocket</tt> class
-     * and its instances for logging output.
+     * The <tt>Logger</tt> used by the <tt>MultiplexedSocket</tt> class and its
+     * instances for logging output.
      */
     private static final Logger logger
-            = Logger.getLogger(MultiplexedSocket.class.getName());
+        = Logger.getLogger(MultiplexedSocket.class.getName());
+
     /**
      * The <tt>DatagramPacketFilter</tt> which determines which
      * <tt>DatagramPacket</tt>s read from the network by {@link #multiplexing}
@@ -41,8 +41,13 @@ public class MultiplexedSocket
     private final DatagramPacketFilter filter;
 
     /**
-     * The <tt>MultiplexingSocket</tt> which does the actual reading
-     * from the network and which forwards <tt>DatagramPacket</tt>s accepted by
+     * The custom <tt>InputStream</tt> for this <tt>MultiplexedSocket</tt>.
+     */
+    private final InputStream inputStream = new InputStreamImpl();
+
+    /**
+     * The <tt>MultiplexingSocket</tt> which does the actual reading from the
+     * network and which forwards <tt>DatagramPacket</tt>s accepted by
      * {@link #filter} for receipt to this instance.
      */
     private final MultiplexingSocket multiplexing;
@@ -54,20 +59,13 @@ public class MultiplexedSocket
     final List<DatagramPacket> received = new LinkedList<DatagramPacket>();
 
     /**
-     * The custom <tt>InputStream</tt> for this <tt>MultiplexedSocket</tt>.
-     */
-    private final InputStreamImpl inputStream = new InputStreamImpl();
-
-    /**
-     * Initializes a new <tt>MultiplexedSocket</tt> which is unbound and
-     * filters <tt>DatagramPacket</tt>s away from a specific
-     * <tt>MultiplexingSocket</tt> using a specific
-     * <tt>DatagramPacketFilter</tt>.
+     * Initializes a new <tt>MultiplexedSocket</tt> which is unbound and filters
+     * <tt>DatagramPacket</tt>s away from a specific <tt>MultiplexingSocket</tt>
+     * using a specific <tt>DatagramPacketFilter</tt>.
      *
-     * @param multiplexing the <tt>MultiplexingSocket</tt> which does
-     * the actual reading from the network and which forwards
-     * <tt>DatagramPacket</tt>s accepted by the specified <tt>filter</tt> to the
-     * new instance
+     * @param multiplexing the <tt>MultiplexingSocket</tt> which does the actual
+     * reading from the network and which forwards <tt>DatagramPacket</tt>s
+     * accepted by the specified <tt>filter</tt> to the new instance
      * @param filter the <tt>DatagramPacketFilter</tt> which determines which
      * <tt>DatagramPacket</tt>s read from the network by the specified
      * <tt>multiplexing</tt> are to be received through the new instance
@@ -79,11 +77,11 @@ public class MultiplexedSocket
         throws SocketException
     {
         /*
-         * Even if MultiplexingSocket allows MultiplexedSocket
-         * to perform bind, binding in the super will not execute correctly this
-         * early in the construction because the multiplexing field is not set
-         * yet. That is why MultiplexedSocket does not currently support
-         * bind at construction time.
+         * Even if MultiplexingSocket allows MultiplexedSocket to perform bind,
+         * binding in the super will not execute correctly this early in the
+         * construction because the multiplexing field is not set yet. That is
+         * why MultiplexedSocket does not currently support bind at construction
+         * time.
          */
         super(multiplexing);
 
@@ -110,15 +108,6 @@ public class MultiplexedSocket
     }
 
     /**
-     * {@inheritDoc}
-     */
-    @Override
-    public InputStream getInputStream()
-    {
-        return inputStream;
-    }
-
-    /**
      * Gets the <tt>DatagramPacketFilter</tt> which determines which
      * <tt>DatagramPacket</tt>s read from the network are to be received through
      * this <tt>Socket</tt>.
@@ -130,6 +119,15 @@ public class MultiplexedSocket
     public DatagramPacketFilter getFilter()
     {
         return filter;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public InputStream getInputStream()
+    {
+        return inputStream;
     }
 
     /**
@@ -202,8 +200,19 @@ public class MultiplexedSocket
          * {@inheritDoc}
          */
         @Override
+        public int read()
+            throws IOException
+        {
+            // We don't support reading a single byte
+            return 0;
+        }
+
+        /**
+         * {@inheritDoc}
+         */
+        @Override
         public int read(byte[] b)
-                throws IOException
+            throws IOException
         {
             return read(b, 0, b.length);
         }
@@ -221,13 +230,19 @@ public class MultiplexedSocket
                 receive(packet);
 
                 int lengthRead = packet.getLength();
+
                 if (packet.getData() == b && lengthRead <= len)
+                {
                     return lengthRead;
+                }
                 else
-                    logger.warning("Failed to read directly into the provided"
-                                       + " buffer, len=" + len + " lengthRead="
-                                       + lengthRead + " (packet.getData() == b)="
-                                       + (packet.getData() == b));
+                {
+                    logger.warning(
+                            "Failed to read directly into the provided buffer,"
+                                + " len=" + len + " lengthRead=" + lengthRead
+                                + " (packet.getData() == b)="
+                                + (packet.getData() == b));
+                }
             }
 
             // either there's an offset to take into account, or receiving
@@ -238,6 +253,7 @@ public class MultiplexedSocket
 
             int packetLen = packet.getLength();
             int lengthRead = Math.min(len, packetLen);
+
             System.arraycopy(
                     packet.getData(), packet.getOffset(),
                     b, off,
@@ -251,11 +267,12 @@ public class MultiplexedSocket
          */
         @Override
         public void reset()
-                throws IOException
+            throws IOException
         {
             if(!markSupported())
             {
-                throw new IOException("InputStreamImpl does not support reset()");
+                throw new IOException(
+                        "InputStreamImpl does not support reset()");
             }
         }
 
@@ -267,17 +284,6 @@ public class MultiplexedSocket
             throws IOException
         {
             throw new IOException("InputStreamImpl does not support skip.");
-        }
-
-        /**
-         * {@inheritDoc}
-         */
-        @Override
-        public int read()
-                throws IOException
-        {
-            //We don't support reading a single byte
-            return 0;
         }
     }
 }

@@ -7,9 +7,9 @@
 package org.ice4j.socket;
 
 import java.io.*;
+import java.net.*;
 import java.nio.*;
 import java.nio.channels.*;
-import java.net.*;
 
 /**
  * Implements a <tt>Socket</tt> which delegates its calls to a specific
@@ -21,6 +21,75 @@ public class DelegatingSocket
     extends Socket
 {
     /**
+     * Receives an RFC4571-formatted frame from <tt>inputStream</tt> into
+     * <tt>p</tt>, and sets <tt>p</tt>'s port and address to <tt>port</tt> and
+     * <tt>inetAddress</tt>.
+     *
+     * @param p the <tt>DatagramPacket</tt> into which to place the incoming
+     * data.
+     * @param inputStream The TCP stream to be read.
+     * @param inetAddress The receiver address (local address) to set to the
+     * datagram packet.
+     * @param port The receiver port (local port) to set to the datagram packet.
+     *
+     * @throws IOException if an I/O error occurs
+     * @see #receive(DatagramPacket)
+     */
+    public static void receiveFromNetwork(
+            DatagramPacket p,
+            InputStream inputStream,
+            InetAddress inetAddress,
+            int port)
+        throws IOException
+    {
+        byte data[] = p.getData();
+        int len = 0;
+
+        int fb = inputStream.read();
+        int sb = inputStream.read();
+
+        // If we do not achieve to read the first bytes, then it was just an
+        // hole punch packet.
+        if(fb == -1 || sb == -1)
+        {
+            p.setLength(0);
+            throw new SocketException("read failed");
+        }
+
+        int desiredLength = (((fb & 0xff) << 8) | (sb & 0xff));
+        int readLen = 0;
+        int offset = 0;
+
+        while(readLen < desiredLength)
+        {
+            len = inputStream.read(data, offset, desiredLength - offset);
+            if(len == -1)
+                throw new SocketException("read failed");
+            offset += len;
+            readLen += len;
+        }
+
+        if (readLen == desiredLength)
+        {
+            p.setData(data);
+            p.setLength(len);
+            p.setAddress(inetAddress);
+            p.setPort(port);
+        }
+        else
+        {
+            throw new SocketException("Failed to receive data from socket");
+        }
+    }
+
+    /**
+     * A <tt>ByteBuffer</tt> instance used in
+     * {@link #receiveFromChannel(java.nio.channels.SocketChannel, java.net.DatagramPacket)}
+     * to read the 2-byte length field into.
+     */
+    private final ByteBuffer byteBufferLen = ByteBuffer.allocate(2);
+
+    /**
      * Delegate <tt>Socket</tt>.
      */
     protected final Socket delegate;
@@ -31,9 +100,19 @@ public class DelegatingSocket
     private InputStream inputStream = null;
 
     /**
-     * OutputStream for this socket.
+     * The last time an information about packet lost has been logged.
      */
-    private OutputStream outputStream = null;
+    private long lastLostPacketLogTime = 0;
+
+    /**
+     * The last RTP sequence number received for this socket.
+     */
+    private long lastRtpSequenceNumber = -1;
+
+    /**
+     * The number of RTP packets lost (not received) for this socket.
+     */
+    private long nbLostRtpPackets = 0;
 
     /**
      * The number of RTP packets received for this socket.
@@ -46,33 +125,16 @@ public class DelegatingSocket
     private long nbSentRtpPackets = 0;
 
     /**
-     * The number of RTP packets lost (not received) for this socket.
+     * OutputStream for this socket.
      */
-    private long nbLostRtpPackets = 0;
-
-    /**
-     * The last RTP sequence number received for this socket.
-     */
-    private long lastRtpSequenceNumber = -1;
-
-    /**
-     * The last time an information about packet lost has been logged.
-     */
-    private long lastLostPacketLogTime = 0;
-
-    /**
-     * A <tt>ByteBuffer</tt> instance used in
-     * {@link #receiveFromChannel(java.nio.channels.SocketChannel, java.net.DatagramPacket)}
-     * to read the 2-byte length field into.
-     */
-    private final ByteBuffer byteBufferLen = ByteBuffer.allocate(2);
+    private OutputStream outputStream = null;
 
     /**
      * Initializes a new <tt>DelegatingSocket</tt>.
      */
     public DelegatingSocket()
     {
-        delegate = null;
+        this((Socket) null);
     }
 
     /**
@@ -83,7 +145,7 @@ public class DelegatingSocket
     public DelegatingSocket(InetAddress address, int port)
         throws IOException
     {
-        delegate = null;
+        this((Socket) null);
     }
 
     /**
@@ -91,11 +153,12 @@ public class DelegatingSocket
      *
      * @see Socket#Socket(InetAddress, int, InetAddress, int)
      */
-    public DelegatingSocket(InetAddress address, int port,
-        InetAddress localAddr, int localPort)
+    public DelegatingSocket(
+            InetAddress address, int port,
+            InetAddress localAddr, int localPort)
         throws IOException
     {
-        delegate = null;
+        this((Socket) null);
     }
 
     /**
@@ -105,7 +168,17 @@ public class DelegatingSocket
      */
     public DelegatingSocket(Proxy proxy)
     {
-        delegate = null;
+        this((Socket) null);
+    }
+
+    /**
+     * Initializes a new <tt>DelegatingSocket</tt>.
+     *
+     * @param delegate delegating socket
+     */
+    public DelegatingSocket(Socket delegate)
+    {
+        this.delegate = delegate;
     }
 
     /**
@@ -116,7 +189,7 @@ public class DelegatingSocket
     protected DelegatingSocket(SocketImpl impl)
         throws SocketException
     {
-        delegate = null;
+        this((Socket) null);
     }
 
     /**
@@ -125,10 +198,9 @@ public class DelegatingSocket
      * @see Socket#Socket(String, int)
      */
     public DelegatingSocket(String host, int port)
-        throws UnknownHostException,
-        IOException
+        throws UnknownHostException, IOException
     {
-        delegate = null;
+        this((Socket) null);
     }
 
     /**
@@ -136,21 +208,11 @@ public class DelegatingSocket
      *
      * @see Socket#Socket(String, int, InetAddress, int)
      */
-    public DelegatingSocket(String host, int port, InetAddress localAddr,
-        int localPort)
+    public DelegatingSocket(
+            String host, int port,
+            InetAddress localAddr, int localPort)
     {
-        delegate = null;
-    }
-
-    /**
-     * Initializes a new <tt>DelegatingSocket</tt>.
-     *
-     * @param socket delegating socket
-     */
-    public DelegatingSocket(Socket socket)
-    {
-        super();
-        this.delegate = socket;
+        this((Socket) null);
     }
 
     /**
@@ -559,6 +621,154 @@ public class DelegatingSocket
     }
 
     /**
+     * Receives a datagram packet from this socket. The <tt>DatagramPacket</tt>s
+     * returned by this method do not match any of the
+     * <tt>DatagramPacketFilter</tt>s of the <tt>MultiplexedSocket</tt>s
+     * associated with this instance at the time of their receipt. When this
+     * method returns, the <tt>DatagramPacket</tt>'s buffer is filled with the
+     * data received. The datagram packet also contains the sender's IP address,
+     * and the port number on the sender's machine.
+     * <p>
+     * This method blocks until a datagram is received. The <tt>length</tt>
+     * field of the datagram packet object contains the length of the received
+     * message. If the message is longer than the packet's length, the message
+     * is truncated.
+     * </p>
+     *
+     * @param p the <tt>DatagramPacket</tt> into which to place the incoming
+     *            data
+     * @throws IOException if an I/O error occurs
+     * @see #receive(DatagramPacket)
+     */
+    public void receive(DatagramPacket p)
+        throws IOException
+    {
+        if (delegate != null && delegate instanceof DelegatingSocket)
+        {
+            ((DelegatingSocket) delegate).receive(p);
+        }
+        else
+        {
+            SocketChannel channel = getChannel();
+
+            if (channel == null)
+            {
+                // Read from our InputStream
+                if (inputStream == null)
+                    inputStream = getInputStream();
+
+                DelegatingSocket.receiveFromNetwork(
+                        p,
+                        inputStream,
+                        this.getInetAddress(),
+                        this.getPort());
+            }
+            else
+            {
+                // For nio SocketChannel-s, the read() from the InputStream and
+                // the write() to the OutputStream both lock on the same object.
+                // So, read from the Channel directly in order to avoid
+                // preventing any writing threads from proceeding.
+                receiveFromChannel(channel, p);
+            }
+
+            // no exception packet is successfully received, log it.
+            // If this is not a STUN/TURN packet, then this is a RTP packet.
+            if (!StunDatagramPacketFilter.isStunPacket(p))
+                ++nbReceivedRtpPackets;
+
+            InetSocketAddress localAddress
+                = (InetSocketAddress) super.getLocalSocketAddress();
+
+            DelegatingDatagramSocket.logPacketToPcap(
+                    p,
+                    nbReceivedRtpPackets,
+                    false,
+                    localAddress.getAddress(),
+                    localAddress.getPort());
+            // Log RTP losses if > 5%.
+            updateRtpLosses(p);
+        }
+    }
+
+    /**
+     * Receives an RFC4571-formatted frame from <tt>channel</tt> into
+     * <tt>p</tt>, and sets <tt>p</tt>'s port and address to the remote port
+     * and address of this <tt>Socket</tt>.
+     */
+    private synchronized void receiveFromChannel(SocketChannel channel,
+                                                 DatagramPacket p)
+        throws IOException
+    {
+        int ret;
+        while (byteBufferLen.hasRemaining())
+        {
+            ret = channel.read(byteBufferLen);
+            if (ret == -1)
+                throw new SocketException("Failed to receive data from socket.");
+        }
+
+        byteBufferLen.flip();
+        int fb = byteBufferLen.get();
+        int sb = byteBufferLen.get();
+        int frameLength = (((fb & 0xff) << 8) | (sb & 0xff));
+        byteBufferLen.flip();
+
+        byte[] data = p.getData();
+        if (data == null || data.length < frameLength)
+            data = new byte[frameLength];
+
+        ByteBuffer byteBuffer = ByteBuffer.wrap(data, 0, frameLength);
+
+        while (byteBuffer.hasRemaining())
+        {
+            ret = channel.read(byteBuffer);
+            if (ret == -1)
+                throw new SocketException("Failed to receive data from socket.");
+        }
+
+        p.setData(data);
+        p.setLength(frameLength);
+        p.setAddress(getInetAddress());
+        p.setPort(getPort());
+    }
+
+    /**
+     * Send a datagram packet from this socket.
+     *
+     * @param p <tt>DatagramPacket</tt> to sent
+     * @throws IOException if something goes wrong during send
+     */
+    public void send(DatagramPacket p) throws IOException
+    {
+        // The delegate socket will encapsulate the packet.
+        if (delegate != null && delegate instanceof DelegatingSocket)
+        {
+            ((DelegatingSocket) delegate).send(p);
+            return;
+        }
+
+        if (outputStream == null)
+        {
+            outputStream = getOutputStream();
+        }
+
+        // Else, sends the packet to the final socket (outputStream).
+        outputStream.write(p.getData(), p.getOffset(), p.getLength());
+
+        // no exception packet is successfully sent, log it.
+        ++nbSentRtpPackets;
+        InetSocketAddress localAddress
+            = (InetSocketAddress) super.getLocalSocketAddress();
+        DelegatingDatagramSocket.logPacketToPcap(
+                p,
+                this.nbSentRtpPackets,
+                true,
+                localAddress.getAddress(),
+                localAddress.getPort());
+    }
+
+    /**
      * {@inheritDoc}
      */
     public void sendUrgentData(int data) throws IOException
@@ -601,6 +811,17 @@ public class DelegatingSocket
         {
             super.setOOBInline(on);
         }
+    }
+
+    /**
+     * Set original <tt>InputStream</tt>.
+     *
+     * @param inputStream <tt>InputStream</tt>
+     */
+    public void setOriginalInputStream(InputStream inputStream)
+    {
+        if(this.inputStream == null && inputStream != null)
+            this.inputStream = inputStream;
     }
 
     /**
@@ -768,228 +989,6 @@ public class DelegatingSocket
         {
             return super.toString();
         }
-    }
-
-    /**
-     * Send a datagram packet from this socket.
-     *
-     * @param p <tt>DatagramPacket</tt> to sent
-     * @throws IOException if something goes wrong during send
-     */
-    public void send(DatagramPacket p) throws IOException
-    {
-        // The delegate socket will encapsulate the packet.
-        if (delegate != null && delegate instanceof DelegatingSocket)
-        {
-            ((DelegatingSocket) delegate).send(p);
-            return;
-        }
-
-        if (outputStream == null)
-        {
-            outputStream = getOutputStream();
-        }
-
-        // Else, sends the packet to the final socket (outputStream).
-        outputStream.write(p.getData(), p.getOffset(), p.getLength());
-
-        // no exception packet is successfully sent, log it.
-        ++nbSentRtpPackets;
-        InetSocketAddress localAddress
-            = (InetSocketAddress) super.getLocalSocketAddress();
-        DelegatingDatagramSocket.logPacketToPcap(
-                p,
-                this.nbSentRtpPackets,
-                true,
-                localAddress.getAddress(),
-                localAddress.getPort());
-    }
-
-    /**
-     * Receives a datagram packet from this socket. The <tt>DatagramPacket</tt>s
-     * returned by this method do not match any of the
-     * <tt>DatagramPacketFilter</tt>s of the <tt>MultiplexedSocket</tt>s
-     * associated with this instance at the time of their receipt. When this
-     * method returns, the <tt>DatagramPacket</tt>'s buffer is filled with the
-     * data received. The datagram packet also contains the sender's IP address,
-     * and the port number on the sender's machine.
-     * <p>
-     * This method blocks until a datagram is received. The <tt>length</tt>
-     * field of the datagram packet object contains the length of the received
-     * message. If the message is longer than the packet's length, the message
-     * is truncated.
-     * </p>
-     *
-     * @param p the <tt>DatagramPacket</tt> into which to place the incoming
-     *            data
-     * @throws IOException if an I/O error occurs
-     * @see #receive(DatagramPacket)
-     */
-    public void receive(DatagramPacket p)
-        throws IOException
-    {
-        if (delegate != null && delegate instanceof DelegatingSocket)
-        {
-            ((DelegatingSocket) delegate).receive(p);
-        }
-        else
-        {
-            SocketChannel channel = getChannel();
-            if (channel == null)
-            {
-                // Read from our InputStream
-                if (inputStream == null)
-                {
-                    inputStream = this.getInputStream();
-                }
-
-                DelegatingSocket.receiveFromNetwork(
-                        p,
-                        inputStream,
-                        this.getInetAddress(),
-                        this.getPort());
-            }
-            else
-            {
-                // For nio SocketChannel-s, the read() from the InputStream and
-                // the write() to the OutputStream both lock on the same object.
-                // So, read from the Channel directly in order to avoid
-                // preventing any writing threads from proceeding.
-                receiveFromChannel(channel, p);
-            }
-
-            // no exception packet is successfully received, log it.
-            // If this is not a STUN/TURN packet, then this is a RTP packet.
-            if (!StunDatagramPacketFilter.isStunPacket(p))
-            {
-                ++nbReceivedRtpPackets;
-            }
-            InetSocketAddress localAddress
-                    = (InetSocketAddress) super.getLocalSocketAddress();
-            DelegatingDatagramSocket.logPacketToPcap(
-                    p,
-                    this.nbReceivedRtpPackets,
-                    false,
-                    localAddress.getAddress(),
-                    localAddress.getPort());
-            // Log RTP losses if > 5%.
-            updateRtpLosses(p);
-        }
-    }
-
-    /**
-     * Receives an RFC4571-formatted frame from <tt>inputStream</tt> into
-     * <tt>p</tt>, and sets <tt>p</tt>'s port and address to <tt>port</tt> and
-     * <tt>inetAddress</tt>.
-     *
-     * @param p the <tt>DatagramPacket</tt> into which to place the incoming
-     * data.
-     * @param inputStream The TCP stream to be read.
-     * @param inetAddress The receiver address (local address) to set to the
-     * datagram packet.
-     * @param port The receiver port (local port) to set to the datagram packet.
-     *
-     * @throws IOException if an I/O error occurs
-     * @see #receive(DatagramPacket)
-     */
-    public static void receiveFromNetwork(
-            DatagramPacket p,
-            InputStream inputStream,
-            InetAddress inetAddress,
-            int port)
-        throws IOException
-    {
-        byte data[] = p.getData();
-        int len = 0;
-
-        int fb = inputStream.read();
-        int sb = inputStream.read();
-
-        // If we do not achieve to read the first bytes, then it was just an
-        // hole punch packet.
-        if(fb == -1 || sb == -1)
-        {
-            p.setLength(0);
-            throw new SocketException("read failed");
-        }
-
-        int desiredLength = (((fb & 0xff) << 8) | (sb & 0xff));
-        int readLen = 0;
-        int offset = 0;
-
-        while(readLen < desiredLength)
-        {
-            len = inputStream.read(data, offset, desiredLength - offset);
-            if(len == -1)
-                throw new SocketException("read failed");
-            offset += len;
-            readLen += len;
-        }
-
-        if (readLen == desiredLength)
-        {
-            p.setData(data);
-            p.setLength(len);
-            p.setAddress(inetAddress);
-            p.setPort(port);
-        }
-        else
-        {
-            throw new SocketException("Failed to receive data from socket");
-        }
-    }
-
-    /**
-     * Receives an RFC4571-formatted frame from <tt>channel</tt> into
-     * <tt>p</tt>, and sets <tt>p</tt>'s port and address to the remote port
-     * and address of this <tt>Socket</tt>.
-     */
-    private synchronized void receiveFromChannel(SocketChannel channel,
-                                                 DatagramPacket p)
-        throws IOException
-    {
-        int ret;
-        while (byteBufferLen.hasRemaining())
-        {
-            ret = channel.read(byteBufferLen);
-            if (ret == -1)
-                throw new SocketException("Failed to receive data from socket.");
-        }
-
-        byteBufferLen.flip();
-        int fb = byteBufferLen.get();
-        int sb = byteBufferLen.get();
-        int frameLength = (((fb & 0xff) << 8) | (sb & 0xff));
-        byteBufferLen.flip();
-
-        byte[] data = p.getData();
-        if (data == null || data.length < frameLength)
-            data = new byte[frameLength];
-
-        ByteBuffer byteBuffer = ByteBuffer.wrap(data, 0, frameLength);
-
-        while (byteBuffer.hasRemaining())
-        {
-            ret = channel.read(byteBuffer);
-            if (ret == -1)
-                throw new SocketException("Failed to receive data from socket.");
-        }
-
-        p.setData(data);
-        p.setLength(frameLength);
-        p.setAddress(getInetAddress());
-        p.setPort(getPort());
-    }
-
-    /**
-     * Set original <tt>InputStream</tt>.
-     *
-     * @param inputStream <tt>InputStream</tt>
-     */
-    public void setOriginalInputStream(InputStream inputStream)
-    {
-        if(this.inputStream == null && inputStream != null)
-            this.inputStream = inputStream;
     }
 
     /**

@@ -311,9 +311,16 @@ public class Component
         }
         catch(Exception e)
         {
-            logger.info("Failed to connect to " +
-                remoteCandidate.getTransportAddress());
-            sock.close();
+            logger.info(
+                    "Failed to connect to "
+                        + remoteCandidate.getTransportAddress());
+            try
+            {
+                sock.close();
+            }
+            catch (IOException ioex)
+            {
+            }
             return null;
         }
 

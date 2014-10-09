@@ -39,7 +39,13 @@ public class MultiplexingTcpHostHarvester
      * Our class logger.
      */
     private static final Logger logger
-            = Logger.getLogger(MultiplexingTcpHostHarvester.class.getName());
+        = Logger.getLogger(MultiplexingTcpHostHarvester.class.getName());
+
+    /**
+     * The constant which specifies how often to perform purging on
+     * {@link #components}.
+     */
+    private static final int PURGE_INTERVAL = 20;
 
     /**
      * Channels which we have failed to read from after at least
@@ -49,204 +55,20 @@ public class MultiplexingTcpHostHarvester
     private static final int READ_TIMEOUT = 10000;
 
     /**
-     * The constant which specifies how often to perform purging on
-     * {@link #components}.
-     */
-    private static final int PURGE_INTERVAL = 20;
-
-    /**
-     * The list of <tt>ServerSocketChannel</tt>s that we will <tt>accept</tt> on.
-     */
-    private final List<ServerSocketChannel> serverSocketChannels
-            = new LinkedList<ServerSocketChannel>();
-
-    /**
-     * The list of transport addresses which we have found to be listening on,
-     * and which we will advertise as candidates in
-     * {@link #harvest(org.ice4j.ice.Component)}
-     */
-    private final List<TransportAddress> localAddresses
-            = new LinkedList<TransportAddress>();
-
-    /**
-     * The thread which <tt>accept</tt>s TCP connections from the sockets in
-     * {@link #serverSocketChannels}.
-     */
-    private AcceptThread acceptThread;
-
-    /**
-     * The thread which reads from the already <tt>accept</tt>ed sockets.
-     */
-    private ReadThread readThread;
-
-    /**
-     * The <tt>Selector</tt> used by {@link #readThread}.
-     */
-    private Selector readSelector = Selector.open();
-
-    /**
-     * Triggers the termination of the threads of this instance.
-     */
-    private boolean close = false;
-
-    /**
-     * Whether or not to use ssltcp.
-     */
-    private boolean ssltcp = false;
-
-    /**
-     * Channels pending to be added to the list that {@link #readThread} reads
-     * from.
-     */
-    private final List<SocketChannel> newChannels
-            = new LinkedList<SocketChannel>();
-
-    /**
-     * Maps a local "ufrag" to the single <tt>Component</tt> instance with that
-     * "ufrag".
-     *
-     * We only keep weak references, because we do not want to prevent
-     * <tt>Component</tt>s from being freed.
-     */
-    private final Map<String, WeakReference<Component>> components
-            = new HashMap<String, WeakReference<Component>>();
-
-    /**
-     * A counter used to decide when to purge {@link #components}.
-     */
-    private int purgeCounter = 0;
-
-    /**
-     * Maps a public address to a local address.
-     */
-    private final Map<InetAddress, InetAddress> mappedAddresses
-            = new HashMap<InetAddress, InetAddress>();
-
-    /**
-     * Sets of additional ports, for which server reflexive candidates will be
-     * added.
-     */
-    private Set<Integer> mappedPorts = new HashSet<Integer>();
-
-    /**
-     * Initializes a new <tt>MultiplexingTcpHostHarvester</tt>, which is to
-     * listen on port number <tt>port</tt> on all IP addresses on all
-     * available interfaces.
-     *
-     * @param port the port to listen on.
-     */
-    public MultiplexingTcpHostHarvester(int port)
-        throws IOException
-    {
-        this(port,
-             Collections.list(NetworkInterface.getNetworkInterfaces()),
-             false);
-    }
-
-    /**
-     * Initializes a new <tt>MultiplexingTcpHostHarvester</tt>, which is to
-     * listen on port number <tt>port</tt> on all IP addresses on all
-     * available interfaces.
-     *
-     * @param port the port to listen on.
-     * @param ssltcp whether to use ssltcp or not.
-     */
-    public MultiplexingTcpHostHarvester(int port, boolean ssltcp)
-            throws IOException
-    {
-        this(port,
-             Collections.list(NetworkInterface.getNetworkInterfaces()),
-             ssltcp);
-    }
-
-    /**
-     * Initializes a new <tt>MultiplexingTcpHostHarvester</tt>, which is to
-     * listen on the specified list of <tt>TransportAddress</tt>es.
-     *
-     * @param transportAddresses the transport addresses to listen on.
-     * @param ssltcp whether to use ssltcp or not.
-     */
-    public MultiplexingTcpHostHarvester(
-            List<TransportAddress> transportAddresses,
-            boolean ssltcp)
-        throws IOException
-    {
-        this.ssltcp = ssltcp;
-        addLocalAddresses(transportAddresses);
-        init();
-    }
-
-    /**
-     * Initializes a new <tt>MultiplexingTcpHostHarvester</tt>, which is to
-     * listen on the specified list of <tt>TransportAddress</tt>es.
-     *
-     * @param transportAddresses the transport addresses to listen on.
-     */
-    public MultiplexingTcpHostHarvester(
-            List<TransportAddress> transportAddresses)
-            throws IOException
-    {
-        this(transportAddresses, false);
-    }
-
-    /**
-     * Initializes a new <tt>MultiplexingTcpHostHarvester</tt>, which is to
-     * listen on port number <tt>port</tt> on all the IP addresses on the
-     * specified <tt>NetworkInterface</tt>s.
-     *
-     * @param port the port to listen on.
-     * @param interfaces the interfaces to listen on.
-     */
-    public MultiplexingTcpHostHarvester(int port,
-                                        List<NetworkInterface> interfaces,
-                                        boolean ssltcp)
-        throws IOException
-    {
-        this.ssltcp = ssltcp;
-        addLocalAddresses(getLocalAddresses(port, interfaces));
-        init();
-    }
-
-    /**
-     * Initializes {@link #serverSocketChannels}, creates and starts the threads
-     * used by this instance.
-     */
-    private void init()
-            throws IOException
-    {
-        for (TransportAddress transportAddress : localAddresses)
-        {
-            ServerSocketChannel channel = ServerSocketChannel.open();
-            ServerSocket socket = channel.socket();
-            socket.bind(
-                    new InetSocketAddress(transportAddress.getAddress(),
-                                          transportAddress.getPort()));
-            serverSocketChannels.add(channel);
-        }
-
-        acceptThread = new AcceptThread();
-        acceptThread.start();
-
-        readThread = new ReadThread();
-        readThread.start();
-    }
-
-    /**
      * Returns a list of all addresses on the interfaces in <tt>interfaces</tt>
-     * which are found suitable for candidate allocations (are not loopback,
-     * are up, and are allowed by the configuration.
+     * which are found suitable for candidate allocations (are not loopback, are
+     * up, and are allowed by the configuration.
      *
      * @param port the port to use.
      * @param interfaces the list of interfaces to use.
      */
-    private List<TransportAddress> getLocalAddresses(
+    private static List<TransportAddress> getLocalAddresses(
             int port,
             List<NetworkInterface> interfaces)
         throws IOException
 
     {
-        List<TransportAddress> addresses
-                = new LinkedList<TransportAddress>();
+        List<TransportAddress> addresses = new LinkedList<TransportAddress>();
 
         for (NetworkInterface iface : interfaces)
         {
@@ -264,15 +86,161 @@ public class MultiplexingTcpHostHarvester
             {
                 InetAddress addr = ifaceAddresses.nextElement();
 
-                TransportAddress transportAddress
-                    = new TransportAddress(addr,
-                                           port,
-                                           Transport.TCP);
-                addresses.add(transportAddress);
+                addresses.add(new TransportAddress(addr, port, Transport.TCP));
             }
         }
-
         return addresses;
+    }
+
+    /**
+     * The thread which <tt>accept</tt>s TCP connections from the sockets in
+     * {@link #serverSocketChannels}.
+     */
+    private AcceptThread acceptThread;
+
+    /**
+     * Triggers the termination of the threads of this instance.
+     */
+    private boolean close = false;
+
+    /**
+     * Maps a local "ufrag" to the single <tt>Component</tt> instance with that
+     * "ufrag".
+     *
+     * We only keep weak references, because we do not want to prevent
+     * <tt>Component</tt>s from being freed.
+     */
+    private final Map<String, WeakReference<Component>> components
+        = new HashMap<String, WeakReference<Component>>();
+
+    /**
+     * The list of transport addresses which we have found to be listening on,
+     * and which we will advertise as candidates in
+     * {@link #harvest(org.ice4j.ice.Component)}
+     */
+    private final List<TransportAddress> localAddresses
+        = new LinkedList<TransportAddress>();
+
+    /**
+     * Maps a public address to a local address.
+     */
+    private final Map<InetAddress, InetAddress> mappedAddresses
+        = new HashMap<InetAddress, InetAddress>();
+
+    /**
+     * Sets of additional ports, for which server reflexive candidates will be
+     * added.
+     */
+    private final Set<Integer> mappedPorts = new HashSet<Integer>();
+
+    /**
+     * Channels pending to be added to the list that {@link #readThread} reads
+     * from.
+     */
+    private final List<SocketChannel> newChannels
+        = new LinkedList<SocketChannel>();
+
+    /**
+     * A counter used to decide when to purge {@link #components}.
+     */
+    private int purgeCounter = 0;
+
+    /**
+     * The <tt>Selector</tt> used by {@link #readThread}.
+     */
+    private final Selector readSelector = Selector.open();
+
+    /**
+     * The thread which reads from the already <tt>accept</tt>ed sockets.
+     */
+    private ReadThread readThread;
+
+    /**
+     * The list of <tt>ServerSocketChannel</tt>s that we will <tt>accept</tt>
+     * on.
+     */
+    private final List<ServerSocketChannel> serverSocketChannels
+        = new LinkedList<ServerSocketChannel>();
+
+    /**
+     * Whether or not to use ssltcp.
+     */
+    private final boolean ssltcp;
+
+    /**
+     * Initializes a new <tt>MultiplexingTcpHostHarvester</tt>, which is to
+     * listen on port number <tt>port</tt> on all IP addresses on all available
+     * interfaces.
+     *
+     * @param port the port to listen on.
+     */
+    public MultiplexingTcpHostHarvester(int port)
+        throws IOException
+    {
+        this(port, /* ssltcp */ false);
+    }
+
+    /**
+     * Initializes a new <tt>MultiplexingTcpHostHarvester</tt>, which is to
+     * listen on port number <tt>port</tt> on all IP addresses on all available
+     * interfaces.
+     *
+     * @param port the port to listen on.
+     * @param ssltcp <tt>true</tt> to use ssltcp; otherwise, <tt>false</tt>
+     */
+    public MultiplexingTcpHostHarvester(int port, boolean ssltcp)
+            throws IOException
+    {
+        this(port,
+             Collections.list(NetworkInterface.getNetworkInterfaces()),
+             ssltcp);
+    }
+
+    /**
+     * Initializes a new <tt>MultiplexingTcpHostHarvester</tt>, which is to
+     * listen on port number <tt>port</tt> on all the IP addresses on the
+     * specified <tt>NetworkInterface</tt>s.
+     *
+     * @param port the port to listen on.
+     * @param interfaces the interfaces to listen on.
+     * @param ssltcp <tt>true</tt> to use ssltcp; otherwise, <tt>false</tt>
+     */
+    public MultiplexingTcpHostHarvester(int port,
+                                        List<NetworkInterface> interfaces,
+                                        boolean ssltcp)
+        throws IOException
+    {
+        this(getLocalAddresses(port, interfaces), ssltcp);
+    }
+
+    /**
+     * Initializes a new <tt>MultiplexingTcpHostHarvester</tt>, which is to
+     * listen on the specified list of <tt>TransportAddress</tt>es.
+     *
+     * @param transportAddresses the transport addresses to listen on.
+     */
+    public MultiplexingTcpHostHarvester(
+            List<TransportAddress> transportAddresses)
+        throws IOException
+    {
+        this(transportAddresses, /* ssltcp */ false);
+    }
+
+    /**
+     * Initializes a new <tt>MultiplexingTcpHostHarvester</tt>, which is to
+     * listen on the specified list of <tt>TransportAddress</tt>es.
+     *
+     * @param transportAddresses the transport addresses to listen on.
+     * @param ssltcp <tt>true</tt> to use ssltcp; otherwise, <tt>false</tt>
+     */
+    public MultiplexingTcpHostHarvester(
+            List<TransportAddress> transportAddresses,
+            boolean ssltcp)
+        throws IOException
+    {
+        this.ssltcp = ssltcp;
+        addLocalAddresses(transportAddresses);
+        init();
     }
 
     /**
@@ -304,7 +272,7 @@ public class MultiplexingTcpHostHarvester
             for (int i = 0; i < allowedAddressesStr.length; i++)
             {
                 allowedAddresses[i]
-                        = InetAddress.getByName(allowedAddressesStr[i]);
+                    = InetAddress.getByName(allowedAddressesStr[i]);
             }
         }
 
@@ -319,7 +287,7 @@ public class MultiplexingTcpHostHarvester
             for (int i = 0; i < blockedAddressesStr.length; i++)
             {
                 blockedAddresses[i]
-                        = InetAddress.getByName(blockedAddressesStr[i]);
+                    = InetAddress.getByName(blockedAddressesStr[i]);
             }
         }
 
@@ -391,11 +359,159 @@ public class MultiplexingTcpHostHarvester
     }
 
     /**
+     * Adds a mapping between <tt>publicAddress</tt> and <tt>localAddress</tt>.
+     * This means that on harvest, along with any host candidates that have
+     * <tt>publicAddress</tt>, a server reflexive candidate will be added (with
+     * the same port as the host candidate).
+     *
+     * @param publicAddress the public address.
+     * @param localAddress the local address.
+     */
+    public void addMappedAddress(InetAddress publicAddress,
+                                 InetAddress localAddress)
+    {
+        mappedAddresses.put(publicAddress, localAddress);
+    }
+
+    /**
+     * Adds port as an additional port. When harvesting, additional server
+     * reflexive candidates will be added with this port.
+     *
+     * @param port the port to add.
+     */
+    public void addMappedPort(int port)
+    {
+        mappedPorts.add(port);
+    }
+
+    /**
+     * Creates and returns the list of <tt>LocalCandidate</tt>s which are to be
+     * added by this <tt>MultiplexingTcpHostHarvester</tt> to a specific
+     * <tt>Component</tt>.
+     *
+     * @param component the <tt>Component</tt> for which to create candidates.
+     * @return the list of <tt>LocalCandidate</tt>s which are to be added by
+     * this <tt>MultiplexingTcpHostHarvester</tt> to a specific
+     * <tt>Component</tt>.
+     */
+    private List<LocalCandidate> createLocalCandidates(Component component)
+    {
+        List<TcpHostCandidate> hostCandidates
+            = new LinkedList<TcpHostCandidate>();
+
+        // Add the host candidates for the addresses we really listen on
+        for (TransportAddress transportAddress : localAddresses)
+        {
+            TcpHostCandidate candidate
+                = new TcpHostCandidate(transportAddress, component);
+
+            candidate.setTcpType(CandidateTcpType.PASSIVE);
+            if (ssltcp)
+                candidate.setSSL(true);
+
+            hostCandidates.add(candidate);
+        }
+
+        // Add srflx candidates for any mapped addresses
+        List<LocalCandidate> mappedCandidates
+            = new LinkedList<LocalCandidate>();
+
+        for (Map.Entry<InetAddress, InetAddress> mapping
+                : mappedAddresses.entrySet())
+        {
+            InetAddress localAddress = mapping.getValue();
+
+            for (TcpHostCandidate base : hostCandidates)
+            {
+                TransportAddress baseTransportAddress
+                    = base.getTransportAddress();
+
+                if (localAddress.equals(baseTransportAddress.getAddress()))
+                {
+                    InetAddress publicAddress = mapping.getKey();
+                    ServerReflexiveCandidate mappedCandidate
+                        = new ServerReflexiveCandidate(
+                            new TransportAddress(publicAddress,
+                                                 baseTransportAddress.getPort(),
+                                                 Transport.TCP),
+                            base,
+                            base.getStunServerAddress(),
+                            CandidateExtendedType.STATICALLY_MAPPED_CANDIDATE);
+
+                    if (base.isSSL())
+                        mappedCandidate.setSSL(true);
+
+                    mappedCandidates.add(mappedCandidate);
+                }
+            }
+        }
+
+        // Add srflx candidates for mapped ports
+        List<LocalCandidate> portMappedCandidates
+            = new LinkedList<LocalCandidate>();
+
+        for (TcpHostCandidate base : hostCandidates)
+        {
+            for (Integer port : mappedPorts)
+            {
+                ServerReflexiveCandidate portMappedCandidate
+                    = new ServerReflexiveCandidate(
+                        new TransportAddress(
+                            base.getTransportAddress().getAddress(),
+                            port,
+                            Transport.TCP),
+                        base,
+                        base.getStunServerAddress(),
+                        CandidateExtendedType.STATICALLY_MAPPED_CANDIDATE);
+
+                if (base.isSSL())
+                    portMappedCandidate.setSSL(true);
+
+                portMappedCandidates.add(portMappedCandidate);
+            }
+        }
+        // Mapped ports for mapped addresses
+        for (LocalCandidate mappedCandidate : mappedCandidates)
+        {
+            TcpHostCandidate base
+                = (TcpHostCandidate) mappedCandidate.getBase();
+
+            for (Integer port : mappedPorts)
+            {
+                ServerReflexiveCandidate portMappedCandidate
+                    = new ServerReflexiveCandidate(
+                        new TransportAddress(
+                                mappedCandidate.getTransportAddress()
+                                        .getAddress(),
+                                port,
+                                Transport.TCP),
+                        base,
+                        base.getStunServerAddress(),
+                        CandidateExtendedType.STATICALLY_MAPPED_CANDIDATE);
+
+                if (base.isSSL())
+                    portMappedCandidate.setSSL(true);
+
+                portMappedCandidates.add(portMappedCandidate);
+            }
+        }
+
+        LinkedList<LocalCandidate> allCandidates
+            = new LinkedList<LocalCandidate>();
+
+        allCandidates.addAll(hostCandidates);
+        allCandidates.addAll(mappedCandidates);
+        allCandidates.addAll(portMappedCandidates);
+        return allCandidates;
+    }
+
+    /**
      * Returns the <tt>Component</tt> instance, if any, for a given local
-     * "ufrag".
-     * @param localUfrag the local "ufrag"
+     * &quot;ufrag&quot;.
+     *
+     * @param localUfrag the local &quot;ufrag&quot;
      * @return the <tt>Component</tt> instance, if any, for a given local
-     * "ufrag".
+     * &quot;ufrag&quot;.
      */
     private Component getComponent(String localUfrag)
     {
@@ -406,6 +522,7 @@ public class MultiplexingTcpHostHarvester
             if (wr != null)
             {
                 Component component = wr.get();
+
                 if (component == null)
                 {
                     components.remove(localUfrag);
@@ -423,15 +540,17 @@ public class MultiplexingTcpHostHarvester
      * Saves a (weak) reference to <tt>Component</tt>, so that it can be
      * notified if/when a socket for one of it <tt>LocalCandidate</tt>s is
      * accepted.
-     *
-     * This method does not perform any network operations and should return
+     * <p>
+     * The method does not perform any network operations and should return
      * quickly.
+     * </p>
      */
     @Override
     public Collection<LocalCandidate> harvest(Component component)
     {
         IceMediaStream stream = component.getParentStream();
         Agent agent = stream.getParentAgent();
+
         if (stream.getComponentCount() != 1 || agent.getStreamCount() != 1)
         {
             /*
@@ -440,14 +559,14 @@ public class MultiplexingTcpHostHarvester
              * because we use the local "ufrag" to de-multiplex the accept()-ed
              * sockets between the known components.
              */
-            throw new IllegalStateException("More than one Component for an "
-                                            + "Agent, cannot harvest.");
+            throw new IllegalStateException(
+                    "More than one Component for an Agent, cannot harvest.");
         }
 
         List<LocalCandidate> candidates = createLocalCandidates(component);
+
         for (LocalCandidate candidate : candidates)
             component.addLocalCandidate(candidate);
-
 
         synchronized (components)
         {
@@ -460,163 +579,49 @@ public class MultiplexingTcpHostHarvester
     }
 
     /**
+     * Initializes {@link #serverSocketChannels}, creates and starts the threads
+     * used by this instance.
+     */
+    private void init()
+        throws IOException
+    {
+        for (TransportAddress transportAddress : localAddresses)
+        {
+            ServerSocketChannel channel = ServerSocketChannel.open();
+            ServerSocket socket = channel.socket();
+            socket.bind(
+                    new InetSocketAddress(transportAddress.getAddress(),
+                                          transportAddress.getPort()));
+            serverSocketChannels.add(channel);
+        }
+
+        acceptThread = new AcceptThread();
+        acceptThread.start();
+
+        readThread = new ReadThread();
+        readThread.start();
+    }
+
+    /**
      * Removes entries from {@link #components} for which the
      * <tt>WeakReference</tt> has been cleared.
      */
     private void purgeComponents()
     {
-        purgeCounter += 1;
+        ++purgeCounter;
         if (purgeCounter % PURGE_INTERVAL == 0)
         {
-            List<String> toRemove = new LinkedList<String>();
             synchronized (components)
             {
-                for (Map.Entry<String, WeakReference<Component>> entry
-                        : components.entrySet())
+                for (Iterator<WeakReference<Component>> i
+                            = components.values().iterator();
+                        i.hasNext();)
                 {
-                    WeakReference<Component> wr = entry.getValue();
-                    if (wr == null || wr.get() == null)
-                        toRemove.add(entry.getKey());
-                }
-
-                for (String key : toRemove)
-                    components.remove(key);
-            }
-        }
-    }
-
-    /**
-     * Creates and returns the list of <tt>LocalCandidate</tt>s which are to be added
-     * by this <tt>MultiplexingTcpHostHarvester</tt>to a specific
-     * <tt>Component</tt>.
-     *
-     * @param component the <tt>Component</tt> for which to create candidates.
-     * @return the list of <tt>LocalCandidate</tt>s which are to be added
-     * by this <tt>MultiplexingTcpHostHarvester</tt>to a specific
-     * <tt>Component</tt>.
-     */
-    private List<LocalCandidate> createLocalCandidates(Component component)
-    {
-        List<TcpHostCandidate> hostCandidates
-                = new LinkedList<TcpHostCandidate>();
-        // Add the host candidates for the addresses we really listen on
-        for (TransportAddress transportAddress : localAddresses)
-        {
-            TcpHostCandidate candidate
-                    = new TcpHostCandidate(transportAddress, component);
-            candidate.setTcpType(CandidateTcpType.PASSIVE);
-            if (ssltcp)
-                candidate.setSSL(true);
-
-            hostCandidates.add(candidate);
-        }
-
-        // Add srflx candidates for any mapped addresses
-        List<LocalCandidate> mappedCandidates
-                = new LinkedList<LocalCandidate>();
-        for (Map.Entry<InetAddress, InetAddress> mapping
-                : mappedAddresses.entrySet())
-        {
-            InetAddress localAddress = mapping.getValue();
-            for (TcpHostCandidate base : hostCandidates)
-            {
-                if (localAddress
-                        .equals(base.getTransportAddress().getAddress()))
-                {
-                    InetAddress publicAddress = mapping.getKey();
-                    ServerReflexiveCandidate mappedCandidate
-                        = new ServerReflexiveCandidate(
-                            new TransportAddress(publicAddress,
-                                                 base.getTransportAddress()
-                                                     .getPort(),
-                                                 Transport.TCP),
-                            base,
-                            base.getStunServerAddress(),
-                            CandidateExtendedType.STATICALLY_MAPPED_CANDIDATE);
-                    if (base.isSSL())
-                        mappedCandidate.setSSL(true);
-
-                    mappedCandidates.add(mappedCandidate);
+                    if (i.next().get() == null)
+                        i.remove();
                 }
             }
         }
-
-        // Add srflx candidates for mapped ports
-        List<LocalCandidate> portMappedCandidates
-                = new LinkedList<LocalCandidate>();
-        for (TcpHostCandidate base : hostCandidates)
-        {
-            for (Integer port : mappedPorts)
-            {
-                ServerReflexiveCandidate portMappedCandidate
-                    = new ServerReflexiveCandidate(
-                        new TransportAddress(
-                            base.getTransportAddress().getAddress(),
-                            port,
-                            Transport.TCP),
-                        base,
-                        base.getStunServerAddress(),
-                        CandidateExtendedType.STATICALLY_MAPPED_CANDIDATE);
-                if (base.isSSL())
-                    portMappedCandidate.setSSL(true);
-
-                portMappedCandidates.add(portMappedCandidate);
-            }
-        }
-        // Mapped ports for mapped addresses
-        for (LocalCandidate mappedCandidate : mappedCandidates)
-        {
-            TcpHostCandidate base = (TcpHostCandidate) mappedCandidate.getBase();
-            for (Integer port : mappedPorts)
-            {
-                ServerReflexiveCandidate portMappedCandidate
-                        = new ServerReflexiveCandidate(
-                        new TransportAddress(
-                                mappedCandidate.getTransportAddress()
-                                        .getAddress(),
-                                port,
-                                Transport.TCP),
-                        base,
-                        base.getStunServerAddress(),
-                        CandidateExtendedType.STATICALLY_MAPPED_CANDIDATE);
-                if (base.isSSL())
-                    portMappedCandidate.setSSL(true);
-
-                portMappedCandidates.add(portMappedCandidate);
-            }
-        }
-
-        LinkedList<LocalCandidate> allCandidates
-                = new LinkedList<LocalCandidate>();
-        allCandidates.addAll(hostCandidates);
-        allCandidates.addAll(mappedCandidates);
-        allCandidates.addAll(portMappedCandidates);
-        return allCandidates;
-    }
-
-    /**
-     * Adds port as an additional port. When harvesting, additional server
-     * reflexive candidates will be added with this port.
-     * @param port the port to add.
-     */
-    public void addMappedPort(int port)
-    {
-        mappedPorts.add(port);
-    }
-
-    /**
-     * Adds a mapping between <tt>publicAddress</tt> and <tt>localAddress</tt>.
-     * This means that on harvest, along with any host candidates that have
-     * <tt>publicAddress</tt>, a server reflexive candidate will be added
-     * (with the same port as the host candidate).
-     *
-     * @param publicAddress the public address.
-     * @param localAddress the local address.
-     */
-    public void addMappedAddress(InetAddress publicAddress,
-                                 InetAddress localAddress)
-    {
-        mappedAddresses.put(publicAddress, localAddress);
     }
 
     /**
@@ -633,12 +638,6 @@ public class MultiplexingTcpHostHarvester
         private final Selector selector;
 
         /**
-         * The channel to which this <tt>AcceptThread</tt> will write when a
-         * new socket has been <tt>accept</tt>ed in order to notify
-         * {@link #readThread}.
-         */
-
-        /**
          * Initializes a new <tt>AcceptThread</tt>.
          */
         private AcceptThread()
@@ -652,6 +651,14 @@ public class MultiplexingTcpHostHarvester
                 channel.configureBlocking(false);
                 channel.register(selector, SelectionKey.OP_ACCEPT);
             }
+        }
+
+        /**
+         * Notifies {@link #readThread} that new channels have been added to
+         */
+        private void notifyReadThread()
+        {
+            readSelector.wakeup();
         }
 
         /**
@@ -749,15 +756,133 @@ public class MultiplexingTcpHostHarvester
             }
             catch (IOException ioe)
             {}
+        }
+    }
 
+    /**
+     * An <tt>IceSocketWrapper</tt> implementation which allows a
+     * <tt>DatagramPacket</tt> to be pushed back and received on the first call
+     * to {@link #receive(java.net.DatagramPacket)}.
+     */
+    private static class PushBackIceSocketWrapper
+        extends IceSocketWrapper
+    {
+        /**
+         * The <tt>DatagramPacket</tt> which will be used on the first call to
+         * {@link #receive(java.net.DatagramPacket)}.
+         */
+        private DatagramPacket datagramPacket;
+
+        /**
+         * The <tt>IceSocketWrapper</tt> that this instance wraps around.
+         */
+        private final IceSocketWrapper wrapped;
+
+        /**
+         * Initializes a new <tt>PushBackIceSocketWrapper</tt> instance that
+         * wraps around <tt>wrappedWrapper</tt> and reads from
+         * <tt>datagramSocket</tt> on the first call to
+         * {@link #receive(java.net.DatagramPacket)}
+         *
+         * @param wrappedWrapper the <tt>IceSocketWrapper</tt> instance that we
+         * wrap around.
+         * @param datagramPacket the <tt>DatagramPacket</tt> which will be used
+         * on the first call to {@link #receive(java.net.DatagramPacket)}
+         */
+        private PushBackIceSocketWrapper(IceSocketWrapper wrappedWrapper,
+                                         DatagramPacket datagramPacket)
+        {
+            this.wrapped = wrappedWrapper;
+            this.datagramPacket = datagramPacket;
         }
 
         /**
-         * Notifies {@link #readThread} that new channels have been added to
+         * {@inheritDoc}
          */
-        private void notifyReadThread()
+        @Override
+        public void close()
         {
-            readSelector.wakeup();
+            wrapped.close();
+        }
+
+        /**
+         * {@inheritDoc}
+         */
+        @Override
+        public InetAddress getLocalAddress()
+        {
+            return wrapped.getLocalAddress();
+        }
+
+        /**
+         * {@inheritDoc}
+         */
+        @Override
+        public int getLocalPort()
+        {
+            return wrapped.getLocalPort();
+        }
+
+        /**
+         * {@inheritDoc}
+         */
+        @Override
+        public SocketAddress getLocalSocketAddress()
+        {
+            return wrapped.getLocalSocketAddress();
+        }
+
+        /**
+         * {@inheritDoc}
+         */
+        @Override
+        public Socket getTCPSocket()
+        {
+            return wrapped.getTCPSocket();
+        }
+
+        /**
+         * {@inheritDoc}
+         */
+        @Override
+        public DatagramSocket getUDPSocket()
+        {
+            return wrapped.getUDPSocket();
+        }
+
+        /**
+         * {@inheritDoc}
+         *
+         * On the first call to this instance reads from
+         * {@link #datagramPacket}, on subsequent calls delegates to
+         * {@link #wrapped}.
+         */
+        @Override
+        public void receive(DatagramPacket p) throws IOException
+        {
+            if (datagramPacket != null)
+            {
+                int len = Math.min(p.getLength(), datagramPacket.getLength());
+                System.arraycopy(datagramPacket.getData(), 0,
+                                 p.getData(), 0,
+                                 len);
+                p.setAddress(datagramPacket.getAddress());
+                p.setPort(datagramPacket.getPort());
+                datagramPacket = null;
+            }
+            else
+            {
+                wrapped.receive(p);
+            }
+        }
+
+        /**
+         * {@inheritDoc}
+         */
+        @Override
+        public void send(DatagramPacket p) throws IOException
+        {
+            wrapped.send(p);
         }
     }
 
@@ -769,7 +894,7 @@ public class MultiplexingTcpHostHarvester
          * from, mapped to the time they were initially added.
          */
         private final Map<SocketChannel, Long> channels
-                = new HashMap<SocketChannel, Long>();
+            = new HashMap<SocketChannel, Long>();
 
         /**
          * <tt>Selector</tt> used to detect when one of {@link #channels} is
@@ -778,26 +903,288 @@ public class MultiplexingTcpHostHarvester
         private final Selector selector;
 
         /**
-         * The channel on which we will be notified when new channels are
-         * available in {@link #newChannels}.
-         */
-
-        /**
-         * Used in {@link #cleanup()}, defined here to avoid allocating on
-         * every invocation.
-         */
-        private final List<SocketChannel> toRemove
-                = new LinkedList<SocketChannel>();
-
-        /**
          * Initializes a new <tt>ReadThread</tt>.
+         *
          * @throws IOException if the selector to be used fails to open.
          */
         private ReadThread()
-                throws IOException
+            throws IOException
         {
             setName("MultiplexingTcpHostHarvester ReadThread");
             selector = MultiplexingTcpHostHarvester.this.readSelector;
+        }
+
+        /**
+         * Adds the channels from {@link #newChannels} to {@link #channels} and
+         * registers them in {@link #selector}.
+         */
+        private void checkForNewChannels()
+        {
+            synchronized (newChannels)
+            {
+                for (SocketChannel channel : newChannels)
+                {
+                    try
+                    {
+                        channel.configureBlocking(false);
+                        channel.register(selector, SelectionKey.OP_READ);
+                    }
+                    catch (IOException ioe)
+                    {
+                        logger.info("Failed to register channel: " + ioe);
+                        try
+                        {
+                            channel.close();
+                        }
+                        catch (IOException ioe2)
+                        {}
+                    }
+
+                    channels.put(channel, System.currentTimeMillis());
+                }
+                newChannels.clear();
+            }
+        }
+
+        /**
+         * Checks {@link #channels} for channels which have been added over
+         * {@link #READ_TIMEOUT} milliseconds ago and closes them.
+         */
+        private void cleanup()
+        {
+            long now = System.currentTimeMillis();
+
+            for (Iterator<Map.Entry<SocketChannel, Long>> i
+                        = channels.entrySet().iterator();
+                    i.hasNext();)
+            {
+                Map.Entry<SocketChannel, Long> e = i.next();
+
+                if (now - e.getValue() > READ_TIMEOUT)
+                {
+                    SocketChannel channel = e.getKey();
+
+                    i.remove();
+                    logger.info("Read timeout for socket: " + channel);
+
+                    try
+                    {
+                        channel.close();
+                    }
+                    catch (IOException ioe)
+                    {
+                        logger.info("Failed to close channel: " + ioe);
+                    }
+                }
+            }
+        }
+
+        /**
+         * Searches among the local candidates of <tt>Component</tt> for a
+         * <tt>TcpHostCandidate</tt> with the same transport address as the
+         * local transport address of <tt>socket</tt>.
+         *
+         * We expect to find such a candidate, which has been added by this
+         * <tt>MultiplexingTcpHostHarvester</tt> while harvesting.
+         *
+         * @param component the <tt>Component</tt> to search.
+         * @param socket the <tt>Socket</tt> to match the local transport
+         * address of.
+         * @return a <tt>TcpHostCandidate</tt> among the local candidates of
+         * <tt>Component</tt> with the same transport address as the local
+         * address of <tt>Socket</tt>, or <tt>null</tt> if no such candidate
+         * exists.
+         */
+        private TcpHostCandidate findCandidate(
+                Component component,
+                Socket socket)
+        {
+            InetAddress localAddress = socket.getLocalAddress();
+            int localPort = socket.getLocalPort();
+
+            for (LocalCandidate candidate : component.getLocalCandidates())
+            {
+                TransportAddress transportAddress
+                    = candidate.getTransportAddress();
+                if (candidate instanceof TcpHostCandidate
+                        && Transport.TCP.equals(transportAddress.getTransport())
+                        && localPort == transportAddress.getPort()
+                        && localAddress.equals(transportAddress.getAddress()))
+                {
+                    return (TcpHostCandidate) candidate;
+                }
+            }
+            return null;
+        }
+
+        /**
+         * Makes <tt>socket</tt> available to <tt>component</tt> and pushes back
+         * <tt>datagramPacket</tt> into the STUN socket.
+         *
+         * @param socket the <tt>Socket</tt>.
+         * @param component the <tt>Component</tt>.
+         * @param datagramPacket the <tt>DatagramPacket</tt> to push back.
+         */
+        private void handSocketToComponent(Socket socket,
+                                           Component component,
+                                           DatagramPacket datagramPacket)
+        {
+            IceProcessingState state
+                = component.getParentStream().getParentAgent().getState();
+            if (!IceProcessingState.WAITING.equals(state)
+                    && !IceProcessingState.RUNNING.equals(state))
+            {
+                logger.info("Not adding a socket to an ICE agent with state "
+                                + state);
+                return;
+            }
+
+            // Socket to add to the candidate
+            IceSocketWrapper candidateSocket = null;
+
+            // STUN-only filtered socket to add to the StunStack
+            IceSocketWrapper stunSocket = null;
+
+            try
+            {
+                MultiplexingSocket multiplexing = new MultiplexingSocket(socket);
+                candidateSocket = new IceTcpSocketWrapper(multiplexing);
+
+                stunSocket
+                    = new IceTcpSocketWrapper(
+                        multiplexing.getSocket(new StunDatagramPacketFilter()));
+                stunSocket
+                    = new PushBackIceSocketWrapper(stunSocket, datagramPacket);
+            }
+            catch (IOException ioe)
+            {
+                logger.info("Failed to create sockets: " + ioe);
+            }
+
+            TcpHostCandidate candidate = findCandidate(component, socket);
+            if (candidate != null)
+            {
+                component.getParentStream().getParentAgent().getStunStack()
+                    .addSocket(stunSocket);
+                candidate.addSocket(candidateSocket);
+
+                // the socket is not our responsibility anymore. It is up to
+                // the candidate/component to close/free it.
+            }
+            else
+            {
+                logger.info("Failed to find the local candidate for socket: "
+                                    + socket);
+                try
+                {
+                    socket.close();
+                }
+                catch (IOException ioe)
+                {}
+            }
+
+        }
+
+        /**
+         * Tries to read a STUN message from a specific <tt>SocketChannel</tt>
+         * and handles the channel accordingly.
+         *
+         * If a STUN message is successfully read, and it contains a USERNAME
+         * attribute, the local &quot;ufrag&quot; is extracted from the
+         * attribute value and the socket is passed on to the <tt>Component</tt>
+         * that this <tt>MultiplexingTcpHostHarvester</tt> has associated with
+         * that &quot;ufrag&quot;.
+         *
+         * @param channel the <tt>SocketChannel</tt> to read from.
+         */
+        private void readFromChannel(SocketChannel channel)
+        {
+            try
+            {
+                // re-enable blocking mode, so that we can read from the
+                // socket's input stream
+                channel.configureBlocking(true);
+
+                Socket socket = channel.socket();
+                InputStream inputStream = socket.getInputStream();
+
+                // If we use ssltcp we wait for a pseudo-ssl handshake from the
+                // client.
+                if (ssltcp)
+                {
+                    byte[] buf
+                            = new byte[GoogleTurnSSLCandidateHarvester
+                                            .SSL_CLIENT_HANDSHAKE.length];
+
+                    inputStream.read(buf);
+                    if (Arrays.equals(buf,
+                                      GoogleTurnSSLCandidateHarvester
+                                          .SSL_CLIENT_HANDSHAKE))
+                    {
+                        socket.getOutputStream().write(
+                            GoogleTurnSSLCandidateHarvester
+                                .SSL_SERVER_HANDSHAKE);
+                    }
+                    else
+                    {
+                        throw new IOException(
+                            "Expected a pseudo ssl handshake, didn't get one.");
+                    }
+                }
+
+                // read an RFC4571 frame into datagramPacket
+
+                // TODO refactor so that:
+                // 1. We don't block
+                // 2. We know the length of the buffer to allocate
+                DatagramPacket datagramPacket
+                    = new DatagramPacket(new byte[1500],1500);
+                DelegatingSocket.receiveFromNetwork(
+                        datagramPacket,
+                        inputStream,
+                        socket.getInetAddress(),
+                        socket.getPort());
+
+                // Does this look like a STUN binding request?
+                // What's the username?
+                Message stunMessage
+                    = Message.decode(datagramPacket.getData(),
+                                     (char) datagramPacket.getOffset(),
+                                     (char) datagramPacket.getLength());
+
+                if (stunMessage.getMessageType() != Message.BINDING_REQUEST)
+                    throw new IOException("Not a binding request");
+
+                UsernameAttribute usernameAttribute
+                    = (UsernameAttribute)
+                        stunMessage.getAttribute(Attribute.USERNAME);
+                if (usernameAttribute == null)
+                    throw new IOException(
+                            "No USERNAME attribute present.");
+
+                String usernameString
+                    = new String(usernameAttribute.getUsername());
+                String localUfrag = usernameString.split(":")[0];
+                Component component = getComponent(localUfrag);
+                if (component == null)
+                    throw new IOException("No component found.");
+
+
+                //phew, finally
+                handSocketToComponent(socket, component, datagramPacket);
+            }
+            catch (IOException e)
+            {
+                logger.info("Failed to read from socket: " + e);
+            }
+            catch (StunException e)
+            {
+                logger.info("Failed to read from socket: " + e);
+            }
+            finally
+            {
+                channels.remove(channel);
+            }
         }
 
         /**
@@ -882,422 +1269,5 @@ public class MultiplexingTcpHostHarvester
             catch (IOException ioe)
             {}
         }
-
-        /**
-         * Checks {@link #channels} for channels which have been added over
-         * {@link #READ_TIMEOUT} milliseconds ago and closes them.
-         */
-        private void cleanup()
-        {
-            long now = System.currentTimeMillis();
-            toRemove.clear();
-
-            for (Map.Entry<SocketChannel, Long> entry : channels.entrySet())
-            {
-                if (now - entry.getValue() > READ_TIMEOUT)
-                {
-                    SocketChannel channel = entry.getKey();
-
-                    toRemove.add(channel);
-                    logger.info("Read timeout for socket: " + channel);
-
-                    try
-                    {
-                        channel.close();
-                    }
-                    catch (IOException ioe)
-                    {
-                        logger.info("Failed to close channel: " + ioe);
-                    }
-
-                }
-            }
-
-            for (SocketChannel channel : toRemove)
-            {
-                channels.remove(channel);
-            }
-        }
-
-        /**
-         * Tries to read a STUN message from a specific <tt>SocketChannel</tt>
-         * and handles the channel accordingly.
-         *
-         * If a STUN message is successfully read, and it contains a USERNAME
-         * attribute, the local "ufrag" is extracted from the attribute value
-         * and the socket is passed on to the <tt>Component</tt> that
-         * this <tt>MultiplexingTcpHostHarvester</tt> has associated with that
-         * "ufrag".
-         * @param channel the <tt>SocketChannel</tt> to read from.
-         */
-        private void readFromChannel(SocketChannel channel)
-        {
-            try
-            {
-                // re-enable blocking mode, so that we can read from the
-                // socket's input stream
-                channel.configureBlocking(true);
-
-                Socket socket = channel.socket();
-                InputStream inputStream = socket.getInputStream();
-
-                // If we use ssltcp we wait for a pseudo-ssl handshake from the
-                // client.
-                if (ssltcp)
-                {
-                    byte[] buf
-                            = new byte[GoogleTurnSSLCandidateHarvester
-                                            .SSL_CLIENT_HANDSHAKE.length];
-
-                    inputStream.read(buf);
-                    if (Arrays.equals(buf,
-                                      GoogleTurnSSLCandidateHarvester
-                                          .SSL_CLIENT_HANDSHAKE))
-                    {
-                        socket.getOutputStream().write(
-                            GoogleTurnSSLCandidateHarvester
-                                .SSL_SERVER_HANDSHAKE);
-                    }
-                    else
-                    {
-                        throw new ReadThreadException(
-                            "Expected a pseudo ssl handshake, didn't get one.");
-                    }
-                }
-
-                // read an RFC4571 frame into datagramPacket
-
-                // TODO refactor so that:
-                // 1. We don't block
-                // 2. We know the length of the buffer to allocate
-                DatagramPacket datagramPacket
-                        = new DatagramPacket(new byte[1500],1500);
-                DelegatingSocket.receiveFromNetwork(
-                        datagramPacket,
-                        inputStream,
-                        socket.getInetAddress(),
-                        socket.getPort());
-
-                // Does this look like a STUN binding request?
-                // What's the username?
-                Message stunMessage
-                        = Message.decode(datagramPacket.getData(),
-                                         (char) datagramPacket.getOffset(),
-                                         (char) datagramPacket.getLength());
-
-                if (stunMessage.getMessageType() != Message.BINDING_REQUEST)
-                    throw new ReadThreadException("Not a binding request");
-
-                UsernameAttribute usernameAttribute
-                        = (UsernameAttribute)
-                        stunMessage.getAttribute(Attribute.USERNAME);
-                if (usernameAttribute == null)
-                    throw new ReadThreadException(
-                            "No USERNAME attribute present.");
-
-                String usernameString
-                        = new String(usernameAttribute.getUsername());
-                String localUfrag = usernameString.split(":")[0];
-                Component component = getComponent(localUfrag);
-                if (component == null)
-                    throw new ReadThreadException("No component found.");
-
-
-                //phew, finally
-                handSocketToComponent(socket, component, datagramPacket);
-            }
-            catch (IOException e)
-            {
-                logger.info("Failed to read from socket: " + e);
-            }
-            catch (StunException e)
-            {
-                logger.info("Failed to read from socket: " + e);
-            }
-            catch (ReadThreadException e)
-            {
-                logger.info("Failed to read from socket: " + e);
-            }
-            finally
-            {
-                channels.remove(channel);
-            }
-        }
-
-        /**
-         * Makes <tt>socket</tt> available to <tt>component</tt> and pushes
-         * back <tt>datagramPacket</tt> into the STUN socket.
-         * @param socket the <tt>Socket</tt>.
-         * @param component the <tt>Component</tt>.
-         * @param datagramPacket the <tt>DatagramPacket</tt> to push back.
-         */
-        private void handSocketToComponent(Socket socket,
-                                           Component component,
-                                           DatagramPacket datagramPacket)
-        {
-            IceProcessingState state
-                    = component.getParentStream().getParentAgent().getState();
-            if (!IceProcessingState.WAITING.equals(state)
-                    && !IceProcessingState.RUNNING.equals(state))
-            {
-                logger.info("Not adding a socket to an ICE agent with state "
-                                + state);
-                return;
-            }
-
-            // Socket to add to the candidate
-            IceSocketWrapper candidateSocket = null;
-
-            // STUN-only filtered socket to add to the StunStack
-            IceSocketWrapper stunSocket = null;
-
-            try
-            {
-                MultiplexingSocket multiplexing = new MultiplexingSocket(socket);
-                candidateSocket = new IceTcpSocketWrapper(multiplexing);
-
-                stunSocket
-                    = new IceTcpSocketWrapper(
-                        multiplexing.getSocket(new StunDatagramPacketFilter()));
-                stunSocket
-                    = new PushBackIceSocketWrapper(stunSocket, datagramPacket);
-            }
-            catch (IOException ioe)
-            {
-                logger.info("Failed to create sockets: " + ioe);
-            }
-
-            TcpHostCandidate candidate = findCandidate(component, socket);
-            if (candidate != null)
-            {
-                component.getParentStream().getParentAgent()
-                        .getStunStack().addSocket(stunSocket);
-                candidate.addSocket(candidateSocket);
-
-                // the socket is not our responsibility anymore. It is up to
-                // the candidate/component to close/free it.
-            }
-            else
-            {
-                logger.info("Failed to find the local candidate for socket: "
-                                    + socket);
-                try
-                {
-                    socket.close();
-                }
-                catch (IOException ioe)
-                {}
-            }
-
-        }
-
-        /**
-         * Searches among the local candidates of <tt>Component</tt> for a
-         * <tt>TcpHostCandidate</tt> with the same transport address as the
-         * local transport address of <tt>socket</tt>.
-         *
-         * We expect to find such a candidate, which has been added by this
-         * <tt>MultiplexingTcpHostHarvester</tt> while harvesting.
-         *
-         * @param component the <tt>Component</tt> to search.
-         * @param socket the <tt>Socket</tt> to match the local transport
-         * address of.
-         * @return a <tt>TcpHostCandidate</tt> among the local candidates of
-         * <tt>Component</tt> with the same transport address as the local
-         * address of <tt>Socket</tt>, or <tt>null</tt> if no such candidate
-         * exists.
-         */
-        private TcpHostCandidate findCandidate(Component component, Socket socket)
-        {
-            InetAddress localAddress = socket.getLocalAddress();
-            int localPort = socket.getLocalPort();
-
-            for (LocalCandidate candidate : component.getLocalCandidates())
-            {
-                TransportAddress transportAddress
-                        = candidate.getTransportAddress();
-                if (candidate instanceof TcpHostCandidate
-                        && Transport.TCP.equals(transportAddress.getTransport())
-                        && localPort == transportAddress.getPort()
-                        && localAddress.equals(transportAddress.getAddress()))
-                {
-                    return (TcpHostCandidate) candidate;
-                }
-            }
-            return null;
-        }
-
-        /**
-         * Adds the channels from {@link #newChannels} to {@link #channels}
-         * and registers them in {@link #selector}.
-         */
-        private void checkForNewChannels()
-        {
-            synchronized (newChannels)
-            {
-                for (SocketChannel channel : newChannels)
-                {
-                    try
-                    {
-                        channel.configureBlocking(false);
-                        channel.register(selector, SelectionKey.OP_READ);
-                    }
-                    catch (IOException ioe)
-                    {
-                        logger.info("Failed to register channel: " + ioe);
-                        try
-                        {
-                            channel.close();
-                        }
-                        catch (IOException ioe2)
-                        {}
-                    }
-
-                    channels.put(channel, System.currentTimeMillis());
-                }
-                newChannels.clear();
-            }
-        }
     }
-
-    /**
-     * An exception used internally by
-     * {@link org.ice4j.ice.harvest.MultiplexingTcpHostHarvester.ReadThread}.
-     */
-    @SuppressWarnings("serial")
-    private class ReadThreadException
-        extends Exception
-    {
-        private ReadThreadException(String s)
-        {
-            super(s);
-        }
-    }
-
-    /**
-     * An <tt>IceSocketWrapper</tt> implementation which allows a
-     * <tt>DatagramPacket</tt> to be pushed back and received on the first
-     * call to {@link #receive(java.net.DatagramPacket)}
-     */
-    private static class PushBackIceSocketWrapper
-        extends IceSocketWrapper
-    {
-        /**
-         * The <tt>IceSocketWrapper</tt> that this instance wraps around.
-         */
-        private IceSocketWrapper wrapped;
-
-        /**
-         * The <tt>DatagramPacket</tt> which will be used on the first call
-         * to {@link #receive(java.net.DatagramPacket)}.
-         */
-        private DatagramPacket datagramPacket;
-
-        /**
-         * Initializes a new <tt>PushBackIceSocketWrapper</tt> instance that
-         * wraps around <tt>wrappedWrapper</tt> and reads from
-         * <tt>datagramSocket</tt> on the first call to
-         * {@link #receive(java.net.DatagramPacket)}
-         *
-         * @param wrappedWrapper the <tt>IceSocketWrapper</tt> instance that we
-         * wrap around.
-         * @param datagramPacket the <tt>DatagramPacket</tt> which will be used
-         * on the first call to {@link #receive(java.net.DatagramPacket)}
-         */
-        private PushBackIceSocketWrapper(IceSocketWrapper wrappedWrapper,
-                                         DatagramPacket datagramPacket)
-        {
-            this.wrapped = wrappedWrapper;
-            this.datagramPacket = datagramPacket;
-        }
-
-        /**
-         * {@inheritDoc}
-         */
-        @Override
-        public void send(DatagramPacket p) throws IOException
-        {
-            wrapped.send(p);
-        }
-
-        /**
-         * {@inheritDoc}
-         *
-         * On the first call to this instance reads from {@link #datagramPacket},
-         * on subsequent calls delegates to {@link #wrapped}.
-         */
-        @Override
-        public void receive(DatagramPacket p) throws IOException
-        {
-            if (datagramPacket != null)
-            {
-                int len = Math.min(p.getLength(), datagramPacket.getLength());
-                System.arraycopy(datagramPacket.getData(), 0,
-                                 p.getData(), 0,
-                                 len);
-                p.setAddress(datagramPacket.getAddress());
-                p.setPort(datagramPacket.getPort());
-                datagramPacket = null;
-            }
-            else
-            {
-                wrapped.receive(p);
-            }
-        }
-
-        /**
-         * {@inheritDoc}
-         */
-        @Override
-        public void close()
-        {
-            wrapped.close();
-        }
-
-        /**
-         * {@inheritDoc}
-         */
-        @Override
-        public InetAddress getLocalAddress()
-        {
-            return wrapped.getLocalAddress();
-        }
-
-        /**
-         * {@inheritDoc}
-         */
-        @Override
-        public int getLocalPort()
-        {
-            return wrapped.getLocalPort();
-        }
-
-        /**
-         * {@inheritDoc}
-         */
-        @Override
-        public SocketAddress getLocalSocketAddress()
-        {
-            return wrapped.getLocalSocketAddress();
-        }
-
-        /**
-         * {@inheritDoc}
-         */
-        @Override
-        public Socket getTCPSocket()
-        {
-            return wrapped.getTCPSocket();
-        }
-
-        /**
-         * {@inheritDoc}
-         */
-        @Override
-        public DatagramSocket getUDPSocket()
-        {
-            return wrapped.getUDPSocket();
-        }
-    }
-
 }
