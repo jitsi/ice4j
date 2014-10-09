@@ -689,9 +689,6 @@ public class MultiplexingTcpHostHarvester
 
                 if (readyChannels > 0)
                 {
-                    synchronized (newChannels)
-                    {
-                    }
                     IOException exception = null;
                     List<SocketChannel> channelsToAdd
                             = new LinkedList<SocketChannel>();
