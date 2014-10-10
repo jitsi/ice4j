@@ -9,6 +9,7 @@ package org.ice4j.ice.harvest;
 import java.io.*;
 import java.lang.ref.*;
 import java.net.*;
+import java.nio.*;
 import java.nio.channels.*;
 import java.util.*;
 import java.util.logging.*;
@@ -888,10 +889,10 @@ public class MultiplexingTcpHostHarvester
     {
         /**
          * Contains the <tt>SocketChanel</tt>s that we are currently reading
-         * from, mapped to the time they were initially added.
+         * from.
          */
-        private final Map<SocketChannel, Long> channels
-            = new HashMap<SocketChannel, Long>();
+        private final List<ChannelDesc> channels
+            = new LinkedList<ChannelDesc>();
 
         /**
          * <tt>Selector</tt> used to detect when one of {@link #channels} is
@@ -937,7 +938,7 @@ public class MultiplexingTcpHostHarvester
                         {}
                     }
 
-                    channels.put(channel, System.currentTimeMillis());
+                    channels.add(new ChannelDesc(channel));
                 }
                 newChannels.clear();
             }
@@ -951,22 +952,21 @@ public class MultiplexingTcpHostHarvester
         {
             long now = System.currentTimeMillis();
 
-            for (Iterator<Map.Entry<SocketChannel, Long>> i
-                        = channels.entrySet().iterator();
-                    i.hasNext();)
+            for (Iterator<ChannelDesc> i = channels.iterator();
+                 i.hasNext();)
             {
-                Map.Entry<SocketChannel, Long> e = i.next();
+                ChannelDesc channelDesc = i.next();
 
-                if (now - e.getValue() > READ_TIMEOUT)
+                if (channelDesc.lastActive != -1
+                        && now - channelDesc.lastActive > READ_TIMEOUT)
                 {
-                    SocketChannel channel = e.getKey();
-
                     i.remove();
-                    logger.info("Read timeout for socket: " + channel);
+                    logger.info("Read timeout for socket: "
+                                        + channelDesc.channel);
 
                     try
                     {
-                        channel.close();
+                        channelDesc.channel.close();
                     }
                     catch (IOException ioe)
                     {
@@ -1011,6 +1011,25 @@ public class MultiplexingTcpHostHarvester
                     return (TcpHostCandidate) candidate;
                 }
             }
+            return null;
+        }
+
+        /**
+         * Finds the <tt>ChannelDesc</tt> in {@link #channels} whose
+         * channel is <tt>channel</tt>.
+         *
+         * @param channel the channel to search for.
+         * @return the <tt>ChannelDesc</tt> in {@link #channels} whose
+         * channel is <tt>channel</tt>
+         */
+        private ChannelDesc findChannelDesc(SelectableChannel channel)
+        {
+            for (ChannelDesc channelDesc : channels)
+            {
+                if (channelDesc.channel.equals(channel))
+                    return channelDesc;
+            }
+
             return null;
         }
 
@@ -1083,8 +1102,18 @@ public class MultiplexingTcpHostHarvester
         }
 
         /**
-         * Tries to read a STUN message from a specific <tt>SocketChannel</tt>
-         * and handles the channel accordingly.
+         * Tries to read, without blocking, from <tt>channel</tt> to its
+         * buffer. If after reading the buffer is filled, handles the data in
+         * the buffer.
+         *
+         * This works in three stages:
+         * 1 (optional, only if ssltcp is enabled): Read a fixed-size message.
+         * If it matches the hard-coded pseudo SSL ClientHello, sends the
+         * hard-coded ServerHello.
+         * 2: Read two bytes as an unsigned int and interpret it as the length
+         * to read in the next stage.
+         * 3: Read number of bytes indicated in stage2 and try to interpret
+         * them as a STUN message.
          *
          * If a STUN message is successfully read, and it contains a USERNAME
          * attribute, the local &quot;ufrag&quot; is extracted from the
@@ -1093,94 +1122,164 @@ public class MultiplexingTcpHostHarvester
          * that &quot;ufrag&quot;.
          *
          * @param channel the <tt>SocketChannel</tt> to read from.
+         * @param key the <tt>SelectionKey</tt> associated with
+         * <tt>channel</tt>, which is to be canceled in case no further
+         * reading is required from the channel.
          */
-        private void readFromChannel(SocketChannel channel)
+        private void readFromChannel(ChannelDesc channel,
+                                     SelectionKey key)
         {
+            if (channel.buffer == null)
+            {
+                // Set up a buffer with a pre-determined size
+
+                if (ssltcp && !channel.sslHandshakeRead)
+                {
+                    channel.buffer
+                            = ByteBuffer.allocate(
+                            GoogleTurnSSLCandidateHarvester
+                                    .SSL_CLIENT_HANDSHAKE.length);
+                }
+                else if (channel.length == -1)
+                {
+                    channel.buffer = ByteBuffer.allocate(2);
+                }
+                else
+                {
+                    channel.buffer = ByteBuffer.allocate(channel.length);
+                }
+            }
+
             try
             {
-                // re-enable blocking mode, so that we can read from the
-                // socket's input stream
-                channel.configureBlocking(true);
+                channel.channel.read(channel.buffer);
 
-                Socket socket = channel.socket();
-                InputStream inputStream = socket.getInputStream();
-
-                // If we use ssltcp we wait for a pseudo-ssl handshake from the
-                // client.
-                if (ssltcp)
+                if (!channel.buffer.hasRemaining())
                 {
-                    byte[] buf
-                            = new byte[GoogleTurnSSLCandidateHarvester
-                                            .SSL_CLIENT_HANDSHAKE.length];
-
-                    inputStream.read(buf);
-                    if (Arrays.equals(buf,
-                                      GoogleTurnSSLCandidateHarvester
-                                          .SSL_CLIENT_HANDSHAKE))
+                    // We've filled in the buffer.
+                    if (ssltcp && !channel.sslHandshakeRead)
                     {
-                        socket.getOutputStream().write(
-                            GoogleTurnSSLCandidateHarvester
-                                .SSL_SERVER_HANDSHAKE);
+                        byte[] bytesRead
+                                = new byte[GoogleTurnSSLCandidateHarvester
+                                .SSL_CLIENT_HANDSHAKE.length];
+
+                        channel.buffer.flip();
+                        channel.buffer.get(bytesRead);
+
+                        // Set to null, so that we re-allocate it for the next
+                        // stage
+                        channel.buffer = null;
+                        channel.sslHandshakeRead = true;
+
+                        if (Arrays.equals(bytesRead,
+                                          GoogleTurnSSLCandidateHarvester
+                                                  .SSL_CLIENT_HANDSHAKE))
+                        {
+                            ByteBuffer byteBuffer = ByteBuffer.wrap(
+                                    GoogleTurnSSLCandidateHarvester
+                                            .SSL_SERVER_HANDSHAKE);
+                            channel.channel.write(byteBuffer);
+                        }
+                        else
+                        {
+                            throw new IOException("Expected a pseudo ssl"
+                                + " handshake, but received something else.");
+                        }
+
+                    }
+                    else if (channel.length == -1)
+                    {
+                        channel.buffer.flip();
+                        int fb = channel.buffer.get();
+                        int sb = channel.buffer.get();
+
+                        channel.length = (((fb & 0xff) << 8) | (sb & 0xff));
+
+                        // Set to null, so that we re-allocate it for the next
+                        // stage
+                        channel.buffer = null;
                     }
                     else
                     {
-                        throw new IOException(
-                            "Expected a pseudo ssl handshake, didn't get one.");
+                        byte[] bytesRead = new byte[channel.length];
+                        channel.buffer.flip();
+                        channel.buffer.get(bytesRead);
+
+                        // Does this look like a STUN binding request?
+                        // What's the username?
+                        Message stunMessage
+                            = Message.decode(bytesRead,
+                                             (char) 0,
+                                             (char) bytesRead.length);
+
+                        if (stunMessage.getMessageType()
+                                != Message.BINDING_REQUEST)
+                        {
+                            throw new IOException("Not a binding request");
+                        }
+
+                        UsernameAttribute usernameAttribute
+                                = (UsernameAttribute)
+                                stunMessage.getAttribute(Attribute.USERNAME);
+                        if (usernameAttribute == null)
+                            throw new IOException(
+                                    "No USERNAME attribute present.");
+
+                        String usernameString
+                                = new String(usernameAttribute.getUsername());
+                        String localUfrag = usernameString.split(":")[0];
+                        Component component = getComponent(localUfrag);
+                        if (component == null)
+                            throw new IOException("No component found.");
+
+                        // The rest of the stack will read from the socket's
+                        // InputStream. We cannot change the blocking mode
+                        // bore the channel is removed from the selector (by
+                        // cancelling the key)
+                        key.cancel();
+                        channel.channel.configureBlocking(true);
+
+                        // Construct a DatagramPacket from the just-read packet
+                        // which is to be pushed pack
+                        DatagramPacket p
+                                = new DatagramPacket(bytesRead,
+                                                     bytesRead.length);
+                        Socket socket = channel.channel.socket();
+                        p.setAddress(socket.getInetAddress());
+                        p.setPort(socket.getPort());
+
+                        handSocketToComponent(socket, component, p);
+
+                        // Successfully accepted, we don't need it anymore.
+                        channels.remove(channel);
                     }
                 }
-
-                // read an RFC4571 frame into datagramPacket
-
-                // TODO refactor so that:
-                // 1. We don't block
-                // 2. We know the length of the buffer to allocate
-                DatagramPacket datagramPacket
-                    = new DatagramPacket(new byte[1500],1500);
-                DelegatingSocket.receiveFromNetwork(
-                        datagramPacket,
-                        inputStream,
-                        socket.getInetAddress(),
-                        socket.getPort());
-
-                // Does this look like a STUN binding request?
-                // What's the username?
-                Message stunMessage
-                    = Message.decode(datagramPacket.getData(),
-                                     (char) datagramPacket.getOffset(),
-                                     (char) datagramPacket.getLength());
-
-                if (stunMessage.getMessageType() != Message.BINDING_REQUEST)
-                    throw new IOException("Not a binding request");
-
-                UsernameAttribute usernameAttribute
-                    = (UsernameAttribute)
-                        stunMessage.getAttribute(Attribute.USERNAME);
-                if (usernameAttribute == null)
-                    throw new IOException(
-                            "No USERNAME attribute present.");
-
-                String usernameString
-                    = new String(usernameAttribute.getUsername());
-                String localUfrag = usernameString.split(":")[0];
-                Component component = getComponent(localUfrag);
-                if (component == null)
-                    throw new IOException("No component found.");
-
-
-                //phew, finally
-                handSocketToComponent(socket, component, datagramPacket);
             }
-            catch (IOException e)
+            catch (IOException ioe)
             {
-                logger.info("Failed to read from socket: " + e);
-            }
-            catch (StunException e)
-            {
-                logger.info("Failed to read from socket: " + e);
-            }
-            finally
-            {
+                logger.info("Failed to handle TCP socket "
+                                    + channel.channel.socket() + ": " + ioe);
                 channels.remove(channel);
+                key.cancel();
+                try
+                {
+                    channel.channel.close();
+                }
+                catch (IOException ioe2)
+                {}
+            }
+            catch (StunException se)
+            {
+                logger.info("Failed to handle TCP socket "
+                                    + channel.channel.socket() + ": " + se);
+                channels.remove(channel);
+                key.cancel();
+                try
+                {
+                    channel.channel.close();
+                }
+                catch (IOException ioe)
+                {}
             }
         }
 
@@ -1224,10 +1323,12 @@ public class MultiplexingTcpHostHarvester
                         if (key.isReadable())
                         {
                             selectedChannel = key.channel();
-                            key.cancel();
 
-                            readFromChannel((SocketChannel) selectedChannel);
-                            channels.remove(selectedChannel);
+                            ChannelDesc channelDesc
+                                    = findChannelDesc(selectedChannel);
+                            channelDesc.lastActive = System.currentTimeMillis();
+
+                            readFromChannel(channelDesc, key);
                         }
                     }
                     selectedKeys.clear();
@@ -1249,15 +1350,18 @@ public class MultiplexingTcpHostHarvester
                 newChannels.clear();
             }
 
-            for (SocketChannel channel : channels.keySet())
+            for (ChannelDesc channelDesc : channels)
             {
                 try
                 {
-                    channel.close();
+                    channelDesc.channel.close();
                 }
                 catch (IOException ioe)
-                {}
+                {
+                }
             }
+
+            channels.clear();
 
             try
             {
@@ -1265,6 +1369,48 @@ public class MultiplexingTcpHostHarvester
             }
             catch (IOException ioe)
             {}
+        }
+
+        /**
+         * Contains a <tt>SocketChannel</tt> that <tt>ReadThread</tt> is
+         * reading from.
+         */
+        private class ChannelDesc
+        {
+            /**
+             * The actual <tt>SocketChannel</tt>.
+             */
+            private final SocketChannel channel;
+
+            /**
+             * The time the channel was last found to be active.
+             */
+            private long lastActive = System.currentTimeMillis();
+
+            /**
+             * The buffer which stores the data so far read from the channel.
+             */
+            ByteBuffer buffer = null;
+
+            /**
+             * Whether or not the initial "pseudo" SSL handshake has been read.
+             */
+            boolean sslHandshakeRead = false;
+
+            /**
+             * The value of the RFC4571 "length" field read from the channel, or
+             * -1 if it hasn't (yet) been read.
+             */
+            int length = -1;
+
+            /**
+             * Initializes a new <tt>ChannelDesc</tt> with the given channel.
+             * @param channel the channel.
+             */
+            private ChannelDesc(SocketChannel channel)
+            {
+                this.channel = channel;
+            }
         }
     }
 }
