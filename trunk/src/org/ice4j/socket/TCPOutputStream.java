@@ -19,6 +19,14 @@ public class TCPOutputStream
     extends OutputStream
 {
     /**
+     * The indicator which determines whether this <tt>TCPOutputStream</tt> is
+     * to frame RTP and RTCP packets in accord with RFC 4571 &quot;Framing
+     * Real-time Transport Protocol (RTP) and RTP Control Protocol (RTCP)
+     * Packets over Connection-Oriented Transport&quot;.
+     */
+    private final boolean frame;
+
+    /**
      * Original <tt>OutputStream</tt> that this class wraps.
      */
     private final OutputStream outputStream;
@@ -31,6 +39,12 @@ public class TCPOutputStream
     public TCPOutputStream(OutputStream outputStream)
     {
         this.outputStream = outputStream;
+
+        // GoogleRelayedCandidateSocket will encapsulate data in TURN message so
+        // do not frame.
+        frame
+            = !(outputStream
+                    instanceof GoogleRelayedCandidateSocket.TCPOutputStream);
     }
 
     /**
@@ -57,35 +71,22 @@ public class TCPOutputStream
      * {@inheritDoc}
      */
     @Override
-    public void write(byte[] b)
-        throws IOException
-    {
-        write(b, 0, b.length);
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
     public void write(byte[] b, int off, int len)
         throws IOException
     {
-        // GoogleRelayedCandidateSocket will encapsulate data in TURN message so
-        // do not add framing here
-        if (outputStream
-                instanceof GoogleRelayedCandidateSocket.TCPOutputStream)
+        if (frame)
         {
-            outputStream.write(b, off, len);
+            int newLen = len + 2;
+            byte newB[] = new byte[newLen];
+
+            newB[0] = (byte) ((len >> 8) & 0xFF);
+            newB[1] = (byte) (len & 0xFF);
+            System.arraycopy(b, off, newB, 2, len);
+            outputStream.write(newB, 0, newLen);
         }
         else
         {
-            int dataLength = len + 2;
-            byte data[] = new byte[dataLength];
-
-            data[0] = (byte) ((len >> 8) & 0xFF);
-            data[1] = (byte) (len & 0xFF);
-            System.arraycopy(b, off, data, 2, len);
-            outputStream.write(data, 0, dataLength);
+            outputStream.write(b, off, len);
         }
     }
 
