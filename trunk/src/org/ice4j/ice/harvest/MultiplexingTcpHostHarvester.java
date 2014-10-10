@@ -386,6 +386,15 @@ public class MultiplexingTcpHostHarvester
     }
 
     /**
+     * Triggers the termination of the threads of this
+     * <tt>MultiplexingTcpHarvester</tt>.
+     */
+    public void close()
+    {
+        close = true;
+    }
+
+    /**
      * Creates and returns the list of <tt>LocalCandidate</tt>s which are to be
      * added by this <tt>MultiplexingTcpHostHarvester</tt> to a specific
      * <tt>Component</tt>.
@@ -645,6 +654,7 @@ public class MultiplexingTcpHostHarvester
             throws IOException
         {
             setName("MultiplexingTcpHostHarvester AcceptThread");
+            setDaemon(true);
 
             selector = Selector.open();
             for (ServerSocketChannel channel : serverSocketChannels)
@@ -895,12 +905,6 @@ public class MultiplexingTcpHostHarvester
             = new LinkedList<ChannelDesc>();
 
         /**
-         * <tt>Selector</tt> used to detect when one of {@link #channels} is
-         * ready to be read from.
-         */
-        private final Selector selector;
-
-        /**
          * Initializes a new <tt>ReadThread</tt>.
          *
          * @throws IOException if the selector to be used fails to open.
@@ -909,12 +913,12 @@ public class MultiplexingTcpHostHarvester
             throws IOException
         {
             setName("MultiplexingTcpHostHarvester ReadThread");
-            selector = MultiplexingTcpHostHarvester.this.readSelector;
+            setDaemon(true);
         }
 
         /**
          * Adds the channels from {@link #newChannels} to {@link #channels} and
-         * registers them in {@link #selector}.
+         * registers them in {@link #readSelector}.
          */
         private void checkForNewChannels()
         {
@@ -925,7 +929,7 @@ public class MultiplexingTcpHostHarvester
                     try
                     {
                         channel.configureBlocking(false);
-                        channel.register(selector, SelectionKey.OP_READ);
+                        channel.register(readSelector, SelectionKey.OP_READ);
                     }
                     catch (IOException ioe)
                     {
@@ -1308,7 +1312,7 @@ public class MultiplexingTcpHostHarvester
 
                 try
                 {
-                    readyChannels = selector.select(READ_TIMEOUT / 2);
+                    readyChannels = readSelector.select(READ_TIMEOUT / 2);
                 }
                 catch (IOException ioe)
                 {
@@ -1317,7 +1321,7 @@ public class MultiplexingTcpHostHarvester
 
                 if (readyChannels > 0)
                 {
-                    selectedKeys = selector.selectedKeys();
+                    selectedKeys = readSelector.selectedKeys();
                     for (SelectionKey key : selectedKeys)
                     {
                         if (key.isReadable())
@@ -1365,7 +1369,7 @@ public class MultiplexingTcpHostHarvester
 
             try
             {
-                selector.close();
+                readSelector.close();
             }
             catch (IOException ioe)
             {}
