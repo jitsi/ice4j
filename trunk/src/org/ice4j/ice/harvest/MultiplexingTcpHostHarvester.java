@@ -450,6 +450,7 @@ public class MultiplexingTcpHostHarvester
 
                     if (base.isSSL())
                         mappedCandidate.setSSL(true);
+                    mappedCandidate.setTcpType(CandidateTcpType.PASSIVE);
 
                     mappedCandidates.add(mappedCandidate);
                 }
@@ -476,6 +477,7 @@ public class MultiplexingTcpHostHarvester
 
                 if (base.isSSL())
                     portMappedCandidate.setSSL(true);
+                portMappedCandidate.setTcpType(CandidateTcpType.PASSIVE);
 
                 portMappedCandidates.add(portMappedCandidate);
             }
@@ -501,6 +503,7 @@ public class MultiplexingTcpHostHarvester
 
                 if (base.isSSL())
                     portMappedCandidate.setSSL(true);
+                portMappedCandidate.setTcpType(CandidateTcpType.PASSIVE);
 
                 portMappedCandidates.add(portMappedCandidate);
             }
