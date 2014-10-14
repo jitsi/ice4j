@@ -44,7 +44,19 @@ public class MultiplexedDatagramSocket
      * The list of <tt>DatagramPacket</tt>s to be received through this
      * <tt>DatagramSocket</tt> i.e. accepted by {@link #filter}.
      */
-    final List<DatagramPacket> received = new LinkedList<DatagramPacket>();
+    final List<DatagramPacket> received
+        = new SocketReceiveBuffer()
+        {
+            private static final long serialVersionUID
+                = -5763976093759762087L;
+
+            @Override
+            public int getReceiveBufferSize()
+                throws SocketException
+            {
+                return MultiplexedDatagramSocket.this.getReceiveBufferSize();
+            }
+        };
 
     /**
      * Initializes a new <tt>MultiplexedDatagramSocket</tt> which is unbound and
