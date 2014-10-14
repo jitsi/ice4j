@@ -966,7 +966,16 @@ public class MultiplexingTcpHostHarvester
                 {
                     i.remove();
                     logger.info("Read timeout for socket: "
-                                        + channelDesc.channel);
+                                        + channelDesc.channel.socket());
+
+                    // De-register from the selector
+                    for (SelectionKey key : readSelector.keys())
+                    {
+                        if (key.channel().equals(channelDesc.channel))
+                        {
+                            key.cancel();
+                        }
+                    }
 
                     try
                     {
@@ -1156,7 +1165,10 @@ public class MultiplexingTcpHostHarvester
 
             try
             {
-                channel.channel.read(channel.buffer);
+                if (channel.channel.read(channel.buffer) == -1)
+                {
+                    throw new IOException("Socket closed.");
+                }
 
                 if (!channel.buffer.hasRemaining())
                 {
