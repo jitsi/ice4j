@@ -63,7 +63,18 @@ public class MultiplexingSocket
      * {@link #sockets} at the time of the reading from the network.
      */
     private final List<DatagramPacket> received
-        = new LinkedList<DatagramPacket>();
+        = new SocketReceiveBuffer()
+        {
+            private static final long serialVersionUID
+                = 4097024214973676873L;
+
+            @Override
+            public int getReceiveBufferSize()
+                throws SocketException
+            {
+                return MultiplexingSocket.this.getReceiveBufferSize();
+            }
+        };
 
     /**
      * The <tt>Object</tt> which synchronizes the access to {@link #inReceive}.
