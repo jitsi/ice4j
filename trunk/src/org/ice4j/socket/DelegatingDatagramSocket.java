@@ -7,12 +7,12 @@
  */
 package org.ice4j.socket;
 
-import org.ice4j.stack.*;
-
 import java.io.*;
 import java.net.*;
 import java.nio.channels.*;
 import java.util.logging.*;
+
+import org.ice4j.stack.*;
 
 /**
  * Implements a <tt>DatagramSocket</tt> which delegates its calls to a specific
@@ -62,7 +62,7 @@ public class DelegatingDatagramSocket
     private long lastLostPacketLogTime = 0;
 
     /**
-     * Assigns a factory to generate custom DatagramSocket to remplace classical
+     * Assigns a factory to generate custom DatagramSocket to replace classical
      * "java" DatamgramSocket. This way external applications can define the
      * type of DatagramSocket to use.
      * If "null", then the classical "java" DatagramSocket is used. Otherwise
@@ -203,7 +203,7 @@ public class DelegatingDatagramSocket
             }
             // If not null, binds the delegate socket to the given address.
             // Otherwise bind the "super" socket to this address.
-            this.bind(address);
+            bind(address);
         }
     }
 
@@ -482,7 +482,7 @@ public class DelegatingDatagramSocket
         throws SocketException
     {
         return
-            (delegate ==null)
+            (delegate == null)
                 ? super.getReuseAddress()
                 : delegate.getReuseAddress();
     }
@@ -619,37 +619,27 @@ public class DelegatingDatagramSocket
         {
             // If the packet length is too small, then the
             // DatagramSocket.receive function will truncate the received
-            // datagram.
-            // This problem appears when reusing the same DatagramPacket: i.e.
-            // if the first time we use the DatagramPacket to receive a small
-            // packet and the second time a bigger one, then after the first
-            // packet is received, the length is set to the size of the first
-            // packet and the second packet is truncated.
+            // datagram. This problem appears when reusing the same
+            // DatagramPacket i.e. if the first time we use the DatagramPacket
+            // to receive a small packet and the second time a bigger one, then
+            // after the first packet is received, the length is set to the size
+            // of the first packet and the second packet is truncated.
             // http://docs.oracle.com/javase/6/docs/api/java/net/DatagramSocket.html
             byte[] data = p.getData();
-            if(data == null)
-            {
-                p.setLength(0);
-            }
-            else
-            {
-                p.setLength(data.length - p.getOffset());
-            }
+
+            p.setLength((data == null) ? 0 : (data.length - p.getOffset()));
 
             super.receive(p);
 
-            // no exception packet is successfully received, log it.
-            // If this is not a STUN/TURN packet, then this is a RTP packet.
+            // No exception, a packet is successfully received - log it. If it
+            // is not a STUN/TURN packet, then it is an RTP packet.
             if(isRtpPacket(p))
-            {
                 ++nbReceivedRtpPackets;
-            }
             logPacketToPcap(
                     p,
-                    this.nbReceivedRtpPackets,
+                    nbReceivedRtpPackets,
                     false,
-                    super.getLocalAddress(),
-                    super.getLocalPort());
+                    super.getLocalAddress(), super.getLocalPort());
             // Log RTP losses if > 5%.
             updateRtpLosses(p);
         }
@@ -687,7 +677,8 @@ public class DelegatingDatagramSocket
         // Sends the packet to the final DatagramSocket
         if (delegate == null)
         {
-            try{
+            try
+            {
                 super.send(p);
             }
             // DIRTY, DIRTY, DIRTY!!!
@@ -722,10 +713,9 @@ public class DelegatingDatagramSocket
             ++nbSentRtpPackets;
             logPacketToPcap(
                     p,
-                    this.nbSentRtpPackets,
+                    nbSentRtpPackets,
                     true,
-                    super.getLocalAddress(),
-                    super.getLocalPort());
+                    super.getLocalAddress(), super.getLocalPort());
         }
         // Else, the delegate socket will encapsulate the packet.
         else
@@ -956,7 +946,6 @@ public class DelegatingDatagramSocket
      * Determines the sequence number of a RTP packet.
      *
      * @param p the last RTP packet received.
-     *
      * @return The last RTP sequence number.
      */
     public static long getRtpSequenceNumber(DatagramPacket p)
@@ -972,28 +961,28 @@ public class DelegatingDatagramSocket
     }
 
     /**
-     * Updates and Logs information about RTP losses if there is more then 5% of
+     * Updates and logs information about RTP losses if there is more then 5% of
      * RTP packet lost (at most every 5 seconds).
      *
      * @param p The last packet received.
      */
-    public void updateRtpLosses(DatagramPacket p)
+    private void updateRtpLosses(DatagramPacket p)
     {
         // If this is not a STUN/TURN packet, then this is a RTP packet.
         if(isRtpPacket(p))
         {
             long newSeq = getRtpSequenceNumber(p);
-            if(this.lastRtpSequenceNumber != -1)
-            {
-                nbLostRtpPackets
-                    += getNbLost(this.lastRtpSequenceNumber, newSeq);
-            }
-            this.lastRtpSequenceNumber = newSeq;
 
-            this.lastLostPacketLogTime = logRtpLosses(
-                    this.nbLostRtpPackets,
-                    this.nbReceivedRtpPackets,
-                    this.lastLostPacketLogTime);
+            if(lastRtpSequenceNumber != -1)
+                nbLostRtpPackets += getNbLost(lastRtpSequenceNumber, newSeq);
+
+            lastRtpSequenceNumber = newSeq;
+
+            lastLostPacketLogTime
+                = logRtpLosses(
+                        nbLostRtpPackets,
+                        nbReceivedRtpPackets,
+                        lastLostPacketLogTime);
         }
     }
 
@@ -1130,24 +1119,25 @@ public class DelegatingDatagramSocket
     /**
      * Determines whether <tt>p</tt> is an RTP packet (and something else, like,
      * a STUN, RTCP or DTLS packet).
+     *
      * @param p the packet.
      * @return <tt>true</tt> if <tt>p</tt> appears to be an RTP packet.
      */
     private boolean isRtpPacket(DatagramPacket p)
     {
-        byte[] data = p.getData();
-        int off = p.getOffset();
         int len = p.getLength();
 
         if (len >= 4)
         {
+            byte[] data = p.getData();
+            int off = p.getOffset();
+
             if (((data[off + 0] & 0xc0) >> 6) == 2)
             {
                 //Either RTP or RTCP
                 return !RtcpDemuxPacketFilter.isRtcpPacket(p);
             }
         }
-
         return false;
     }
 }

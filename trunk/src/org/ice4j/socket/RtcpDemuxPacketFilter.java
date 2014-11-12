@@ -49,6 +49,7 @@ public class RtcpDemuxPacketFilter
     public static boolean isRtcpPacket(DatagramPacket p)
     {
         int len = p.getLength();
+
         if (len >= 4) //minimum RTCP message length
         {
             byte[] data = p.getData();
@@ -57,10 +58,10 @@ public class RtcpDemuxPacketFilter
             if (((data[off + 0] & 0xc0) >> 6) == 2) //RTP/RTCP version field
             {
                 int pt = data[off + 1] & 0xff;
+
                 return (200 <= pt && pt <= 211);
             }
         }
-
         return false;
     }
 

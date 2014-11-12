@@ -16,6 +16,7 @@ import java.nio.channels.*;
  * <tt>Socket</tt>.
  *
  * @author Sebastien Vincent
+ * @author Lyubomir Marinov
  */
 public class DelegatingSocket
     extends Socket
@@ -35,45 +36,47 @@ public class DelegatingSocket
      * @throws IOException if an I/O error occurs
      * @see #receive(DatagramPacket)
      */
-    public static void receiveFromNetwork(
+    public static void receiveFromInputStream(
             DatagramPacket p,
             InputStream inputStream,
-            InetAddress inetAddress,
-            int port)
+            InetAddress inetAddress, int port)
         throws IOException
     {
-        byte data[] = p.getData();
-        int len = 0;
+        int b0 = inputStream.read();
+        int b1 = inputStream.read();
 
-        int fb = inputStream.read();
-        int sb = inputStream.read();
-
-        // If we do not achieve to read the first bytes, then it was just an
-        // hole punch packet.
-        if(fb == -1 || sb == -1)
+        // If we do not achieve to read the first bytes, then it was just a hole
+        // punch packet.
+        if (b0 == -1 || b1 == -1)
         {
             p.setLength(0);
             throw new SocketException("read failed");
         }
 
-        int desiredLength = (((fb & 0xff) << 8) | (sb & 0xff));
+        int frameLen = ((b0 & 0xFF) << 8) | (b1 & 0xFF);
         int readLen = 0;
-        int offset = 0;
+        byte[] data = p.getData();
+        int off = 0;
 
-        while(readLen < desiredLength)
+        while (readLen < frameLen)
         {
-            len = inputStream.read(data, offset, desiredLength - offset);
-            if(len == -1)
+            int len = inputStream.read(data, off, frameLen - off);
+
+            if (len == -1)
+            {
                 throw new SocketException("read failed");
-            offset += len;
-            readLen += len;
+            }
+            else
+            {
+                off += len;
+                readLen += len;
+            }
         }
 
-        if (readLen == desiredLength)
+        if (readLen == frameLen)
         {
-            p.setData(data);
-            p.setLength(len);
             p.setAddress(inetAddress);
+            p.setData(data, 0, frameLen);
             p.setPort(port);
         }
         else
@@ -83,16 +86,22 @@ public class DelegatingSocket
     }
 
     /**
-     * A <tt>ByteBuffer</tt> instance used in
-     * {@link #receiveFromChannel(java.nio.channels.SocketChannel, java.net.DatagramPacket)}
-     * to read the 2-byte length field into.
-     */
-    private final ByteBuffer byteBufferLen = ByteBuffer.allocate(2);
-
-    /**
      * Delegate <tt>Socket</tt>.
      */
     protected final Socket delegate;
+
+    /**
+     * A <tt>DelegatingSocket</tt> view of {@link #delegate} if the latter
+     * implements the former; otherwise, <tt>null</tt>.
+     */
+    private final DelegatingSocket delegateAsDelegatingSocket;
+
+    /**
+     * The <tt>ByteBuffer</tt> instance used in
+     * {@link #receiveFromChannel(java.nio.channels.SocketChannel,
+     * java.net.DatagramPacket)} to read the 2-byte length field into.
+     */
+    private final ByteBuffer frameLengthByteBuffer = ByteBuffer.allocate(2);
 
     /**
      * InputStream for this socket.
@@ -179,6 +188,11 @@ public class DelegatingSocket
     public DelegatingSocket(Socket delegate)
     {
         this.delegate = delegate;
+
+        delegateAsDelegatingSocket
+            = (delegate instanceof DelegatingSocket)
+                ? (DelegatingSocket) delegate
+                : null;
     }
 
     /**
@@ -218,406 +232,301 @@ public class DelegatingSocket
     /**
      * {@inheritDoc}
      */
+    @Override
     public void bind(SocketAddress bindpoint) throws IOException
     {
-        if (delegate != null)
-        {
-            delegate.bind(bindpoint);
-        }
-        else
-        {
+        if (delegate == null)
             super.bind(bindpoint);
-        }
+        else
+            delegate.bind(bindpoint);
     }
 
     /**
      * {@inheritDoc}
      */
+    @Override
     public void close() throws IOException
     {
-        if (delegate != null)
-        {
-            delegate.close();
-        }
-        else
-        {
+        if (delegate == null)
             super.close();
-        }
+        else
+            delegate.close();
     }
 
     /**
      * {@inheritDoc}
      */
+    @Override
     public void connect(SocketAddress endpoint) throws IOException
     {
-        if (delegate != null)
-        {
-            delegate.connect(endpoint);
-        }
-        else
-        {
+        if (delegate == null)
             super.connect(endpoint);
-        }
+        else
+            delegate.connect(endpoint);
     }
 
     /**
      * {@inheritDoc}
      */
+    @Override
     public void connect(SocketAddress endpoint, int timeout) throws IOException
     {
-        if (delegate != null)
-        {
-            delegate.connect(endpoint, timeout);
-        }
-        else
-        {
+        if (delegate == null)
             super.connect(endpoint, timeout);
-        }
+        else
+            delegate.connect(endpoint, timeout);
     }
 
     /**
      * {@inheritDoc}
      */
+    @Override
     public SocketChannel getChannel()
     {
-        if (delegate != null)
-        {
-            return delegate.getChannel();
-        }
-        else
-        {
-            return super.getChannel();
-        }
+        return (delegate == null) ? super.getChannel() : delegate.getChannel();
     }
 
     /**
      * {@inheritDoc}
      */
+    @Override
     public InetAddress getInetAddress()
     {
-        if (delegate != null)
-        {
-            return delegate.getInetAddress();
-        }
-        else
-        {
-            return super.getInetAddress();
-        }
+        return
+            (delegate == null)
+                ? super.getInetAddress()
+                : delegate.getInetAddress();
     }
 
     /**
      * {@inheritDoc}
      */
+    @Override
     public InputStream getInputStream() throws IOException
     {
-        if (delegate != null)
-        {
-            return delegate.getInputStream();
-        }
-        else
-        {
-            return super.getInputStream();
-        }
+        return
+            (delegate == null)
+                ? super.getInputStream()
+                : delegate.getInputStream();
     }
 
     /**
      * {@inheritDoc}
      */
+    @Override
     public boolean getKeepAlive() throws SocketException
     {
-        if (delegate != null)
-        {
-            return delegate.getKeepAlive();
-        }
-        else
-        {
-            return super.getKeepAlive();
-        }
+        return
+            (delegate == null) ? super.getKeepAlive() : delegate.getKeepAlive();
     }
 
     /**
      * {@inheritDoc}
      */
+    @Override
     public InetAddress getLocalAddress()
     {
-        if (delegate != null)
-        {
-            return delegate.getLocalAddress();
-        }
-        else
-        {
-            return super.getLocalAddress();
-        }
+        return
+            (delegate == null)
+                ? super.getLocalAddress()
+                : delegate.getLocalAddress();
     }
 
     /**
      * {@inheritDoc}
      */
+    @Override
     public int getLocalPort()
     {
-        if (delegate != null)
-        {
-            return delegate.getLocalPort();
-        }
-        else
-        {
-            return super.getLocalPort();
-        }
+        return
+            (delegate == null) ? super.getLocalPort() : delegate.getLocalPort();
     }
 
     /**
      * {@inheritDoc}
      */
+    @Override
     public SocketAddress getLocalSocketAddress()
     {
-        if (delegate != null)
-        {
-            return delegate.getLocalSocketAddress();
-        }
-        else
-        {
-            return super.getLocalSocketAddress();
-        }
+        return
+            (delegate == null)
+                ? super.getLocalSocketAddress()
+                : delegate.getLocalSocketAddress();
     }
 
     /**
      * {@inheritDoc}
      */
+    @Override
     public boolean getOOBInline() throws SocketException
     {
-        if (delegate != null)
-        {
-            return delegate.getOOBInline();
-        }
-        else
-        {
-            return super.getOOBInline();
-        }
+        return
+            (delegate == null) ? super.getOOBInline() : delegate.getOOBInline();
     }
 
     /**
      * {@inheritDoc}
      */
+    @Override
     public OutputStream getOutputStream() throws IOException
     {
-        if (delegate != null)
-        {
-            return delegate.getOutputStream();
-        }
-        else
-        {
-            return super.getOutputStream();
-        }
+        return
+            (delegate == null)
+                ? super.getOutputStream()
+                : delegate.getOutputStream();
     }
 
     /**
      * {@inheritDoc}
      */
+    @Override
     public int getPort()
     {
-        if (delegate != null)
-        {
-            return delegate.getPort();
-        }
-        else
-        {
-            return super.getPort();
-        }
+        return (delegate == null) ? super.getPort() : delegate.getPort();
     }
 
     /**
      * {@inheritDoc}
      */
+    @Override
     public int getReceiveBufferSize() throws SocketException
     {
-        if (delegate != null)
-        {
-            return delegate.getReceiveBufferSize();
-        }
-        else
-        {
-            return super.getReceiveBufferSize();
-        }
+        return
+            (delegate == null)
+                ? super.getReceiveBufferSize()
+                : delegate.getReceiveBufferSize();
     }
 
     /**
      * {@inheritDoc}
      */
+    @Override
     public SocketAddress getRemoteSocketAddress()
     {
-        if (delegate != null)
-        {
-            return delegate.getRemoteSocketAddress();
-        }
-        else
-        {
-            return super.getRemoteSocketAddress();
-        }
+        return
+            (delegate == null)
+                ? super.getRemoteSocketAddress()
+                : delegate.getRemoteSocketAddress();
     }
 
     /**
      * {@inheritDoc}
      */
+    @Override
     public boolean getReuseAddress() throws SocketException
     {
-        if (delegate != null)
-        {
-            return delegate.getReuseAddress();
-        }
-        else
-        {
-            return super.getReuseAddress();
-        }
+        return
+            (delegate == null)
+                ? super.getReuseAddress()
+                : delegate.getReuseAddress();
     }
 
     /**
      * {@inheritDoc}
      */
+    @Override
     public int getSendBufferSize() throws SocketException
     {
-        if (delegate != null)
-        {
-            return delegate.getSendBufferSize();
-        }
-        else
-        {
-            return super.getSendBufferSize();
-        }
+        return
+            (delegate == null)
+                ? super.getSendBufferSize()
+                : delegate.getSendBufferSize();
     }
 
     /**
      * {@inheritDoc}
      */
+    @Override
     public int getSoLinger() throws SocketException
     {
-        if (delegate != null)
-        {
-            return delegate.getSoLinger();
-        }
-        else
-        {
-            return super.getSoLinger();
-        }
+        return
+            (delegate == null) ? super.getSoLinger() : delegate.getSoLinger();
     }
 
     /**
      * {@inheritDoc}
      */
+    @Override
     public int getSoTimeout() throws SocketException
     {
-        if (delegate != null)
-        {
-            return delegate.getSoTimeout();
-        }
-        else
-        {
-            return super.getSoTimeout();
-        }
+        return
+            (delegate == null) ? super.getSoTimeout() : delegate.getSoTimeout();
     }
 
     /**
      * {@inheritDoc}
      */
+    @Override
     public boolean getTcpNoDelay() throws SocketException
     {
-        if (delegate != null)
-        {
-            return delegate.getTcpNoDelay();
-        }
-        else
-        {
-            return super.getTcpNoDelay();
-        }
+        return
+            (delegate == null)
+                ? super.getTcpNoDelay()
+                : delegate.getTcpNoDelay();
     }
 
     /**
      * {@inheritDoc}
      */
+    @Override
     public int getTrafficClass() throws SocketException
     {
-        if (delegate != null)
-        {
-            return delegate.getTrafficClass();
-        }
-        else
-        {
-            return super.getTrafficClass();
-        }
+        return
+            (delegate == null)
+                ? super.getTrafficClass()
+                : delegate.getTrafficClass();
     }
 
     /**
      * {@inheritDoc}
      */
+    @Override
     public boolean isBound()
     {
-        if (delegate != null)
-        {
-            return delegate.isBound();
-        }
-        else
-        {
-            return super.isBound();
-        }
+        return (delegate == null) ? super.isBound() : delegate.isBound();
     }
 
     /**
      * {@inheritDoc}
      */
+    @Override
     public boolean isClosed()
     {
-        if (delegate != null)
-        {
-            return delegate.isClosed();
-        }
-        else
-        {
-            return super.isClosed();
-        }
+        return (delegate == null) ? super.isClosed() : delegate.isClosed();
     }
 
     /**
      * {@inheritDoc}
      */
+    @Override
     public boolean isConnected()
     {
-        if (delegate != null)
-        {
-            return delegate.isConnected();
-        }
-        else
-        {
-            return super.isConnected();
-        }
+        return
+            (delegate == null) ? super.isConnected() : delegate.isConnected();
     }
 
     /**
      * {@inheritDoc}
      */
+    @Override
     public boolean isInputShutdown()
     {
-        if (delegate != null)
-        {
-            return delegate.isInputShutdown();
-        }
-        else
-        {
-            return super.isInputShutdown();
-        }
+        return
+            (delegate == null)
+                ? super.isInputShutdown()
+                : delegate.isInputShutdown();
     }
 
     /**
      * {@inheritDoc}
      */
+    @Override
     public boolean isOutputShutdown()
     {
-        if (delegate != null)
-        {
-            return delegate.isOutputShutdown();
-        }
-        else
-        {
-            return super.isOutputShutdown();
-        }
+        return
+            (delegate == null)
+                ? super.isOutputShutdown()
+                : delegate.isOutputShutdown();
     }
 
     /**
@@ -643,9 +552,9 @@ public class DelegatingSocket
     public void receive(DatagramPacket p)
         throws IOException
     {
-        if (delegate != null && delegate instanceof DelegatingSocket)
+        if (delegateAsDelegatingSocket != null)
         {
-            ((DelegatingSocket) delegate).receive(p);
+            delegateAsDelegatingSocket.receive(p);
         }
         else
         {
@@ -657,11 +566,10 @@ public class DelegatingSocket
                 if (inputStream == null)
                     inputStream = getInputStream();
 
-                DelegatingSocket.receiveFromNetwork(
+                DelegatingSocket.receiveFromInputStream(
                         p,
                         inputStream,
-                        this.getInetAddress(),
-                        this.getPort());
+                        getInetAddress(), getPort());
             }
             else
             {
@@ -672,8 +580,8 @@ public class DelegatingSocket
                 receiveFromChannel(channel, p);
             }
 
-            // no exception packet is successfully received, log it.
-            // If this is not a STUN/TURN packet, then this is a RTP packet.
+            // No exception, a packet is successfully received - log it. If it
+            // is not a STUN/TURN packet, then it is an RTP packet.
             if (!StunDatagramPacketFilter.isStunPacket(p))
                 ++nbReceivedRtpPackets;
 
@@ -684,8 +592,7 @@ public class DelegatingSocket
                     p,
                     nbReceivedRtpPackets,
                     false,
-                    localAddress.getAddress(),
-                    localAddress.getPort());
+                    localAddress.getAddress(), localAddress.getPort());
             // Log RTP losses if > 5%.
             updateRtpLosses(p);
         }
@@ -695,26 +602,36 @@ public class DelegatingSocket
      * Receives an RFC4571-formatted frame from <tt>channel</tt> into
      * <tt>p</tt>, and sets <tt>p</tt>'s port and address to the remote port
      * and address of this <tt>Socket</tt>.
+     *
+     * @param channel
+     * @param p
+     * @throws IOException
      */
-    private synchronized void receiveFromChannel(SocketChannel channel,
-                                                 DatagramPacket p)
+    private synchronized void receiveFromChannel(
+            SocketChannel channel,
+            DatagramPacket p)
         throws IOException
     {
-        int ret;
-        while (byteBufferLen.hasRemaining())
+        while (frameLengthByteBuffer.hasRemaining())
         {
-            ret = channel.read(byteBufferLen);
-            if (ret == -1)
-                throw new SocketException("Failed to receive data from socket.");
-        }
+            int read = channel.read(frameLengthByteBuffer);
 
-        byteBufferLen.flip();
-        int fb = byteBufferLen.get();
-        int sb = byteBufferLen.get();
-        int frameLength = (((fb & 0xff) << 8) | (sb & 0xff));
-        byteBufferLen.flip();
+            if (read == -1)
+            {
+                throw new SocketException(
+                        "Failed to receive data from socket.");
+            }
+        }
+        frameLengthByteBuffer.flip();
+
+        int b0 = frameLengthByteBuffer.get();
+        int b1 = frameLengthByteBuffer.get();
+        int frameLength = ((b0 & 0xFF) << 8) | (b1 & 0xFF);
+
+        frameLengthByteBuffer.flip();
 
         byte[] data = p.getData();
+
         if (data == null || data.length < frameLength)
             data = new byte[frameLength];
 
@@ -722,14 +639,17 @@ public class DelegatingSocket
 
         while (byteBuffer.hasRemaining())
         {
-            ret = channel.read(byteBuffer);
-            if (ret == -1)
-                throw new SocketException("Failed to receive data from socket.");
+            int read = channel.read(byteBuffer);
+
+            if (read == -1)
+            {
+                throw new SocketException(
+                        "Failed to receive data from socket.");
+            }
         }
 
-        p.setData(data);
-        p.setLength(frameLength);
         p.setAddress(getInetAddress());
+        p.setData(data, 0, frameLength);
         p.setPort(getPort());
     }
 
@@ -742,75 +662,65 @@ public class DelegatingSocket
     public void send(DatagramPacket p) throws IOException
     {
         // The delegate socket will encapsulate the packet.
-        if (delegate != null && delegate instanceof DelegatingSocket)
+        if (delegateAsDelegatingSocket != null)
         {
-            ((DelegatingSocket) delegate).send(p);
-            return;
+            delegateAsDelegatingSocket.send(p);
         }
-
-        if (outputStream == null)
+        else
         {
-            outputStream = getOutputStream();
+            if (outputStream == null)
+                outputStream = getOutputStream();
+
+            // Else, sends the packet to the final socket (outputStream).
+            outputStream.write(p.getData(), p.getOffset(), p.getLength());
+
+            // no exception packet is successfully sent, log it.
+            ++nbSentRtpPackets;
+            InetSocketAddress localAddress
+                = (InetSocketAddress) super.getLocalSocketAddress();
+
+            DelegatingDatagramSocket.logPacketToPcap(
+                    p,
+                    nbSentRtpPackets,
+                    true,
+                    localAddress.getAddress(), localAddress.getPort());
         }
-
-        // Else, sends the packet to the final socket (outputStream).
-        outputStream.write(p.getData(), p.getOffset(), p.getLength());
-
-        // no exception packet is successfully sent, log it.
-        ++nbSentRtpPackets;
-        InetSocketAddress localAddress
-            = (InetSocketAddress) super.getLocalSocketAddress();
-        DelegatingDatagramSocket.logPacketToPcap(
-                p,
-                this.nbSentRtpPackets,
-                true,
-                localAddress.getAddress(),
-                localAddress.getPort());
     }
 
     /**
      * {@inheritDoc}
      */
+    @Override
     public void sendUrgentData(int data) throws IOException
     {
-        if (delegate != null)
-        {
-            delegate.sendUrgentData(data);
-        }
-        else
-        {
+        if (delegate == null)
             super.sendUrgentData(data);
-        }
+        else
+            delegate.sendUrgentData(data);
     }
 
     /**
      * {@inheritDoc}
      */
+    @Override
     public void setKeepAlive(boolean on) throws SocketException
     {
-        if (delegate != null)
-        {
-            delegate.setKeepAlive(on);
-        }
-        else
-        {
+        if (delegate == null)
             super.setKeepAlive(on);
-        }
+        else
+            delegate.setKeepAlive(on);
     }
 
     /**
      * {@inheritDoc}
      */
+    @Override
     public void setOOBInline(boolean on) throws SocketException
     {
-        if (delegate != null)
-        {
-            delegate.setOOBInline(on);
-        }
-        else
-        {
+        if (delegate == null)
             super.setOOBInline(on);
-        }
+        else
+            delegate.setOOBInline(on);
     }
 
     /**
@@ -827,168 +737,140 @@ public class DelegatingSocket
     /**
      * {@inheritDoc}
      */
-    public void setPerformancePreferences(int connectionTime, int latency,
-        int bandwidth)
+    @Override
+    public void setPerformancePreferences(
+            int connectionTime,
+            int latency,
+            int bandwidth)
     {
-        if (delegate != null)
-        {
-            delegate.setPerformancePreferences(connectionTime, bandwidth,
-                bandwidth);
-        }
-        else
+        if (delegate == null)
         {
             super.setPerformancePreferences(connectionTime, latency, bandwidth);
         }
+        else
+        {
+            delegate.setPerformancePreferences(
+                    connectionTime,
+                    latency,
+                    bandwidth);
+        }
     }
 
     /**
      * {@inheritDoc}
      */
+    @Override
     public void setReceiveBufferSize(int size) throws SocketException
     {
-        if (delegate != null)
-        {
-            delegate.setReceiveBufferSize(size);
-        }
-        else
-        {
+        if (delegate == null)
             super.setReceiveBufferSize(size);
-        }
+        else
+            delegate.setReceiveBufferSize(size);
     }
 
     /**
      * {@inheritDoc}
      */
+    @Override
     public void setReuseAddress(boolean on) throws SocketException
     {
-        if (delegate != null)
-        {
-            delegate.setReuseAddress(on);
-        }
-        else
-        {
+        if (delegate == null)
             super.setReuseAddress(on);
-        }
+        else
+            delegate.setReuseAddress(on);
     }
 
     /**
      * {@inheritDoc}
      */
+    @Override
     public void setSendBufferSize(int size) throws SocketException
     {
-        if (delegate != null)
-        {
-            delegate.setSendBufferSize(size);
-        }
-        else
-        {
+        if (delegate == null)
             super.setSendBufferSize(size);
-        }
+        else
+            delegate.setSendBufferSize(size);
     }
 
     /**
      * {@inheritDoc}
      */
+    @Override
     public void setSoLinger(boolean on, int linger) throws SocketException
     {
-        if (delegate != null)
-        {
-            delegate.setSoLinger(on, linger);
-        }
-        else
-        {
+        if (delegate == null)
             super.setSoLinger(on, linger);
-        }
+        else
+            delegate.setSoLinger(on, linger);
     }
 
     /**
      * {@inheritDoc}
      */
+    @Override
     public void setSoTimeout(int timeout) throws SocketException
     {
-        if (delegate != null)
-        {
-            delegate.setSoTimeout(timeout);
-        }
-        else
-        {
+        if (delegate == null)
             super.setSoTimeout(timeout);
-        }
+        else
+            delegate.setSoTimeout(timeout);
     }
 
     /**
      * {@inheritDoc}
      */
+    @Override
     public void setTcpNoDelay(boolean on) throws SocketException
     {
-        if (delegate != null)
-        {
-            delegate.setTcpNoDelay(on);
-        }
-        else
-        {
+        if (delegate == null)
             super.setTcpNoDelay(on);
-        }
+        else
+            delegate.setTcpNoDelay(on);
     }
 
     /**
      * {@inheritDoc}
      */
+    @Override
     public void setTrafficClass(int tc) throws SocketException
     {
-        if (delegate != null)
-        {
-            delegate.setTrafficClass(tc);
-        }
-        else
-        {
+        if (delegate == null)
             super.setTrafficClass(tc);
-        }
+        else
+            delegate.setTrafficClass(tc);
     }
 
     /**
      * {@inheritDoc}
      */
+    @Override
     public void shutdownInput() throws IOException
     {
-        if (delegate != null)
-        {
-            delegate.shutdownInput();
-        }
-        else
-        {
+        if (delegate == null)
             super.shutdownInput();
-        }
+        else
+            delegate.shutdownInput();
     }
 
     /**
      * {@inheritDoc}
      */
+    @Override
     public void shutdownOutput() throws IOException
     {
-        if (delegate != null)
-        {
-            delegate.shutdownOutput();
-        }
-        else
-        {
+        if (delegate == null)
             super.shutdownOutput();
-        }
+        else
+            delegate.shutdownOutput();
     }
 
     /**
      * {@inheritDoc}
      */
+    @Override
     public String toString()
     {
-        if (delegate != null)
-        {
-            return delegate.toString();
-        }
-        else
-        {
-            return super.toString();
-        }
+        return (delegate == null) ? super.toString() : delegate.toString();
     }
 
     /**
@@ -997,23 +879,27 @@ public class DelegatingSocket
      *
      * @param p The last packet received.
      */
-    public void updateRtpLosses(DatagramPacket p)
+    private void updateRtpLosses(DatagramPacket p)
     {
         // If this is not a STUN/TURN packet, then this is a RTP packet.
         if(!StunDatagramPacketFilter.isStunPacket(p))
         {
             long newSeq = DelegatingDatagramSocket.getRtpSequenceNumber(p);
-            if(this.lastRtpSequenceNumber != -1)
-            {
-                nbLostRtpPackets += DelegatingDatagramSocket
-                    .getNbLost(this.lastRtpSequenceNumber, newSeq);
-            }
-            this.lastRtpSequenceNumber = newSeq;
 
-            this.lastLostPacketLogTime = DelegatingDatagramSocket.logRtpLosses(
-                    this.nbLostRtpPackets,
-                    this.nbReceivedRtpPackets,
-                    this.lastLostPacketLogTime);
+            if(lastRtpSequenceNumber != -1)
+            {
+                nbLostRtpPackets
+                    += DelegatingDatagramSocket.getNbLost(
+                            lastRtpSequenceNumber,
+                            newSeq);
+            }
+            lastRtpSequenceNumber = newSeq;
+
+            lastLostPacketLogTime
+                = DelegatingDatagramSocket.logRtpLosses(
+                        nbLostRtpPackets,
+                        nbReceivedRtpPackets,
+                        lastLostPacketLogTime);
         }
     }
 }

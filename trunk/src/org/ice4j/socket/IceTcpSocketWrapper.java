@@ -18,19 +18,25 @@ public class IceTcpSocketWrapper
     extends IceSocketWrapper
 {
     /**
+     * InputStream for this socket.
+     */
+    private final InputStream inputStream;
+
+    /**
+     * OutputStream for this socket.
+     */
+    private final OutputStream outputStream;
+
+    /**
      * Delegate TCP <tt>Socket</tt>.
      */
     private final Socket socket;
 
     /**
-     * InputStream for this socket.
+     * A <tt>DelegatingSocket</tt> view of {@link #socket} if the latter
+     * implements the former; otherwise, <tt>null</tt>.
      */
-    private InputStream inputStream = null;
-
-    /**
-     * OutputStream for this socket.
-     */
-    private OutputStream outputStream = null;
+    private final DelegatingSocket socketAsDelegatingSocket;
 
     /**
      * Constructor.
@@ -42,54 +48,20 @@ public class IceTcpSocketWrapper
     public IceTcpSocketWrapper(Socket delegate)
         throws IOException
     {
-        this.socket = delegate;
-        if(!(delegate instanceof DelegatingSocket))
+        socket = delegate;
+
+        if(delegate instanceof DelegatingSocket)
         {
-            inputStream = socket.getInputStream();
-            outputStream = socket.getOutputStream();
+            inputStream = null;
+            outputStream = null;
+            socketAsDelegatingSocket = (DelegatingSocket) delegate;
         }
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public void send(DatagramPacket p)
-        throws IOException
-    {
-        if(socket instanceof DelegatingSocket)
+        else
         {
-            ((DelegatingSocket)socket).send(p);
-            return;
+            inputStream = delegate.getInputStream();
+            outputStream = delegate.getOutputStream();
+            socketAsDelegatingSocket = null;
         }
-
-        int len = p.getLength();
-        int off = p.getOffset();
-        byte data[] = new byte[len + 2];
-        data[0] = (byte)((len >> 8) & 0xff);
-        data[1] = (byte)(len & 0xff);
-        System.arraycopy(p.getData(), off, data, 2, len);
-        outputStream.write(data, 0, len + 2);
-        data = null;
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public void receive(DatagramPacket p) throws IOException
-    {
-        if(socket instanceof DelegatingSocket)
-        {
-            ((DelegatingSocket)socket).receive(p);
-            return;
-        }
-
-        DelegatingSocket.receiveFromNetwork(
-                p,
-                inputStream,
-                this.getLocalAddress(),
-                this.getLocalPort());
     }
 
     /**
@@ -150,5 +122,48 @@ public class IceTcpSocketWrapper
     public DatagramSocket getUDPSocket()
     {
         return null;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public void receive(DatagramPacket p) throws IOException
+    {
+        if (socketAsDelegatingSocket != null)
+        {
+            socketAsDelegatingSocket.receive(p);
+        }
+        else
+        {
+            DelegatingSocket.receiveFromInputStream(
+                    p,
+                    inputStream,
+                    getLocalAddress(), getLocalPort());
+        }
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public void send(DatagramPacket p)
+        throws IOException
+    {
+        if (socketAsDelegatingSocket != null)
+        {
+            socketAsDelegatingSocket.send(p);
+        }
+        else
+        {
+            int len = p.getLength();
+            int off = p.getOffset();
+            byte data[] = new byte[len + 2];
+
+            data[0] = (byte)((len >> 8) & 0xff);
+            data[1] = (byte)(len & 0xff);
+            System.arraycopy(p.getData(), off, data, 2, len);
+            outputStream.write(data, 0, len + 2);
+        }
     }
 }
