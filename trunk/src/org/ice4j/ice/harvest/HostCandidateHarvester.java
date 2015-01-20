@@ -25,6 +25,7 @@ import org.ice4j.socket.*;
  *
  * @author Emil Ivov
  * @author George Politis
+ * @author Boris Grozev
  */
 public class HostCandidateHarvester
 {
@@ -52,10 +53,26 @@ public class HostCandidateHarvester
     private static String[] blockedInterfaces;
 
     /**
+     * The list of allowed addresses.
+     */
+    private static List<InetAddress> allowedAddresses;
+
+    /**
+     * The list of blocked addresses.
+     */
+    private static List<InetAddress> blockedAddresses;
+
+    /**
      * A boolean value that indicates whether the host candidate interface
      * filters have been initialized or not.
      */
-    private static boolean interfaceFiltersinitialized = false;
+    private static boolean interfaceFiltersInitialized = false;
+
+    /**
+     * A boolean value that indicates whether the host candidate address
+     * filters have been initialized or not.
+     */
+    private static boolean addressFiltersInitialized = false;
 
     /**
      * Gets the array of allowed interfaces.
@@ -63,7 +80,7 @@ public class HostCandidateHarvester
      * @return the non-empty String array of allowed interfaces or null.
      */
     public static String[] getAllowedInterfaces(){
-        if (!interfaceFiltersinitialized)
+        if (!interfaceFiltersInitialized)
         {
             try
             {
@@ -85,7 +102,7 @@ public class HostCandidateHarvester
      * @return the non-empty String array of blocked interfaces or null.
      */
     public static String[] getBlockedInterfaces() {
-        if (!interfaceFiltersinitialized)
+        if (!interfaceFiltersInitialized)
         {
             try
             {
@@ -99,6 +116,108 @@ public class HostCandidateHarvester
         }
 
         return blockedInterfaces;
+    }
+
+    /**
+     * Gets the list of explicitly allowed addresses.
+     * @return the list of explicitly allowed addresses.
+     */
+    public static List<InetAddress> getAllowedAddresses()
+    {
+        synchronized (HostCandidateHarvester.class)
+        {
+            if (!addressFiltersInitialized)
+            {
+                initializeAddressFilters();
+            }
+        }
+
+        return allowedAddresses;
+    }
+
+    /**
+     * Gets the list of blocked addresses.
+     * @return the list of blocked addresses.
+     */
+    public static List<InetAddress> getBlockedAddresses()
+    {
+        synchronized (HostCandidateHarvester.class)
+        {
+            if (!addressFiltersInitialized)
+            {
+                initializeAddressFilters();
+            }
+        }
+
+        return blockedAddresses;
+    }
+
+    /**
+     * Initializes the lists of allowed and blocked addresses according to the
+     * configuration properties.
+     */
+    private static void initializeAddressFilters()
+    {
+        synchronized (HostCandidateHarvester.class)
+        {
+            if (addressFiltersInitialized)
+                return;
+
+            String[] allowedAddressesStr
+                = StackProperties.getStringArray(
+                        StackProperties.ALLOWED_ADDRESSES, ";");
+
+            if (allowedAddressesStr != null)
+            {
+                for (String addressStr : allowedAddressesStr)
+                {
+                    InetAddress address;
+                    try
+                    {
+                        address = InetAddress.getByName(addressStr);
+                    }
+                    catch (Exception e)
+                    {
+                        logger.warning("Failed to add an allowed address: "
+                            + addressStr);
+                        continue;
+                    }
+
+                    if (allowedAddresses == null)
+                        allowedAddresses = new ArrayList<InetAddress>();
+
+                    allowedAddresses.add(address);
+                }
+            }
+
+            String[] blockedAddressesStr
+                    = StackProperties.getStringArray(
+                    StackProperties.BLOCKED_ADDRESSES, ";");
+            if (blockedAddressesStr != null)
+            {
+                for (String addressStr : blockedAddressesStr)
+                {
+                    InetAddress address;
+                    try
+                    {
+                        address = InetAddress.getByName(addressStr);
+                    }
+                    catch (Exception e)
+                    {
+                        logger.warning("Failed to add a blocked address: "
+                                               + addressStr);
+                        continue;
+                    }
+
+                    if (blockedAddresses == null)
+                        blockedAddresses = new ArrayList<InetAddress>();
+
+                    blockedAddresses.add(address);
+                }
+            }
+
+            addressFiltersInitialized = true;
+        }
     }
 
     /**
@@ -170,9 +289,8 @@ public class HostCandidateHarvester
             {
                 InetAddress addr = addresses.nextElement();
 
-                if (addr.isLoopbackAddress())
+                if (!isAddressAllowed(addr))
                 {
-                    //loopback again
                     continue;
                 }
 
@@ -311,6 +429,42 @@ public class HostCandidateHarvester
         }
 
         return true;
+    }
+
+    /**
+     * Returns <tt>true</tt> if <tt>address</tt> is allowed to be used by this
+     * <tt>HostCandidateHarvester</tt> for the purposes of candidate allocation,
+     * and <tt>false</tt> otherwise.
+     *
+     * An address is considered allowed, if
+     * 1. It is not a loopback address.
+     * 2. Either no addresses have explicitly been configured allowed (via the
+     * <tt>StackProperties.ALLOWED_ADDRESSES</tt> property), or <tt>address</tt>
+     * is explicitly configured allowed.
+     * 3. <tt>address</tt> is not explicitly configured blocked (via the
+     * <tt>StackProperties.BLOCKED_ADDRESSES</tt> property).
+     *
+     * @param address the address to check
+     * @return <tt>true</tt> if <tt>address</tt> is allowed to be used by this
+     * <tt>HostCandidateHarvester</tt>.
+     */
+    private static boolean isAddressAllowed(InetAddress address)
+    {
+        if (address.isLoopbackAddress())
+        {
+            return false;
+        }
+
+        boolean ret = true;
+        List<InetAddress> allowed = getAllowedAddresses();
+        List<InetAddress> blocked = getBlockedAddresses();
+
+        if (allowed != null)
+            ret = allowed.contains(address);
+        if (blocked != null)
+            ret = ret && !blocked.contains(address);
+
+        return ret;
     }
 
     /**
@@ -559,10 +713,12 @@ public class HostCandidateHarvester
         synchronized (HostCandidateHarvester.class)
         {
             // We want this method to run only once.
-            if (interfaceFiltersinitialized)
+            if (interfaceFiltersInitialized)
                 return;
 
-            interfaceFiltersinitialized = true;
+            interfaceFiltersInitialized = true;
+
+            // Should we hold this lock until we are done modifying the fields?
         }
 
         // Initialize the allowed interfaces array.
