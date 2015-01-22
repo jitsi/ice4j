@@ -2199,31 +2199,22 @@ public class Agent
     }
 
     /**
-     * Returns the selected pair for this Agent.
+     * Returns the selected pair for the RTP component for the ICE media stream
+     * with name <tt>streamName</tt> of this Agent, or <tt>null</tt>.
      *
-     * @param streamName The stream name (AUDIO, VIDEO);
+     * @param streamName The stream name.
      *
-     * @return The selected pair for this Agent. Null if no pair is selected.
+     * @return the selected pair for the RTP component for the ICE media stream
+     * with name <tt>streamName</tt> of this Agent, or <tt>null</tt>.
      */
     private CandidatePair getSelectedPair(String streamName)
     {
-        List<IceMediaStream> iceMediaStreams = this.getStreams();
-        for(int i = 0; i < iceMediaStreams.size(); ++i)
+        IceMediaStream stream = getStream(streamName);
+        if (stream != null)
         {
-            if(iceMediaStreams.get(i).getName().equals(streamName))
-            {
-                List<org.ice4j.ice.Component> components =
-                    iceMediaStreams.get(i).getComponents();
-                for(int j = 0; j < components.size(); ++j)
-                {
-                    Component component = components.get(i);
-                    if(component.getComponentID()
-                            == org.ice4j.ice.Component.RTP)
-                    {
-                        return component.getSelectedPair();
-                    }
-                }
-            }
+            Component component = stream.getComponent(Component.RTP);
+            if (component != null)
+                return component.getSelectedPair();
         }
         return null;
     }
