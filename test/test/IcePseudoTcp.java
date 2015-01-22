@@ -169,7 +169,7 @@ public class IcePseudoTcp
                     try
                     {
                         localJob = new LocalPseudoTcpJob(
-                            localCandidate.getDatagramSocket());                        
+                            selectedPair.getDatagramSocket());
                     }
                     catch (UnknownHostException ex)
                     {
@@ -253,8 +253,8 @@ public class IcePseudoTcp
                     try
                     {
                         remoteJob = new RemotePseudoTcpJob(
-                            localCandidate.getDatagramSocket(),
-                            remoteCandidate.getTransportAddress());                        
+                            usedPair.getDatagramSocket(),
+                            remoteCandidate.getTransportAddress());
                     }
                     catch (UnknownHostException ex)
                     {
