@@ -296,7 +296,7 @@ public class IceMediaStream
          * same as when freeing the components inside the synchronized block
          * because in the latter case an exception thrown by Component#free()
          * will leave subsequent components in IceMediaStream#componenets. But
-         * there is no idication that such behaviour is expected.
+         * there is no indication that such behaviour is expected.
          */
         for (Component component : components)
             component.free();
