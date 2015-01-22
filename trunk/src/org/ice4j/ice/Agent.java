@@ -535,16 +535,38 @@ public class Agent
      */
     private void pruneNonMatchedStreams()
     {
+        // The previous behavior allows users of ice4j to run an Agent with
+        // remote candidates for only some of the streams/components, in which
+        // case the component without remote candidates are removed here, and
+        // so they do not cause an ICE failure if they fail to connect.
+        // In order to allow operation without remote candidates, we only prune
+        // if we detect that there is at least one component with some remote
+        // candidates.
+        boolean prune = false;
         for (IceMediaStream stream : getStreams())
         {
-            for(Component cmp : stream.getComponents())
+            for (Component component : stream.getComponents())
             {
-                if(cmp.getRemoteCandidateCount() == 0)
-                    stream.removeComponent(cmp);
+                if (component.getRemoteCandidateCount() > 0)
+                    prune = true;
+                if (prune)
+                    break;
             }
+        }
 
-            if(stream.getComponentCount() == 0)
-                removeStream(stream);
+        if (prune)
+        {
+            for (IceMediaStream stream : getStreams())
+            {
+                for (Component component : stream.getComponents())
+                {
+                    if (component.getRemoteCandidateCount() == 0)
+                        stream.removeComponent(component);
+                }
+
+                if (stream.getComponentCount() == 0)
+                    removeStream(stream);
+            }
         }
     }
 
@@ -681,13 +703,17 @@ public class Agent
         //first init the check list.
         List<IceMediaStream> streams
             = getStreamsWithPendingConnectivityEstablishment();
+        int streamCount = streams.size();
 
         //init the maximum number of check list entries per stream.
         int maxCheckListSize = Integer.getInteger(
                StackProperties.MAX_CHECK_LIST_SIZE,
                DEFAULT_MAX_CHECK_LIST_SIZE);
 
-        int maxPerStreamSize = maxCheckListSize / streams.size();
+        int maxPerStreamSize =
+                streamCount == 0
+                ? 0
+                : maxCheckListSize / streamCount;
 
         for(IceMediaStream stream : streams)
         {
@@ -697,7 +723,8 @@ public class Agent
         }
 
         //init the states of the first media stream as per 5245
-        streams.get(0).getCheckList().computeInitialCheckListPairStates();
+        if (streamCount > 0)
+            streams.get(0).getCheckList().computeInitialCheckListPairStates();
     }
 
     /**

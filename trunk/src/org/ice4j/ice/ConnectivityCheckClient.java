@@ -76,14 +76,21 @@ class ConnectivityCheckClient
      */
     public void startChecks()
     {
-        CheckList firstCheckList
-            = parentAgent
-                .getStreamsWithPendingConnectivityEstablishment()
-                    .get(0)
-                        .getCheckList();
+        List<IceMediaStream> streamsWithPendingConnectivityEstablishment
+            = parentAgent.getStreamsWithPendingConnectivityEstablishment();
 
-        logger.info("Start connectivity checks!");
-        startChecks(firstCheckList);
+        if (streamsWithPendingConnectivityEstablishment.size() > 0)
+        {
+            logger.info("Start connectivity checks!");
+            startChecks(
+                    streamsWithPendingConnectivityEstablishment
+                        .get(0).getCheckList());
+        }
+        else
+        {
+            logger.info("Not starting any checks, because there are no pending "
+                                + "streams.");
+        }
     }
 
     /**
