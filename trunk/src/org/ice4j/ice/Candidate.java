@@ -290,36 +290,42 @@ public abstract class Candidate<T extends Candidate<?>>
     public boolean equals(Object obj)
         throws NullPointerException
     {
-        if(obj == this)
+        if (obj == this)
             return true;
 
-        if( ! (obj instanceof Candidate))
+        if (! (obj instanceof Candidate))
             return false;
 
-        Candidate<?> targetCandidate = (Candidate<?>) obj;
+        Candidate<?> candidate = (Candidate<?>) obj;
 
         //compare candidate addresses
-        if( ! targetCandidate.getTransportAddress()
-                .equals(getTransportAddress()))
+        if (! candidate.getTransportAddress().equals(getTransportAddress()))
             return false;
 
         //compare bases
-        if( getBase() == null )
+        Candidate<?> base = getBase();
+        Candidate<?> candidateBase = candidate.getBase();
+        boolean baseEqualsCandidateBase;
+
+        if (base == null)
         {
-            if (targetCandidate.getBase() != null)
+            if (candidateBase != null)
                 return false;
+            else
+                baseEqualsCandidateBase = true;
+        }
+        else
+        {
+            baseEqualsCandidateBase = base.equals(candidateBase);
         }
 
         //compare other properties
-        if(((getBase() == this && targetCandidate.getBase() == targetCandidate)
-            || getBase().equals(targetCandidate.getBase()))
-            && getPriority() == targetCandidate.getPriority()
-            && getType() == targetCandidate.getType()
-            && getFoundation().equals(targetCandidate.getFoundation()))
-        {
-            return true;
-        }
-        return false;
+        return
+            (baseEqualsCandidateBase
+                    || (base == this && candidateBase == candidate))
+                && getPriority() == candidate.getPriority()
+                && getType() == candidate.getType()
+                && getFoundation().equals(candidate.getFoundation());
     }
 
     /**
