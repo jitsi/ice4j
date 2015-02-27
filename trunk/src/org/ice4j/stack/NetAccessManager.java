@@ -263,7 +263,7 @@ class NetAccessManager
             mp = new MessageProcessor(this);
             mp.start();
             logger.fine("A message processor has been relaunched because "
-                        +"of an error.");
+                        + "of an error.");
         }
     }
 
@@ -408,6 +408,35 @@ class NetAccessManager
         }
     }
 
+    /**
+     * Returns the <tt>Connector</tt> responsible for a particular source
+     * address and a particular destination address.
+     *
+     * @param src the source address.
+     * @param dst the destination address.
+     * Returns the <tt>Connector</tt> responsible for a particular source
+     * address and a particular destination address, or <tt>null</tt> if there's
+     * none.
+     */
+    private Connector getConnector(TransportAddress src, TransportAddress dst)
+    {
+        synchronized (connectorsSyncRoot)
+        {
+            switch (src.getTransport())
+            {
+                case UDP:
+                    return netUDPAccessPoints.get(src);
+                case TCP:
+                    List<Connector> connectors = netTCPAccessPoints.get(src);
+
+                    if (connectors != null)
+                        return findTCPConnectorByRemoteAddress(connectors, dst);
+            }
+        }
+
+        return null;
+    }
+
     //---------------thread pool implementation --------------------------------
     /**
      * Adjusts the number of concurrently running MessageProcessors.
@@ -485,35 +514,6 @@ class NetAccessManager
         }
     }
 
-    /**
-     * Returns the <tt>Connector</tt> responsible for a particular source
-     * address and a particular destination address.
-     *
-     * @param src the source address.
-     * @param dst the destination address.
-     * Returns the <tt>Connector</tt> responsible for a particular source
-     * address and a particular destination address, or <tt>null</tt> if there's
-     * none.
-     */
-    private Connector getConnector(TransportAddress src, TransportAddress dst)
-    {
-        synchronized (connectorsSyncRoot)
-        {
-            switch (src.getTransport())
-            {
-            case UDP:
-                return netUDPAccessPoints.get(src);
-            case TCP:
-                List<Connector> connectors = netTCPAccessPoints.get(src);
-
-                if (connectors != null)
-                    return findTCPConnectorByRemoteAddress(connectors, dst);
-            }
-        }
-
-        return null;
-    }
-
     //--------------- SENDING MESSAGES -----------------------------------------
     /**
      * Sends the specified stun message through the specified access point.
@@ -534,18 +534,7 @@ class NetAccessManager
         throws IllegalArgumentException,
                IOException
     {
-        byte[] bytes = stunMessage.encode(stunStack);
-
-        Connector ap = getConnector(srcAddr, remoteAddr);
-
-        if (ap == null)
-        {
-            throw new IllegalArgumentException(
-                    "No socket has been added for: " + srcAddr + " <-> "
-                        + remoteAddr);
-        }
-
-        ap.sendMessage(bytes, remoteAddr);
+        sendMessage(stunMessage.encode(stunStack), srcAddr, remoteAddr);
     }
     
     /**
@@ -568,17 +557,7 @@ class NetAccessManager
         throws IllegalArgumentException,
                IOException, StunException
     {
-        byte[] bytes = channelData.encode();
-
-        Connector ap = getConnector(srcAddr, remoteAddr);
-
-        if (ap == null)
-        {
-            throw new IllegalArgumentException(
-                    "No socket has been added for source address: " + srcAddr);
-        }
-
-        ap.sendMessage(bytes, remoteAddr);
+        sendMessage(channelData.encode(), srcAddr, remoteAddr);
     }
 
     /**
@@ -592,21 +571,19 @@ class NetAccessManager
      * access point that had not been installed,
      * @throws IOException  if an error occurs while sending message bytes
      * through the network socket.
-     * @throws StunException 
      */
     void sendMessage(
             byte[] bytes,
             TransportAddress srcAddr,
             TransportAddress remoteAddr)
         throws IllegalArgumentException,
-               IOException, StunException
+               IOException
     {
         Connector ap = getConnector(srcAddr, remoteAddr);
-
         if (ap == null)
         {
             throw new IllegalArgumentException(
-                    "No socket has been added for source address: " + srcAddr);
+                    "No socket found for " + srcAddr + "->" + remoteAddr);
         }
 
         ap.sendMessage(bytes, remoteAddr);
