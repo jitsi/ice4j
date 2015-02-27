@@ -731,32 +731,15 @@ public class CandidatePair
         if (base != null)
             localCandidate = base;
 
-        if (localCandidate instanceof TcpHostCandidate)
+        RemoteCandidate remoteCandidate = getRemoteCandidate();
+        if (remoteCandidate != null)
         {
-            /*
-             * TcpHostCandidates can have multiple sockets, and the one
-             * to be used by this specific CandidatePair has to have the
-             * same remote socket address as the pair's remote candidate.
-             */
-            RemoteCandidate remoteCandidate = getRemoteCandidate();
-            if (remoteCandidate == null)
-                return null;
-
-            SocketAddress remoteSocketAddress
+            SocketAddress remoteAddress
                     = remoteCandidate.getTransportAddress();
-            for (IceSocketWrapper socket
-                  : ((TcpHostCandidate) localCandidate).getIceSocketWrappers())
-            {
-                if (socket.getTCPSocket()
-                        .getRemoteSocketAddress().equals(remoteSocketAddress))
-                    return socket;
-            }
-        }
-        else
-        {
-            return localCandidate.getIceSocketWrapper();
+            if (remoteAddress != null)
+                return localCandidate.getIceSocketWrapper(remoteAddress);
         }
 
-        return null;
+        return localCandidate.getIceSocketWrapper();
     }
 }

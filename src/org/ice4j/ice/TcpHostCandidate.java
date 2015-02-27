@@ -73,8 +73,16 @@ public class TcpHostCandidate
         super.free();
     }
 
-    public List<IceSocketWrapper> getIceSocketWrappers()
+    @Override
+    protected IceSocketWrapper getIceSocketWrapper(SocketAddress remoteAddress)
     {
-        return sockets;
+        for (IceSocketWrapper socket : sockets)
+        {
+            if (socket.getTCPSocket().getRemoteSocketAddress()
+                    .equals(remoteAddress))
+                return socket;
+        }
+
+        return null;
     }
 }
