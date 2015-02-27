@@ -59,8 +59,9 @@ public class HostCandidate extends LocalCandidate
      * @param parentComponent the <tt>Component</tt> that this candidate
      * belongs to.
      */
-    HostCandidate(TransportAddress transportAddress,
-                  Component parentComponent)
+    public HostCandidate(
+            TransportAddress transportAddress,
+            Component parentComponent)
     {
         super(transportAddress,
               parentComponent,
