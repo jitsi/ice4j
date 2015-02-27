@@ -123,6 +123,20 @@ public abstract class LocalCandidate
     protected abstract IceSocketWrapper getIceSocketWrapper();
 
     /**
+     * Gets the <tt>IceSocketWrapper</tt> associated with this
+     * <tt>Candidate</tt> which is to be used for a specific remote address.
+     * This default implementation ignores the remote address.
+     *
+     * @param remoteAddress the remote address for which to get a socket.
+     * @return the <tt>IceSocketWrapper</tt> associated with this
+     * <tt>Candidate</tt> which is to be used for a specific remote address.
+     */
+    protected IceSocketWrapper getIceSocketWrapper(SocketAddress remoteAddress)
+    {
+        return getIceSocketWrapper();
+    }
+
+    /**
      * Creates if necessary and returns a <tt>DatagramSocket</tt> that would
      * capture all STUN packets arriving on this candidate's socket. If the
      * <tt>serverAddress</tt> parameter is not <tt>null</tt> this socket would
