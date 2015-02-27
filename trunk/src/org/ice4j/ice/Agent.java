@@ -1509,7 +1509,7 @@ public class Agent
             //
             if(triggerPair.getParentComponent().getSelectedPair() == null)
                 logger.info("Add peer CandidatePair with new reflexive " +
-                        "address to checkList");
+                        "address to checkList: " + triggerPair);
             triggerPair.setUseCandidateReceived();
             parentStream.addToCheckList(triggerPair);
         }
