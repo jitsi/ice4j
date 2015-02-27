@@ -58,7 +58,7 @@ public class MultiplexingTcpHostHarvester
     /**
      * Returns a list of all addresses on the interfaces in <tt>interfaces</tt>
      * which are found suitable for candidate allocations (are not loopback, are
-     * up, and are allowed by the configuration.
+     * up, and are allowed by the configuration).
      *
      * @param port the port to use.
      * @param interfaces the list of interfaces to use.
@@ -635,6 +635,15 @@ public class MultiplexingTcpHostHarvester
                 }
             }
         }
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public boolean isHostHarvester()
+    {
+        return true;
     }
 
     /**
@@ -1253,13 +1262,13 @@ public class MultiplexingTcpHostHarvester
 
                         // The rest of the stack will read from the socket's
                         // InputStream. We cannot change the blocking mode
-                        // bore the channel is removed from the selector (by
+                        // before the channel is removed from the selector (by
                         // cancelling the key)
                         key.cancel();
                         channel.channel.configureBlocking(true);
 
                         // Construct a DatagramPacket from the just-read packet
-                        // which is to be pushed pack
+                        // which is to be pushed back
                         DatagramPacket p
                                 = new DatagramPacket(bytesRead,
                                                      bytesRead.length);

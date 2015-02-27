@@ -36,7 +36,8 @@ public class IceUdpSocketWrapper
      * {@inheritDoc}
      */
     @Override
-    public void send(DatagramPacket p) throws IOException
+    public void send(DatagramPacket p)
+        throws IOException
     {
         socket.send(p);
     }
