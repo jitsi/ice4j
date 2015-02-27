@@ -110,14 +110,25 @@ public class StunStack
     }
 
     /**
-     * Creates and starts the specified Network Access Point based on the
-     * specified socket and returns a relevant descriptor.
+     * Creates and starts a Network Access Point (Connector) based on the
+     * specified socket.
      *
      * @param sock The socket that the new access point should represent.
      */
     public void addSocket(IceSocketWrapper sock)
     {
         netAccessManager.addSocket(sock);
+    }
+
+    /**
+     * Creates and starts a Network Access Point (Connector) based on the
+     * specified socket and the specified remote address.
+     *
+     * @param sock The socket that the new access point should represent.
+     */
+    public void addSocket(IceSocketWrapper sock, TransportAddress remoteAddress)
+    {
+        netAccessManager.addSocket(sock, remoteAddress);
     }
 
     /**
@@ -472,10 +483,6 @@ public class StunStack
         {
             getNetAccessManager().sendMessage(
                 udpMessage.getBytes(), sendThrough, sendTo);
-        }
-        catch (StunException stex)
-        {
-            throw stex;
         }
         catch (IllegalArgumentException iaex)
         {

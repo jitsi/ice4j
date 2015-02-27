@@ -77,12 +77,14 @@ class Connector
      * @param errorHandler the instance to notify when errors occur.
      */
     protected Connector(IceSocketWrapper socket,
+                        TransportAddress remoteAddress,
                         MessageQueue   messageQueue,
                         ErrorHandler   errorHandler)
     {
         this.sock = socket;
         this.messageQueue = messageQueue;
         this.errorHandler = errorHandler;
+        this.remoteAddress = remoteAddress;
 
         Transport transport
             = socket.getUDPSocket() != null ? Transport.UDP : Transport.TCP;
@@ -91,19 +93,6 @@ class Connector
             = new TransportAddress(socket.getLocalAddress(),
                                    socket.getLocalPort(),
                                    transport);
-        if (transport == Transport.UDP)
-        {
-            remoteAddress = null;
-        }
-        else
-        {
-            Socket tcpSocket = socket.getTCPSocket();
-
-            remoteAddress
-                = new TransportAddress(tcpSocket.getInetAddress(),
-                                       tcpSocket.getPort(),
-                                       transport);
-        }
     }
 
     /**
@@ -335,11 +324,11 @@ class Connector
      }
 
     /**
-     * Returns the remote <tt>TransportAddress</tt> in case of TCP, or
-     * <tt>null</tt> in case of UDP.
+     * Returns the remote <tt>TransportAddress</tt> or <tt>null</tt> if none
+     * is specified.
      *
-     * @return  the remote <tt>TransportAddress</tt> in case of TCP, or
-     * <tt>null</tt> in case of UDP.
+     * @return the remote <tt>TransportAddress</tt> or <tt>null</tt> if none
+     * is specified.
      */
     TransportAddress getRemoteAddress()
     {
