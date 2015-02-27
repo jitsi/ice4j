@@ -39,6 +39,7 @@ import org.ice4j.stack.*;
  * @author Lyubomir Marinov
  * @author Sebastien Vincent
  * @author Aakash Garg
+ * @author Boris Grozev
  */
 public class Agent
 {
@@ -105,6 +106,14 @@ public class Agent
      */
     private final HostCandidateHarvester hostCandidateHarvester
                                                 = new HostCandidateHarvester();
+
+    /**
+     * A list of additional <tt>CandidateHarvester</tt>s which will be used to
+     * harvest candidates synchronously, and previously to harvesting by
+     * {@link #harvesters}.
+     */
+    private final List<CandidateHarvester> hostHarvesters
+            = new LinkedList<CandidateHarvester>();
 
     /**
      * The set of harvesters (i.e. STUN, TURN, and others) that the agent should
@@ -253,6 +262,12 @@ public class Agent
      * consent freshness.
      */
     private boolean performConsentFreshness = false;
+
+    /**
+     * The flag which specifies whether {@link #hostCandidateHarvester} should
+     * be used or not.
+     */
+    private boolean useHostHarvester = true;
 
     /**
      * Creates an empty <tt>Agent</tt> with no streams, and no address.
@@ -412,9 +427,17 @@ public class Agent
         logger.info("Gather candidates for component " +
                 component.toShortString());
 
-        hostCandidateHarvester.harvest(
-                component,
-                preferredPort, minPort, maxPort, Transport.UDP);
+        if (useHostHarvester)
+        {
+            hostCandidateHarvester.harvest(
+                    component,
+                    preferredPort, minPort, maxPort, Transport.UDP);
+        }
+
+        for (CandidateHarvester harvester : hostHarvesters)
+        {
+            harvester.harvest(component);
+        }
 
         logger.fine("host candidate count: " +
             component.getLocalCandidateCount());
@@ -749,7 +772,10 @@ public class Agent
      */
     public void addCandidateHarvester(CandidateHarvester harvester)
     {
-        harvesters.add(harvester);
+        if (harvester.isHostHarvester())
+            hostHarvesters.add(harvester);
+        else
+            harvesters.add(harvester);
     }
 
     /**
@@ -2432,4 +2458,27 @@ public class Agent
     {
         this.performConsentFreshness = performConsentFreshness;
     }
+
+    /**
+     * Checks whether using the dynamic UDP host harvester is enabled or not.
+     *
+     * @return <tt>true</tt> if using the dynamic UDP host harvester is enabled.
+     */
+    public boolean dynamicHostHarvesterEnabled()
+    {
+        return useHostHarvester;
+    }
+
+    /**
+     * Sets the flag to enable or disable the dynamic UDP host harvester.
+     * Note: to have the desired effect this needs to be called before any
+     * any <tt>Component</tt>s are created using
+     * {@link #createComponent(IceMediaStream, org.ice4j.Transport, int, int, int)}
+     * @param enable the value to set.
+     */
+    public void enableDynamicHostHarvester(boolean enable)
+    {
+        this.useHostHarvester = enable;
+    }
+
 }

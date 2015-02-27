@@ -55,4 +55,20 @@ public abstract class CandidateHarvester
     {
         return harvestStatistics;
     }
+
+    /**
+     * Returns <tt>true</tt> if this <tt>CandidateHarvester</tt> is to be
+     * considered a harvester for host candidates. Such a harvester should
+     * 1. Create local candidates of type <tt>HOST_CANDIDATE</tt>.
+     * 2. Not depend on other local candidates, already harvested for the
+     *      component for which it is called.
+     * 3. Not perform blocking operations while harvesting.
+     *
+     * @return <tt>true</tt> if this <tt>CandidateHarvester</tt> is a harvester
+     * for host candidates.
+     */
+    public boolean isHostHarvester()
+    {
+        return false;
+    }
 }
