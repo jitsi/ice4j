@@ -267,7 +267,7 @@ public class Agent
      * The flag which specifies whether {@link #hostCandidateHarvester} should
      * be used or not.
      */
-    private boolean useHostHarvester = true;
+    private Boolean useHostHarvester = null;
 
     /**
      * Creates an empty <tt>Agent</tt> with no streams, and no address.
@@ -427,7 +427,7 @@ public class Agent
         logger.info("Gather candidates for component " +
                 component.toShortString());
 
-        if (useHostHarvester)
+        if (useHostHarvester())
         {
             hostCandidateHarvester.harvest(
                     component,
@@ -2460,25 +2460,20 @@ public class Agent
     }
 
     /**
-     * Checks whether using the dynamic UDP host harvester is enabled or not.
-     *
-     * @return <tt>true</tt> if using the dynamic UDP host harvester is enabled.
+     * Checks whether the dynamic host harvester should be used or not.
+     * @return <tt>true</tt> if the dynamic host harvester should be used and
+     * <tt>false</tt> otherwise.
      */
-    public boolean dynamicHostHarvesterEnabled()
+    private boolean useHostHarvester()
     {
+        if (useHostHarvester == null)
+        {
+            useHostHarvester
+                = StackProperties.getBoolean(
+                       StackProperties.USE_DYNAMIC_HOST_HARVESTER,
+                       true);
+        }
+
         return useHostHarvester;
     }
-
-    /**
-     * Sets the flag to enable or disable the dynamic UDP host harvester.
-     * Note: to have the desired effect this needs to be called before any
-     * any <tt>Component</tt>s are created using
-     * {@link #createComponent(IceMediaStream, org.ice4j.Transport, int, int, int)}
-     * @param enable the value to set.
-     */
-    public void enableDynamicHostHarvester(boolean enable)
-    {
-        this.useHostHarvester = enable;
-    }
-
 }
