@@ -64,6 +64,65 @@ public class SinglePortUdpHarvester
     private static final int POOL_SIZE = 256;
 
     /**
+     * Creates a new <tt>SinglePortUdpHarvester</tt> instance for each allowed
+     * IP address found on each allowed network interface, with the given port.
+     *
+     * @param port the UDP port number to use.
+     * @return the list of created <tt>SinglePortUdpHarvester</tt>s.
+     */
+    public static List<SinglePortUdpHarvester>
+        createHarvesters(int port)
+    {
+        List<SinglePortUdpHarvester> harvesters
+           = new LinkedList<SinglePortUdpHarvester>();
+
+        List<TransportAddress> addresses = new LinkedList<TransportAddress>();
+
+        try
+        {
+            for (NetworkInterface iface
+                    : Collections.list(NetworkInterface.getNetworkInterfaces()))
+            {
+                if (NetworkUtils.isInterfaceLoopback(iface)
+                        || !NetworkUtils.isInterfaceUp(iface)
+                        || !HostCandidateHarvester.isInterfaceAllowed(iface))
+                {
+                    continue;
+                }
+
+                Enumeration<InetAddress> ifaceAddresses
+                        = iface.getInetAddresses();
+                while (ifaceAddresses.hasMoreElements())
+                {
+                    InetAddress address = ifaceAddresses.nextElement();
+
+                    addresses.add(
+                        new TransportAddress(address, port, Transport.UDP));
+                }
+            }
+        }
+        catch (SocketException se)
+        {
+            logger.info("Failed to get network interfaces: " + se);
+        }
+
+        for (TransportAddress address : addresses)
+        {
+            try
+            {
+                harvesters.add(new SinglePortUdpHarvester(address));
+            }
+            catch (IOException ioe)
+            {
+                logger.info("Failed to create SinglePortUdpHarvester for "
+                                + "address " + address + ": " + ioe);
+            }
+        }
+
+        return harvesters;
+    }
+
+    /**
      * The map which keeps the known remote addresses and their associated
      * candidateSockets.
      * {@link #thread} is the only thread which adds new entries, while

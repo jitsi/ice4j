@@ -448,7 +448,7 @@ public class HostCandidateHarvester
      * @return <tt>true</tt> if <tt>address</tt> is allowed to be used by this
      * <tt>HostCandidateHarvester</tt>.
      */
-    private static boolean isAddressAllowed(InetAddress address)
+    static boolean isAddressAllowed(InetAddress address)
     {
         if (address.isLoopbackAddress())
         {
