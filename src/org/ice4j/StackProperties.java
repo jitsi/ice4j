@@ -179,6 +179,13 @@ public class StackProperties
             = "org.ice4j.ice.harvest.BLOCKED_ADDRESSES";
 
     /**
+     * The name of the property which specifies whether the dynamic port UDP
+     * host harvester should be used by <tt>Agent</tt> instances.
+     */
+    public static final String USE_DYNAMIC_HOST_HARVESTER
+            = "org.ice4j.ice.harvest.USE_DYNAMIC_HOST_HARVESTER";
+
+    /**
      * Returns the String value of the specified property (minus all
      * encompassing whitespaces)and null in case no property value was mapped
      * against the specified propertyName, or in case the returned property
