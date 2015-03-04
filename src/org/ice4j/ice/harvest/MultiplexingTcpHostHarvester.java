@@ -572,8 +572,9 @@ public class MultiplexingTcpHostHarvester
              * because we use the local "ufrag" to de-multiplex the accept()-ed
              * sockets between the known components.
              */
-            throw new IllegalStateException(
+            logger.info(
                     "More than one Component for an Agent, cannot harvest.");
+            return new LinkedList<LocalCandidate>();
         }
 
         List<LocalCandidate> candidates = createLocalCandidates(component);

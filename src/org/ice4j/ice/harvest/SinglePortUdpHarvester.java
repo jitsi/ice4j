@@ -374,8 +374,9 @@ public class SinglePortUdpHarvester
              * because we use the local "ufrag" from an incoming STUN packet
              * to setup de-multiplexing based on remote transport address.
              */
-            throw new IllegalStateException(
+            logger.info(
                     "More than one Component for an Agent, cannot harvest.");
+            return new LinkedList<LocalCandidate>();
         }
 
         MyCandidate candidate = new MyCandidate(component, ufrag);
