@@ -433,14 +433,19 @@ public class Agent
                     component,
                     preferredPort, minPort, maxPort, Transport.UDP);
         }
+        else
+        {
+            if (hostHarvesters.isEmpty())
+                logger.warning("No host harvesters available!");
+        }
 
         for (CandidateHarvester harvester : hostHarvesters)
         {
             harvester.harvest(component);
         }
 
-        logger.fine("host candidate count: " +
-            component.getLocalCandidateCount());
+        if (component.getLocalCandidateCount() == 0)
+            logger.warning("Failed to gather any host candidates!");
 
         //in case we are not trickling, apply other harvesters here
         if(!isTrickling())
