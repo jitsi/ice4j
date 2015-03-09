@@ -789,7 +789,7 @@ public class StunStack
      * Sets the listener that should be notified when a new Request is received.
      * @param requestListener the listener interested in incoming requests.
      */
-    public  void addRequestListener(RequestListener requestListener)
+    public void addRequestListener(RequestListener requestListener)
     {
         this.eventDispatcher.addRequestListener( requestListener );
     }

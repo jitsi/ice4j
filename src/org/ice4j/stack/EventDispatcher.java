@@ -136,7 +136,7 @@ public class EventDispatcher
      * Add a RequestListener to the listener list. The listener is registered
      * for requests coming from no matter which NetAccessPoint.
      *
-     * @param listener  The ReuqestListener to be added
+     * @param listener  The RequestListener to be added
      */
     public void addRequestListener(RequestListener listener)
     {
