@@ -78,6 +78,10 @@ public class SinglePortUdpHarvester
 
         List<TransportAddress> addresses = new LinkedList<TransportAddress>();
 
+        boolean isIPv6Disabled = StackProperties.getBoolean(
+                StackProperties.DISABLE_IPv6,
+                false);
+
         try
         {
             for (NetworkInterface iface
@@ -95,6 +99,9 @@ public class SinglePortUdpHarvester
                 while (ifaceAddresses.hasMoreElements())
                 {
                     InetAddress address = ifaceAddresses.nextElement();
+
+                    if (isIPv6Disabled && address instanceof Inet6Address)
+                        continue;
 
                     addresses.add(
                         new TransportAddress(address, port, Transport.UDP));
