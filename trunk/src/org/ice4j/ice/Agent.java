@@ -226,6 +226,11 @@ public class Agent
     private TerminationThread terminationThread;
 
     /**
+     * The object used to synchronize access to {@link #terminationThread}.
+     */
+    private final Object terminationThreadSyncRoot = new Object();
+
+    /**
      * The thread that we use for STUN keep-alive.
      */
     private Thread stunKeepAliveThread;
@@ -1929,10 +1934,13 @@ public class Agent
      */
     private void scheduleTermination()
     {
-        if (terminationThread == null)
+        synchronized (terminationThreadSyncRoot)
         {
-            terminationThread = new TerminationThread();
-            terminationThread.start();
+            if (terminationThread == null)
+            {
+                terminationThread = new TerminationThread();
+                terminationThread.start();
+            }
         }
     }
 
@@ -2012,7 +2020,10 @@ public class Agent
             logger.info("ICE state is TERMINATED");
             terminate(IceProcessingState.TERMINATED);
 
-            terminationThread = null;
+            synchronized (terminationThreadSyncRoot)
+            {
+                terminationThread = null;
+            }
         }
     }
 
