@@ -2112,13 +2112,13 @@ public class Agent
 
     /**
      * Prepares this <tt>Agent</tt> for garbage collection by ending all related
-     * processes and  freeing its <tt>IceMediaStream</tt>s, <tt>Component</tt>s
+     * processes and freeing its <tt>IceMediaStream</tt>s, <tt>Component</tt>s
      * and <tt>Candidate</tt>s. This method will also place the agent in the
      * terminated state in case it wasn't already there.
      */
     public void free()
     {
-        logger.info("Free ICE agent");
+        logger.fine("Free ICE agent");
 
         shutdown = true;
 
@@ -2144,18 +2144,18 @@ public class Agent
         // Free its IceMediaStreams, Components and Candidates.
         boolean interrupted = false;
 
-        logger.info("remove streams");
+        logger.fine("remove streams");
         for (IceMediaStream stream : getStreams())
         {
             try
             {
                 removeStream(stream);
-                logger.info("remove stream " + stream.getName());
+                logger.fine("remove stream " + stream.getName());
             }
             catch (Throwable t)
             {
-                logger.info(
-                        "remove stream "  + stream.getName() + " failed: " + t);
+                logger.fine(
+                        "remove stream " + stream.getName() + " failed: " + t);
                 if (t instanceof InterruptedException)
                     interrupted = true;
                 else if (t instanceof ThreadDeath)
@@ -2167,7 +2167,7 @@ public class Agent
 
         getStunStack().shutDown();
 
-        logger.info("ICE agent freed");
+        logger.fine("ICE agent freed");
     }
 
     /**
