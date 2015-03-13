@@ -209,6 +209,11 @@ public class Agent
     private IceProcessingState state = IceProcessingState.WAITING;
 
     /**
+     * Object used to synchronize access to {@link #state}.
+     */
+    private final Object stateSyncRoot = new Object();
+
+    /**
      * Contains {@link PropertyChangeListener}s registered with this {@link
      * Agent} and following its changes of state.
      */
@@ -718,13 +723,28 @@ public class Agent
      * <tt>newState</tt> and triggers the corresponding change event.
      *
      * @param newState the new state of ICE processing for this <tt>Agent</tt>.
+     * @return <tt>true</tt> iff the state of this <tt>Agent</tt> changed as
+     * a result of this call.
      */
-    private void setState(IceProcessingState newState)
+    private boolean setState(IceProcessingState newState)
     {
-        IceProcessingState oldState = state;
+        IceProcessingState oldState;
+        synchronized (stateSyncRoot)
+        {
+            oldState = state;
+            this.state = newState;
+        }
 
-        this.state = newState;
-        fireStateChange(oldState, newState);
+        if (!oldState.equals(newState))
+        {
+            logger.info("ICE state changed from " + oldState + " to "
+                                + newState);
+            fireStateChange(oldState, newState);
+
+            return true;
+        }
+
+        return false;
     }
 
     /**
@@ -1705,7 +1725,6 @@ public class Agent
         if(!atLeastOneListSucceeded)
         {
             //all lists ended but none succeeded. No love today ;(
-            logger.info("ICE state is FAILED");
             terminate(IceProcessingState.FAILED);
             return;
         }
@@ -1718,13 +1737,15 @@ public class Agent
             return;
         }
 
-        logger.info("ICE state is COMPLETED");
-
-        setState(IceProcessingState.COMPLETED);
+        // The race condition in which another thread enters COMPLETED right
+        // under our nose here has been observed (and not in a single instance)
+        // So check that we did indeed just trigger the change.
+        if (!setState(IceProcessingState.COMPLETED))
+            return;
 
         // keep ICE running (answer STUN Binding requests, send STUN Binding
         // indications or requests)
-        if(stunKeepAliveThread == null
+        if (stunKeepAliveThread == null
                 && !StackProperties.getBoolean(
                         StackProperties.NO_KEEP_ALIVES,
                         false))
@@ -2017,7 +2038,6 @@ public class Agent
                 }
             }
 
-            logger.info("ICE state is TERMINATED");
             terminate(IceProcessingState.TERMINATED);
 
             synchronized (terminationThreadSyncRoot)
