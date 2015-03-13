@@ -1696,7 +1696,7 @@ public class Agent
         boolean allListsEnded = true;
         boolean atLeastOneListSucceeded = false;
 
-        if(getState() == IceProcessingState.COMPLETED)
+        if(getState().isEstablished())
             return;
 
         List<IceMediaStream> streams = getStreams();
