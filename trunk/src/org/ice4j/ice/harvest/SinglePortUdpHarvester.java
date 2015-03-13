@@ -430,6 +430,12 @@ public class SinglePortUdpHarvester
         private SocketAddress remoteAddress;
 
         /**
+         * The flag which indicates that this <tt>DatagramSocket</tt> has been
+         * closed.
+         */
+        private boolean closed = false;
+
+        /**
          * Initializes a new <tt>MySocket</tt> instance with the given
          * remote address.
          * @param remoteAddress the remote address to be associated with the
@@ -451,9 +457,14 @@ public class SinglePortUdpHarvester
          */
         private void addBuffer(Buffer buf)
         {
-            // XXX Should we drop the first packet from the queue instead?
-            if (!queue.offer(buf))
-                logger.info("Dropping a packet because the queue is full.");
+            synchronized (queue)
+            {
+                // XXX Should we drop the first packet from the queue instead?
+                if (!queue.offer(buf))
+                    logger.info("Dropping a packet because the queue is full.");
+
+                queue.notifyAll();
+            }
         }
 
         /**
@@ -498,6 +509,14 @@ public class SinglePortUdpHarvester
         @Override
         public void close()
         {
+            closed = true;
+
+            synchronized (queue)
+            {
+                // Wake up any threads still in receive()
+                queue.notifyAll();
+            }
+
             // We could be called by the super-class constructor, in which
             // case this.removeAddress is not initialized yet.
             if (remoteAddress != null)
@@ -520,13 +539,22 @@ public class SinglePortUdpHarvester
 
             while (buf == null)
             {
-                try
+                if (closed)
+                    throw new SocketException("Socket closed");
+
+                synchronized (queue)
                 {
-                    buf = queue.take();
-                }
-                catch (InterruptedException ie)
-                {
-                    // XXX How should we handle this?
+                    if (queue.isEmpty())
+                    {
+                        try
+                        {
+                            queue.wait();
+                        }
+                        catch (InterruptedException ie)
+                        {}
+                    }
+
+                    buf = queue.poll();
                 }
             }
 
@@ -598,6 +626,12 @@ public class SinglePortUdpHarvester
         private final String ufrag;
 
         /**
+         * The flag which indicates that this <tt>MyCandidate</tt> has been
+         * freed.
+         */
+        private boolean freed = false;
+
+        /**
          * The collection of <tt>IceSocketWrapper</tt>s that can potentially
          * be used by the ice4j user to read/write from/to this candidate.
          * The keys are the remote addresses for each socket.
@@ -640,20 +674,19 @@ public class SinglePortUdpHarvester
         @Override
         public void free()
         {
-            candidates.remove(ufrag);
-
-            synchronized (candidateSockets)
+            synchronized (this)
             {
-                for (IceSocketWrapper s : candidateSockets.values())
-                {
-                    s.close();
-                }
-                candidateSockets.clear();
+                if (freed)
+                    return;
+                freed = true;
             }
 
-            StunStack stunStack = getStunStack();
+            candidates.remove(ufrag);
+
             synchronized (sockets)
             {
+                StunStack stunStack = getStunStack();
+
                 for (Map.Entry<SocketAddress, DatagramSocket> e
                         : sockets.entrySet())
                 {
@@ -662,19 +695,26 @@ public class SinglePortUdpHarvester
                     if (stunStack != null)
                     {
                         TransportAddress localAddress
-                            = new TransportAddress(socket.getLocalAddress(),
-                                                   socket.getLocalPort(),
-                                                   Transport.UDP);
+                                = new TransportAddress(socket.getLocalAddress(),
+                                                       socket.getLocalPort(),
+                                                       Transport.UDP);
                         TransportAddress remoteAddress
-                            = new TransportAddress((InetSocketAddress)e.getKey(),
-                                                   Transport.UDP);
+                                = new TransportAddress((InetSocketAddress) e.getKey(),
+
+                                                       Transport.UDP);
 
                         stunStack.removeSocket(localAddress, remoteAddress);
                     }
 
                     socket.close();
                 }
+
                 sockets.clear();
+            }
+
+            synchronized (candidateSockets)
+            {
+                candidateSockets.clear();
             }
 
             super.free();
@@ -686,13 +726,21 @@ public class SinglePortUdpHarvester
          * @param socket the socket to add.
          * @param remoteAddress the remote address for the socket.
          */
-        private void addSocket(DatagramSocket socket,
+        private synchronized void addSocket(DatagramSocket socket,
                                InetSocketAddress remoteAddress)
             throws IOException
         {
+            if (freed)
+            {
+                throw new IOException("Candidate freed");
+            }
+
             Component component = getParentComponent();
             if (component == null)
-                return;
+            {
+                throw new IOException("No parent component");
+            }
+
             IceProcessingState state
                     = component.getParentStream().getParentAgent().getState();
             if (!IceProcessingState.WAITING.equals(state)
