@@ -87,4 +87,18 @@ public enum IceProcessingState
     {
         return stateName;
     }
+
+    /**
+     * Returns <tt>true</tt> iff the state is one in which a connection
+     * has been established, that is either <tt>COMPLETED</tt> or
+     * <tt>TERMINATED</tt>.
+     *
+     * @return <tt>true</tt> iff the state is one in which a connection
+     * has been established, that is either <tt>COMPLETED</tt> or
+     * <tt>TERMINATED</tt>.
+     */
+    public boolean isEstablished()
+    {
+        return this == COMPLETED || this == TERMINATED;
+    }
 }
