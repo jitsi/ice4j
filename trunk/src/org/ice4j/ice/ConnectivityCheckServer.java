@@ -49,6 +49,22 @@ class ConnectivityCheckServer
     private final StunStack stunStack;
 
     /**
+     * A flag that determines whether we have received a STUN request or not.
+     */
+    private boolean reachable = false;
+
+    /**
+     * Returns a boolean value indicating whether we have received a STUN
+     * request or not.
+     *
+     * @return a boolean value indicating whether we have received a STUN
+     * request or not.
+     */
+    public boolean isReachable() {
+        return reachable;
+    }
+
+    /**
      * Creates a new <tt>ConnectivityCheckServer</tt> setting
      * <tt>parentAgent</tt> as the agent that will be used for retrieving
      * information such as user fragments for example.
@@ -81,6 +97,8 @@ class ConnectivityCheckServer
     {
         if(logger.isLoggable(Level.FINER))
             logger.finer("Received request " + evt);
+
+        reachable = true;
 
         Request request = (Request)evt.getMessage();
 
