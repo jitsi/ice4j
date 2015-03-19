@@ -55,6 +55,22 @@ class ConnectivityCheckClient
     private Map<String, Timer> timers = new HashMap<String, Timer>();
 
     /**
+     * A flag that determines whether we have received a STUN response or not.
+     */
+    private boolean reachable = false;
+
+    /**
+     * Returns a boolean value indicating whether we have received a STUN
+     * response or not.
+     *
+     * @return a boolean value indicating whether we have received a STUN
+     * response or not.
+     */
+    public boolean isReachable() {
+        return reachable;
+    }
+
+    /**
      * Creates a new <tt>ConnectivityCheckHandler</tt> setting
      * <tt>parentAgent</tt> as the agent that will be used for retrieving
      * information such as user fragments for example.
@@ -321,6 +337,8 @@ class ConnectivityCheckClient
      */
     public void processResponse(StunResponseEvent ev)
     {
+        reachable = true;
+
         CandidatePair checkedPair
             = (CandidatePair) ev.getTransactionID().getApplicationData();
 
