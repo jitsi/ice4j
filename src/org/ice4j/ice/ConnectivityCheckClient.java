@@ -57,17 +57,23 @@ class ConnectivityCheckClient
     /**
      * A flag that determines whether we have received a STUN response or not.
      */
-    private boolean reachable = false;
+    private boolean alive = false;
 
     /**
      * Returns a boolean value indicating whether we have received a STUN
      * response or not.
      *
+     * Note that this should NOT be taken as an indication that the negotiation
+     * has succeeded, it merely indicates that we have received ANY STUN
+     * response, possibly a BINDING_ERROR_RESPONSE. It is completely
+     * unrelated/independent from the ICE spec and it's only meant to be used
+     * for debugging purposes.
+     *
      * @return a boolean value indicating whether we have received a STUN
      * response or not.
      */
-    public boolean isReachable() {
-        return reachable;
+    public boolean isAlive() {
+        return alive;
     }
 
     /**
@@ -337,7 +343,7 @@ class ConnectivityCheckClient
      */
     public void processResponse(StunResponseEvent ev)
     {
-        reachable = true;
+        alive = true;
 
         CandidatePair checkedPair
             = (CandidatePair) ev.getTransactionID().getApplicationData();
