@@ -51,17 +51,23 @@ class ConnectivityCheckServer
     /**
      * A flag that determines whether we have received a STUN request or not.
      */
-    private boolean reachable = false;
+    private boolean alive = false;
 
     /**
      * Returns a boolean value indicating whether we have received a STUN
      * request or not.
      *
+     * Note that this should NOT be taken as an indication that the negotiation
+     * has succeeded, it merely indicates that we have received ANY STUN
+     * request, even invalid ones (e.g. with the wrong username or ufrag). It is
+     * completely unrelated/independent from the ICE spec and it's only meant to
+     * be used for debugging purposes.
+     *
      * @return a boolean value indicating whether we have received a STUN
      * request or not.
      */
-    public boolean isReachable() {
-        return reachable;
+    public boolean isAlive() {
+        return alive;
     }
 
     /**
@@ -98,7 +104,7 @@ class ConnectivityCheckServer
         if(logger.isLoggable(Level.FINER))
             logger.finer("Received request " + evt);
 
-        reachable = true;
+        alive = true;
 
         Request request = (Request)evt.getMessage();
 

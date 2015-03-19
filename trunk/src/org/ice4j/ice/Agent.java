@@ -1726,8 +1726,8 @@ public class Agent
         {
             //all lists ended but none succeeded. No love today ;(
             if (logger.isLoggable(Level.INFO)) {
-                if (connCheckClient.isReachable()
-                    || connCheckServer.isReachable())
+                if (connCheckClient.isAlive()
+                    || connCheckServer.isAlive())
                 {
                     logger.info("Suspicious ICE connectivity failure. Checks" +
                         " failed but the remote end was able to reach us.");
