@@ -6,6 +6,8 @@
  */
 package org.ice4j.socket;
 
+import org.ice4j.stack.*;
+
 import java.io.*;
 import java.net.*;
 import java.nio.*;
@@ -570,10 +572,13 @@ public class DelegatingSocket
 
             if (StunDatagramPacketFilter.isStunPacket(p)
                 || DelegatingDatagramSocket.logNonStun(++nbReceivedPackets))
-                DelegatingDatagramSocket.logPacketToPcap(
-                    p,
-                    false,
-                    localAddress.getAddress(), localAddress.getPort());
+            {
+                StunStack.logPacketToPcap(
+                        p,
+                        false,
+                        localAddress.getAddress(),
+                        localAddress.getPort());
+            }
         }
     }
 
@@ -657,10 +662,13 @@ public class DelegatingSocket
                 = (InetSocketAddress) super.getLocalSocketAddress();
 
             if (DelegatingDatagramSocket.logNonStun(++nbSentPackets))
-                DelegatingDatagramSocket.logPacketToPcap(
-                    p,
-                    true,
-                    localAddress.getAddress(), localAddress.getPort());
+            {
+                StunStack.logPacketToPcap(
+                        p,
+                        true,
+                        localAddress.getAddress(),
+                        localAddress.getPort());
+            }
         }
     }
 
