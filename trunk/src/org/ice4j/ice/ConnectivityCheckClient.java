@@ -60,6 +60,20 @@ class ConnectivityCheckClient
     private boolean alive = false;
 
     /**
+     * Creates a new <tt>ConnectivityCheckClient</tt> setting
+     * <tt>parentAgent</tt> as the agent that will be used for retrieving
+     * information such as user fragments for example.
+     *
+     * @param parentAgent the <tt>Agent</tt> that is creating this instance.
+     */
+    public ConnectivityCheckClient(Agent parentAgent)
+    {
+        this.parentAgent = parentAgent;
+
+        stunStack = this.parentAgent.getStunStack();
+    }
+
+    /**
      * Returns a boolean value indicating whether we have received a STUN
      * response or not.
      *
@@ -72,22 +86,9 @@ class ConnectivityCheckClient
      * @return a boolean value indicating whether we have received a STUN
      * response or not.
      */
-    public boolean isAlive() {
-        return alive;
-    }
-
-    /**
-     * Creates a new <tt>ConnectivityCheckHandler</tt> setting
-     * <tt>parentAgent</tt> as the agent that will be used for retrieving
-     * information such as user fragments for example.
-     *
-     * @param parentAgent the <tt>Agent</tt> that is creating this instance.
-     */
-    public ConnectivityCheckClient(Agent parentAgent)
+    boolean isAlive()
     {
-        this.parentAgent = parentAgent;
-
-        stunStack = this.parentAgent.getStunStack();
+        return alive;
     }
 
     /**
