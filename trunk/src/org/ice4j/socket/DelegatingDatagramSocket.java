@@ -10,7 +10,6 @@ package org.ice4j.socket;
 import java.io.*;
 import java.net.*;
 import java.nio.channels.*;
-import java.util.logging.*;
 
 import org.ice4j.stack.*;
 
@@ -24,46 +23,8 @@ public class DelegatingDatagramSocket
     extends DatagramSocket
 {
     /**
-     * The <tt>Logger</tt> used by the <tt>Agent</tt> class and its instances
-     * for logging output.
-     */
-    private static final Logger logger
-        = Logger.getLogger(DelegatingDatagramSocket.class.getName());
-
-    /**
-     * The <tt>DatagramSocket</tt> to which this
-     * <tt>DelegatingDatagramSocket</tt> delegates its calls.
-     */
-    protected final DatagramSocket delegate;
-
-    /**
-     * The number of RTP packets received for this socket.
-     */
-    private long nbReceivedRtpPackets = 0;
-
-    /**
-     * The number of RTP packets sent for this socket.
-     */
-    private long nbSentRtpPackets = 0;
-
-    /**
-     * The number of RTP packets lost (not received) for this socket.
-     */
-    private long nbLostRtpPackets = 0;
-
-    /**
-     * The last RTP sequence number received for this socket.
-     */
-    private long lastRtpSequenceNumber = -1;
-
-    /**
-     * The last time an information about packet lost has been logged.
-     */
-    private long lastLostPacketLogTime = 0;
-
-    /**
      * Assigns a factory to generate custom DatagramSocket to replace classical
-     * "java" DatamgramSocket. This way external applications can define the
+     * "java" DatagramSocket. This way external applications can define the
      * type of DatagramSocket to use.
      * If "null", then the classical "java" DatagramSocket is used. Otherwise
      * the factory generates custom DatagramSockets.
@@ -77,6 +38,110 @@ public class DelegatingDatagramSocket
      * be greater than 0 to be effective.
      */
     private static int defaultReceiveBufferSize = -1;
+
+    /**
+     * If a factory is provided, then any new instances of
+     * DelegatingDatagramSocket will automatically use a socket from  the
+     * factory instead of the super class.
+     *
+     * If this method is used, the factory class needs to ensure the socket
+     * objects are properly constructed and initialized - in particular, any
+     * default receive buffer size specified through
+     * DelegatingDatagramSocket#setDefaultReceiveBufferSize() won't
+     * automatically be applied to sockets obtain from the factory.
+     *
+     * @param factory The factory assigned to generates the new DatagramSocket
+     * for each new DelegatingDatagramSocket which do not use a delegate socket.
+     */
+    public static void setDefaultDelegateFactory(DatagramSocketFactory factory)
+    {
+        delegateFactory = factory;
+    }
+
+    /**
+     * Specifies a default receive buffer size for the underlying sockets.
+     * This function must be called before using the DelegatingDatagramSocket
+     * constructor. The size must be greater than 0 to be effective.
+     *
+     * @see DatagramSocket#setReceiveBufferSize(int) for a discussion of the
+     * effect of changing this setting.
+     *
+     * @param size the size to which to set the receive buffer size. This value
+     * must be greater than 0.
+     */
+    public static void setDefaultReceiveBufferSize(int size)
+    {
+        defaultReceiveBufferSize = size;
+    }
+
+    /**
+     * Determines whether a packet should be logged, given the number of sent
+     * or received packets.
+     *
+     * @param numOfPacket the number of packets sent or received.
+     */
+    static boolean logNonStun(long numOfPacket)
+    {
+        return (numOfPacket == 1)
+                || (numOfPacket == 300)
+                || (numOfPacket == 500)
+                || (numOfPacket == 1000)
+                || ((numOfPacket % 5000) == 0);
+    }
+
+    /**
+     * Logs a packet (STUN/TURN or RTP) to the pcap file.
+     *
+     * @param p the <tt>DatagramPacket</tt> received/sent.
+     * @param isSent True if this packet is sent. False if this packet is
+     * received.
+     * @param interfaceAddress The InetAddress bind by this socket to the local
+     * interface (0.0.0.0 or ::0 is the socket is not bound).
+     * @param interfacePort The port bind by this socket to the local interface.
+     */
+    static void logPacketToPcap(
+            DatagramPacket p,
+            boolean isSent,
+            InetAddress interfaceAddress,
+            int interfacePort)
+    {
+        // The interfaceAddress may be null if the socket is closed before this
+        // packet has been logged. In this case, this packet is not logged.
+        if (interfaceAddress != null)
+        {
+            InetAddress[] addr = {interfaceAddress, p.getAddress()};
+            int[] port = {interfacePort, p.getPort()};
+            int fromIndex = isSent ? 0 : 1;
+            int toIndex = isSent ? 1 : 0;
+
+            if(StunStack.isPacketLoggerEnabled())
+            {
+                StunStack.getPacketLogger().logPacket(
+                        addr[fromIndex].getAddress(),
+                        port[fromIndex],
+                        addr[toIndex].getAddress(),
+                        port[toIndex],
+                        p.getData(),
+                        isSent);
+            }
+        }
+    }
+
+    /**
+     * The <tt>DatagramSocket</tt> to which this
+     * <tt>DelegatingDatagramSocket</tt> delegates its calls.
+     */
+    protected final DatagramSocket delegate;
+
+    /**
+     * The number of non-STUN packets received on this socket.
+     */
+    private long nbReceivedPackets = 0;
+
+    /**
+     * The number of non-STUN packets sent through this socket.
+     */
+    private long nbSentPackets = 0;
 
     /**
      * Initializes a new <tt>DelegatingDatagramSocket</tt> instance and binds it
@@ -631,17 +696,9 @@ public class DelegatingDatagramSocket
 
             super.receive(p);
 
-            // No exception, a packet is successfully received - log it. If it
-            // is not a STUN/TURN packet, then it is an RTP packet.
-            if(isRtpPacket(p))
-                ++nbReceivedRtpPackets;
-            logPacketToPcap(
-                    p,
-                    nbReceivedRtpPackets,
-                    false,
-                    super.getLocalAddress(), super.getLocalPort());
-            // Log RTP losses if > 5%.
-            updateRtpLosses(p);
+            if (StunDatagramPacketFilter.isStunPacket(p)
+                    || logNonStun(++nbReceivedPackets))
+                logPacketToPcap(p, false, getLocalAddress(), getLocalPort());
         }
         else
         {
@@ -709,13 +766,8 @@ public class DelegatingDatagramSocket
                 }
             }
 
-            // no exception packet is successfully sent, log it.
-            ++nbSentRtpPackets;
-            logPacketToPcap(
-                    p,
-                    nbSentRtpPackets,
-                    true,
-                    super.getLocalAddress(), super.getLocalPort());
+            if (logNonStun(++nbSentPackets))
+                logPacketToPcap(p, true, getLocalAddress(), getLocalPort());
         }
         // Else, the delegate socket will encapsulate the packet.
         else
@@ -871,229 +923,6 @@ public class DelegatingDatagramSocket
             delegate.setTrafficClass(tc);
     }
 
-    /**
-     * Determines whether a RTP packet which has a specific number in
-     * the total number of sent or received is to be logged in pcap file.
-     *
-     * @param numOfPacket the number of the <tt>RawPacket</tt> in the total
-     * number of sent <tt>RawPacket</tt>s
-     * @return <tt>true</tt> if the <tt>RawPacket</tt> with the specified
-     * <tt>numOfPacket</tt> is to be logged by <tt>PacketLoggingService</tt>;
-     * otherwise, <tt>false</tt>
-     */
-    public static boolean logRTPPacket(long numOfPacket)
-    {
-        return (numOfPacket == 1)
-                || (numOfPacket == 300)
-                || (numOfPacket == 500)
-                || (numOfPacket == 1000)
-                || ((numOfPacket % 5000) == 0);
-    }
-
-    /**
-     * Logs interesting packets (STUN/TURN or RTP) to the pcap file.
-     *
-     * @param p the <tt>DatagramPacket</tt> received/sent.
-     * @param nbSentOrReceivedRtpPackets the number of RTP packets already
-     * received or sent.
-     * @param isSent True if this packet is sent. False if this packet is
-     * received.
-     * @param interfaceAddress The InetAddress bind by this socket to the local
-     * interface (0.0.0.0 or ::0 is the socket is not bound).
-     * @param interfacePort The port bind by this socket to the local interface.
-     */
-    public static void logPacketToPcap(
-            DatagramPacket p,
-            long nbSentOrReceivedRtpPackets,
-            boolean isSent,
-            InetAddress interfaceAddress,
-            int interfacePort)
-    {
-        boolean isStunPacket = StunDatagramPacketFilter.isStunPacket(p);
-        boolean logThisRtpPacket = false;
-
-        // If this is not a STUN/TURN packet, then this is a RTP packet.
-        if(!isStunPacket)
-        {
-            logThisRtpPacket = DelegatingDatagramSocket.logRTPPacket(
-                    nbSentOrReceivedRtpPackets);
-        }
-
-        // The interfaceAddress may be null if the socket is closed before this
-        // packet has been logged. In this cqse, this packet is not logged. 
-        if((isStunPacket || logThisRtpPacket)
-                && interfaceAddress != null)
-        {
-            InetAddress[] addr = {interfaceAddress, p.getAddress()};
-            int[] port = {interfacePort, p.getPort()};
-            int fromIndex = isSent ? 0 : 1;
-            int toIndex = isSent ? 1 : 0;
-
-            if(StunStack.isPacketLoggerEnabled())
-            {
-                StunStack.getPacketLogger().logPacket(
-                    addr[fromIndex].getAddress(),
-                    port[fromIndex],
-                    addr[toIndex].getAddress(),
-                    port[toIndex],
-                    p.getData(),
-                    isSent);
-            }
-        }
-    }
-
-    /**
-     * Determines the sequence number of a RTP packet.
-     *
-     * @param p the last RTP packet received.
-     * @return The last RTP sequence number.
-     */
-    public static long getRtpSequenceNumber(DatagramPacket p)
-    {
-        // The sequence number is contained in the third and fourth bytes of the
-        // RTP header (stored in big endian).
-        byte[] data = p.getData();
-        int offset = p.getOffset();
-        long seq_high = data[offset + 2] & 0xff;
-        long seq_low = data[offset + 3] & 0xff;
-
-        return seq_high << 8 | seq_low;
-    }
-
-    /**
-     * Updates and logs information about RTP losses if there is more then 5% of
-     * RTP packet lost (at most every 5 seconds).
-     *
-     * @param p The last packet received.
-     */
-    private void updateRtpLosses(DatagramPacket p)
-    {
-        // If this is not a STUN/TURN packet, then this is a RTP packet.
-        if(isRtpPacket(p))
-        {
-            long newSeq = getRtpSequenceNumber(p);
-
-            if(lastRtpSequenceNumber != -1)
-                nbLostRtpPackets += getNbLost(lastRtpSequenceNumber, newSeq);
-
-            lastRtpSequenceNumber = newSeq;
-
-            lastLostPacketLogTime
-                = logRtpLosses(
-                        nbLostRtpPackets,
-                        nbReceivedRtpPackets,
-                        lastLostPacketLogTime);
-        }
-    }
-
-    /**
-     * Logs information about RTP losses if there is more then 5% of RTP packet
-     * lost (at most every 5 seconds).
-     *
-     * @param totalNbLost The total number of lost packet since the beginning of
-     * this stream.
-     * @param totalNbReceived The total number of received packet since the
-     * beginning of this stream.
-     * @param lastLogTime The last time we have logged information about RTP
-     * losses.
-     *
-     * @return the last log time updated if this function as log new information
-     * about RTP losses. Otherwise, returns the same last log time value as
-     * given in parameter.
-     */
-    public static long logRtpLosses(
-            long totalNbLost,
-            long totalNbReceived,
-            long lastLogTime)
-    {
-        double percentLost = ((double) totalNbLost)
-            / ((double) (totalNbLost + totalNbReceived));
-        // Log the information if the loss rate is upper 5% and if the last
-        // log is before 5 seconds.
-        if(percentLost > 0.05)
-        {
-            long currentTime = System.currentTimeMillis();
-            if(currentTime - lastLogTime >= 5000)
-            {
-                logger.info("RTP lost > 5%: " + percentLost);
-                return currentTime;
-            }
-        }
-        return lastLogTime;
-    }
-
-    /**
-     * Return the number of loss between the 2 last RTP packets received.
-     *
-     * @param lastRtpSequenceNumber The previous RTP sequence number.
-     * @param newSeq The current RTP sequence number.
-     *
-     * @return the number of loss between the 2 last RTP packets received.
-     */
-    public static long getNbLost(
-            long lastRtpSequenceNumber,
-            long newSeq)
-    {
-        long newNbLost = 0;
-        if(lastRtpSequenceNumber <= newSeq)
-        {
-            newNbLost = newSeq - lastRtpSequenceNumber;
-        }
-        else
-        {
-            newNbLost = (0xffff - lastRtpSequenceNumber) + newSeq;
-        }
-
-        if(newNbLost > 1)
-        {
-            if(newNbLost < 0x00ff)
-            {
-                return newNbLost - 1;
-            }
-            // Else the paquet is desequenced, then count it as a
-            // single loss.
-            else
-            {
-                return 1;
-            }
-        }
-        return 0;
-    }
-
-    /**
-     * If a factory is provided, then any new instances of
-     * DelegatingDatagramSocket will automatically use a socket from  the
-     * factory instead of the super class.
-     * 
-     * If this method is used, the factory class needs to ensure the socket
-     * objects are properly constructed and initialized - in particular, any
-     * default receive buffer size specified through
-     * DelegatingDatagramSocket#setDefaultReceiveBufferSize() won't
-     * automatically be applied to sockets obtain from the factory.
-     * 
-     * @param factory The factory assigned to generates the new DatagramSocket
-     * for each new DelegatingDatagramSocket which do not use a delegate socket.
-     */
-    public static void setDefaultDelegateFactory(DatagramSocketFactory factory)
-    {
-        delegateFactory = factory;
-    }
-
-    /**
-     * Specifies a default receive buffer size for the underlying sockets.
-     * This function must be called before using the DelegatingDatagramSocket
-     * constructor. The size must be greater than 0 to be effective.
-     *
-     * @see DatagramSocket#setReceiveBufferSize() for a discussion of the
-     * effect of changing this setting.
-     * 
-     * @param size the size to which to set the receive buffer size. This value
-     * must be greater than 0. 
-     */
-    public static void setDefaultReceiveBufferSize(int size)
-    {
-        defaultReceiveBufferSize = size;
-    }
 
     /**
      * A utility method used by the constructors to ensure the receive buffer
@@ -1114,30 +943,5 @@ public class DelegatingDatagramSocket
         {
             super.setReceiveBufferSize(defaultReceiveBufferSize);
         }
-    }
-
-    /**
-     * Determines whether <tt>p</tt> is an RTP packet (and something else, like,
-     * a STUN, RTCP or DTLS packet).
-     *
-     * @param p the packet.
-     * @return <tt>true</tt> if <tt>p</tt> appears to be an RTP packet.
-     */
-    private boolean isRtpPacket(DatagramPacket p)
-    {
-        int len = p.getLength();
-
-        if (len >= 4)
-        {
-            byte[] data = p.getData();
-            int off = p.getOffset();
-
-            if (((data[off + 0] & 0xc0) >> 6) == 2)
-            {
-                //Either RTP or RTCP
-                return !RtcpDemuxPacketFilter.isRtcpPacket(p);
-            }
-        }
-        return false;
     }
 }
