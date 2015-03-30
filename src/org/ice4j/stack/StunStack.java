@@ -1579,4 +1579,40 @@ public class StunStack
             return null;
         }
     }
+
+    /**
+     * Logs a specific <tt>DatagramPacket</tt> using the packet logger of the
+     * <tt>StunStack</tt>.
+     *
+     * @param p The <tt>DatagramPacket</tt> to log.
+     * @param isSent <tt>true</tt> if the packet is sent, or <tt>false</tt>
+     * if the packet is received.
+     * @param interfaceAddress The <tt>InetAddress</tt> to use as source (if
+     * the packet was sent) or destination (if the packet was received).
+     * @param interfacePort The port to use as source (if the packet was sent)
+     * or destination (if the packet was received).
+     */
+    public static void logPacketToPcap(
+            DatagramPacket p,
+            boolean isSent,
+            InetAddress interfaceAddress,
+            int interfacePort)
+    {
+        if (interfaceAddress != null && isPacketLoggerEnabled())
+        {
+            InetAddress[] addr = {interfaceAddress, p.getAddress()};
+            int[] port = {interfacePort, p.getPort()};
+            int fromIndex = isSent ? 0 : 1;
+            int toIndex = isSent ? 1 : 0;
+
+            getPacketLogger().logPacket(
+                    addr[fromIndex].getAddress(),
+                    port[fromIndex],
+                    addr[toIndex].getAddress(),
+                    port[toIndex],
+                    p.getData(),
+                    isSent);
+        }
+    }
+
 }

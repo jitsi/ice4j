@@ -90,44 +90,6 @@ public class DelegatingDatagramSocket
     }
 
     /**
-     * Logs a packet (STUN/TURN or RTP) to the pcap file.
-     *
-     * @param p the <tt>DatagramPacket</tt> received/sent.
-     * @param isSent True if this packet is sent. False if this packet is
-     * received.
-     * @param interfaceAddress The InetAddress bind by this socket to the local
-     * interface (0.0.0.0 or ::0 is the socket is not bound).
-     * @param interfacePort The port bind by this socket to the local interface.
-     */
-    static void logPacketToPcap(
-            DatagramPacket p,
-            boolean isSent,
-            InetAddress interfaceAddress,
-            int interfacePort)
-    {
-        // The interfaceAddress may be null if the socket is closed before this
-        // packet has been logged. In this case, this packet is not logged.
-        if (interfaceAddress != null)
-        {
-            InetAddress[] addr = {interfaceAddress, p.getAddress()};
-            int[] port = {interfacePort, p.getPort()};
-            int fromIndex = isSent ? 0 : 1;
-            int toIndex = isSent ? 1 : 0;
-
-            if(StunStack.isPacketLoggerEnabled())
-            {
-                StunStack.getPacketLogger().logPacket(
-                        addr[fromIndex].getAddress(),
-                        port[fromIndex],
-                        addr[toIndex].getAddress(),
-                        port[toIndex],
-                        p.getData(),
-                        isSent);
-            }
-        }
-    }
-
-    /**
      * The <tt>DatagramSocket</tt> to which this
      * <tt>DelegatingDatagramSocket</tt> delegates its calls.
      */
@@ -698,7 +660,13 @@ public class DelegatingDatagramSocket
 
             if (StunDatagramPacketFilter.isStunPacket(p)
                     || logNonStun(++nbReceivedPackets))
-                logPacketToPcap(p, false, getLocalAddress(), getLocalPort());
+            {
+                StunStack.logPacketToPcap(
+                        p,
+                        false,
+                        getLocalAddress(),
+                        getLocalPort());
+            }
         }
         else
         {
@@ -767,7 +735,13 @@ public class DelegatingDatagramSocket
             }
 
             if (logNonStun(++nbSentPackets))
-                logPacketToPcap(p, true, getLocalAddress(), getLocalPort());
+            {
+                StunStack.logPacketToPcap(
+                        p,
+                        true,
+                        getLocalAddress(),
+                        getLocalPort());
+            }
         }
         // Else, the delegate socket will encapsulate the packet.
         else
