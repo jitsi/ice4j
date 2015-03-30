@@ -54,23 +54,6 @@ class ConnectivityCheckServer
     private boolean alive = false;
 
     /**
-     * Returns a boolean value indicating whether we have received a STUN
-     * request or not.
-     *
-     * Note that this should NOT be taken as an indication that the negotiation
-     * has succeeded, it merely indicates that we have received ANY STUN
-     * request, even invalid ones (e.g. with the wrong username or ufrag). It is
-     * completely unrelated/independent from the ICE spec and it's only meant to
-     * be used for debugging purposes.
-     *
-     * @return a boolean value indicating whether we have received a STUN
-     * request or not.
-     */
-    public boolean isAlive() {
-        return alive;
-    }
-
-    /**
      * Creates a new <tt>ConnectivityCheckServer</tt> setting
      * <tt>parentAgent</tt> as the agent that will be used for retrieving
      * information such as user fragments for example.
@@ -85,6 +68,24 @@ class ConnectivityCheckServer
         stunStack.getCredentialsManager().registerAuthority(this);
 
         start();
+    }
+
+    /**
+     * Returns a boolean value indicating whether we have received a STUN
+     * request or not.
+     *
+     * Note that this should NOT be taken as an indication that the negotiation
+     * has succeeded, it merely indicates that we have received ANY STUN
+     * request, even invalid ones (e.g. with the wrong username or ufrag). It is
+     * completely unrelated/independent from the ICE spec and it's only meant to
+     * be used for debugging purposes.
+     *
+     * @return a boolean value indicating whether we have received a STUN
+     * request or not.
+     */
+    boolean isAlive()
+    {
+        return alive;
     }
 
     /**

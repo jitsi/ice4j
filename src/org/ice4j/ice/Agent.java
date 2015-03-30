@@ -1725,7 +1725,8 @@ public class Agent
         if(!atLeastOneListSucceeded)
         {
             //all lists ended but none succeeded. No love today ;(
-            if (logger.isLoggable(Level.INFO)) {
+            if (logger.isLoggable(Level.INFO))
+            {
                 if (connCheckClient.isAlive()
                     || connCheckServer.isAlive())
                 {
