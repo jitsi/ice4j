@@ -109,29 +109,14 @@ public class DelegatingSocket
     private InputStream inputStream = null;
 
     /**
-     * The last time an information about packet lost has been logged.
+     * The number of non-STUN packets received for this socket.
      */
-    private long lastLostPacketLogTime = 0;
+    private long nbReceivedPackets = 0;
 
     /**
-     * The last RTP sequence number received for this socket.
+     * The number of non-STUN packets sent for this socket.
      */
-    private long lastRtpSequenceNumber = -1;
-
-    /**
-     * The number of RTP packets lost (not received) for this socket.
-     */
-    private long nbLostRtpPackets = 0;
-
-    /**
-     * The number of RTP packets received for this socket.
-     */
-    private long nbReceivedRtpPackets = 0;
-
-    /**
-     * The number of RTP packets sent for this socket.
-     */
-    private long nbSentRtpPackets = 0;
+    private long nbSentPackets = 0;
 
     /**
      * OutputStream for this socket.
@@ -580,21 +565,15 @@ public class DelegatingSocket
                 receiveFromChannel(channel, p);
             }
 
-            // No exception, a packet is successfully received - log it. If it
-            // is not a STUN/TURN packet, then it is an RTP packet.
-            if (!StunDatagramPacketFilter.isStunPacket(p))
-                ++nbReceivedRtpPackets;
-
             InetSocketAddress localAddress
                 = (InetSocketAddress) super.getLocalSocketAddress();
 
-            DelegatingDatagramSocket.logPacketToPcap(
+            if (StunDatagramPacketFilter.isStunPacket(p)
+                || DelegatingDatagramSocket.logNonStun(++nbReceivedPackets))
+                DelegatingDatagramSocket.logPacketToPcap(
                     p,
-                    nbReceivedRtpPackets,
                     false,
                     localAddress.getAddress(), localAddress.getPort());
-            // Log RTP losses if > 5%.
-            updateRtpLosses(p);
         }
     }
 
@@ -674,14 +653,12 @@ public class DelegatingSocket
             // Else, sends the packet to the final socket (outputStream).
             outputStream.write(p.getData(), p.getOffset(), p.getLength());
 
-            // no exception packet is successfully sent, log it.
-            ++nbSentRtpPackets;
             InetSocketAddress localAddress
                 = (InetSocketAddress) super.getLocalSocketAddress();
 
-            DelegatingDatagramSocket.logPacketToPcap(
+            if (DelegatingDatagramSocket.logNonStun(++nbSentPackets))
+                DelegatingDatagramSocket.logPacketToPcap(
                     p,
-                    nbSentRtpPackets,
                     true,
                     localAddress.getAddress(), localAddress.getPort());
         }
@@ -871,35 +848,5 @@ public class DelegatingSocket
     public String toString()
     {
         return (delegate == null) ? super.toString() : delegate.toString();
-    }
-
-    /**
-     * Updates and Logs information about RTP losses if there is more then 5% of
-     * RTP packet lost (at most every 5 seconds).
-     *
-     * @param p The last packet received.
-     */
-    private void updateRtpLosses(DatagramPacket p)
-    {
-        // If this is not a STUN/TURN packet, then this is a RTP packet.
-        if(!StunDatagramPacketFilter.isStunPacket(p))
-        {
-            long newSeq = DelegatingDatagramSocket.getRtpSequenceNumber(p);
-
-            if(lastRtpSequenceNumber != -1)
-            {
-                nbLostRtpPackets
-                    += DelegatingDatagramSocket.getNbLost(
-                            lastRtpSequenceNumber,
-                            newSeq);
-            }
-            lastRtpSequenceNumber = newSeq;
-
-            lastLostPacketLogTime
-                = DelegatingDatagramSocket.logRtpLosses(
-                        nbLostRtpPackets,
-                        nbReceivedRtpPackets,
-                        lastLostPacketLogTime);
-        }
     }
 }
