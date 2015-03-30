@@ -459,9 +459,14 @@ public class SinglePortUdpHarvester
         {
             synchronized (queue)
             {
-                // XXX Should we drop the first packet from the queue instead?
-                if (!queue.offer(buf))
+                // Drop the first rather than the current packet, so that
+                // receivers can notice the loss earlier.
+                if (queue.size() == QUEUE_SIZE)
+                {
                     logger.info("Dropping a packet because the queue is full.");
+                    queue.poll();
+                }
+                queue.offer(buf);
 
                 queue.notifyAll();
             }
