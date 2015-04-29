@@ -7,14 +7,10 @@
  */
 package org.ice4j.ice;
 
-import java.io.*;
-import java.net.*;
 import java.util.*;
 import java.util.logging.*;
 
 import org.ice4j.*;
-import org.ice4j.ice.harvest.*;
-import org.ice4j.socket.*;
 
 /**
  * A component is a piece of a media stream requiring a single transport
@@ -278,81 +274,6 @@ public class Component
             }
 
             remoteUpdateCandidates.add(candidate);
-        }
-    }
-
-    /**
-     * Creates a local TCP candidate for use with a specific remote GTalk TCP
-     * candidate.
-     *
-     * @param remoteCandidate the GTalk TCP candidate that we'd like to connect
-     * to.
-     * @param localCandidate the local candidate that we are pairing
-     * remoteCandidate with and that we should use as a source for the ice
-     * ufrag and password.
-     *
-     * @return the newly created {@link LocalCandidate}
-     */
-    private LocalCandidate createLocalTcpCandidate4GTalk(
-                                           RemoteCandidate remoteCandidate,
-                                           LocalCandidate  localCandidate)
-    {
-        MultiplexingSocket sock = new MultiplexingSocket();
-        try
-        {
-            // if we use proxy (socks5, ...), the connect() timeout
-            // may not be respected
-            int timeout = sock.getSoTimeout();
-            sock.setSoTimeout(1000);
-            sock.connect(new InetSocketAddress(
-                remoteCandidate.getTransportAddress().getAddress(),
-                remoteCandidate.getTransportAddress().getPort()), 1000);
-            sock.setSoTimeout(timeout);
-        }
-        catch(Exception e)
-        {
-            logger.info(
-                    "Failed to connect to "
-                        + remoteCandidate.getTransportAddress());
-            try
-            {
-                sock.close();
-            }
-            catch (IOException ioex)
-            {
-            }
-            return null;
-        }
-
-        try
-        {
-            if(remoteCandidate.getTransportAddress().getPort() == 443)
-            {
-                //SSL/TCP handshake
-                OutputStream outputStream =
-                    sock.getOriginalOutputStream();
-                InputStream inputStream = sock.getOriginalInputStream();
-
-                if(!GoogleTurnSSLCandidateHarvester.sslHandshake(
-                    inputStream, outputStream))
-                {
-                    logger.info("Failed to connect to SSL/TCP relay");
-                    return null;
-                }
-            }
-
-            LocalCandidate newLocalCandidate =
-                new HostCandidate(new IceTcpSocketWrapper(sock),
-                    this, Transport.TCP);
-            parentStream.getParentAgent().getStunStack().addSocket(
-                newLocalCandidate.getStunSocket(null));
-            newLocalCandidate.setUfrag(localCandidate.getUfrag());
-            return newLocalCandidate;
-        }
-        catch(IOException ioe)
-        {
-            logger.log(Level.INFO, "Failed to connect to SSL/TCP relay", ioe);
-            return null;
         }
     }
 

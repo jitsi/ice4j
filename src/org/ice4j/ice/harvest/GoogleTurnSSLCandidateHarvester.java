@@ -45,7 +45,7 @@ public class GoogleTurnSSLCandidateHarvester
     /**
      * Data for the SSL message sent by the client.
      */
-    static final byte SSL_CLIENT_HANDSHAKE[] =
+    public static final byte SSL_CLIENT_HANDSHAKE[] =
     {
         (byte)0x80, 0x46, 0x01, 0x03, 0x01, 0x00, 0x2d, 0x00,
         0x00, 0x00, 0x10, 0x01, 0x00, (byte)0x80, 0x03, 0x00,
