@@ -88,6 +88,14 @@ public class DelegatingSocket
     }
 
     /**
+     * The <tt>SocketChannel</tt> (to be) returned by {@link #getChannel()}. If
+     * <tt>null</tt>, <tt>getChannel()</tt> forwards to {@link #delegate}. (If
+     * <tt>delegate</tt> is <tt>null</tt>, <tt>getChannel()</tt> invokes the
+     * super implementation.
+     */
+    protected final SocketChannel channel;
+
+    /**
      * Delegate <tt>Socket</tt>.
      */
     protected final Socket delegate;
@@ -136,6 +144,8 @@ public class DelegatingSocket
     /**
      * Initializes a new <tt>DelegatingSocket</tt>.
      *
+     * @param address
+     * @param port
      * @see Socket#Socket(InetAddress, int)
      */
     public DelegatingSocket(InetAddress address, int port)
@@ -147,6 +157,10 @@ public class DelegatingSocket
     /**
      * Initializes a new <tt>DelegatingSocket</tt>.
      *
+     * @param address
+     * @param port
+     * @param localAddr
+     * @param localPort
      * @see Socket#Socket(InetAddress, int, InetAddress, int)
      */
     public DelegatingSocket(
@@ -160,6 +174,7 @@ public class DelegatingSocket
     /**
      * Initializes a new <tt>DelegatingSocket</tt>.
      *
+     * @param proxy
      * @see Socket#Socket(Proxy)
      */
     public DelegatingSocket(Proxy proxy)
@@ -168,13 +183,30 @@ public class DelegatingSocket
     }
 
     /**
-     * Initializes a new <tt>DelegatingSocket</tt>.
+     * Initializes a new <tt>DelegatingSocket</tt> instance which is to delegate
+     * (i.e. forwards) method calls to a specific <tt>Socket</tt>.
      *
-     * @param delegate delegating socket
+     * @param delegate the <tt>Socket</tt> the new instance is to delegate to
      */
     public DelegatingSocket(Socket delegate)
     {
+        this(delegate, (delegate == null) ? null : delegate.getChannel());
+    }
+
+    /**
+     * Initializes a new <tt>DelegatingSocket</tt> instance which is to delegate
+     * (i.e. forward) method calls to a specific <tt>Socket</tt> and to report
+     * (i.e. return) an association with a specific <tt>SocketChannel</tt>.
+     *
+     * @param delegate the <tt>Socket</tt> the new instance is to delegate to
+     * @param channel the <tt>SocketChannel</tt> to be returned by
+     * {@link #getChannel()}. If <tt>null</tt>, <tt>getChannel()</tt> forwards
+     * to <tt>delegate</tt>.
+     */
+    public DelegatingSocket(Socket delegate, SocketChannel channel)
+    {
         this.delegate = delegate;
+        this.channel = channel;
 
         delegateAsDelegatingSocket
             = (delegate instanceof DelegatingSocket)
@@ -185,6 +217,7 @@ public class DelegatingSocket
     /**
      * Initializes a new <tt>DelegatingSocket</tt>.
      *
+     * @param impl
      * @see Socket#Socket(SocketImpl)
      */
     protected DelegatingSocket(SocketImpl impl)
@@ -196,6 +229,8 @@ public class DelegatingSocket
     /**
      * Initializes a new <tt>DelegatingSocket</tt>.
      *
+     * @param host
+     * @param port
      * @see Socket#Socket(String, int)
      */
     public DelegatingSocket(String host, int port)
@@ -207,6 +242,10 @@ public class DelegatingSocket
     /**
      * Initializes a new <tt>DelegatingSocket</tt>.
      *
+     * @param host
+     * @param port
+     * @param localAddr
+     * @param localPort
      * @see Socket#Socket(String, int, InetAddress, int)
      */
     public DelegatingSocket(
@@ -270,7 +309,18 @@ public class DelegatingSocket
     @Override
     public SocketChannel getChannel()
     {
-        return (delegate == null) ? super.getChannel() : delegate.getChannel();
+        SocketChannel channel = this.channel;
+
+        if (channel == null)
+        {
+            Socket delegate = this.delegate;
+
+            channel
+                = (delegate == null)
+                    ? super.getChannel()
+                    : delegate.getChannel();
+        }
+        return channel;
     }
 
     /**
