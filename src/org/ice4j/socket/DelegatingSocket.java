@@ -208,10 +208,25 @@ public class DelegatingSocket
         this.delegate = delegate;
         this.channel = channel;
 
-        delegateAsDelegatingSocket
-            = (delegate instanceof DelegatingSocket)
-                ? (DelegatingSocket) delegate
-                : null;
+        if (delegate instanceof DelegatingSocket)
+        {
+            // FIXME DelegatingSocketChannel was in need of a Socket which wraps
+            // another Socket and reports a specific SocketChannel. Since
+            // DelegatingSocket does that, DelegatingSocketChannel used it.
+            // Unfortunately, it turned out after much debugging that
+            // DelegatingSocket has the additional function of flagging where
+            // UDP packets sent over TCP are to be framed. As a temporary fix,
+            // do not treat the sockets of DelegatingSocketChannel as
+            // DelegatingSockets.
+            if (channel instanceof DelegatingSocketChannel)
+                delegateAsDelegatingSocket = null;
+            else
+                delegateAsDelegatingSocket = (DelegatingSocket) delegate;
+        }
+        else
+        {
+            delegateAsDelegatingSocket = null;
+        }
     }
 
     /**
@@ -708,11 +723,11 @@ public class DelegatingSocket
             // Else, sends the packet to the final socket (outputStream).
             outputStream.write(p.getData(), p.getOffset(), p.getLength());
 
-            InetSocketAddress localAddress
-                = (InetSocketAddress) super.getLocalSocketAddress();
-
             if (DelegatingDatagramSocket.logNonStun(++nbSentPackets))
             {
+                InetSocketAddress localAddress
+                    = (InetSocketAddress) super.getLocalSocketAddress();
+
                 StunStack.logPacketToPcap(
                         p,
                         true,

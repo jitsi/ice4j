@@ -50,7 +50,7 @@ public class IceTcpSocketWrapper
     {
         socket = delegate;
 
-        if(delegate instanceof DelegatingSocket)
+        if (delegate instanceof DelegatingSocket)
         {
             inputStream = null;
             outputStream = null;
