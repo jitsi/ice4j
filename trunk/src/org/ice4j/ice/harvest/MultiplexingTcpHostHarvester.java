@@ -32,6 +32,7 @@ import org.ice4j.socket.*;
  * to the appropriate <tt>Component</tt>.
  *
  * @author Boris Grozev
+ * @author Lyubomir Marinov
  */
 public class MultiplexingTcpHostHarvester
     extends CandidateHarvester
@@ -49,11 +50,14 @@ public class MultiplexingTcpHostHarvester
     private static final int PURGE_INTERVAL = 20;
 
     /**
-     * Channels which we have failed to read from after at least
-     * <tt>READ_TIMEOUT</tt> milliseconds will be considered failed and will
-     * be closed.
+     * Closes a {@code Channel} and swallows any {@link IOException}.
+     *
+     * @param channel the {@code Channel} to close
      */
-    private static final int READ_TIMEOUT = 10000;
+    static void closeNoExceptions(Channel channel)
+    {
+        MuxServerSocketChannel.closeNoExceptions(channel);
+    }
 
     /**
      * Returns a list of all addresses on the interfaces in <tt>interfaces</tt>
@@ -67,7 +71,6 @@ public class MultiplexingTcpHostHarvester
             int port,
             List<NetworkInterface> interfaces)
         throws IOException
-
     {
         List<TransportAddress> addresses = new LinkedList<TransportAddress>();
 
@@ -193,8 +196,8 @@ public class MultiplexingTcpHostHarvester
             throws IOException
     {
         this(port,
-             Collections.list(NetworkInterface.getNetworkInterfaces()),
-             ssltcp);
+                Collections.list(NetworkInterface.getNetworkInterfaces()),
+                ssltcp);
     }
 
     /**
@@ -257,7 +260,6 @@ public class MultiplexingTcpHostHarvester
         boolean useIPv6 = !StackProperties.getBoolean(
                 StackProperties.DISABLE_IPv6,
                 false);
-
         boolean useIPv6LinkLocal = !StackProperties.getBoolean(
                 StackProperties.DISABLE_LINK_LOCAL_ADDRESSES,
                 false);
@@ -267,6 +269,7 @@ public class MultiplexingTcpHostHarvester
             = StackProperties.getStringArray(StackProperties.ALLOWED_ADDRESSES,
                                              ";");
         InetAddress[] allowedAddresses = null;
+
         if (allowedAddressesStr != null)
         {
             allowedAddresses = new InetAddress[allowedAddressesStr.length];
@@ -282,6 +285,7 @@ public class MultiplexingTcpHostHarvester
             = StackProperties.getStringArray(StackProperties.BLOCKED_ADDRESSES,
                                              ";");
         InetAddress[] blockedAddresses = null;
+
         if (blockedAddressesStr != null)
         {
             blockedAddresses = new InetAddress[blockedAddressesStr.length];
@@ -317,6 +321,7 @@ public class MultiplexingTcpHostHarvester
             if (allowedAddresses != null)
             {
                 boolean found = false;
+
                 for (InetAddress allowedAddress : allowedAddresses)
                 {
                     if (allowedAddress.equals(address))
@@ -325,7 +330,6 @@ public class MultiplexingTcpHostHarvester
                         break;
                     }
                 }
-
                 if (!found)
                 {
                     logger.info("Not using " + address +" for TCP candidates, "
@@ -337,6 +341,7 @@ public class MultiplexingTcpHostHarvester
             if (blockedAddresses != null)
             {
                 boolean found = false;
+
                 for (InetAddress blockedAddress : blockedAddresses)
                 {
                     if (blockedAddress.equals(address))
@@ -345,7 +350,6 @@ public class MultiplexingTcpHostHarvester
                         break;
                     }
                 }
-
                 if (found)
                 {
                     logger.info("Not using " + address + " for TCP candidates, "
@@ -601,11 +605,25 @@ public class MultiplexingTcpHostHarvester
     {
         for (TransportAddress transportAddress : localAddresses)
         {
-            ServerSocketChannel channel = ServerSocketChannel.open();
-            ServerSocket socket = channel.socket();
-            socket.bind(
-                    new InetSocketAddress(transportAddress.getAddress(),
-                                          transportAddress.getPort()));
+            ServerSocketChannel channel
+                = MuxServerSocketChannel.openAndBind(
+                        /* properties */ null,
+                        new InetSocketAddress(
+                                transportAddress.getAddress(),
+                                transportAddress.getPort()),
+                        /* backlog */ 0,
+                        new DatagramPacketFilter()
+                        {
+                            /**
+                             * {@inheritDoc}
+                             */
+                            @Override
+                            public boolean accept(DatagramPacket p)
+                            {
+                                return isFirstDatagramPacket(p);
+                            }
+                        });
+
             serverSocketChannels.add(channel);
         }
 
@@ -614,6 +632,85 @@ public class MultiplexingTcpHostHarvester
 
         readThread = new ReadThread();
         readThread.start();
+    }
+
+    /**
+     * Determines whether a specific {@link DatagramPacket} is the first
+     * expected (i.e. supported) to be received from an accepted
+     * {@link SocketChannel} by this {@code MultiplexingTcpHostHarvester}. If
+     * {@link #ssltcp} signals that Google TURN SSLTCP is to be expected, then
+     * {@code p} must be
+     * {@link GoogleTurnSSLCandidateHarvester#SSL_CLIENT_HANDSHAKE}. Otherwise,
+     * it must be a STUN Binding request packetized for TCP.
+     *
+     * @param p the {@code DatagramPacket} to examine
+     * @return {@code true} if {@code p} looks like the first
+     * {@code DatagramPacket} expected to be received from an accepted
+     * {@code SocketChannel} by this {@code MultiplexingTcpHostHarvester};
+     * otherwise, {@code false}
+     */
+    private boolean isFirstDatagramPacket(DatagramPacket p)
+    {
+        int len = p.getLength();
+        boolean b = false;
+
+        if (len > 0)
+        {
+            byte[] buf = p.getData();
+            int off = p.getOffset();
+
+            if (ssltcp)
+            {
+                // Google TURN SSLTCP
+                final byte[] googleTurnSslTcp
+                    = GoogleTurnSSLCandidateHarvester.SSL_CLIENT_HANDSHAKE;
+
+                if (len >= googleTurnSslTcp.length)
+                {
+                    b = true;
+                    for (int i = 0, iEnd = googleTurnSslTcp.length, j = off;
+                            i < iEnd;
+                            i++, j++)
+                    {
+                        if (googleTurnSslTcp[i] != buf[j])
+                        {
+                            b = false;
+                            break;
+                        }
+                    }
+                }
+            }
+            else
+            {
+                // 2 bytes    uint16 length
+                // STUN Binding request:
+                //   2 bits   00
+                //   14 bits  STUN Messsage Type
+                //   2 bytes  Message Length
+                //   4 bytes  Magic Cookie
+
+                // RFC 5389: For example, a Binding request has class=0b00
+                // (request) and method=0b000000000001 (Binding) and is encoded
+                // into the first 16 bits as 0x0001.
+                if (len >= 10 && buf[off + 2] == 0 && buf[off + 3] == 1)
+                {
+                    final byte[] magicCookie = Message.MAGIC_COOKIE;
+
+                    b = true;
+                    for (int i = 0, iEnd = magicCookie.length, j = off + 6;
+                            i < iEnd;
+                            i++, j++)
+                    {
+                        if (magicCookie[i] != buf[j])
+                        {
+                            b = false;
+                            break;
+                        }
+                    }
+                }
+            }
+        }
+        return b;
     }
 
     /**
@@ -663,7 +760,7 @@ public class MultiplexingTcpHostHarvester
         /**
          * Initializes a new <tt>AcceptThread</tt>.
          */
-        private AcceptThread()
+        public AcceptThread()
             throws IOException
         {
             setName("MultiplexingTcpHostHarvester AcceptThread");
@@ -691,85 +788,91 @@ public class MultiplexingTcpHostHarvester
         @Override
         public void run()
         {
-            while (true)
+            do
             {
-                int readyChannels;
                 if (close)
                 {
                     break;
                 }
 
-                try
+                IOException exception = null;
+                List<SocketChannel> channelsToAdd
+                    = new LinkedList<SocketChannel>();
+                // Allow to go on, so we can quit if closed.
+                long selectTimeout = 3000;
+
+                for (SelectionKey key : selector.keys())
                 {
-                    // Allow to go on, so we can quit if closed
-                    readyChannels = selector.select(3000);
+                    if (key.isValid())
+                    {
+                        SocketChannel channel;
+                        boolean acceptable = key.isAcceptable();
+
+                        try
+                        {
+                            channel
+                                = ((ServerSocketChannel) key.channel())
+                                    .accept();
+                        }
+                        catch (IOException ioe)
+                        {
+                            exception = ioe;
+                            break;
+                        }
+
+                        // Add the accepted channel to newChannels to allow the
+                        // 'read' thread to it up.
+                        if (channel != null)
+                        {
+                            channelsToAdd.add(channel);
+                        }
+                        else if (acceptable)
+                        {
+                            // The SelectionKey reported the channel as
+                            // acceptable but channel#accept() did not accept a
+                            // non-null SocketChannel. Give the channel a little
+                            // time to get its act together.
+                            selectTimeout = 100;
+                        }
+                    }
                 }
-                catch (IOException ioe)
+                // We accepted from all serverSocketChannels.
+                selector.selectedKeys().clear();
+
+                if (!channelsToAdd.isEmpty())
                 {
-                    logger.info("Failed to select an accept-ready socket: "
-                                    + ioe);
+                    synchronized (newChannels)
+                    {
+                        newChannels.addAll(channelsToAdd);
+                    }
+                    notifyReadThread();
+                }
+
+                if (exception != null)
+                {
+                    logger.info(
+                            "Failed to accept a socket, which should have been"
+                                + " ready to accept: " + exception);
                     break;
                 }
 
-                if (readyChannels > 0)
-                {
-                    IOException exception = null;
-                    List<SocketChannel> channelsToAdd
-                            = new LinkedList<SocketChannel>();
-
-                    for (SelectionKey key : selector.selectedKeys())
-                    {
-                        SocketChannel channel;
-                        if (key.isAcceptable())
-                        {
-                            try
-                            {
-                                channel = ((ServerSocketChannel)
-                                    key.channel()).accept();
-                            }
-                            catch (IOException ioe)
-                            {
-                                exception = ioe;
-                                break;
-                            }
-
-                            // Add the accepted socket to newChannels, so
-                            // the 'read' thread can pick it up.
-                            channelsToAdd.add(channel);
-                        }
-                    }
-                    selector.selectedKeys().clear();
-
-                    if (!channelsToAdd.isEmpty())
-                    {
-                        synchronized (newChannels)
-                        {
-                            newChannels.addAll(channelsToAdd);
-                        }
-                        notifyReadThread();
-                    }
-
-                    if (exception != null)
-                    {
-                        logger.info("Failed to accept a socket, which"
-                                        + "should have been ready to accept: "
-                                        + exception);
-                        break;
-                    }
-                }
-            } // while(true)
-
-            //now clean up and exit
-            for (ServerSocketChannel serverSocketChannel : serverSocketChannels)
-            {
                 try
                 {
-                    serverSocketChannel.close();
+                    // Allow to go on, so we can quit if closed.
+                    selector.select(selectTimeout);
                 }
                 catch (IOException ioe)
                 {
+                    logger.info(
+                            "Failed to select an accept-ready socket: " + ioe);
+                    break;
                 }
             }
+            while (true);
+
+            //now clean up and exit
+            for (ServerSocketChannel serverSocketChannel : serverSocketChannels)
+                closeNoExceptions(serverSocketChannel);
 
             try
             {
@@ -777,6 +880,48 @@ public class MultiplexingTcpHostHarvester
             }
             catch (IOException ioe)
             {}
+        }
+    }
+
+    /**
+     * Contains a <tt>SocketChannel</tt> that <tt>ReadThread</tt> is reading
+     * from.
+     */
+    private static class ChannelDesc
+    {
+        /**
+         * The actual <tt>SocketChannel</tt>.
+         */
+        public final SocketChannel channel;
+
+        /**
+         * The time the channel was last found to be active.
+         */
+        long lastActive = System.currentTimeMillis();
+
+        /**
+         * The buffer which stores the data so far read from the channel.
+         */
+        ByteBuffer buffer = null;
+
+        /**
+         * Whether or not the initial "pseudo" SSL handshake has been read.
+         */
+        boolean sslHandshakeRead = false;
+
+        /**
+         * The value of the RFC4571 "length" field read from the channel, or
+         * -1 if it hasn't been read (yet).
+         */
+        int length = -1;
+
+        /**
+         * Initializes a new <tt>ChannelDesc</tt> with the given channel.
+         * @param channel the channel.
+         */
+        public ChannelDesc(SocketChannel channel)
+        {
+            this.channel = channel;
         }
     }
 
@@ -810,8 +955,8 @@ public class MultiplexingTcpHostHarvester
          * @param datagramPacket the <tt>DatagramPacket</tt> which will be used
          * on the first call to {@link #receive(java.net.DatagramPacket)}
          */
-        private PushBackIceSocketWrapper(IceSocketWrapper wrappedWrapper,
-                                         DatagramPacket datagramPacket)
+        public PushBackIceSocketWrapper(IceSocketWrapper wrappedWrapper,
+                                        DatagramPacket datagramPacket)
         {
             this.wrapped = wrappedWrapper;
             this.datagramPacket = datagramPacket;
@@ -911,18 +1056,11 @@ public class MultiplexingTcpHostHarvester
         extends Thread
     {
         /**
-         * Contains the <tt>SocketChanel</tt>s that we are currently reading
-         * from.
-         */
-        private final List<ChannelDesc> channels
-            = new LinkedList<ChannelDesc>();
-
-        /**
          * Initializes a new <tt>ReadThread</tt>.
          *
          * @throws IOException if the selector to be used fails to open.
          */
-        private ReadThread()
+        public ReadThread()
             throws IOException
         {
             setName("MultiplexingTcpHostHarvester ReadThread");
@@ -942,20 +1080,16 @@ public class MultiplexingTcpHostHarvester
                     try
                     {
                         channel.configureBlocking(false);
-                        channel.register(readSelector, SelectionKey.OP_READ);
+                        channel.register(
+                                readSelector,
+                                SelectionKey.OP_READ,
+                                new ChannelDesc(channel));
                     }
                     catch (IOException ioe)
                     {
                         logger.info("Failed to register channel: " + ioe);
-                        try
-                        {
-                            channel.close();
-                        }
-                        catch (IOException ioe2)
-                        {}
+                        closeNoExceptions(channel);
                     }
-
-                    channels.add(new ChannelDesc(channel));
                 }
                 newChannels.clear();
             }
@@ -969,35 +1103,35 @@ public class MultiplexingTcpHostHarvester
         {
             long now = System.currentTimeMillis();
 
-            for (Iterator<ChannelDesc> i = channels.iterator();
-                 i.hasNext();)
+            for (SelectionKey key : readSelector.keys())
             {
-                ChannelDesc channelDesc = i.next();
+                // An invalid key specifies that either the channel was closed
+                // (in which case we do not have to do anything else to it) or
+                // that we no longer control the channel (i.e. we do not want to
+                // do anything else to it). 
+                if (!key.isValid())
+                    continue;
 
-                if (channelDesc.lastActive != -1
-                        && now - channelDesc.lastActive > READ_TIMEOUT)
+                ChannelDesc channelDesc = (ChannelDesc) key.attachment();
+
+                if (channelDesc == null)
+                    continue;
+
+                long lastActive = channelDesc.lastActive;
+
+                if (lastActive != -1
+                        && now - lastActive
+                            > MuxServerSocketChannel
+                                .SOCKET_CHANNEL_READ_TIMEOUT)
                 {
-                    i.remove();
-                    logger.info("Read timeout for socket: "
-                                        + channelDesc.channel.socket());
+                    // De-register from the Selector.
+                    key.cancel();
 
-                    // De-register from the selector
-                    for (SelectionKey key : readSelector.keys())
-                    {
-                        if (key.channel().equals(channelDesc.channel))
-                        {
-                            key.cancel();
-                        }
-                    }
+                    SocketChannel channel = channelDesc.channel;
 
-                    try
-                    {
-                        channelDesc.channel.close();
-                    }
-                    catch (IOException ioe)
-                    {
-                        logger.info("Failed to close channel: " + ioe);
-                    }
+                    logger.info("Read timeout for socket: " + channel.socket());
+
+                    closeNoExceptions(channel);
                 }
             }
         }
@@ -1029,6 +1163,7 @@ public class MultiplexingTcpHostHarvester
             {
                 TransportAddress transportAddress
                     = candidate.getTransportAddress();
+
                 if (candidate instanceof TcpHostCandidate
                         && Transport.TCP.equals(transportAddress.getTransport())
                         && localPort == transportAddress.getPort()
@@ -1037,25 +1172,6 @@ public class MultiplexingTcpHostHarvester
                     return (TcpHostCandidate) candidate;
                 }
             }
-            return null;
-        }
-
-        /**
-         * Finds the <tt>ChannelDesc</tt> in {@link #channels} whose
-         * channel is <tt>channel</tt>.
-         *
-         * @param channel the channel to search for.
-         * @return the <tt>ChannelDesc</tt> in {@link #channels} whose
-         * channel is <tt>channel</tt>
-         */
-        private ChannelDesc findChannelDesc(SelectableChannel channel)
-        {
-            for (ChannelDesc channelDesc : channels)
-            {
-                if (channelDesc.channel.equals(channel))
-                    return channelDesc;
-            }
-
             return null;
         }
 
@@ -1073,17 +1189,18 @@ public class MultiplexingTcpHostHarvester
         {
             IceProcessingState state
                 = component.getParentStream().getParentAgent().getState();
+
             if (!IceProcessingState.WAITING.equals(state)
                     && !IceProcessingState.RUNNING.equals(state))
             {
-                logger.info("Not adding a socket to an ICE agent with state "
-                                + state);
+                logger.info(
+                        "Not adding a socket to an ICE agent with state "
+                            + state);
                 return;
             }
 
             // Socket to add to the candidate
             IceSocketWrapper candidateSocket = null;
-
             // STUN-only filtered socket to add to the StunStack
             IceSocketWrapper stunSocket = null;
 
@@ -1124,7 +1241,6 @@ public class MultiplexingTcpHostHarvester
                 catch (IOException ioe)
                 {}
             }
-
         }
 
         /**
@@ -1152,8 +1268,7 @@ public class MultiplexingTcpHostHarvester
          * <tt>channel</tt>, which is to be canceled in case no further
          * reading is required from the channel.
          */
-        private void readFromChannel(ChannelDesc channel,
-                                     SelectionKey key)
+        private void readFromChannel(ChannelDesc channel, SelectionKey key)
         {
             if (channel.buffer == null)
             {
@@ -1162,8 +1277,8 @@ public class MultiplexingTcpHostHarvester
                 if (ssltcp && !channel.sslHandshakeRead)
                 {
                     channel.buffer
-                            = ByteBuffer.allocate(
-                            GoogleTurnSSLCandidateHarvester
+                        = ByteBuffer.allocate(
+                                GoogleTurnSSLCandidateHarvester
                                     .SSL_CLIENT_HANDSHAKE.length);
                 }
                 else if (channel.length == -1)
@@ -1178,10 +1293,12 @@ public class MultiplexingTcpHostHarvester
 
             try
             {
-                if (channel.channel.read(channel.buffer) == -1)
-                {
-                    throw new IOException("Socket closed.");
-                }
+                int read = channel.channel.read(channel.buffer);
+
+                if (read == -1)
+                    throw new IOException("End of stream!");
+                else if (read > 0)
+                    channel.lastActive = System.currentTimeMillis();
 
                 if (!channel.buffer.hasRemaining())
                 {
@@ -1189,7 +1306,7 @@ public class MultiplexingTcpHostHarvester
                     if (ssltcp && !channel.sslHandshakeRead)
                     {
                         byte[] bytesRead
-                                = new byte[GoogleTurnSSLCandidateHarvester
+                            = new byte[GoogleTurnSSLCandidateHarvester
                                 .SSL_CLIENT_HANDSHAKE.length];
 
                         channel.buffer.flip();
@@ -1214,11 +1331,11 @@ public class MultiplexingTcpHostHarvester
                             throw new IOException("Expected a pseudo ssl"
                                 + " handshake, but received something else.");
                         }
-
                     }
                     else if (channel.length == -1)
                     {
                         channel.buffer.flip();
+
                         int fb = channel.buffer.get();
                         int sb = channel.buffer.get();
 
@@ -1231,6 +1348,7 @@ public class MultiplexingTcpHostHarvester
                     else
                     {
                         byte[] bytesRead = new byte[channel.length];
+
                         channel.buffer.flip();
                         channel.buffer.get(bytesRead);
 
@@ -1248,16 +1366,20 @@ public class MultiplexingTcpHostHarvester
                         }
 
                         UsernameAttribute usernameAttribute
-                                = (UsernameAttribute)
+                            = (UsernameAttribute)
                                 stunMessage.getAttribute(Attribute.USERNAME);
+
                         if (usernameAttribute == null)
+                        {
                             throw new IOException(
                                     "No USERNAME attribute present.");
+                        }
 
                         String usernameString
-                                = new String(usernameAttribute.getUsername());
+                            = new String(usernameAttribute.getUsername());
                         String localUfrag = usernameString.split(":")[0];
                         Component component = getComponent(localUfrag);
+
                         if (component == null)
                             throw new IOException("No component found.");
 
@@ -1271,44 +1393,31 @@ public class MultiplexingTcpHostHarvester
                         // Construct a DatagramPacket from the just-read packet
                         // which is to be pushed back
                         DatagramPacket p
-                                = new DatagramPacket(bytesRead,
-                                                     bytesRead.length);
+                            = new DatagramPacket(bytesRead, bytesRead.length);
                         Socket socket = channel.channel.socket();
+
                         p.setAddress(socket.getInetAddress());
                         p.setPort(socket.getPort());
 
                         handSocketToComponent(socket, component, p);
-
-                        // Successfully accepted, we don't need it anymore.
-                        channels.remove(channel);
                     }
                 }
             }
             catch (IOException ioe)
             {
-                logger.info("Failed to handle TCP socket "
-                                    + channel.channel.socket() + ": " + ioe);
-                channels.remove(channel);
+                logger.info(
+                        "Failed to handle TCP socket "
+                            + channel.channel.socket() + ": " + ioe);
                 key.cancel();
-                try
-                {
-                    channel.channel.close();
-                }
-                catch (IOException ioe2)
-                {}
+                closeNoExceptions(channel.channel);
             }
             catch (StunException se)
             {
-                logger.info("Failed to handle TCP socket "
-                                    + channel.channel.socket() + ": " + se);
-                channels.remove(channel);
+                logger.info(
+                        "Failed to handle TCP socket "
+                            + channel.channel.socket() + ": " + se);
                 key.cancel();
-                try
-                {
-                    channel.channel.close();
-                }
-                catch (IOException ioe)
-                {}
+                closeNoExceptions(channel.channel);
             }
         }
 
@@ -1318,11 +1427,7 @@ public class MultiplexingTcpHostHarvester
         @Override
         public void run()
         {
-            Set<SelectionKey> selectedKeys;
-            int readyChannels = 0;
-            SelectableChannel selectedChannel;
-
-            while (true)
+            do
             {
                 synchronized (MultiplexingTcpHostHarvester.this)
                 {
@@ -1335,62 +1440,56 @@ public class MultiplexingTcpHostHarvester
 
                 checkForNewChannels();
 
+                for (SelectionKey key : readSelector.keys())
+                {
+                    if (key.isValid())
+                    {
+                        ChannelDesc channelDesc
+                            = (ChannelDesc) key.attachment();
+
+                        readFromChannel(channelDesc, key);
+                    }
+                }
+                // We read from all SocketChannels.
+                readSelector.selectedKeys().clear();
+
                 try
                 {
-                    readyChannels = readSelector.select(READ_TIMEOUT / 2);
+                    readSelector.select(
+                            MuxServerSocketChannel.SOCKET_CHANNEL_READ_TIMEOUT
+                                / 2);
                 }
                 catch (IOException ioe)
                 {
                     logger.info("Failed to select a read-ready channel.");
                 }
-
-                if (readyChannels > 0)
-                {
-                    selectedKeys = readSelector.selectedKeys();
-                    for (SelectionKey key : selectedKeys)
-                    {
-                        if (key.isReadable())
-                        {
-                            selectedChannel = key.channel();
-
-                            ChannelDesc channelDesc
-                                    = findChannelDesc(selectedChannel);
-                            channelDesc.lastActive = System.currentTimeMillis();
-
-                            readFromChannel(channelDesc, key);
-                        }
-                    }
-                    selectedKeys.clear();
-                }
-            } //while(true)
+            }
+            while (true);
 
             //we are all done, clean up.
             synchronized (newChannels)
             {
                 for (SocketChannel channel : newChannels)
                 {
-                    try
-                    {
-                        channel.close();
-                    }
-                    catch (IOException ioe)
-                    {}
+                    closeNoExceptions(channel);
                 }
                 newChannels.clear();
             }
 
-            for (ChannelDesc channelDesc : channels)
+            for (SelectionKey key : readSelector.keys())
             {
-                try
+                // An invalid key specifies that either the channel was closed
+                // (in which case we do not have to do anything else to it) or
+                // that we no longer control the channel (i.e. we do not want to
+                // do anything else to it).
+                if (key.isValid())
                 {
-                    channelDesc.channel.close();
-                }
-                catch (IOException ioe)
-                {
+                    Channel channel = key.channel();
+
+                    if (channel.isOpen())
+                        closeNoExceptions(channel);
                 }
             }
-
-            channels.clear();
 
             try
             {
@@ -1398,48 +1497,6 @@ public class MultiplexingTcpHostHarvester
             }
             catch (IOException ioe)
             {}
-        }
-
-        /**
-         * Contains a <tt>SocketChannel</tt> that <tt>ReadThread</tt> is
-         * reading from.
-         */
-        private class ChannelDesc
-        {
-            /**
-             * The actual <tt>SocketChannel</tt>.
-             */
-            private final SocketChannel channel;
-
-            /**
-             * The time the channel was last found to be active.
-             */
-            private long lastActive = System.currentTimeMillis();
-
-            /**
-             * The buffer which stores the data so far read from the channel.
-             */
-            ByteBuffer buffer = null;
-
-            /**
-             * Whether or not the initial "pseudo" SSL handshake has been read.
-             */
-            boolean sslHandshakeRead = false;
-
-            /**
-             * The value of the RFC4571 "length" field read from the channel, or
-             * -1 if it hasn't (yet) been read.
-             */
-            int length = -1;
-
-            /**
-             * Initializes a new <tt>ChannelDesc</tt> with the given channel.
-             * @param channel the channel.
-             */
-            private ChannelDesc(SocketChannel channel)
-            {
-                this.channel = channel;
-            }
         }
     }
 }
