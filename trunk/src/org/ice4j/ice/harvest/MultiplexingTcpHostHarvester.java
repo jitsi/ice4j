@@ -56,7 +56,7 @@ public class MultiplexingTcpHostHarvester
      */
     static void closeNoExceptions(Channel channel)
     {
-        MuxServerSocketChannel.closeNoExceptions(channel);
+        MuxServerSocketChannelFactory.closeNoExceptions(channel);
     }
 
     /**
@@ -606,23 +606,24 @@ public class MultiplexingTcpHostHarvester
         for (TransportAddress transportAddress : localAddresses)
         {
             ServerSocketChannel channel
-                = MuxServerSocketChannel.openAndBind(
-                        /* properties */ null,
-                        new InetSocketAddress(
-                                transportAddress.getAddress(),
-                                transportAddress.getPort()),
-                        /* backlog */ 0,
-                        new DatagramPacketFilter()
-                        {
-                            /**
-                             * {@inheritDoc}
-                             */
-                            @Override
-                            public boolean accept(DatagramPacket p)
+                = MuxServerSocketChannelFactory
+                    .openAndBindMuxServerSocketChannel(
+                            /* properties */ null,
+                            new InetSocketAddress(
+                                    transportAddress.getAddress(),
+                                    transportAddress.getPort()),
+                            /* backlog */ 0,
+                            new DatagramPacketFilter()
                             {
-                                return isFirstDatagramPacket(p);
-                            }
-                        });
+                                /**
+                                 * {@inheritDoc}
+                                 */
+                                @Override
+                                public boolean accept(DatagramPacket p)
+                                {
+                                    return isFirstDatagramPacket(p);
+                                }
+                            });
 
             serverSocketChannels.add(channel);
         }
@@ -1121,7 +1122,7 @@ public class MultiplexingTcpHostHarvester
 
                 if (lastActive != -1
                         && now - lastActive
-                            > MuxServerSocketChannel
+                            > MuxServerSocketChannelFactory
                                 .SOCKET_CHANNEL_READ_TIMEOUT)
                 {
                     // De-register from the Selector.
@@ -1456,7 +1457,8 @@ public class MultiplexingTcpHostHarvester
                 try
                 {
                     readSelector.select(
-                            MuxServerSocketChannel.SOCKET_CHANNEL_READ_TIMEOUT
+                            MuxServerSocketChannelFactory
+                                    .SOCKET_CHANNEL_READ_TIMEOUT
                                 / 2);
                 }
                 catch (IOException ioe)

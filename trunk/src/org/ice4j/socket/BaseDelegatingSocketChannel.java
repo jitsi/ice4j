@@ -8,38 +8,28 @@ package org.ice4j.socket;
 
 import java.io.*;
 import java.net.*;
+import java.nio.*;
 import java.nio.channels.*;
 import java.util.*;
 
-import sun.nio.ch.*;
-
 /**
- * Implements a {@code ServerSocketChannel} which delegates (its method calls)
- * to another {@code ServerSocketChannel}. In other words, the former wraps the
- * latter.
+ * Implements a {@code SocketChannel} which delegates (its method calls) to
+ * another {@code SocketChannel}. In other words, the former wraps the latter.
  *
  * @author Lyubomir Marinov
  */
-public class DelegatingServerSocketChannel<T extends ServerSocketChannel>
-    extends ServerSocketChannel
-    implements SelChImpl
+public class BaseDelegatingSocketChannel<T extends SocketChannel>
+    extends SocketChannel
 {
     /**
-     * The {@link ServerSocketChannel} this instance delegates (its method
-     * calls) to.
+     * The {@link SocketChannel} this instance delegates (its method calls) to.
      */
     protected final T delegate;
 
     /**
-     * The view of {@link #delegate} as a <tt>SelChImpl</tt> interface instance
-     * required by {@link Selector} and related functionality.
+     * The {@code Socket} to be reported by this instance.
      */
-    protected final SelChImpl delegateAsSelChImpl;
-
-    /**
-     * The {@code ServerSocket} to be reported by this instance.
-     */
-    private ServerSocket socket;
+    private Socket socket;
 
     /**
      * The <tt>Object</tt> which synchronizes the access to {@link #socket}.
@@ -47,34 +37,17 @@ public class DelegatingServerSocketChannel<T extends ServerSocketChannel>
     private final Object socketSyncRoot = new Object();
 
     /**
-     * Initializes a new {@code DelegatingServerSocketChannel} instance which is
-     * to delegate (its method calls) to a specific {@code ServerSocketChannel}.
+     * Initializes a new {@code BaseDelegatingSocketChannel} instance which is
+     * to delegate (its method calls) to a specific {@code SocketChannel}.
      *
-     * @param delegate the {@code ServerSocketChannel} the new instance is to
-     * delegate (its method calls) to
+     * @param delegate the {@code SocketChannel} the new instance is to delegate
+     * (its method calls) to
      */
-    public DelegatingServerSocketChannel(T delegate)
+    public BaseDelegatingSocketChannel(T delegate)
     {
         super(delegate.provider());
 
         this.delegate = delegate;
-
-        delegateAsSelChImpl
-            = (delegate instanceof SelChImpl) ? (SelChImpl) delegate : null;
-    }
-
-    /**
-     * {@inheritDoc}
-     *
-     * Forwards to {@link #delegate}.
-     */
-    @Override
-    public SocketChannel accept()
-        throws IOException
-    {
-        SocketChannel channel = delegate.accept();
-
-        return (channel == null) ? null : implAccept(channel);
     }
 
     /**
@@ -83,10 +56,10 @@ public class DelegatingServerSocketChannel<T extends ServerSocketChannel>
      * Forwards to {@link #delegate} and returns {@code this}.
      */
     @Override
-    public ServerSocketChannel bind(SocketAddress local, int backlog)
+    public SocketChannel bind(SocketAddress local)
         throws IOException
     {
-        delegate.bind(local, backlog);
+        delegate.bind(local);
         return this;
     }
 
@@ -96,9 +69,10 @@ public class DelegatingServerSocketChannel<T extends ServerSocketChannel>
      * Forwards to {@link #delegate}.
      */
     @Override
-    public FileDescriptor getFD()
+    public boolean connect(SocketAddress remote)
+        throws IOException
     {
-        return delegateAsSelChImpl.getFD();
+        return delegate.connect(remote);
     }
 
     /**
@@ -107,9 +81,10 @@ public class DelegatingServerSocketChannel<T extends ServerSocketChannel>
      * Forwards to {@link #delegate}.
      */
     @Override
-    public int getFDVal()
+    public boolean finishConnect()
+        throws IOException
     {
-        return delegateAsSelChImpl.getFDVal();
+        return delegate.finishConnect();
     }
 
     /**
@@ -137,19 +112,15 @@ public class DelegatingServerSocketChannel<T extends ServerSocketChannel>
     }
 
     /**
-     * Allows extenders to optionally configure (e.g. wrap) a
-     * <tt>SocketChannel</tt> which has been accepted by {@link #delegate} and
-     * before it is returned by {@link #accept()}.
+     * {@inheritDoc}
      *
-     * @param accepted the <tt>SocketChannel</tt> accepted by <tt>delegate</tt>
-     * @return the <tt>SocketChannel</tt> to be returned by {@link #accept()}
-     * (in place of <tt>accepted</tt>)
-     * @throws IOException if an I/O error occurs
+     * Forwards to {@link #delegate}.
      */
-    protected SocketChannel implAccept(SocketChannel accepted)
+    @Override
+    public SocketAddress getRemoteAddress()
         throws IOException
     {
-        return accepted;
+        return delegate.getRemoteAddress();
     }
 
     /**
@@ -177,36 +148,18 @@ public class DelegatingServerSocketChannel<T extends ServerSocketChannel>
     }
 
     /**
-     * Allows extenders to optionally configure (e.g. wrap) the
-     * {@code ServerSocket} of {@link #delegate} and before it is returned by
-     * {@link #socket()}.
+     * Allows extenders to optionally configure (e.g. wrap) the {@code Socket}
+     * of {@link #delegate} and before it is returned by {@link #socket()}.
      *
-     * @param socket the {@code ServerSocket} of {@code delegate}
-     * @return the {@code ServerSocket} to be returned by {@link #socket()} (in
-     * place of {@code socket})
+     * @param socket the {@code Socket} of {@code delegate}
+     * @return the {@code Socket} to be returned by {@link #socket()} (in place
+     * of {@code socket})
      * @throws IOException if an I/O error occurs
      */
-    protected ServerSocket implSocket(ServerSocket socket)
+    protected Socket implSocket(Socket socket)
         throws IOException
     {
-        return new DelegatingServerSocket(socket, this);
-    }
-
-    /**
-     * Determines whether this {@code DelegatingServerSocketChannel} is bound.
-     *
-     * @return {@code true} if this instancei bound; otherwise, {@code false}
-     */
-    public boolean isBound()
-    {
-        try
-        {
-            return getLocalAddress() != null;
-        }
-        catch (IOException ioe)
-        {
-            return false;
-        }
+        return new DelegatingSocket(socket, this);
     }
 
     /**
@@ -215,10 +168,44 @@ public class DelegatingServerSocketChannel<T extends ServerSocketChannel>
      * Forwards to {@link #delegate}.
      */
     @Override
-    public void kill()
+    public boolean isConnected()
+    {
+        return delegate.isConnected();
+    }
+
+    /**
+     * {@inheritDoc}
+     *
+     * Forwards to {@link #delegate}.
+     */
+    @Override
+    public boolean isConnectionPending()
+    {
+        return delegate.isConnectionPending();
+    }
+
+    /**
+     * {@inheritDoc}
+     *
+     * Forwards to {@link #delegate}.
+     */
+    @Override
+    public int read(ByteBuffer dst)
         throws IOException
     {
-        delegateAsSelChImpl.kill();
+        return delegate.read(dst);
+    }
+
+    /**
+     * {@inheritDoc}
+     *
+     * Forwards to {@link #delegate}.
+     */
+    @Override
+    public long read(ByteBuffer[] dsts, int offset, int length)
+        throws IOException
+    {
+        return delegate.read(dsts, offset, length);
     }
 
     /**
@@ -227,7 +214,7 @@ public class DelegatingServerSocketChannel<T extends ServerSocketChannel>
      * Forwards to {@link #delegate} and returns {@code this}.
      */
     @Override
-    public <U> ServerSocketChannel setOption(SocketOption<U> name, U value)
+    public <U> SocketChannel setOption(SocketOption<U> name, U value)
         throws IOException
     {
         delegate.setOption(name, value);
@@ -237,12 +224,38 @@ public class DelegatingServerSocketChannel<T extends ServerSocketChannel>
     /**
      * {@inheritDoc}
      *
+     * Forwards to {@link #delegate} and returns {@code this}.
+     */
+    @Override
+    public SocketChannel shutdownInput()
+        throws IOException
+    {
+        delegate.shutdownInput();
+        return this;
+    }
+
+    /**
+     * {@inheritDoc}
+     *
+     * Forwards to {@link #delegate} and returns {@code this}.
+     */
+    @Override
+    public SocketChannel shutdownOutput()
+        throws IOException
+    {
+        delegate.shutdownOutput();
+        return this;
+    }
+
+    /**
+     * {@inheritDoc}
+     *
      * Allows wrapping the {@code socket} of {@link #delegate}.
      */
     @Override
-    public ServerSocket socket()
+    public Socket socket()
     {
-        ServerSocket socket = delegate.socket();
+        Socket socket = delegate.socket();
 
         synchronized (socketSyncRoot)
         {
@@ -292,9 +305,10 @@ public class DelegatingServerSocketChannel<T extends ServerSocketChannel>
      * Forwards to {@link #delegate}.
      */
     @Override
-    public void translateAndSetInterestOps(int ops, SelectionKeyImpl sk)
+    public int write(ByteBuffer src)
+        throws IOException
     {
-        delegateAsSelChImpl.translateAndSetInterestOps(ops, sk);
+        return delegate.write(src);
     }
 
     /**
@@ -303,19 +317,9 @@ public class DelegatingServerSocketChannel<T extends ServerSocketChannel>
      * Forwards to {@link #delegate}.
      */
     @Override
-    public boolean translateAndSetReadyOps(int ops, SelectionKeyImpl sk)
+    public long write(ByteBuffer[] srcs, int offset, int length)
+        throws IOException
     {
-        return delegateAsSelChImpl.translateAndSetReadyOps(ops, sk);
-    }
-
-    /**
-     * {@inheritDoc}
-     *
-     * Forwards to {@link #delegate}.
-     */
-    @Override
-    public boolean translateAndUpdateReadyOps(int ops, SelectionKeyImpl sk)
-    {
-        return delegateAsSelChImpl.translateAndUpdateReadyOps(ops, sk);
+        return delegate.write(srcs, offset, length);
     }
 }

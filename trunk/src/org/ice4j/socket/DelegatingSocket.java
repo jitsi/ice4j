@@ -210,15 +210,15 @@ public class DelegatingSocket
 
         if (delegate instanceof DelegatingSocket)
         {
-            // FIXME DelegatingSocketChannel was in need of a Socket which wraps
-            // another Socket and reports a specific SocketChannel. Since
-            // DelegatingSocket does that, DelegatingSocketChannel used it.
+            // FIXME BaseDelegatingSocketChannel was in need of a Socket which
+            // wraps another Socket and reports a specific SocketChannel. Since
+            // DelegatingSocket does that, BaseDelegatingSocketChannel used it.
             // Unfortunately, it turned out after much debugging that
             // DelegatingSocket has the additional function of flagging where
             // UDP packets sent over TCP are to be framed. As a temporary fix,
             // do not treat the sockets of DelegatingSocketChannel as
             // DelegatingSockets.
-            if (channel instanceof DelegatingSocketChannel)
+            if (channel instanceof BaseDelegatingSocketChannel)
                 delegateAsDelegatingSocket = null;
             else
                 delegateAsDelegatingSocket = (DelegatingSocket) delegate;

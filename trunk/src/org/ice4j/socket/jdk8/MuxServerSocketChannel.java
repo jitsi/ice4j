@@ -4,7 +4,7 @@
  *
  * Distributable under LGPL license. See terms of license at gnu.org.
  */
-package org.ice4j.socket;
+package org.ice4j.socket.jdk8;
 
 import java.io.*;
 import java.net.*;
@@ -13,6 +13,7 @@ import java.nio.channels.*;
 import java.util.*;
 
 import org.ice4j.ice.harvest.*;
+import org.ice4j.socket.*;
 
 /**
  * Implements a {@link ServerSocketChannel} which is capable of sharing its
@@ -41,16 +42,8 @@ public class MuxServerSocketChannel
      * {@code SocketChannel} to provide incoming/readable data before it is
      * considered abandoned by the client.
      */
-    public static final int SOCKET_CHANNEL_READ_TIMEOUT = 15 * 1000;
-
-    /**
-     * The name of the <tt>boolean</tt> property of the <tt>socket</tt> property
-     * of the <tt>ServerSocketChannel</tt> returned by {@link #openAndBind(Map,
-     * SocketAddress, int, DatagramPacketFilter)} which specifies the value of
-     * the <tt>SO_REUSEADDR</tt> socket option.
-     */
-    public static final String SOCKET_REUSE_ADDRESS_PROPERTY_NAME
-        = "socket.reuseAddress";
+    private static final int SOCKET_CHANNEL_READ_TIMEOUT
+        = MuxServerSocketChannelFactory.SOCKET_CHANNEL_READ_TIMEOUT;
 
     /**
      * Asserts that <tt>t</tt> is not <tt>null</tt> by throwing a
@@ -80,13 +73,7 @@ public class MuxServerSocketChannel
      */
     public static void closeNoExceptions(Channel channel)
     {
-        try
-        {
-            channel.close();
-        }
-        catch (IOException ioe)
-        {
-        }
+        MuxServerSocketChannelFactory.closeNoExceptions(channel);
     }
 
     /**
@@ -594,35 +581,12 @@ public class MuxServerSocketChannel
                 muxingChannel = findMuxingServerSocketChannel(endpoint);
                 if (muxingChannel == null)
                 {
-                    ServerSocketChannel channel = ServerSocketChannel.open();
-                    // Apply the specified properties.
-                    ServerSocket socket = channel.socket();
-
-                    if (properties != null && !properties.isEmpty())
-                    {
-                        for (Map.Entry<String,Object> property
-                                : properties.entrySet())
-                        {
-                            String name = property.getKey();
-
-                            if (SOCKET_REUSE_ADDRESS_PROPERTY_NAME.equals(name))
-                            {
-                                Object value = property.getValue();
-                                boolean on;
-
-                                if (value == null)
-                                    on = false;
-                                else if (value instanceof Boolean)
-                                    on = ((Boolean) value).booleanValue();
-                                else
-                                    on = Boolean.valueOf(value.toString());
-
-                                socket.setReuseAddress(on);
-                            }
-                        }
-                    }
-
-                    socket.bind(endpoint, backlog);
+                    ServerSocketChannel channel
+                        = MuxServerSocketChannelFactory
+                            .openAndBindServerSocketChannel(
+                                    properties,
+                                    endpoint,
+                                    backlog);
 
                     muxingChannel = new MuxingServerSocketChannel(channel);
                     addMuxingServerSocketChannel(muxingChannel);
