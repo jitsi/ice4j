@@ -35,20 +35,25 @@
 
     <!-- compiles all classes -->
     <target name="compile" depends="init">
+        <condition property="compile.javac.exclude.name" value="**/jdk8/**">
+            <not>
+                <matches string="${java.runtime.version}" pattern="^1\.8(\..*)?$"/>
+            </not>
+        </condition>
         <javac classpathref="project.class.path"
                debug="true"
                deprecation="true"
                destdir="${dest}"
+               includeantruntime="false"
                nowarn="false"
                optimize="true"
-               target="1.5"
                source="1.5"
-               includeantruntime="false">
-            <src path="${src}"/>
+               target="1.5">
             <compilerarg value="-Xlint"/>
+            <src path="${src}"/>
+            <exclude name="${compile.javac.exclude.name}"/>
         </javac>
     </target>
-
 
     <!-- compiles all tests -->
     <target name="compile-tests" depends="init">

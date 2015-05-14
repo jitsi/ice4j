@@ -4,7 +4,7 @@
  *
  * Distributable under LGPL license. See terms of license at gnu.org.
  */
-package org.ice4j.socket;
+package org.ice4j.socket.jdk8;
 
 import java.io.*;
 import java.net.*;
@@ -17,7 +17,7 @@ import java.nio.channels.*;
  *
  * @author Lyubomir Marinov
  */
-public class PreReadSocketChannel
+class PreReadSocketChannel
     extends DelegatingSocketChannel<SocketChannel>
 {
     /**

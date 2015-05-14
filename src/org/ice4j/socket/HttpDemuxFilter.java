@@ -13,7 +13,7 @@ import org.ice4j.ice.harvest.*;
 
 /**
  * Implements a {@link DatagramPacketFilter} which allows demultiplexing HTTP(S)
- * out of {@link MuxServerSocketChannel}. Accepts HTTP, SSL v2, and TLS. Rejects
+ * out of {@code MuxServerSocketChannel}. Accepts HTTP, SSL v2, and TLS. Rejects
  * Google TURN SSLTCP.
  *
  * @author Lyubomir Marinov
