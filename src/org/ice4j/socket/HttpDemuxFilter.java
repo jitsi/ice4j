@@ -75,7 +75,7 @@ public class HttpDemuxFilter
         // Gather statistics about the supported HTTP request methods in order
         // to speed up the analysis of DatagramPackets later on.
         char maxChar = 'A';
-        int maxLength = Integer.MAX_VALUE;
+        int maxLength = Integer.MIN_VALUE;
         char minChar = 'Z';
         Charset ascii = Charset.forName("US-ASCII");
 
