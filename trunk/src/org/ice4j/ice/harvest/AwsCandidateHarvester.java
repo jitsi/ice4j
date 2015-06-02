@@ -210,7 +210,7 @@ public class AwsCandidateHarvester
      * @return <tt>true</tt> if there appear to be decent chances for this
      * machine to be an AWS EC2 and <tt>false</tt> otherwise.
      */
-    public static boolean smellsLikeAnEC2()
+    public synchronized static boolean smellsLikeAnEC2()
     {
         if (RUNNING_ON_EC2 == null)
         {
