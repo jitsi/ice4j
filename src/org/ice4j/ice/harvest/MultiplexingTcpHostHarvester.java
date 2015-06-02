@@ -628,6 +628,17 @@ public class MultiplexingTcpHostHarvester
             serverSocketChannels.add(channel);
         }
 
+        // Automatically add a mapping if we're on EC2
+        TransportAddress ec2Face = AwsCandidateHarvester.getFace();
+        TransportAddress ec2Mask;
+        if (ec2Face != null &&
+                (ec2Mask = AwsCandidateHarvester.getMask()) != null)
+        {
+            addMappedAddress(ec2Mask.getAddress(), ec2Face.getAddress());
+            logger.info("Adding an EC2 mapping for TCP: "
+                                + ec2Face + "->" + ec2Mask);
+        }
+
         acceptThread = new AcceptThread();
         acceptThread.start();
 
