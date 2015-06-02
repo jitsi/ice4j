@@ -2512,7 +2512,7 @@ public class Agent
      * @return <tt>true</tt> if the dynamic host harvester should be used and
      * <tt>false</tt> otherwise.
      */
-    private boolean useHostHarvester()
+    public boolean useHostHarvester()
     {
         if (useHostHarvester == null)
         {
@@ -2523,5 +2523,15 @@ public class Agent
         }
 
         return useHostHarvester;
+    }
+
+    /**
+     * Sets the flag which indicates whether the dynamic host harvester will
+     * be used or not by this <tt>Agent</tt>.
+     * @param useHostHarvester the value to set.
+     */
+    public void setUseHostHarvester(boolean useHostHarvester)
+    {
+        this.useHostHarvester = useHostHarvester;
     }
 }
