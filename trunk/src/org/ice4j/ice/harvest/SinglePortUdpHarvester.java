@@ -113,11 +113,20 @@ public class SinglePortUdpHarvester
             logger.info("Failed to get network interfaces: " + se);
         }
 
+        TransportAddress ec2Mask = AwsCandidateHarvester.getMask();
         for (TransportAddress address : addresses)
         {
+            TransportAddress publicAddress = null;
+            if (ec2Mask != null
+                    && ec2Mask.getAddress().equals(address.getAddress()))
+            {
+                publicAddress = AwsCandidateHarvester.getFace();
+            }
+
             try
             {
-                harvesters.add(new SinglePortUdpHarvester(address));
+                harvesters.add(
+                    new SinglePortUdpHarvester(address, publicAddress));
             }
             catch (IOException ioe)
             {
@@ -164,6 +173,11 @@ public class SinglePortUdpHarvester
     private final DatagramSocket socket;
 
     /**
+     * The public address that this harvester will use for reflexive candidates.
+     */
+    private TransportAddress publicAddress = null;
+
+    /**
      * The thread reading from {@link #socket}.
      */
     private final Thread thread;
@@ -172,9 +186,12 @@ public class SinglePortUdpHarvester
      * Initializes a new <tt>SinglePortUdpHarvester</tt> instance which is to
      * bind on the specified local address.
      * @param localAddress the address to bind to.
+     * @param publicAddress the public address that this harvester will use for
+     * reflexive candidates.
      * @throws IOException if initialization fails.
      */
-    public SinglePortUdpHarvester(TransportAddress localAddress)
+    public SinglePortUdpHarvester(TransportAddress localAddress,
+                                  TransportAddress publicAddress)
         throws IOException
     {
         this.localAddress = localAddress;
@@ -194,6 +211,18 @@ public class SinglePortUdpHarvester
         thread.setName(SinglePortUdpHarvester.class.getName() + " thread");
         thread.setDaemon(true);
         thread.start();
+    }
+
+    /**
+     * Initializes a new <tt>SinglePortUdpHarvester</tt> instance which is to
+     * bind on the specified local address.
+     * @param localAddress the address to bind to.
+     * @throws IOException if initialization fails.
+     */
+    public SinglePortUdpHarvester(TransportAddress localAddress)
+        throws IOException
+    {
+        this(localAddress, null);
     }
 
     /**
@@ -390,6 +419,17 @@ public class SinglePortUdpHarvester
 
         candidates.put(ufrag, candidate);
         component.addLocalCandidate(candidate);
+
+        if (publicAddress != null)
+        {
+            ServerReflexiveCandidate mappedCandidate
+                = new ServerReflexiveCandidate(
+                    publicAddress,
+                    candidate,
+                    candidate.getStunServerAddress(),
+                    CandidateExtendedType.STATICALLY_MAPPED_CANDIDATE);
+            component.addLocalCandidate(mappedCandidate);
+        }
 
         return new ArrayList<LocalCandidate>(Arrays.asList(candidate));
     }
