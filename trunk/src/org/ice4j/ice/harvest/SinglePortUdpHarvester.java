@@ -77,9 +77,11 @@ public class SinglePortUdpHarvester
            = new LinkedList<SinglePortUdpHarvester>();
 
         List<TransportAddress> addresses = new LinkedList<TransportAddress>();
-
         boolean isIPv6Disabled = StackProperties.getBoolean(
                 StackProperties.DISABLE_IPv6,
+                false);
+        boolean isIPv6LinkLocalDisabled = StackProperties.getBoolean(
+                StackProperties.DISABLE_LINK_LOCAL_ADDRESSES,
                 false);
 
         try
@@ -100,7 +102,14 @@ public class SinglePortUdpHarvester
                 {
                     InetAddress address = ifaceAddresses.nextElement();
 
+                    if (!HostCandidateHarvester.isAddressAllowed(address))
+                        continue;
+
                     if (isIPv6Disabled && address instanceof Inet6Address)
+                        continue;
+                    if (isIPv6LinkLocalDisabled
+                            && address instanceof Inet6Address
+                            && address.isLinkLocalAddress())
                         continue;
 
                     addresses.add(
