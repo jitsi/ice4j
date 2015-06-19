@@ -316,13 +316,16 @@ public abstract class Candidate<T extends Candidate<?>>
         }
         else
         {
-            baseEqualsCandidateBase = base.equals(candidateBase);
+            // If this and candidate are bases of themselves, their bases are
+            // considered equal.
+            baseEqualsCandidateBase
+                = (base == this && candidateBase == candidate)
+                    || base.equals(candidateBase);
         }
 
         //compare other properties
         return
-            (baseEqualsCandidateBase
-                    || (base == this && candidateBase == candidate))
+            baseEqualsCandidateBase
                 && getPriority() == candidate.getPriority()
                 && getType() == candidate.getType()
                 && getFoundation().equals(candidate.getFoundation());
