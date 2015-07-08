@@ -56,6 +56,7 @@ public class HttpDemuxFilter
             "HEAD",
             "MOVE",
             "OPTIONS",
+            "PATCH",
             "POST",
             "PRI",
             "PROXY",
