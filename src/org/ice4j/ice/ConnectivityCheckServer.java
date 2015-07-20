@@ -212,11 +212,11 @@ class ConnectivityCheckServer
         {
             if(logger.isLoggable(Level.FINE))
             {
-                logger.log(Level.FINE, "Received a connectivity ckeck with"
+                logger.log(Level.FINE, "Received a connectivity check with"
                             + "no PRIORITY attribute. Discarding.");
             }
 
-            throw new IllegalArgumentException("Missing PRIORITY attribtue!");
+            throw new IllegalArgumentException("Missing PRIORITY attribute!");
         }
 
         return priorityAttr.getPriority();
@@ -307,7 +307,7 @@ class ConnectivityCheckServer
             if(ourTieBreaker >= theirTieBreaker)
             {
                 logger.finer(
-                        "Swithing to controlling because theirTieBreaker="
+                        "Switching to controlling because theirTieBreaker="
                         + theirTieBreaker + " and ourTieBreaker="
                         + ourTieBreaker);
                 parentAgent.setControlling(true);
