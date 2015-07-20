@@ -33,6 +33,23 @@ class ConnectivityCheckServer
         = Logger.getLogger(ConnectivityCheckServer.class.getName());
 
     /**
+     * Compares <tt>a</tt> and <tt>b</tt> as unsigned long values. Serves the
+     * same purpose as the <tt>Long.compareUnsigned</tt> method available in
+     * Java 1.8.
+     * @return <tt>-1</tt> if <tt>a</tt> is less than <tt>b</tt>, <tt>0</tt> if
+     * they are equal and <tt>1</tt> if <tt>a</tt> is bigger.
+     */
+    private static int compareUnsignedLong(long a, long b)
+    {
+        if (a == b)
+            return 0;
+        else if ((a + Long.MIN_VALUE) < (b + Long.MIN_VALUE))
+            return -1;
+        else
+            return 1;
+    }
+
+    /**
      * The agent that created us.
      */
     private final Agent parentAgent;
@@ -257,7 +274,7 @@ class ConnectivityCheckServer
             // contents of the ICE-CONTROLLING attribute, the agent generates
             // a Binding error response and includes an ERROR-CODE attribute
             // with a value of 487 (Role Conflict) but retains its role.
-            if(Long.compareUnsigned(ourTieBreaker, theirTieBreaker) >= 0)
+            if(compareUnsignedLong(ourTieBreaker, theirTieBreaker) >= 0)
             {
                 Response response = MessageFactory.createBindingErrorResponse(
                                 ErrorCodeAttribute.ROLE_CONFLICT);
@@ -284,7 +301,7 @@ class ConnectivityCheckServer
             else
             {
                 logger.finer(
-                        "Swithing to controlled because theirTieBreaker="
+                        "Switching to controlled because theirTieBreaker="
                         + theirTieBreaker + " and ourTieBreaker="
                         + ourTieBreaker);
                 parentAgent.setControlling(false);
@@ -304,7 +321,7 @@ class ConnectivityCheckServer
             //If the agent's tie-breaker is larger than or equal to the
             //contents of the ICE-CONTROLLED attribute, the agent switches to
             //the controlling role.
-            if(Long.compareUnsigned(ourTieBreaker, theirTieBreaker) >= 0)
+            if(compareUnsignedLong(ourTieBreaker, theirTieBreaker) >= 0)
             {
                 logger.finer(
                         "Switching to controlling because theirTieBreaker="
