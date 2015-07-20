@@ -257,7 +257,7 @@ class ConnectivityCheckServer
             // contents of the ICE-CONTROLLING attribute, the agent generates
             // a Binding error response and includes an ERROR-CODE attribute
             // with a value of 487 (Role Conflict) but retains its role.
-            if( ourTieBreaker >= theirTieBreaker)
+            if(Long.compareUnsigned(ourTieBreaker, theirTieBreaker) >= 0)
             {
                 Response response = MessageFactory.createBindingErrorResponse(
                                 ErrorCodeAttribute.ROLE_CONFLICT);
@@ -304,7 +304,7 @@ class ConnectivityCheckServer
             //If the agent's tie-breaker is larger than or equal to the
             //contents of the ICE-CONTROLLED attribute, the agent switches to
             //the controlling role.
-            if(ourTieBreaker >= theirTieBreaker)
+            if(Long.compareUnsigned(ourTieBreaker, theirTieBreaker) >= 0)
             {
                 logger.finer(
                         "Switching to controlling because theirTieBreaker="
