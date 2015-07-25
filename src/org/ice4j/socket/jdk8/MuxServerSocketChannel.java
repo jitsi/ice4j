@@ -44,6 +44,18 @@ public class MuxServerSocketChannel
      */
     private static final int SOCKET_CHANNEL_READ_TIMEOUT
         = MuxServerSocketChannelFactory.SOCKET_CHANNEL_READ_TIMEOUT;
+    
+    /**
+     * Reference to 0.0.0.0 IPv4 or 0::0 IPv6 address for "wildcard" matching purposes
+     */
+    private static final InetAddress ANY_LOCAL_ADDRESS;
+    static {
+    	try {
+			ANY_LOCAL_ADDRESS = InetAddress.getByName("::");
+		} catch (UnknownHostException e) {
+			throw new RuntimeException(e);
+		}
+    }
 
     /**
      * Asserts that <tt>t</tt> is not <tt>null</tt> by throwing a
@@ -492,7 +504,21 @@ public class MuxServerSocketChannel
                         {
                             aLocalAddr = null;
                         }
-                        if (aLocalAddr != null && aLocalAddr.equals(localAddr))
+                        
+                        boolean matches = aLocalAddr != null && aLocalAddr.equals(localAddr);
+                        
+                        // if not the same address, let's see if the cached one is an "anyLocalAddress" and if so let's consider it a match
+                        if (!matches && aLocalAddr instanceof InetSocketAddress && localAddr instanceof InetSocketAddress) 
+                        {
+                        	InetSocketAddress aLocalInetAddr = (InetSocketAddress) aLocalAddr;
+                        	InetSocketAddress localInetAddr = (InetSocketAddress) localAddr;
+                        	
+                        	matches = 
+                    			aLocalInetAddr.getAddress().equals(ANY_LOCAL_ADDRESS) && 
+                    			aLocalInetAddr.getPort() == localInetAddr.getPort();
+                        }
+                        
+						if (matches)
                         {
                             channel = aChannel;
                             // The whole idea of using (1) a List for
