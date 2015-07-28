@@ -35,11 +35,6 @@
     </dependency>
   </dependencies>
 
-  <build>
-    <sourceDirectory>src</sourceDirectory>
-    <testSourceDirectory>test</testSourceDirectory>
-  </build>
-
   <profiles>
     <profile>
       <activation>
