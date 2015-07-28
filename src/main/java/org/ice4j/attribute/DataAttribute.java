@@ -38,12 +38,12 @@ public class DataAttribute
      *
      * Some dialect does not add (and support) padding (GTalk).
      */
-    private boolean padding = true;
+    private final boolean padding;
 
     /**
      * Constructor.
      */
-    protected DataAttribute ()
+    protected DataAttribute()
     {
         this(true);
     }
@@ -51,9 +51,10 @@ public class DataAttribute
     /**
      * Constructor.
      */
-    protected DataAttribute (boolean padding)
+    protected DataAttribute(boolean padding)
     {
         super(DATA);
+
         this.padding = padding;
     }
 
@@ -80,22 +81,26 @@ public class DataAttribute
      */
     public byte[] encode()
     {
+        char dataLength = getDataLength();
         char type = getAttributeType();
-        byte binValue[] = new byte[HEADER_LENGTH + getDataLength() +
-                                   (padding ? (getDataLength() % 4) : 0)];
+        byte binary[]
+            = new byte[
+                    HEADER_LENGTH
+                        + dataLength
+                        + (padding ? ((4 - dataLength % 4) % 4) : 0)];
 
         //Type
-        binValue[0] = (byte)(type >> 8);
-        binValue[1] = (byte)(type & 0x00FF);
+        binary[0] = (byte)(type >> 8);
+        binary[1] = (byte)(type & 0x00FF);
 
         //Length
-        binValue[2] = (byte)(getDataLength() >> 8);
-        binValue[3] = (byte)(getDataLength() & 0x00FF);
+        binary[2] = (byte)(dataLength >> 8);
+        binary[3] = (byte)(dataLength & 0x00FF);
 
         //data
-        System.arraycopy(data, 0, binValue, 4, getDataLength());
+        System.arraycopy(data, 0, binary, 4, dataLength);
 
-        return binValue;
+        return binary;
     }
 
     /**
