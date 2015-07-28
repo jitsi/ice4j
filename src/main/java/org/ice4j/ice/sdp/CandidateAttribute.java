@@ -28,7 +28,11 @@ public class CandidateAttribute extends AttributeField
     /**
      * The Candidate that we will be encapsulating.
      */
-    private final Candidate<?> candidate;
+    private Candidate<?> candidate;
+
+    protected CandidateAttribute()
+    {
+    }
 
     /**
      * Creates an attribute instance
@@ -68,8 +72,6 @@ public class CandidateAttribute extends AttributeField
     {
         return true;
     }
-
-    ;
 
     /**
      * Returns the value of this attribute.
@@ -111,10 +113,9 @@ public class CandidateAttribute extends AttributeField
      * @throws javax.sdp.SdpException if there's a problem with the <tt>value
      * String</tt>.
      */
-    public void setValue(String value) throws
-                                       SdpException
+    public void setValue(String value)
+        throws SdpException
     {
-
     }
 
     /**
@@ -134,7 +135,10 @@ public class CandidateAttribute extends AttributeField
      */
     public CandidateAttribute clone()
     {
-        return null;
+        CandidateAttribute clone = (CandidateAttribute) super.clone();
+
+        clone.candidate = candidate;
+        return clone;
     }
 
     /**
@@ -149,5 +153,4 @@ public class CandidateAttribute extends AttributeField
          sbuff.append(getValue());
          return sbuff.append(Separators.NEWLINE).toString();
      }
-
 }

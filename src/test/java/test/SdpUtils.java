@@ -92,12 +92,10 @@ public class SdpUtils
                 continue;
 
             Vector<Attribute> attributes = desc.getAttributes(true);
-            for( Attribute attribute : attributes)
+            for (Attribute attribute : attributes)
             {
-                if(!attribute.getName().equals(CandidateAttribute.NAME))
-                    continue;
-
-                parseCandidate(attribute, stream);
+                if (attribute.getName().equals(CandidateAttribute.NAME))
+                    parseCandidate(attribute, stream);
             }
 
             //set default candidates
