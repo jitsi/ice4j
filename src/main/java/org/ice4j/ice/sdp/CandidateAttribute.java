@@ -32,6 +32,7 @@ public class CandidateAttribute extends AttributeField
 
     protected CandidateAttribute()
     {
+        this(null);
     }
 
     /**
@@ -42,6 +43,29 @@ public class CandidateAttribute extends AttributeField
     public CandidateAttribute(Candidate<?> candidate)
     {
         this.candidate = candidate;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    public NameValue getAttribute()
+    {
+        // We've overridden the method getValue() of AttributeField. The
+        // NameValue pair of the method getAttribute() should return the value of
+        // the method getValue() of AttributeField then. Unfortunately, NameValue
+        // accesses its field value in multiple places so it is not a question of
+        // simply overriding a method or two. As a compromise, initialize a new
+        // NameValue with the current name and value upon each invocation.
+        NameValue attribute = super.getAttribute();
+        String name = getName();
+
+        if ((attribute == null)
+                || (name.equals(attribute.getName())
+                        && (attribute.getValue() == null)))
+        {
+            attribute = new NameValue(name, getValue());
+        }
+        return attribute;
     }
 
     /**
