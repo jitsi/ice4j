@@ -731,8 +731,10 @@ public class DelegatingDatagramSocket
 
                     super.send(p);
 
+                } else if (ex instanceof IOException) {
+                	throw((IOException)ex);
                 }
-            }
+           }
 
             if (logNonStun(++nbSentPackets))
             {
