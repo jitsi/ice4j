@@ -5,8 +5,8 @@
     <property name="dest-test" value="classes-test"/>
     <property name="lib" value="lib"/>
     <property name="JUnit.home" value="${lib}"/>
-    <property name="src" value="src"/>
-    <property name="src2" value="test"/>
+    <property name="src" value="src/main/java"/>
+    <property name="src2" value="src/test/java"/>
     <property name="junit.reports" value="junit-reports"/>
     <property name="junit.html.reports" value="${junit.reports}/html"/>
     <property name="ice4j.jar" value="ice4j.jar"/>

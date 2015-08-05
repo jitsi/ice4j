@@ -178,7 +178,7 @@ public class Agent
      * repair the case where both agents believe to have the controlling or the
      * controlled role.
      */
-    private final long tieBreaker;
+    private long tieBreaker;
 
     /**
      * Determines whether this is the controlling agent in a an ICE interaction.
@@ -309,6 +309,16 @@ public class Agent
 
         tieBreaker = Math.abs(random.nextLong());
         nominator = new DefaultNominator(this);
+    }
+
+    /**
+     * Sets the tie breaker value. Note that to this should be set early (before
+     * connectivity checks start).
+     * @param tieBreakerInput the value to set.
+     */
+    public void setTieBreaker(long tieBreakerInput)
+    {
+        tieBreaker = tieBreakerInput;
     }
 
     /**

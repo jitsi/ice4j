@@ -28,7 +28,12 @@ public class CandidateAttribute extends AttributeField
     /**
      * The Candidate that we will be encapsulating.
      */
-    private final Candidate<?> candidate;
+    private Candidate<?> candidate;
+
+    protected CandidateAttribute()
+    {
+        this(null);
+    }
 
     /**
      * Creates an attribute instance
@@ -38,6 +43,29 @@ public class CandidateAttribute extends AttributeField
     public CandidateAttribute(Candidate<?> candidate)
     {
         this.candidate = candidate;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    public NameValue getAttribute()
+    {
+        // We've overridden the method getValue() of AttributeField. The
+        // NameValue pair of the method getAttribute() should return the value of
+        // the method getValue() of AttributeField then. Unfortunately, NameValue
+        // accesses its field value in multiple places so it is not a question of
+        // simply overriding a method or two. As a compromise, initialize a new
+        // NameValue with the current name and value upon each invocation.
+        NameValue attribute = super.getAttribute();
+        String name = getName();
+
+        if ((attribute == null)
+                || (name.equals(attribute.getName())
+                        && (attribute.getValue() == null)))
+        {
+            attribute = new NameValue(name, getValue());
+        }
+        return attribute;
     }
 
     /**
@@ -68,8 +96,6 @@ public class CandidateAttribute extends AttributeField
     {
         return true;
     }
-
-    ;
 
     /**
      * Returns the value of this attribute.
@@ -111,10 +137,9 @@ public class CandidateAttribute extends AttributeField
      * @throws javax.sdp.SdpException if there's a problem with the <tt>value
      * String</tt>.
      */
-    public void setValue(String value) throws
-                                       SdpException
+    public void setValue(String value)
+        throws SdpException
     {
-
     }
 
     /**
@@ -134,7 +159,10 @@ public class CandidateAttribute extends AttributeField
      */
     public CandidateAttribute clone()
     {
-        return null;
+        CandidateAttribute clone = (CandidateAttribute) super.clone();
+
+        clone.candidate = candidate;
+        return clone;
     }
 
     /**
@@ -149,5 +177,4 @@ public class CandidateAttribute extends AttributeField
          sbuff.append(getValue());
          return sbuff.append(Separators.NEWLINE).toString();
      }
-
 }

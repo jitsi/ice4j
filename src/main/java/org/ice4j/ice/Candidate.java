@@ -773,24 +773,32 @@ public abstract class Candidate<T extends Candidate<?>>
      */
     protected int getDefaultPreference()
     {
-        if( getType() == CandidateType.RELAYED_CANDIDATE)
+        // https://tools.ietf.org/html/rfc5245#section-4.1.4
+        //
+        // It is RECOMMENDED that default candidates be chosen based on the
+        // likelihood of those candidates to work with the peer that is being
+        // contacted.  It is RECOMMENDED that the default candidates are the
+        // relayed candidates (if relayed candidates are available), server
+        // reflexive candidates (if server reflexive candidates are available),
+        // and finally host candidates.
+
+        switch (getType())
+        {
+        case RELAYED_CANDIDATE:
             return 30;
 
-        if( getType() == CandidateType.SERVER_REFLEXIVE_CANDIDATE)
-            return 10;
+        case SERVER_REFLEXIVE_CANDIDATE:
+            return 20;
 
-        if( getType() == CandidateType.HOST_CANDIDATE)
-        {
-            //prefer IPv4 as default since many servers would still freak out
-            //when seeing IPv6 address.
-            if(getTransportAddress().isIPv6())
-                return 20;
-            else
-                return 25;
+        case HOST_CANDIDATE:
+            // Prefer IPv4 as default since many servers would still freak out
+            // when seeing IPv6 address.
+            return getTransportAddress().isIPv6() ? 10 : 15;
+
+        default:
+            // WTF?
+            return 5;
         }
-
-        //WTF?
-        return 5;
     }
 
     /**

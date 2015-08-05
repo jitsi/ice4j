@@ -691,21 +691,15 @@ public class Component
     {
         synchronized(localCandidates)
         {
-            Iterator<LocalCandidate> localCandsIter
-                                                = localCandidates.iterator();
+            Iterator<LocalCandidate> localCandsIter = localCandidates.iterator();
 
             while (localCandsIter.hasNext())
             {
                 LocalCandidate cand = localCandsIter.next();
 
-                if(this.defaultCandidate == null)
-                {
-                    this.defaultCandidate = cand;
-                    continue;
-                }
-
-                if( defaultCandidate.getDefaultPreference()
-                                < cand.getDefaultPreference())
+                if ((defaultCandidate == null)
+                        || (defaultCandidate.getDefaultPreference()
+                                < cand.getDefaultPreference()))
                 {
                     defaultCandidate = cand;
                 }
