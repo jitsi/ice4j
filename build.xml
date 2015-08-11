@@ -47,8 +47,8 @@
                includeantruntime="false"
                nowarn="false"
                optimize="true"
-               source="1.5"
-               target="1.5">
+               source="1.6"
+               target="1.6">
             <compilerarg value="-Xlint"/>
             <src path="${src}"/>
             <exclude name="${compile.javac.exclude.name}"/>
@@ -63,8 +63,8 @@
                destdir="${dest-test}"
                nowarn="false"
                optimize="true"
-               target="1.5"
-               source="1.5">
+               source="1.6"
+               target="1.6">
             <src path="${src2}"/>
             <compilerarg value="-Xlint"/>
         </javac>
