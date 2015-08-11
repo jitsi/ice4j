@@ -15,21 +15,20 @@ import org.ice4j.*;
 import org.ice4j.message.*;
 
 /**
- * The ClientTransaction class retransmits (what a surprise) requests as
- * specified by rfc 3489.
+ * The {@code StunClientTransaction} class retransmits requests as specified by
+ * RFC 3489.
  *
  * Once formulated and sent, the client sends the Binding Request.  Reliability
- * is accomplished through request retransmissions.  The ClientTransaction
- * retransmits the request starting with an interval of 100ms, doubling
- * every retransmit until the interval reaches 1.6s.  Retransmissions
- * continue with intervals of 1.6s until a response is received, or a
- * total of 9 requests have been sent. If no response is received by 1.6
- * seconds after the last request has been sent, the client SHOULD
- * consider the transaction to have failed. In other words, requests
- * would be sent at times 0ms, 100ms, 300ms, 700ms, 1500ms, 3100ms,
- * 4700ms, 6300ms, and 7900ms. At 9500ms, the client considers the
- * transaction to have failed if no response has been received.
- *
+ * is accomplished through request retransmissions.  The
+ * {@code StunClientTransaction} retransmits the request starting with an
+ * interval of 100ms, doubling every retransmit until the interval reaches 1.6s.
+ * Retransmissions continue with intervals of 1.6s until a response is received,
+ * or a total of 9 requests have been sent. If no response is received by 1.6
+ * seconds after the last request has been sent, the client SHOULD consider the
+ * transaction to have failed. In other words, requests would be sent at times
+ * 0ms, 100ms, 300ms, 700ms, 1500ms, 3100ms, 4700ms, 6300ms, and 7900ms. At
+ * 9500ms, the client considers the transaction to have failed if no response
+ * has been received.
  *
  * @author Emil Ivov.
  * @author Pascal Mogeri (contributed configuration of client transactions).
@@ -70,44 +69,42 @@ public class StunClientTransaction
     private static final ExecutorService retransmissionThreadPool
         = Executors.newCachedThreadPool(
                 new ThreadFactory()
+                {
+                    /**
+                     * The default {@code ThreadFactory} implementation which is
+                     * augmented by this instance to create daemon
+                     * {@code Thread}s.
+                     */
+                    private final ThreadFactory defaultThreadFactory
+                        = Executors.defaultThreadFactory();
+
+                    @Override
+                    public Thread newThread(Runnable r)
+                    {
+                        Thread t = defaultThreadFactory.newThread(r);
+
+                        if (t != null)
                         {
-                            /**
-                             * The default <tt>ThreadFactory</tt> implementation
-                             * which is augmented by this instance to create
-                             * daemon <tt>Thread</tt>s.
-                             */
-                            private final ThreadFactory defaultThreadFactory
-                                = Executors.defaultThreadFactory();
+                            t.setDaemon(true);
 
-                            @Override
-                            public Thread newThread(Runnable r)
-                            {
-                                Thread t = defaultThreadFactory.newThread(r);
+                            // Additionally, make it known through the name of
+                            // the Thread that it is associated with the
+                            // StunClientTransaction class for
+                            // debugging/informational purposes.
+                            String name = t.getName();
 
-                                if (t != null)
-                                {
-                                    t.setDaemon(true);
-
-                                    /*
-                                     * Additionally, make it known through the
-                                     * name of the Thread that it is associated
-                                     * with the StunClientTransaction class for
-                                     * debugging/informational purposes.
-                                     */
-                                    String name = t.getName();
-
-                                    if (name == null)
-                                        name = "";
-                                    t.setName("StunClientTransaction-" + name);
-                                }
-                                return t;
-                            }
-                        });
+                            if (name == null)
+                                name = "";
+                            t.setName("StunClientTransaction-" + name);
+                        }
+                        return t;
+                    }
+                });
 
     /**
      * Maximum number of retransmissions. Once this number is reached and if no
-     * response is received after MAX_WAIT_INTERVAL milliseconds the request is
-     * considered unanswered.
+     * response is received after {@link #maxWaitInterval} milliseconds the
+     * request is considered unanswered.
      */
     public int maxRetransmissions = DEFAULT_MAX_RETRANSMISSIONS;
 
@@ -240,8 +237,8 @@ public class StunClientTransaction
         }
         catch (StunException ex)
         {
-            //Shouldn't happen so lets just through a runtime exception in case
-            //anything is real messed up
+            // Shouldn't happen so lets just throw a RuntimeException in case
+            // something is really messed up.
             throw new IllegalArgumentException(
                     "The TransactionID class generated an invalid transaction"
                         + " ID");
@@ -346,7 +343,8 @@ public class StunClientTransaction
 
     /**
      * Sends the request and schedules the first retransmission for after
-     * ORIGINAL_WAIT_INTERVAL and thus starts the retransmission algorithm.
+     * {@link #originalWaitInterval} and thus starts the retransmission
+     * algorithm.
      *
      * @throws IOException  if an error occurs while sending message bytes
      * through the network socket.
@@ -391,6 +389,7 @@ public class StunClientTransaction
 
     /**
      * Returns the request that was the reason for creating this transaction.
+     *
      * @return the request that was the reason for creating this transaction.
      */
     Request getRequest()
@@ -430,25 +429,21 @@ public class StunClientTransaction
      */
     void cancel(boolean waitForResponse)
     {
-        /*
-         * XXX The cancelled field is initialized to false and then the one and
-         * only write access to it is here to set it to true. The rest of the
-         * code just checks whether it has become true. Consequently, there
-         * shouldn't be a problem if the set is outside a synchronized block.
-         * However, it being outside a synchronized block will decrease the risk
-         * of deadlocks.
-         */
+        // XXX The cancelled field is initialized to false and then the one and
+        // only write access to it is here to set it to true. The rest of the
+        // code just checks whether it has become true. Consequently, there
+        // shouldn't be a problem if the set is outside a synchronized block.
+        // However, it being outside a synchronized block will decrease the risk
+        // of deadlocks.
         cancelled = true;
 
         if(!waitForResponse)
         {
-            /*
-             * Try to interrupt #waitFor(long) if possible. But don't risk a
-             * deadlock. It is not a problem if it is not possible to interrupt
-             * #waitFor(long) here because it will complete in finite time and
-             * this StunClientTransaction will eventually notice that it has
-             * been cancelled.    
-             */
+            // Try to interrupt #waitFor(long) if possible. But don't risk a
+            // deadlock. It is not a problem if it is not possible to interrupt
+            // #waitFor(long) here because it will complete in finite time and
+            // this StunClientTransaction will eventually notice that it has
+            // been cancelled.
             if (lock.tryLock())
             {
                 try
