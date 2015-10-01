@@ -125,10 +125,11 @@ public class MultiplexingSocket
     /**
      * Initializes a new <tt>MultiplexingSocket</tt> instance.
      *
+     * @param address not used
+     * @param port not used
      * @see Socket#Socket(InetAddress, int)
      */
     public MultiplexingSocket(InetAddress address, int port)
-        throws IOException
     {
         this((Socket) null);
     }
@@ -136,12 +137,15 @@ public class MultiplexingSocket
     /**
      * Initializes a new <tt>MultiplexingSocket</tt> instance.
      *
+     * @param address not used
+     * @param port not used
+     * @param localAddr not used
+     * @param localPort not used
      * @see Socket#Socket(InetAddress, int, InetAddress, int)
      */
     public MultiplexingSocket(
             InetAddress address, int port,
             InetAddress localAddr, int localPort)
-        throws IOException
     {
         this((Socket) null);
     }
@@ -149,6 +153,7 @@ public class MultiplexingSocket
     /**
      * Initializes a new <tt>MultiplexingSocket</tt> instance.
      *
+     * @param proxy not used
      * @see Socket#Socket(Proxy)
      */
     public MultiplexingSocket(Proxy proxy)
@@ -178,10 +183,10 @@ public class MultiplexingSocket
     /**
      * Initializes a new <tt>MultiplexingSocket</tt> instance.
      *
+     * @param impl not used
      * @see Socket#Socket(SocketImpl)
      */
     protected MultiplexingSocket(SocketImpl impl)
-        throws SocketException
     {
         this((Socket) null);
     }
@@ -189,10 +194,11 @@ public class MultiplexingSocket
     /**
      * Initializes a new <tt>MultiplexingSocket</tt> instance.
      *
+     * @param host not used
+     * @param port not used
      * @see Socket#Socket(String, int)
      */
     public MultiplexingSocket(String host, int port)
-        throws UnknownHostException, IOException
     {
         this((Socket) null);
     }
@@ -200,6 +206,10 @@ public class MultiplexingSocket
     /**
      * Initializes a new <tt>MultiplexingSocket</tt> instance.
      *
+     * @param host not used
+     * @param port not used
+     * @param localAddr not used
+     * @param localPort not used
      * @see Socket#Socket(String, int, InetAddress, int)
      */
     public MultiplexingSocket(
@@ -511,8 +521,8 @@ public class MultiplexingSocket
                             }
                             accepted = true;
 
-                            // Emil: Don't break because we want all filtering
-                            // sockets to get the received packet.
+                            // Emil Ivov: Don't break because we want all
+                            // filtering sockets to get the received packet.
                         }
                     }
                     if (!accepted)
