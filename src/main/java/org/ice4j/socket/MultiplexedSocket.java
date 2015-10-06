@@ -35,6 +35,7 @@ import java.util.logging.*;
  */
 public class MultiplexedSocket
     extends DelegatingSocket
+    implements MultiplexedXXXSocket
 {
     /**
      * The <tt>Logger</tt> used by the <tt>MultiplexedSocket</tt> class and its
@@ -130,14 +131,9 @@ public class MultiplexedSocket
     }
 
     /**
-     * Gets the <tt>DatagramPacketFilter</tt> which determines which
-     * <tt>DatagramPacket</tt>s read from the network are to be received through
-     * this <tt>Socket</tt>.
-     *
-     * @return the <tt>DatagramPacketFilter</tt> which determines which
-     * <tt>DatagramPacket</tt>s read from the network are to be received through
-     * this <tt>Socket</tt>
+     * {@inheritDoc}
      */
+    @Override
     public DatagramPacketFilter getFilter()
     {
         return filter;

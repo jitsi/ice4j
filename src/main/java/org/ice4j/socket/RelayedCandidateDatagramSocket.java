@@ -734,7 +734,7 @@ public class RelayedCandidateDatagramSocket
                 {
                     DatagramPacket packetToReceive = packetsToReceive.remove(0);
 
-                    MultiplexingDatagramSocket.copy(packetToReceive, p);
+                    MultiplexingXXXSocketSupport.copy(packetToReceive, p);
                     packetsToReceive.notifyAll();
                     break;
                 }
@@ -1072,7 +1072,7 @@ public class RelayedCandidateDatagramSocket
             }
             else
             {
-                packetsToSend.add(MultiplexingDatagramSocket.clone(p));
+                packetsToSend.add(MultiplexingXXXSocketSupport.clone(p));
                 if (sendThread == null)
                     createSendThread();
                 else

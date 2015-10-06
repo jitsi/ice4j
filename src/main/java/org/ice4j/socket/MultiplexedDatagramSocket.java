@@ -35,6 +35,7 @@ import java.util.*;
  */
 public class MultiplexedDatagramSocket
     extends DelegatingDatagramSocket
+    implements MultiplexedXXXSocket
 {
     /**
      * The <tt>DatagramPacketFilter</tt> which determines which
@@ -120,14 +121,9 @@ public class MultiplexedDatagramSocket
     }
 
     /**
-     * Gets the <tt>DatagramPacketFilter</tt> which determines which
-     * <tt>DatagramPacket</tt>s read from the network are to be received through
-     * this <tt>DatagramSocket</tt>.
-     *
-     * @return the <tt>DatagramPacketFilter</tt> which determines which
-     * <tt>DatagramPacket</tt>s read from the network are to be received through
-     * this <tt>DatagramSocket</tt>
+     * {@inheritDoc}
      */
+    @Override
     public DatagramPacketFilter getFilter()
     {
         return filter;
