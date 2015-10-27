@@ -903,4 +903,17 @@ public class IceMediaStream
     {
         return remotePassword;
     }
+    
+    /**
+     * Use builder pattern to provide an immutable IceMediaStream instance.
+     * 
+     * @param parentAgent
+     * @param name
+     * @return IceMediaStream
+     */
+    public static IceMediaStream build(Agent parentAgent, String name)
+    {
+    	return new IceMediaStream(parentAgent, name);
+    }
+    
 }

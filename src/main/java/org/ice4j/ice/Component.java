@@ -884,4 +884,18 @@ public class Component
         else
             return Integer.toString(componentID);
     }
+
+    /**
+     * Use builder pattern to allow creation of Component immutable instances,
+	 * from outside the current package. This allows use by turnserver.
+	 * 
+     * @param componentID
+     * @param mediaStream
+     * @return Component
+     */
+    public static Component build(int componentID, IceMediaStream mediaStream)
+    {
+    	return new Component(componentID, mediaStream);
+    }
+    
 }

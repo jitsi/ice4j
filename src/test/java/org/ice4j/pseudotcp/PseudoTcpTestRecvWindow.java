@@ -390,15 +390,18 @@ public class PseudoTcpTestRecvWindow extends PseudoTcpTestBase
         test.setOptNagling(false);
         test.setOptAckDelay(0);
         int wndSize = 300000;
+        // if window scaling is not supported by either local or remote, use default size
+        if (!test.getLocalTcp().m_support_wnd_scale || !test.getRemoteTcp().m_support_wnd_scale) {
+        	wndSize = 65535;
+        }
+        test.setLocalOptSndBuf(wndSize);        	
         test.setRemoteOptRcvBuf(wndSize);
-        test.setLocalOptSndBuf(wndSize);
         int wndScale = test.getRemoteScaleFactor();
         //logger.log(Level.INFO, "Using scale factor: {0}", wndScale);
         test.doTestTransfer(1024 * 3000);
-        //beacuse there may be situations 
-        //when 1 byte may be waiting in send queue
-        //before 
-        //scaling factor == 1 not allows to determine exact window size (+-1)
+        // because there may be situations when 1 byte may be waiting in send 
+        // queue before scaling factor == 1 not allows to determine exact 
+        // window size (+-1)
         assert (wndSize - test.estimateReceiveWindowSize()
             <= PseudoTcpTestRecvWindow.getShadowedBytes(wndScale));
     }
