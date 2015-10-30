@@ -884,4 +884,19 @@ public class Component
         else
             return Integer.toString(componentID);
     }
+
+    /**
+     * Use builder pattern to allow creation of immutable Component instances,
+	 * from outside the current package.
+	 *
+     * @param componentID the id of this component.
+     * @param mediaStream the {@link IceMediaStream} instance that would be the
+     * parent of this component.
+     * @return Component
+     */
+    public static Component build(int componentID, IceMediaStream mediaStream)
+    {
+        return new Component(componentID, mediaStream);
+    }
+
 }

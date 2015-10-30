@@ -119,4 +119,24 @@ public class RawMessage
     {
         return localAddress;
     }
+
+    /**
+     * Use builder pattern to allow creation of immutable RawMessage instances,
+     * from outside the current package. This allows use by turnserver.
+     *
+     * @param messageBytes the message itself.
+     * @param messageLength the number of bytes currently stored in the
+     * <tt>messageBytes</tt> array.
+     * @param remoteAddress the address where the message came from.
+     * @param localAddress the <tt>TransportAddress</tt> that the message was
+     * received on.
+     * @return RawMessage instance
+     */
+    public static RawMessage build(byte[] messageBytes, int messageLength,
+        TransportAddress remoteAddress, TransportAddress localAddress)
+    {
+        return new RawMessage(messageBytes, messageLength, remoteAddress,
+            localAddress);
+    }
+
 }

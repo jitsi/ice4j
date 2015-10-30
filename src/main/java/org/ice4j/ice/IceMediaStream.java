@@ -903,4 +903,19 @@ public class IceMediaStream
     {
         return remotePassword;
     }
+    
+    /**
+     * Use builder pattern to provide an immutable IceMediaStream instance.
+     * This allows use by turnserver.
+     *
+     * @param name the name of the media stream
+     * @param parentAgent the agent that is handling the session that this
+     * media stream is a part of
+     * @return IceMediaStream
+     */
+    public static IceMediaStream build(Agent parentAgent, String name)
+    {
+        return new IceMediaStream(parentAgent, name);
+    }
+
 }
