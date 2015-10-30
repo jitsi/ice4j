@@ -122,7 +122,7 @@ public class RawMessage
 
     /**
      * Use builder pattern to allow creation of immutable RawMessage instances,
-     * from outside the current package. This allows use by turnserver.
+     * from outside the current package.
      *
      * @param messageBytes the message itself.
      * @param messageLength the number of bytes currently stored in the

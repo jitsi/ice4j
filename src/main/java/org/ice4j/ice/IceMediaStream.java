@@ -906,7 +906,6 @@ public class IceMediaStream
     
     /**
      * Use builder pattern to provide an immutable IceMediaStream instance.
-     * This allows use by turnserver.
      *
      * @param name the name of the media stream
      * @param parentAgent the agent that is handling the session that this
