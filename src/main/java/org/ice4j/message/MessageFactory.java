@@ -1112,6 +1112,35 @@ public class MessageFactory
     }
     
     /**
+     * Creates a ConnectRequest in a 6062 compliant manner containing only
+     * <tt>XOR-PEER-ADDRESS</tt> attribute. This method is used by turnserver.
+     *
+     * @param peerAddress the address to assign the xorPeerAddressAttribute
+     * @param transactionId the transaction id that this response will belong
+     * to.
+     * @return a ConnectRequest assigning the specified values to mandatory
+     * headers.
+     * @throws IllegalArgumentException if there was something wrong with the
+     * way we are trying to create the response.
+     */
+    public static Request createConnectRequest(TransportAddress peerAddress,
+        byte[] transactionId)
+        throws IllegalArgumentException
+    {
+        Request connectRequest = new Request();
+
+        connectRequest.setMessageType(Message.CONNECT_REQUEST);
+
+        // xor peer address
+        XorPeerAddressAttribute xorPeerAddressAttribute = AttributeFactory
+            .createXorPeerAddressAttribute(peerAddress, transactionId);
+
+        connectRequest.putAttribute(xorPeerAddressAttribute);
+
+        return connectRequest;
+    }   
+
+    /**
      * Creates a Connect Response in a 6062 compliant manner containing a single
      * <tt>CONNECTION-ID-ATTRIBUTE</tt> attribute
      * @param connectionIdValue the address to assign the connectionIdAttribute
@@ -1312,4 +1341,46 @@ public class MessageFactory
         return connectionAttemptIndication;
    }
     
+    /**
+     * Creates a ConnectionAttempt Indication in a 6062 compliant manner
+     * containing only <tt>CONECTION-ID-ATTRIBUTE</tt> attribute and
+     * <tt>XOR-PPER-ADDRESS</tt> attribute.
+     *
+     * @param connectionIdValue the value to assign the connectionidAtribute
+     * @param peerAddress the value to assign the xorPeerAddress
+     * @param transactionId the transaction id that the response belongs to.
+     * @return a ConnectionAttempt Indication assigning the specified values to
+     * mandatory headers.
+     * @throws IllegalArgumentException if there was something wrong with the
+     * way we are trying to create the Request.
+     */
+    public static Indication createConnectionAttemptIndication(
+        int connectionIdValue, TransportAddress peerAddress,
+        byte[] transactionId)
+        throws IllegalArgumentException, StunException
+    {
+        Indication connectionAttemptIndication = new Indication();
+
+        // set the attempt transaction id
+        connectionAttemptIndication.setTransactionID(transactionId);
+
+        connectionAttemptIndication.setMessageType(
+            Message.CONNECTION_ATTEMPT_INDICATION);
+
+        // connection id attribute
+        ConnectionIdAttribute connectionIdAttribute = AttributeFactory
+            .createConnectionIdAttribute(connectionIdValue);
+
+        connectionAttemptIndication.putAttribute(connectionIdAttribute);
+
+        // xor peer address attribute
+        XorPeerAddressAttribute xorPeerAddressAttribute = AttributeFactory
+            .createXorPeerAddressAttribute(peerAddress,
+            connectionAttemptIndication.getTransactionID());
+
+        connectionAttemptIndication.putAttribute(xorPeerAddressAttribute);
+
+        return connectionAttemptIndication;
+    }   
+
 }
