@@ -46,12 +46,12 @@ public class MappingCandidateHarvester
     /**
      * The addresses that we will use as a mask
      */
-    private TransportAddress mask;
+    private final TransportAddress mask;
 
     /**
      * The addresses that we will be masking
      */
-    private TransportAddress face;
+    private final TransportAddress face;
 
     /**
      * Creates a mapping harvester with the specified <tt>mask</tt>
@@ -65,6 +65,7 @@ public class MappingCandidateHarvester
         this.mask = mask;
         this.face = face;
     }
+
     /**
      * Maps all candidates to this harvester's mask and adds them to
      * <tt>component</tt>.
@@ -76,8 +77,7 @@ public class MappingCandidateHarvester
      */
     public Collection<LocalCandidate> harvest(Component component)
     {
-
-        if (mask == null || face == null)
+        if (getMask() == null || getFace() == null)
             return null;
 
         /*
@@ -90,15 +90,15 @@ public class MappingCandidateHarvester
         {
             if (!(cand instanceof HostCandidate)
                 || !cand.getTransportAddress().getHostAddress()
-                            .equals(face.getHostAddress())
-                || cand.getTransport() != face.getTransport())
+                            .equals(getFace().getHostAddress())
+                || cand.getTransport() != getFace().getTransport())
             {
                 continue;
             }
 
             HostCandidate hostCandidate = (HostCandidate) cand;
             TransportAddress mappedAddress = new TransportAddress(
-                mask.getHostAddress(),
+                getMask().getHostAddress(),
                 hostCandidate.getHostAddress().getPort(),
                 hostCandidate.getHostAddress().getTransport());
 
@@ -121,5 +121,23 @@ public class MappingCandidateHarvester
         }
 
         return candidates;
+    }
+
+    /**
+     * Returns the public (mask) address, or null.
+     * @return the public (mask) address, or null.
+     */
+    public TransportAddress getMask()
+    {
+        return this.mask;
+    }
+
+    /**
+     * Returns the local (face) address, or null.
+     * @return the local (face) address, or null.
+     */
+    public TransportAddress getFace()
+    {
+        return this.face;
     }
 }

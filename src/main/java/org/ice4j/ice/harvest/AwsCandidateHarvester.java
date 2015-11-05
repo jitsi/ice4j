@@ -94,51 +94,13 @@ public class AwsCandidateHarvester
      */
     public Collection<LocalCandidate> harvest(Component component)
     {
-
         if (mask == null || face == null)
         {
             if(!obtainEC2Addresses())
                 return null;
         }
 
-
-        /*
-         * Report the LocalCandidates gathered by this CandidateHarvester so
-         * that the harvest is sure to be considered successful.
-         */
-        Collection<LocalCandidate> candidates = new HashSet<LocalCandidate>();
-
-        for (Candidate<?> cand : component.getLocalCandidates())
-        {
-            if (!(cand instanceof HostCandidate)
-                || !cand.getTransportAddress().getHostAddress()
-                            .equals(face.getHostAddress()))
-            {
-                continue;
-            }
-
-            TransportAddress mappedAddress = new TransportAddress(
-                mask.getHostAddress(),
-                cand.getHostAddress().getPort(),
-                cand.getHostAddress().getTransport());
-
-            ServerReflexiveCandidate mappedCandidate
-                = new ServerReflexiveCandidate(
-                    mappedAddress,
-                    (HostCandidate)cand,
-                    cand.getStunServerAddress(),
-                    CandidateExtendedType.STATICALLY_MAPPED_CANDIDATE);
-
-            //try to add the candidate to the component and then
-            //only add it to the harvest not redundant
-            if( !candidates.contains(mappedCandidate)
-                && component.addLocalCandidate(mappedCandidate))
-            {
-                candidates.add(mappedCandidate);
-            }
-        }
-
-        return candidates;
+        return super.harvest(component);
     }
 
     /**
@@ -190,7 +152,7 @@ public class AwsCandidateHarvester
      * Returns the discovered public (mask) address, or null.
      * @return the discovered public (mask) address, or null.
      */
-    public static TransportAddress getMask()
+    public static TransportAddress getDiscoveredMask()
     {
         if (smellsLikeAnEC2())
         {
@@ -204,7 +166,7 @@ public class AwsCandidateHarvester
      * Returns the discovered local (face) address, or null.
      * @return the discovered local (face) address, or null.
      */
-    public static TransportAddress getFace()
+    public static TransportAddress getDiscoveredFace()
     {
         if (smellsLikeAnEC2())
         {
@@ -275,5 +237,23 @@ public class AwsCandidateHarvester
         in.close();
 
         return retString;
+    }
+
+    /**
+     * Returns the public (mask) address, or null.
+     * @return the public (mask) address, or null.
+     */
+    public TransportAddress getMask()
+    {
+        return this.mask;
+    }
+
+    /**
+     * Returns the local (face) address, or null.
+     * @return the local (face) address, or null.
+     */
+    public TransportAddress getFace()
+    {
+        return this.face;
     }
 }
