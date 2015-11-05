@@ -45,14 +45,14 @@ import org.ice4j.socket.*;
  * @author Boris Grozev
  * @author Lyubomir Marinov
  */
-public class MultiplexingTcpHostHarvester
+public class TcpHarvester
     extends CandidateHarvester
 {
     /**
      * Our class logger.
      */
     private static final Logger logger
-        = Logger.getLogger(MultiplexingTcpHostHarvester.class.getName());
+        = Logger.getLogger(TcpHarvester.class.getName());
 
     /**
      * The constant which specifies how often to perform purging on
@@ -183,27 +183,27 @@ public class MultiplexingTcpHostHarvester
     private final boolean ssltcp;
 
     /**
-     * Initializes a new <tt>MultiplexingTcpHostHarvester</tt>, which is to
+     * Initializes a new <tt>TcpHarvester</tt>, which is to
      * listen on port number <tt>port</tt> on all IP addresses on all available
      * interfaces.
      *
      * @param port the port to listen on.
      */
-    public MultiplexingTcpHostHarvester(int port)
+    public TcpHarvester(int port)
         throws IOException
     {
         this(port, /* ssltcp */ false);
     }
 
     /**
-     * Initializes a new <tt>MultiplexingTcpHostHarvester</tt>, which is to
+     * Initializes a new <tt>TcpHarvester</tt>, which is to
      * listen on port number <tt>port</tt> on all IP addresses on all available
      * interfaces.
      *
      * @param port the port to listen on.
      * @param ssltcp <tt>true</tt> to use ssltcp; otherwise, <tt>false</tt>
      */
-    public MultiplexingTcpHostHarvester(int port, boolean ssltcp)
+    public TcpHarvester(int port, boolean ssltcp)
             throws IOException
     {
         this(port,
@@ -212,7 +212,7 @@ public class MultiplexingTcpHostHarvester
     }
 
     /**
-     * Initializes a new <tt>MultiplexingTcpHostHarvester</tt>, which is to
+     * Initializes a new <tt>TcpHarvester</tt>, which is to
      * listen on port number <tt>port</tt> on all the IP addresses on the
      * specified <tt>NetworkInterface</tt>s.
      *
@@ -220,7 +220,7 @@ public class MultiplexingTcpHostHarvester
      * @param interfaces the interfaces to listen on.
      * @param ssltcp <tt>true</tt> to use ssltcp; otherwise, <tt>false</tt>
      */
-    public MultiplexingTcpHostHarvester(int port,
+    public TcpHarvester(int port,
                                         List<NetworkInterface> interfaces,
                                         boolean ssltcp)
         throws IOException
@@ -229,12 +229,12 @@ public class MultiplexingTcpHostHarvester
     }
 
     /**
-     * Initializes a new <tt>MultiplexingTcpHostHarvester</tt>, which is to
+     * Initializes a new <tt>TcpHarvester</tt>, which is to
      * listen on the specified list of <tt>TransportAddress</tt>es.
      *
      * @param transportAddresses the transport addresses to listen on.
      */
-    public MultiplexingTcpHostHarvester(
+    public TcpHarvester(
             List<TransportAddress> transportAddresses)
         throws IOException
     {
@@ -242,13 +242,13 @@ public class MultiplexingTcpHostHarvester
     }
 
     /**
-     * Initializes a new <tt>MultiplexingTcpHostHarvester</tt>, which is to
+     * Initializes a new <tt>TcpHarvester</tt>, which is to
      * listen on the specified list of <tt>TransportAddress</tt>es.
      *
      * @param transportAddresses the transport addresses to listen on.
      * @param ssltcp <tt>true</tt> to use ssltcp; otherwise, <tt>false</tt>
      */
-    public MultiplexingTcpHostHarvester(
+    public TcpHarvester(
             List<TransportAddress> transportAddresses,
             boolean ssltcp)
         throws IOException
@@ -411,12 +411,12 @@ public class MultiplexingTcpHostHarvester
 
     /**
      * Creates and returns the list of <tt>LocalCandidate</tt>s which are to be
-     * added by this <tt>MultiplexingTcpHostHarvester</tt> to a specific
+     * added by this <tt>TcpHarvester</tt> to a specific
      * <tt>Component</tt>.
      *
      * @param component the <tt>Component</tt> for which to create candidates.
      * @return the list of <tt>LocalCandidate</tt>s which are to be added by
-     * this <tt>MultiplexingTcpHostHarvester</tt> to a specific
+     * this <tt>TcpHarvester</tt> to a specific
      * <tt>Component</tt>.
      */
     private List<LocalCandidate> createLocalCandidates(Component component)
@@ -582,7 +582,7 @@ public class MultiplexingTcpHostHarvester
         if (stream.getComponentCount() != 1 || agent.getStreamCount() != 1)
         {
             /*
-             * MultiplexingTcpHostHarvester only works with streams with a
+             * TcpHarvester only works with streams with a
              * single component, and agents with a single stream. This is
              * because we use the local "ufrag" to de-multiplex the accept()-ed
              * sockets between the known components.
@@ -649,7 +649,7 @@ public class MultiplexingTcpHostHarvester
     /**
      * Determines whether a specific {@link DatagramPacket} is the first
      * expected (i.e. supported) to be received from an accepted
-     * {@link SocketChannel} by this {@code MultiplexingTcpHostHarvester}. If
+     * {@link SocketChannel} by this {@code TcpHarvester}. If
      * {@link #ssltcp} signals that Google TURN SSLTCP is to be expected, then
      * {@code p} must be
      * {@link GoogleTurnSSLCandidateHarvester#SSL_CLIENT_HANDSHAKE}. Otherwise,
@@ -658,7 +658,7 @@ public class MultiplexingTcpHostHarvester
      * @param p the {@code DatagramPacket} to examine
      * @return {@code true} if {@code p} looks like the first
      * {@code DatagramPacket} expected to be received from an accepted
-     * {@code SocketChannel} by this {@code MultiplexingTcpHostHarvester};
+     * {@code SocketChannel} by this {@code TcpHarvester};
      * otherwise, {@code false}
      */
     private boolean isFirstDatagramPacket(DatagramPacket p)
@@ -775,7 +775,7 @@ public class MultiplexingTcpHostHarvester
         public AcceptThread()
             throws IOException
         {
-            setName("MultiplexingTcpHostHarvester AcceptThread");
+            setName("TcpHarvester AcceptThread");
             setDaemon(true);
 
             selector = Selector.open();
@@ -1075,7 +1075,7 @@ public class MultiplexingTcpHostHarvester
         public ReadThread()
             throws IOException
         {
-            setName("MultiplexingTcpHostHarvester ReadThread");
+            setName("TcpHarvester ReadThread");
             setDaemon(true);
         }
 
@@ -1154,7 +1154,7 @@ public class MultiplexingTcpHostHarvester
          * local transport address of <tt>socket</tt>.
          *
          * We expect to find such a candidate, which has been added by this
-         * <tt>MultiplexingTcpHostHarvester</tt> while harvesting.
+         * <tt>TcpHarvester</tt> while harvesting.
          *
          * @param component the <tt>Component</tt> to search.
          * @param socket the <tt>Socket</tt> to match the local transport
@@ -1272,7 +1272,7 @@ public class MultiplexingTcpHostHarvester
          * If a STUN message is successfully read, and it contains a USERNAME
          * attribute, the local &quot;ufrag&quot; is extracted from the
          * attribute value and the socket is passed on to the <tt>Component</tt>
-         * that this <tt>MultiplexingTcpHostHarvester</tt> has associated with
+         * that this <tt>TcpHarvester</tt> has associated with
          * that &quot;ufrag&quot;.
          *
          * @param channel the <tt>SocketChannel</tt> to read from.
@@ -1441,7 +1441,7 @@ public class MultiplexingTcpHostHarvester
         {
             do
             {
-                synchronized (MultiplexingTcpHostHarvester.this)
+                synchronized (TcpHarvester.this)
                 {
                     if (close)
                         break;

@@ -166,7 +166,7 @@ public class StackProperties
      * addresses that are allowed to be used for host candidate allocations.
      *
      * NOTE: this is currently only supported by
-     * {@link org.ice4j.ice.harvest.MultiplexingTcpHostHarvester}.
+     * {@link org.ice4j.ice.harvest.TcpHarvester}.
      */
     public static final String ALLOWED_ADDRESSES
             = "org.ice4j.ice.harvest.ALLOWED_ADDRESSES";
@@ -183,7 +183,7 @@ public class StackProperties
      * addresses that are not allowed to be used for host candidate allocations.
      *
      * NOTE: this is currently only supported by
-     * {@link org.ice4j.ice.harvest.MultiplexingTcpHostHarvester}.
+     * {@link org.ice4j.ice.harvest.TcpHarvester}.
      */
     public static final String BLOCKED_ADDRESSES
             = "org.ice4j.ice.harvest.BLOCKED_ADDRESSES";
