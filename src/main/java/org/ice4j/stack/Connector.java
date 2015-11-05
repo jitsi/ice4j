@@ -207,6 +207,13 @@ class Connector
                     return;
 
                 logger.finest("received datagram");
+                logger.finest(String.format("packet - addr: %s port: %d",
+                    packet.getAddress(), packet.getPort()));
+                if (packet.getPort() < 0)
+                {
+                    // force a minimum port of 0 to prevent out of range errors
+                    packet.setPort(0);
+                }
 
                 RawMessage rawMessage
                     = new RawMessage(
