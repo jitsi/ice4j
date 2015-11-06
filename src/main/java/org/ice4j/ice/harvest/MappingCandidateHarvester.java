@@ -46,12 +46,12 @@ public class MappingCandidateHarvester
     /**
      * The addresses that we will use as a mask
      */
-    private final TransportAddress mask;
+    protected TransportAddress mask;
 
     /**
      * The addresses that we will be masking
      */
-    private final TransportAddress face;
+    protected TransportAddress face;
 
     /**
      * Creates a mapping harvester with the specified <tt>mask</tt>

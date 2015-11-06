@@ -112,7 +112,7 @@ public class AwsCandidateHarvester
      * @return <tt>true</tt> if we managed to obtain addresses or someone else
      * had already achieved that before us, <tt>false</tt> otherwise.
      */
-    private static synchronized boolean obtainEC2Addresses()
+    private synchronized boolean obtainEC2Addresses()
     {
         if(mask != null && face != null)
             return true;
@@ -137,22 +137,23 @@ public class AwsCandidateHarvester
         }
         catch (Exception exc)
         {
-            //whatever happens, we just log and bail
+            //whatever happens, we just log and fail
             logger.log(Level.INFO, "We failed to obtain EC2 instance addresses "
                 + "for the following reason: ", exc);
             logger.info("String for local IP: " + localIPStr);
             logger.info("String for public IP: " + publicIPStr);
 
+            return false;
         }
 
         return true;
     }
 
     /**
-     * Returns the discovered public (mask) address, or null.
-     * @return the discovered public (mask) address, or null.
+     * Returns the public (mask) address, or null.
+     * @return the public (mask) address, or null.
      */
-    public static TransportAddress getDiscoveredMask()
+    public TransportAddress getMask()
     {
         if (smellsLikeAnEC2())
         {
@@ -163,10 +164,10 @@ public class AwsCandidateHarvester
     }
 
     /**
-     * Returns the discovered local (face) address, or null.
-     * @return the discovered local (face) address, or null.
+     * Returns the local (face) address, or null.
+     * @return the local (face) address, or null.
      */
-    public static TransportAddress getDiscoveredFace()
+    public TransportAddress getFace()
     {
         if (smellsLikeAnEC2())
         {
@@ -237,23 +238,5 @@ public class AwsCandidateHarvester
         in.close();
 
         return retString;
-    }
-
-    /**
-     * Returns the public (mask) address, or null.
-     * @return the public (mask) address, or null.
-     */
-    public TransportAddress getMask()
-    {
-        return this.mask;
-    }
-
-    /**
-     * Returns the local (face) address, or null.
-     * @return the local (face) address, or null.
-     */
-    public TransportAddress getFace()
-    {
-        return this.face;
     }
 }
