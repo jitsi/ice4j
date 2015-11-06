@@ -67,7 +67,7 @@ public class StunMappingCandidateHarvester
     {
         super(null, null);
 
-        this.stunServers = servers;
+        StunMappingCandidateHarvester.stunServers = servers;
 
         // we have the list of addresses lets, try discovering
         obtainAddresses();
@@ -140,15 +140,16 @@ public class StunMappingCandidateHarvester
                 TransportAddress addr = iceMediaStream
                     .getComponent(Component.RTP).getDefaultCandidate()
                     .getTransportAddress();
-                this.mask = addr;
+                StunMappingCandidateHarvester.mask = addr;
 
                 Candidate<?> candidate =
                     iceMediaStream.getComponents().get(0).getDefaultCandidate();
-                this.face = candidate.getHostAddress();
+                StunMappingCandidateHarvester.face = candidate.getHostAddress();
 
                 agent.free();
 
-                if(this.mask != null && this.face != null)
+                if(StunMappingCandidateHarvester.mask != null
+                    && StunMappingCandidateHarvester.face != null)
                     break;
             }
 
