@@ -206,8 +206,7 @@ class Connector
                 if(!running)
                     return;
 
-                logger.finest("received datagram");
-                logger.finest(String.format("packet - addr: %s port: %d",
+                logger.finest(String.format("received datagram packet - addr: %s port: %d",
                     packet.getAddress(), packet.getPort()));
                 if (packet.getPort() < 0)
                 {
