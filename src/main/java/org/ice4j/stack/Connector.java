@@ -210,6 +210,7 @@ class Connector
                     packet.getAddress(), packet.getPort()));
                 if (packet.getPort() < 0)
                 {
+                    logger.warning("Out of range packet port, resetting to 0");
                     // force a minimum port of 0 to prevent out of range errors
                     packet.setPort(0);
                 }
