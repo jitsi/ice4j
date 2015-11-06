@@ -398,17 +398,6 @@ public class SinglePortUdpHarvester
         candidates.put(ufrag, candidate);
         component.addLocalCandidate(candidate);
 
-//        if (publicAddress != null)
-//        {
-//            ServerReflexiveCandidate mappedCandidate
-//                = new ServerReflexiveCandidate(
-//                    publicAddress,
-//                    candidate,
-//                    candidate.getStunServerAddress(),
-//                    CandidateExtendedType.STATICALLY_MAPPED_CANDIDATE);
-//            component.addLocalCandidate(mappedCandidate);
-//        }
-
         return new ArrayList<LocalCandidate>(Arrays.asList(candidate));
     }
 
