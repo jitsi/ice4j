@@ -109,7 +109,7 @@ public class StunMappingCandidateHarvester
      * @return <tt>true</tt> if we managed to obtain addresses or someone else
      * had already achieved that before us, <tt>false</tt> otherwise.
      */
-    private synchronized boolean obtainAddresses()
+    private static synchronized boolean obtainAddresses()
     {
         if(mask != null && face != null)
             return true;

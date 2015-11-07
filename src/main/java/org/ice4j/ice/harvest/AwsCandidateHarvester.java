@@ -112,7 +112,7 @@ public class AwsCandidateHarvester
      * @return <tt>true</tt> if we managed to obtain addresses or someone else
      * had already achieved that before us, <tt>false</tt> otherwise.
      */
-    private synchronized boolean obtainEC2Addresses()
+    private static synchronized boolean obtainEC2Addresses()
     {
         if(mask != null && face != null)
             return true;
