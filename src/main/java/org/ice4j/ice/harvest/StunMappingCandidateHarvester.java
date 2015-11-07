@@ -140,16 +140,15 @@ public class StunMappingCandidateHarvester
                 TransportAddress addr = iceMediaStream
                     .getComponent(Component.RTP).getDefaultCandidate()
                     .getTransportAddress();
-                StunMappingCandidateHarvester.mask = addr;
+                mask = addr;
 
                 Candidate<?> candidate =
                     iceMediaStream.getComponents().get(0).getDefaultCandidate();
-                StunMappingCandidateHarvester.face = candidate.getHostAddress();
+                face = candidate.getHostAddress();
 
                 agent.free();
 
-                if(StunMappingCandidateHarvester.mask != null
-                    && StunMappingCandidateHarvester.face != null)
+                if (mask != null && face != null)
                     break;
             }
 
