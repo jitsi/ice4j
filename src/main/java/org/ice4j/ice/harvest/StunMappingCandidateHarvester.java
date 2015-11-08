@@ -111,8 +111,9 @@ public class StunMappingCandidateHarvester
      */
     private static synchronized boolean obtainAddresses()
     {
-        if(mask != null && face != null)
-            return true;
+        if (addressChecked)
+            return;
+        addressChecked = true;
 
         try
         {
@@ -155,7 +156,6 @@ public class StunMappingCandidateHarvester
             logger.info("Detected through stun local IP: " + face);
             logger.info("Detected through stun public IP: " + mask);
 
-            addressChecked = true;
         }
         catch (Exception exc)
         {
