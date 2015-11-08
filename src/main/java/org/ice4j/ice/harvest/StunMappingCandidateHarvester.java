@@ -20,7 +20,6 @@ package org.ice4j.ice.harvest;
 import org.ice4j.*;
 import org.ice4j.ice.*;
 
-import java.util.*;
 import java.util.logging.*;
 
 /**
@@ -82,34 +81,11 @@ public class StunMappingCandidateHarvester
     }
 
     /**
-     * Maps all candidates to this harvester's mask and adds them to
-     * <tt>component</tt>.
-     *
-     * @param component the {@link Component} that we'd like to map candidates
-     * to.
-     * @return  the <tt>LocalCandidate</tt>s gathered by this
-     * <tt>CandidateHarvester</tt> or <tt>null</tt> if no mask is specified.
-     */
-    public Collection<LocalCandidate> harvest(Component component)
-    {
-        if (mask == null || face == null)
-        {
-            if(!obtainAddresses())
-                return null;
-        }
-
-        return super.harvest(component);
-    }
-
-    /**
      * Uses the pre-configured list of stun servers to discover our public
      * address. Uses the first successful one and ignore the rest.
      * Learn the private (face) and public (mask) addresses of this instance.
-     *
-     * @return <tt>true</tt> if we managed to obtain addresses or someone else
-     * had already achieved that before us, <tt>false</tt> otherwise.
      */
-    private static synchronized boolean obtainAddresses()
+    private static synchronized void obtainAddresses()
     {
         if (addressChecked)
             return;
@@ -162,20 +138,7 @@ public class StunMappingCandidateHarvester
             //whatever happens, we just log and fail
             logger.log(Level.INFO, "We failed to obtain addresses "
                 + "for the following reason: ", exc);
-
-            return false;
         }
-
-        return true;
-    }
-
-    /**
-     * Whether we had already checked and succeeded finding address.
-     * @return whether we had already checked and succeeded finding address.
-     */
-    private boolean isAddressChecked()
-    {
-        return addressChecked;
     }
 
     /**
@@ -184,7 +147,7 @@ public class StunMappingCandidateHarvester
      */
     public TransportAddress getMask()
     {
-        if (!isAddressChecked())
+        if (mask == null)
         {
             obtainAddresses();
         }
@@ -197,7 +160,7 @@ public class StunMappingCandidateHarvester
      */
     public TransportAddress getFace()
     {
-        if (!isAddressChecked())
+        if (face == null)
         {
             obtainAddresses();
         }
