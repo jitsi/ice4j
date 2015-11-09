@@ -18,11 +18,9 @@
 package org.ice4j.ice.harvest;
 
 import org.ice4j.*;
-import org.ice4j.ice.*;
 
 import java.io.*;
 import java.net.*;
-import java.util.*;
 import java.util.logging.*;
 
 /**
@@ -75,6 +73,11 @@ public class AwsCandidateHarvester
     private static TransportAddress face;
 
     /**
+     * Whether we have already checked and found the mapping addresses.
+     */
+    private static boolean addressChecked = false;
+
+    /**
      * Creates an AWS harvester. The actual addresses wil be retrieved later,
      * during the first harvest.
      */
@@ -84,38 +87,16 @@ public class AwsCandidateHarvester
     }
 
     /**
-     * Maps all candidates to this harvester's mask and adds them to
-     * <tt>component</tt>.
-     *
-     * @param component the {@link Component} that we'd like to map candidates
-     * to.
-     * @return  the <tt>LocalCandidate</tt>s gathered by this
-     * <tt>CandidateHarvester</tt> or <tt>null</tt> if no mask is specified.
-     */
-    public Collection<LocalCandidate> harvest(Component component)
-    {
-        if (mask == null || face == null)
-        {
-            if(!obtainEC2Addresses())
-                return null;
-        }
-
-        return super.harvest(component);
-    }
-
-    /**
      * Sends HTTP GET queries to
      * <tt>http://169.254.169.254/latest/meta-data/local-ipv4</tt> and
      * <tt>http://169.254.169.254/latest/meta-data/public-ipv4</tt> to learn the
      * private (face) and public (mask) addresses of this EC2 instance.
-     *
-     * @return <tt>true</tt> if we managed to obtain addresses or someone else
-     * had already achieved that before us, <tt>false</tt> otherwise.
      */
-    private synchronized boolean obtainEC2Addresses()
+    private static synchronized void obtainEC2Addresses()
     {
-        if(mask != null && face != null)
-            return true;
+        if (addressChecked)
+            return;
+        addressChecked = true;
 
         String localIPStr = null;
         String publicIPStr = null;
@@ -142,11 +123,7 @@ public class AwsCandidateHarvester
                 + "for the following reason: ", exc);
             logger.info("String for local IP: " + localIPStr);
             logger.info("String for public IP: " + publicIPStr);
-
-            return false;
         }
-
-        return true;
     }
 
     /**
