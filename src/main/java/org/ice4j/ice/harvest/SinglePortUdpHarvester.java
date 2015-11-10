@@ -133,6 +133,20 @@ public class SinglePortUdpHarvester
             logger.info("Failed to get network interfaces: " + se);
         }
 
+        for (TransportAddress address : addresses)
+        {
+            try
+            {
+                harvesters.add(
+                    new SinglePortUdpHarvester(address));
+            }
+            catch (IOException ioe)
+            {
+                logger.info("Failed to create SinglePortUdpHarvester for "
+                                + "address " + address + ": " + ioe);
+            }
+        }
+
         return harvesters;
     }
 
