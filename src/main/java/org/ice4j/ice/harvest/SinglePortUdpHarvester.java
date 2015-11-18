@@ -338,7 +338,7 @@ public class SinglePortUdpHarvester
 
     /**
      * Tries to parse the bytes in <tt>buf</tt> at offset <tt>off</tt> (and
-     * length <tt>len</tt>) and a STUN Binding Request message. If successful,
+     * length <tt>len</tt>) as a STUN Binding Request message. If successful,
      * looks for a USERNAME attribute and returns the local username fragment
      * part (see RFC5245 Section 7.1.2.3).
      * In case of any failure returns <tt>null</tt>.
@@ -351,6 +351,29 @@ public class SinglePortUdpHarvester
      */
     private String getUfrag(byte[] buf, int off, int len)
     {
+        // RFC5389, Section 6:
+        // All STUN messages MUST start with a 20-byte header followed by zero
+        // or more Attributes.
+        if (buf == null || buf.length < off + len || len < 20)
+        {
+            return null;
+        }
+
+        // RFC5389, Section 6:
+        // The magic cookie field MUST contain the fixed value 0x2112A442 in
+        // network byte order.
+        if ( !( (buf[off + 4] & 0xFF) == 0x21 &&
+                (buf[off + 5] & 0xFF) == 0x12 &&
+                (buf[off + 6] & 0xFF) == 0xA4 &&
+                (buf[off + 7] & 0xFF) == 0x42))
+        {
+            if (logger.isLoggable(Level.FINE))
+            {
+                logger.fine("Not a STUN packet, magic cookie not found.");
+            }
+            return null;
+        }
+
         try
         {
             Message stunMessage
@@ -378,7 +401,10 @@ public class SinglePortUdpHarvester
         {
             // Catch everything. We are going to log, and then drop the packet
             // anyway.
-            logger.info("Failed to extract local ufrag: " + e);
+            if (logger.isLoggable(Level.FINE))
+            {
+                logger.fine("Failed to extract local ufrag: " + e);
+            }
         }
 
         return null;
