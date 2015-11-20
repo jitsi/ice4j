@@ -1515,29 +1515,6 @@ public class Agent
             //we already know about the remote address so we only need to
             //trigger a check for the existing pair
 
-            if(!isControlling())
-            {
-                logger.fine("set useCandidateReceived for " +
-                    triggerPair.toShortString());
-
-                // we synchronize here because the same pair object can be
-                // processed (in another thread) in ConnectivityCheckClient's
-                // processSuccessResponse. A controlled agent select its
-                // pair here if the pair state is succeeded (set in
-                // processSuccessResponse) or in processSuccessResponse if
-                // the pair has useCandidateReceived as true (set here). So be
-                // sure that if a binding response and a binding request (for
-                // the same check) from other peer come at the very same time,
-                // that we will trigger the nominationConfirmed (that will
-                // pass the pair as selected if it is the first time).
-                synchronized(triggerPair)
-                {
-                    //next time we will see a request it will be considered as
-                    //having USE-CANDIDATE
-                    triggerPair.setUseCandidateReceived();
-                }
-            }
-
             if (knownPair.getState() == CandidatePairState.SUCCEEDED )
             {
                 //7.2.1.5. Updating the Nominated Flag
@@ -1586,7 +1563,6 @@ public class Agent
             if(triggerPair.getParentComponent().getSelectedPair() == null)
                 logger.info("Add peer CandidatePair with new reflexive " +
                         "address to checkList: " + triggerPair);
-            triggerPair.setUseCandidateReceived();
             parentStream.addToCheckList(triggerPair);
         }
 
