@@ -671,28 +671,27 @@ public class TcpHarvester
             byte[] buf = p.getData();
             int off = p.getOffset();
 
-            if (ssltcp)
-            {
-                // Google TURN SSLTCP
-                final byte[] googleTurnSslTcp
-                    = GoogleTurnSSLCandidateHarvester.SSL_CLIENT_HANDSHAKE;
+            // Check for Google TURN SSLTCP
+            final byte[] googleTurnSslTcp
+                = GoogleTurnSSLCandidateHarvester.SSL_CLIENT_HANDSHAKE;
 
-                if (len >= googleTurnSslTcp.length)
+            if (len >= googleTurnSslTcp.length)
+            {
+                b = true;
+                for (int i = 0, iEnd = googleTurnSslTcp.length, j = off;
+                        i < iEnd;
+                        i++, j++)
                 {
-                    b = true;
-                    for (int i = 0, iEnd = googleTurnSslTcp.length, j = off;
-                            i < iEnd;
-                            i++, j++)
+                    if (googleTurnSslTcp[i] != buf[j])
                     {
-                        if (googleTurnSslTcp[i] != buf[j])
-                        {
-                            b = false;
-                            break;
-                        }
+                        b = false;
+                        break;
                     }
                 }
             }
-            else
+
+            // nothing found, lets check for stun binding requests
+            if (!b)
             {
                 // 2 bytes    uint16 length
                 // STUN Binding request:
@@ -917,9 +916,16 @@ public class TcpHarvester
         ByteBuffer buffer = null;
 
         /**
-         * Whether or not the initial "pseudo" SSL handshake has been read.
+         * Whether we had checked for initial "pseudo" SSL handshake.
          */
-        boolean sslHandshakeRead = false;
+        boolean checkedForSSLHandshake = false;
+
+        /**
+         * Buffer to use if we had read some data in advance and want to process
+         * it after next read, used when we are checking for "pseudo" SSL and
+         * we haven't found some, but had read data to check for it.
+         */
+        byte[] preBuffered = null;
 
         /**
          * The value of the RFC4571 "length" field read from the channel, or
@@ -1286,7 +1292,7 @@ public class TcpHarvester
             {
                 // Set up a buffer with a pre-determined size
 
-                if (ssltcp && !channel.sslHandshakeRead)
+                if (!channel.checkedForSSLHandshake && channel.length == -1)
                 {
                     channel.buffer
                         = ByteBuffer.allocate(
@@ -1315,7 +1321,7 @@ public class TcpHarvester
                 if (!channel.buffer.hasRemaining())
                 {
                     // We've filled in the buffer.
-                    if (ssltcp && !channel.sslHandshakeRead)
+                    if (!channel.checkedForSSLHandshake)
                     {
                         byte[] bytesRead
                             = new byte[GoogleTurnSSLCandidateHarvester
@@ -1327,7 +1333,7 @@ public class TcpHarvester
                         // Set to null, so that we re-allocate it for the next
                         // stage
                         channel.buffer = null;
-                        channel.sslHandshakeRead = true;
+                        channel.checkedForSSLHandshake = true;
 
                         if (Arrays.equals(bytesRead,
                                           GoogleTurnSSLCandidateHarvester
@@ -1340,8 +1346,29 @@ public class TcpHarvester
                         }
                         else
                         {
-                            throw new IOException("Expected a pseudo ssl"
-                                + " handshake, but received something else.");
+                            int fb = bytesRead[0];
+                            int sb = bytesRead[1];
+
+                            channel.length = (((fb & 0xff) << 8) | (sb & 0xff));
+
+                            byte[] preBuffered
+                                = Arrays.copyOfRange(
+                                    bytesRead, 2, bytesRead.length);
+
+                            // if we had read enough data
+                            if(channel.length <= bytesRead.length - 2)
+                            {
+                                processStunBindingRequest(
+                                    preBuffered, channel, key);
+                            }
+                            else
+                            {
+                                // not enough data, store what was read
+                                // and continue
+                                channel.preBuffered = preBuffered;
+
+                                channel.length -= channel.preBuffered.length;
+                            }
                         }
                     }
                     else if (channel.length == -1)
@@ -1364,54 +1391,30 @@ public class TcpHarvester
                         channel.buffer.flip();
                         channel.buffer.get(bytesRead);
 
-                        // Does this look like a STUN binding request?
-                        // What's the username?
-                        Message stunMessage
-                            = Message.decode(bytesRead,
-                                             (char) 0,
-                                             (char) bytesRead.length);
-
-                        if (stunMessage.getMessageType()
-                                != Message.BINDING_REQUEST)
+                        if(channel.preBuffered != null)
                         {
-                            throw new IOException("Not a binding request");
+                            // will store preBuffered and currently read data
+                            byte[] newBytesRead = new byte[
+                                channel.preBuffered.length + bytesRead.length];
+
+                            // copy old data
+                            System.arraycopy(
+                                channel.preBuffered, 0,
+                                newBytesRead, 0,
+                                channel.preBuffered.length);
+                            // and new data
+                            System.arraycopy(
+                                bytesRead, 0,
+                                newBytesRead, channel.preBuffered.length,
+                                bytesRead.length);
+
+                            // use that data for processing
+                            bytesRead = newBytesRead;
+
+                            channel.preBuffered = null;
                         }
 
-                        UsernameAttribute usernameAttribute
-                            = (UsernameAttribute)
-                                stunMessage.getAttribute(Attribute.USERNAME);
-
-                        if (usernameAttribute == null)
-                        {
-                            throw new IOException(
-                                    "No USERNAME attribute present.");
-                        }
-
-                        String usernameString
-                            = new String(usernameAttribute.getUsername());
-                        String localUfrag = usernameString.split(":")[0];
-                        Component component = getComponent(localUfrag);
-
-                        if (component == null)
-                            throw new IOException("No component found.");
-
-                        // The rest of the stack will read from the socket's
-                        // InputStream. We cannot change the blocking mode
-                        // before the channel is removed from the selector (by
-                        // cancelling the key)
-                        key.cancel();
-                        channel.channel.configureBlocking(true);
-
-                        // Construct a DatagramPacket from the just-read packet
-                        // which is to be pushed back
-                        DatagramPacket p
-                            = new DatagramPacket(bytesRead, bytesRead.length);
-                        Socket socket = channel.channel.socket();
-
-                        p.setAddress(socket.getInetAddress());
-                        p.setPort(socket.getPort());
-
-                        handSocketToComponent(socket, component, p);
+                        processStunBindingRequest(bytesRead, channel, key);
                     }
                 }
             }
@@ -1431,6 +1434,79 @@ public class TcpHarvester
                 key.cancel();
                 closeNoExceptions(channel.channel);
             }
+        }
+
+        /**
+         * Process the readed bytes as stun binding request.
+         *
+         * If a STUN message is successfully read, and it contains a USERNAME
+         * attribute, the local &quot;ufrag&quot; is extracted from the
+         * attribute value and the socket is passed on to the <tt>Component</tt>
+         * that this <tt>TcpHarvester</tt> has associated with
+         * that &quot;ufrag&quot;.
+         *
+         * @param bytesRead bytes to be processed
+         * @param channel the <tt>SocketChannel</tt> to read from.
+         * @param key the <tt>SelectionKey</tt> associated with
+         * <tt>channel</tt>, which is to be canceled in case no further
+         * reading is required from the channel.
+         * @throws StunException error decoding package
+         * @throws IOException missing attributes (username, component or
+         *                     wrong type)
+         */
+        private void processStunBindingRequest(
+            byte[] bytesRead,
+            ChannelDesc channel, SelectionKey key)
+            throws StunException, IOException
+        {
+            // Does this look like a STUN binding request?
+            // What's the username?
+            Message stunMessage
+                = Message.decode(bytesRead,
+                (char) 0,
+                (char) bytesRead.length);
+
+            if (stunMessage.getMessageType()
+                != Message.BINDING_REQUEST)
+            {
+                throw new IOException("Not a binding request");
+            }
+
+            UsernameAttribute usernameAttribute
+                = (UsernameAttribute)
+                stunMessage.getAttribute(Attribute.USERNAME);
+
+            if (usernameAttribute == null)
+            {
+                throw new IOException(
+                    "No USERNAME attribute present.");
+            }
+
+            String usernameString
+                = new String(usernameAttribute.getUsername());
+            String localUfrag = usernameString.split(":")[0];
+            Component component = getComponent(localUfrag);
+
+            if (component == null)
+                throw new IOException("No component found.");
+
+            // The rest of the stack will read from the socket's
+            // InputStream. We cannot change the blocking mode
+            // before the channel is removed from the selector (by
+            // cancelling the key)
+            key.cancel();
+            channel.channel.configureBlocking(true);
+
+            // Construct a DatagramPacket from the just-read packet
+            // which is to be pushed back
+            DatagramPacket p
+                = new DatagramPacket(bytesRead, bytesRead.length);
+            Socket socket = channel.channel.socket();
+
+            p.setAddress(socket.getInetAddress());
+            p.setPort(socket.getPort());
+
+            handSocketToComponent(socket, component, p);
         }
 
         /**
