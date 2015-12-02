@@ -150,16 +150,10 @@ class ConnectivityCheckServer
             return;
         }
 
-        //detect role conflicts
-        if( ( parentAgent.isControlling()
-                    && request.containsAttribute(Attribute.ICE_CONTROLLING))
-            || ( ! parentAgent.isControlling()
-                        && request.containsAttribute(Attribute.ICE_CONTROLLED)))
-        {
-            if (!repairRoleConflict(evt))
-                return;
-        }
-
+        // Learn the peer reflexive candidate, even if we are going to send a
+        // role conflict error. This allows us to learn faster, and compensates
+        // for a buggy peer that doesn't switch roles when it gets a role
+        // conflict error.
         long priority = 0;
         boolean useCandidate
             = request.containsAttribute(Attribute.USE_CANDIDATE);
@@ -176,6 +170,16 @@ class ConnectivityCheckServer
         parentAgent.incomingCheckReceived(evt.getRemoteAddress(),
                 evt.getLocalAddress(), priority, remoteUfrag, localUFrag,
                 useCandidate);
+
+        //detect role conflicts
+        if( ( parentAgent.isControlling()
+                && request.containsAttribute(Attribute.ICE_CONTROLLING))
+                || ( ! parentAgent.isControlling()
+                && request.containsAttribute(Attribute.ICE_CONTROLLED)))
+        {
+            if (!repairRoleConflict(evt))
+                return;
+        }
 
         Response response = MessageFactory.createBindingResponse(
                         request, evt.getRemoteAddress());
