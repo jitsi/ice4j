@@ -40,7 +40,7 @@ class PreReadSocketChannel
 
     /**
      * Initializes a new {@code PreReadSocketChannel} instance which is to
-     * prepend a specific {@link DatagrapPacket} to a specific
+     * prepend a specific {@link DatagramPacket} to a specific
      * {@link SocketChannel}.
      *
      * @param preRead the {@code DatagramPacket} to prepend to {@code delegate}

@@ -55,9 +55,10 @@ public class MuxServerSocketChannelFactory
 
     /**
      * The name of the {@code boolean} property of the {@code socket} property
-     * of the {@code ServerSocketChannel} returned by {@link #openAndBind(Map,
-     * SocketAddress, int, DatagramPacketFilter)} which specifies the value of
-     * the {@code SO_REUSEADDR} socket option.
+     * of the {@code ServerSocketChannel} returned by
+     * {@link #openAndBindMuxServerSocketChannel(Map, SocketAddress, int,
+     * DatagramPacketFilter)} which specifies the value of the
+     * {@code SO_REUSEADDR} socket option.
      */
     public static final String SOCKET_REUSE_ADDRESS_PROPERTY_NAME
         = "socket.reuseAddress";
@@ -89,6 +90,7 @@ public class MuxServerSocketChannelFactory
                     "ICE4J does not support sharing of listening endpoints"
                         + " (probably because it is not running on JDK 8).");
         }
+
         Method method;
 
         if (clazz == null)
@@ -128,6 +130,8 @@ public class MuxServerSocketChannelFactory
         }
         catch (IOException ioe)
         {
+            // The whole idea of the method is to close a specific Channel
+            // without caring about any possible IOException.
         }
     }
 
@@ -245,7 +249,7 @@ public class MuxServerSocketChannelFactory
                     if (value == null)
                         on = false;
                     else if (value instanceof Boolean)
-                        on = ((Boolean) value).booleanValue();
+                        on = (Boolean) value;
                     else
                         on = Boolean.valueOf(value.toString());
 

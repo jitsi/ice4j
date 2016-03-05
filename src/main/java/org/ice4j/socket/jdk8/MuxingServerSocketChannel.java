@@ -60,7 +60,7 @@ class MuxingServerSocketChannel
      */
     private static final List<MuxingServerSocketChannel>
         muxingServerSocketChannels
-            = new LinkedList<MuxingServerSocketChannel>();
+            = new LinkedList<>();
 
     /**
      * The maximum number of milliseconds to wait for an accepted
@@ -230,6 +230,8 @@ class MuxingServerSocketChannel
                 }
                 catch (IOException ioe)
                 {
+                    // I don't know what to do about any IOException during
+                    // Selector#close() even if I log it.
                 }
             }
             acceptSelector = null;
@@ -369,27 +371,31 @@ class MuxingServerSocketChannel
                     }
                     catch (InterruptedException ie)
                     {
+                        // I don't know that we care about the interrupted state
+                        // of the current thread because that the method
+                        // runInAcceptThread() is pretty much the whole
+                        // execution of the current thread that could
+                        // potentially care about the interrupted state and it
+                        // doesn't.
                     }
                     continue;
                 }
             }
 
-            // Wait for a new iteration of acceptance.
-            if (select)
+            // Wait for a new iteration of acceptance. (The value of the local
+            // variable select is guaranteed to be true.)
+            try
             {
-                try
-                {
-                    sel.select();
-                }
-                catch (ClosedSelectorException cse)
-                {
-                    break;
-                }
-                catch (IOException ioe)
-                {
-                    // Well, we're selecting from multiple SelectableChannels so
-                    // we're not sure what the IOException signals here.
-                }
+                sel.select();
+            }
+            catch (ClosedSelectorException cse)
+            {
+                break;
+            }
+            catch (IOException ioe)
+            {
+                // Well, we're selecting from multiple SelectableChannels so
+                // we're not sure what the IOException signals here.
             }
         }
         while (true);
@@ -476,7 +482,7 @@ class MuxingServerSocketChannel
      * this instance.
      */
     private final List<MuxServerSocketChannel> muxServerSocketChannels
-        = new ArrayList<MuxServerSocketChannel>();
+        = new ArrayList<>();
 
     /**
      * The list of {@code SocketChannel}s which have been accepted by this
@@ -484,7 +490,7 @@ class MuxingServerSocketChannel
      * accepted by the {@link DatagramPacketFilter} of any
      * {@link MuxServerSocketChannel} yet.
      */
-    private final Queue<SocketChannel> readQ = new LinkedList<SocketChannel>();
+    private final Queue<SocketChannel> readQ = new LinkedList<>();
 
     /**
      * The {@code Selector} which waits for incoming packets on all
@@ -862,27 +868,30 @@ class MuxingServerSocketChannel
                     }
                     catch (InterruptedException ie)
                     {
+                        // I don't know that we care about the interrupted state
+                        // of the current thread because that the method
+                        // runInReadThread() is pretty much the whole execution
+                        // of the current thread that could potentially care
+                        // about the interrupted state and it doesn't.
                     }
                     continue;
                 }
             }
 
-            // Wait for a new iteration of acceptance.
-            if (select)
+            // Wait for a new iteration of acceptance. (The value of the local
+            // variable select is guaranteed to be true.)
+            try
             {
-                try
-                {
-                    sel.select();
-                }
-                catch (ClosedSelectorException cse)
-                {
-                    break;
-                }
-                catch (IOException ioe)
-                {
-                    // Well, we're selecting from multiple SelectableChannels so
-                    // we're not sure what the IOException signals here.
-                }
+                sel.select();
+            }
+            catch (ClosedSelectorException cse)
+            {
+                break;
+            }
+            catch (IOException ioe)
+            {
+                // Well, we're selecting from multiple SelectableChannels so
+                // we're not sure what the IOException signals here.
             }
         }
         while (true);

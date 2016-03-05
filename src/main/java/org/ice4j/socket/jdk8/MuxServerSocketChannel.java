@@ -93,8 +93,7 @@ public class MuxServerSocketChannel
      * The (ordered) list (i.e. queue) of <tt>SocketChannel</tt>s to be returned
      * by {@link #accept()}.
      */
-    private final Queue<SocketChannel> acceptQ
-        = new LinkedList<SocketChannel>();
+    private final Queue<SocketChannel> acceptQ = new LinkedList<>();
 
     /**
      * The {@code DatagramPacketFilter} which demultiplexes
@@ -141,54 +140,66 @@ public class MuxServerSocketChannel
         throws IOException
     {
         SocketChannel accepted;
+        boolean interrupted = false;
 
         // Pop a SocketChannel from acceptQ.
-        do
+        try
         {
-            if (!isOpen())
+            do
             {
-                throw new ClosedChannelException();
-            }
-            else if (!isBound())
-            {
-                throw new NotYetBoundException();
-            }
-            else
-            {
-                synchronized (syncRoot)
+                if (!isOpen())
                 {
-                    accepted = acceptQ.poll();
-                    if (accepted == null)
+                    throw new ClosedChannelException();
+                }
+                else if (!isBound())
+                {
+                    throw new NotYetBoundException();
+                }
+                else
+                {
+                    synchronized (syncRoot)
                     {
-                        if (isBlocking())
+                        accepted = acceptQ.poll();
+                        if (accepted == null)
                         {
-                            try
+                            if (isBlocking())
                             {
-                                syncRoot.wait();
+                                try
+                                {
+                                    syncRoot.wait();
+                                }
+                                catch (InterruptedException ie)
+                                {
+                                    interrupted = true;
+                                }
                             }
-                            catch (InterruptedException ie)
+                            else
                             {
+                                break;
                             }
                         }
-                        else
+                        else if (accepted.isOpen())
                         {
-                            break;
+                            // Allow the MuxServerSocketChannel class and/or its
+                            // super(s) to have a final say on the accepted
+                            // SocketChannel such as wrapping it into a suitable
+                            // specialization of DelegatingSocketChannel.
+                            accepted = implAccept(accepted);
+                            if (accepted != null)
+                                break;
                         }
-                    }
-                    else if (accepted.isOpen())
-                    {
-                        // Allow the MuxServerSocketChannel class and/or its
-                        // super(s) to have a final say on the accepted
-                        // SocketChannel such as wrapping it into a suitable
-                        // specialization of DelegatingSocketChannel.
-                        accepted = implAccept(accepted);
-                        if (accepted != null)
-                            break;
                     }
                 }
             }
+            while (true);
         }
-        while (true);
+        finally
+        {
+            // Restore the interrupted state of the current thread if we've
+            // cleared it in the loop above.
+            if (interrupted)
+                Thread.currentThread().interrupt();
+        }
         return accepted;
     }
 
@@ -210,13 +221,8 @@ public class MuxServerSocketChannel
      */
     protected boolean filterAccept(DatagramPacket p, SocketChannel channel)
     {
-        boolean b;
-
-        if (filter.accept(p))
-            b = qAccept(new PreReadSocketChannel(p, channel));
-        else
-            b = false;
-        return b;
+        return
+            filter.accept(p) && qAccept(new PreReadSocketChannel(p, channel));
     }
 
     /**
