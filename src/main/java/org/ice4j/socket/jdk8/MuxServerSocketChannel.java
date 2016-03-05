@@ -93,7 +93,8 @@ public class MuxServerSocketChannel
      * The (ordered) list (i.e. queue) of <tt>SocketChannel</tt>s to be returned
      * by {@link #accept()}.
      */
-    private final Queue<SocketChannel> acceptQ = new LinkedList<>();
+    private final Queue<Timestamped<SocketChannel>> acceptQ
+        = new LinkedList<>();
 
     /**
      * The {@code DatagramPacketFilter} which demultiplexes
@@ -139,7 +140,7 @@ public class MuxServerSocketChannel
     public SocketChannel accept()
         throws IOException
     {
-        SocketChannel accepted;
+        SocketChannel accepted = null;
         boolean interrupted = false;
 
         // Pop a SocketChannel from acceptQ.
@@ -159,8 +160,9 @@ public class MuxServerSocketChannel
                 {
                     synchronized (syncRoot)
                     {
-                        accepted = acceptQ.poll();
-                        if (accepted == null)
+                        Timestamped<SocketChannel> timestamped = acceptQ.poll();
+
+                        if (timestamped == null)
                         {
                             if (isBlocking())
                             {
@@ -178,7 +180,7 @@ public class MuxServerSocketChannel
                                 break;
                             }
                         }
-                        else if (accepted.isOpen())
+                        else if ((accepted = timestamped.o).isOpen())
                         {
                             // Allow the MuxServerSocketChannel class and/or its
                             // super(s) to have a final say on the accepted
@@ -201,6 +203,39 @@ public class MuxServerSocketChannel
                 Thread.currentThread().interrupt();
         }
         return accepted;
+    }
+
+    /**
+     * Weeds out abandoned {@code SocketChannels} from {@link #acceptQ} i.e.
+     * which were classified/filtered into this {@code MuxServerSocketChannel}
+     * but were not accepted (out of it) for a long time.
+     *
+     * @param now the (system) time in milliseconds at which the method is
+     * invoked
+     */
+    void closeAbandonedSocketChannels(long now)
+    {
+        synchronized (syncRoot)
+        {
+            Collection<Timestamped<SocketChannel>> chs = acceptQ;
+
+            if (!chs.isEmpty())
+            {
+                for (Iterator<Timestamped<SocketChannel>> i = chs.iterator();
+                        i.hasNext();)
+                {
+                    Timestamped<SocketChannel> ch = i.next();
+
+                    if (now - ch.timestamp
+                            >= MuxingServerSocketChannel
+                                .SOCKET_CHANNEL_READ_TIMEOUT)
+                    {
+                        i.remove();
+                        MuxingServerSocketChannel.closeNoExceptions(ch.o);
+                    }
+                }
+            }
+        }
     }
 
     /**
@@ -268,7 +303,8 @@ public class MuxServerSocketChannel
 
         synchronized (syncRoot)
         {
-            if (acceptQ.offer(channel))
+            if (acceptQ.offer(
+                    new Timestamped<>(channel, System.currentTimeMillis())))
             {
                 syncRoot.notifyAll();
                 b = true;

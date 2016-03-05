@@ -64,11 +64,20 @@ class MuxingServerSocketChannel
             = new LinkedList<>();
 
     /**
+     * The maximum number of milliseconds to wait in a
+     * {@link Selector#select(long)}. The timeout should be a precaution though
+     * i.e. (1) it should better not be necessary and (2) it should be long
+     * enough to not unnecessarily hurt the performance of the application.
+     */
+    private static final int SELECTOR_SELECT_TIMEOUT
+        = MuxServerSocketChannelFactory.SOCKET_CHANNEL_READ_TIMEOUT;
+
+    /**
      * The maximum number of milliseconds to wait for an accepted
      * {@code SocketChannel} to provide incoming/readable data before it is
      * considered abandoned by the client.
      */
-    private static final int SOCKET_CHANNEL_READ_TIMEOUT
+    static final int SOCKET_CHANNEL_READ_TIMEOUT
         = MuxServerSocketChannelFactory.SOCKET_CHANNEL_READ_TIMEOUT;
 
     /**
@@ -398,6 +407,14 @@ class MuxingServerSocketChannel
             Iterable<T> channels,
             BiPredicate<T, SelectionKey> predicate)
     {
+        // The timeout to use when invoking Selector#select(long) on sel (i.e.
+        // the Selector supplied by selectorSupplier). It purpose is twofold:
+        // (1) to not wait too long in Selector#select() (hence
+        // SELECTOR_SELECT_TIMEOUT) and (2) to weed out abandoned channels
+        // (hence SOCKET_CHANNEL_READ_TIMEOUT).
+        final int selSelectTimeout
+            = Math.min(SELECTOR_SELECT_TIMEOUT, SOCKET_CHANNEL_READ_TIMEOUT);
+
         do
         {
             Selector sel;
@@ -484,7 +501,10 @@ class MuxingServerSocketChannel
             // to be true here.)
             try
             {
-                sel.select();
+                // Even if no element of channels has its state(s) changed, do
+                // wake up after selSelectTimeout milliseconds in order to weed
+                // out abandoned channels.
+                sel.select(selSelectTimeout);
             }
             catch (ClosedSelectorException cse)
             {
@@ -632,6 +652,26 @@ class MuxingServerSocketChannel
     }
 
     /**
+     * {@inheritDoc}
+     */
+    @Override
+    public SocketChannel accept()
+        throws IOException
+    {
+        SocketChannel ch = super.accept();
+
+        // Weeds out abandoned SocketChannels which were classified/filtered
+        // into MuxServerSocketChannel but were not accepted (out of it) for a
+        // long time. The accept() method of MuxingServerSocketChannel is a
+        // suitable place to do that because it is periodically invoked (by the
+        // runInAcceptThread() method) on a clock (in addition to network
+        // activity, of course).
+        closeAbandonedSocketChannels();
+
+        return ch;
+    }
+
+    /**
      * Adds a specific {@code MuxServerSocketChannel} to the list of
      * {@code MuxServerSocketChannel}s created by and delegating to this
      * instance.
@@ -648,6 +688,27 @@ class MuxingServerSocketChannel
             // Wake readThread up in case a SocketChannel from readQ is accepted
             // by the filter of the newly-added MuxServerSocketChannel.
             scheduleRead(/* channel */ null);
+        }
+    }
+
+    /**
+     * Weed out {@code SocketChannel}s which were classified/filtered into
+     * {@code MuxServerSocketChannel} but were not accepted (out of it) for a
+     * long time.
+     */
+    private void closeAbandonedSocketChannels()
+    {
+        synchronized (syncRoot)
+        {
+            Collection<MuxServerSocketChannel> chs = muxServerSocketChannels;
+
+            if (!chs.isEmpty())
+            {
+                long now = System.currentTimeMillis();
+
+                for (MuxServerSocketChannel ch : chs)
+                    ch.closeAbandonedSocketChannels(now);
+            }
         }
     }
 
@@ -677,10 +738,9 @@ class MuxingServerSocketChannel
 
         synchronized (syncRoot)
         {
-            Iterator<MuxServerSocketChannel> i
-                = muxServerSocketChannels.iterator();
-
-            while (i.hasNext())
+            for (Iterator<MuxServerSocketChannel> i
+                        = muxServerSocketChannels.iterator();
+                    i.hasNext();)
             {
                 MuxServerSocketChannel aChannel = i.next();
 
@@ -989,14 +1049,14 @@ class MuxingServerSocketChannel
             if (read > 0 || db.timestamp == -1)
                 db.timestamp = now;
 
-            DatagramPacket pkt = db.getDatagramPacket();
+            DatagramPacket p = db.getDatagramPacket();
 
-            if (pkt.getLength() > 0 && filterAccept(pkt, ch))
+            if (p.getLength() > 0 && filterAccept(p, ch))
             {
                 remove = true;
             }
             else if (read <= 0
-                    && now - db.timestamp > SOCKET_CHANNEL_READ_TIMEOUT)
+                    && now - db.timestamp >= SOCKET_CHANNEL_READ_TIMEOUT)
             {
                 // The SocketChannel appears to have been abandoned by the
                 // client.

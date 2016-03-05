@@ -23,30 +23,19 @@ import java.nio.*;
 /**
  * Associates a {@link ByteBuffer} with a {@link DatagramPacket} so that the
  * {@code ByteBuffer} may be used for writing into a {@code byte} array and the
- * {@code DatagramPacket} may be used for reader from the same {@code byte}
+ * {@code DatagramPacket} may be used for reading from the same {@code byte}
  * array.
  *
  * @author Lyubomir Marinov
  */
 class DatagramBuffer
+    extends Timestamped<ByteBuffer>
 {
     /**
-     * The {@code ByteBuffer} which is associated with {@link #datagramPacket}
-     * and shares its backing {@code array} with.
-     */
-    private final ByteBuffer byteBuffer;
-
-    /**
-     * The {@code DatagramPacket} which is associated with {@link #byteBuffer}
-     * and shares its {@code data} with.
+     * The {@code DatagramPacket} which is associated with the
+     * {@link ByteBuffer} {@link #o} and shares its {@code data} with.
      */
     private final DatagramPacket datagramPacket;
-
-    /**
-     * The latest/last time in milliseconds at which {@code byte}s were written
-     * into this {@code DatagramBuffer}.
-     */
-    long timestamp = -1;
 
     /**
      * Initializes a new {@code DatagramBuffer} instance with a specific
@@ -58,12 +47,10 @@ class DatagramBuffer
      */
     public DatagramBuffer(int capacity)
     {
-        byteBuffer = ByteBuffer.allocate(capacity);
+        super(ByteBuffer.allocate(capacity));
+
         datagramPacket
-            = new DatagramPacket(
-                    byteBuffer.array(),
-                    /* offset */ 0,
-                    /* length */ 0);
+            = new DatagramPacket(o.array(), /* offset */ 0, /* length */ 0);
     }
 
     /**
@@ -73,7 +60,7 @@ class DatagramBuffer
      */
     public ByteBuffer getByteBuffer()
     {
-        return byteBuffer;
+        return o;
     }
 
     /**
@@ -86,7 +73,7 @@ class DatagramBuffer
      */
     public DatagramPacket getDatagramPacket()
     {
-        datagramPacket.setLength(byteBuffer.position());
+        datagramPacket.setLength(getByteBuffer().position());
         return datagramPacket;
     }
 }
