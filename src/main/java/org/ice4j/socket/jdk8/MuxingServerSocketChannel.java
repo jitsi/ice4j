@@ -22,6 +22,7 @@ import java.net.*;
 import java.nio.*;
 import java.nio.channels.*;
 import java.util.*;
+import java.util.function.*;
 import org.ice4j.ice.harvest.*;
 import org.ice4j.socket.*;
 
@@ -301,31 +302,37 @@ class MuxingServerSocketChannel
      */
     private static void runInAcceptThread()
     {
-        do
-        {
-            Selector sel;
-            boolean select = false;
-
-            synchronized (muxingServerSocketChannels)
-            {
-                if (!Thread.currentThread().equals(acceptThread))
-                    break;
-
-                sel = MuxingServerSocketChannel.acceptSelector;
-                if (!sel.isOpen())
-                    break;
-
-                // Accept from all muxingServerSocketChannels.
-                for (Iterator<MuxingServerSocketChannel> i
-                        = muxingServerSocketChannels.iterator();
-                     i.hasNext();)
+        runInSelectorThread(
+                /* syncRoot */ muxingServerSocketChannels,
+                /* threadSupplier */ new Supplier<Thread>()
                 {
-                    MuxingServerSocketChannel ch = i.next();
-
-                    if (ch.isOpen())
+                    @Override
+                    public Thread get()
+                    {
+                        return MuxingServerSocketChannel.acceptThread;
+                    }
+                },
+                /* selectorSupplier */ new Supplier<Selector>()
+                {
+                    @Override
+                    public Selector get()
+                    {
+                        return MuxingServerSocketChannel.acceptSelector;
+                    }
+                },
+                /* selectionKeyOps */ SelectionKey.OP_ACCEPT,
+                /* channels */ muxingServerSocketChannels,
+                /* predicate */ new BiPredicate<MuxingServerSocketChannel, SelectionKey>()
+                {
+                    @Override
+                    public boolean test(
+                            MuxingServerSocketChannel ch,
+                            SelectionKey sk)
                     {
                         try
                         {
+                            // The idea is that all muxingServerSocketChannels
+                            // are non-blocking.
                             ch.accept();
                         }
                         catch (IOException ioe)
@@ -336,54 +343,145 @@ class MuxingServerSocketChannel
                             // muxingServerSocketChannels.
                         }
 
-                        // Make sure all muxingServerSocketChannels are
-                        // registered with acceptSelector.
-                        if (ch.isOpen() && ch.keyFor(sel) == null)
+                        return false;
+                    }
+                });
+    }
+
+    /**
+     * Continually tests a {@link Predicate} on a set of
+     * {@link SelectableChannel}s.
+     *
+     * @param syncRoot the {@code Object} to synchronize the access to
+     * {@code threadSupplier}, {@code selectorSupplier}, {@code channels}, and
+     * {@code predicate}. It should be notified whenever the values supplied by
+     * {@code threadSupplier}, {@code selectorSupplier}, and {@code channels}
+     * change.
+     * @param threadSupplier the {@link Supplier} which is to supply the
+     * {@code Thread} in which the method is supposed to be running. If the
+     * returned value differs from the {@code Thread} in which the method is
+     * actually running (i.e. {@link Thread#currentThread()}, the method
+     * returns. In other words, {@code threadSupplier} is one of the ways to
+     * break out of the loop implemented by the method. The
+     * {@code threadSupplier} is called on while {@code syncRoot} is acquired.
+     * @param selectorSupplier the {@code Supplier} which is to supply the
+     * {@code Selector} on which the method is to await changes in the states of
+     * {@code channels} in order to begin a subsequent loop iteration. If the
+     * returned {@code Selector} is not open, the method returns. In other
+     * words, {@code selectorSupplier} is another way to break out of the loop
+     * implemented by the method. The {@code selectorSupplier} is called on
+     * while {@code syncRoot} is acquired.
+     * @param selectionKeyOps the {@link SelectionKey} operation-set bits which
+     * identify the states of {@code channels} whose changes trigger new loop
+     * iterations
+     * @param channels the (set of) {@code SelectableChannel}s on each of which
+     * {@code predicate} is to be continually tested. A loop iteration is
+     * triggered when at least one of {@code channels} has a state identified by
+     * {@code selectionKeyOps} changes.
+     * @param predicate the {@code Predicate} which is to be continually tested
+     * on {@code channels}. A loop iteration is triggered when at least one of
+     * {@code channels} has a state identified by {@code selectionKeyOps}
+     * changes. {@link BiPredicate#test(Object, Object)} is supplied with an
+     * element of {@code channels} and its (automatically) associated
+     * {@code SelectionKey} in the {@code Selector} returned by
+     * {@code selectorSupplier}. The {@code SelectionKey} is provided in case,
+     * for example, the implementation of {@code predicate} chooses to associate
+     * additional state with the {@code SelectableChannel} (through
+     * {@link SelectionKey#attach(Object)}) available throughout the whole loop.
+     * @param <T> the element type of {@code channels}
+     */
+    private static <T extends SelectableChannel> void runInSelectorThread(
+            Object syncRoot,
+            Supplier<Thread> threadSupplier,
+            Supplier<Selector> selectorSupplier,
+            int selectionKeyOps,
+            Iterable<T> channels,
+            BiPredicate<T, SelectionKey> predicate)
+    {
+        do
+        {
+            Selector sel;
+            boolean select = false;
+
+            synchronized (syncRoot)
+            {
+                if (!Thread.currentThread().equals(threadSupplier.get()))
+                    break;
+
+                sel = selectorSupplier.get();
+                if (sel == null || !sel.isOpen())
+                    break;
+
+                for (Iterator<T> i = channels.iterator(); i.hasNext();)
+                {
+                    T ch = i.next();
+                    boolean remove = false;
+
+                    if (ch.isOpen())
+                    {
+                        SelectionKey sk = ch.keyFor(sel);
+
+                        if (sk == null)
                         {
+                            // Make sure that all (SelectableChannels in)
+                            // channels are registered with (the Selector) sel.
                             try
                             {
-                                ch.register(sel, SelectionKey.OP_ACCEPT);
+                                sk = ch.register(sel, selectionKeyOps);
                             }
                             catch (ClosedChannelException cce)
                             {
                                 // The cce will be handled at the end of the
-                                // loop by removing ch from
-                                // muxingServerSocketChannels.
+                                // loop by removing ch from channels.
                             }
+                        }
+                        if (sk != null && sk.isValid())
+                        {
+                            remove = predicate.test(ch, sk);
+                            if (remove)
+                                sk.cancel();
                         }
                     }
 
-                    if (ch.isOpen())
-                        select = true;
-                    else
+                    if (remove || !ch.isOpen())
                         i.remove();
+                    else
+                        select = true;
                 }
-                // We've accepted from all muxingServerSocketChannels.
+
+                // We've invoked the predicate on all (SelectableChannels in)
+                // channels.
                 sel.selectedKeys().clear();
 
-                // If there are no muxingServerSocketChannels, we will wait
+                // If there are no SelectableChannels in channels, we will wait
                 // until there are.
                 if (!select)
                 {
+                    // We're going to wait bellow and continue with the next
+                    // iteration of the loop afterwards. Don't hold onto sel
+                    // while waiting (because it's unnecessary).
+                    sel = null;
+
                     try
                     {
-                        muxingServerSocketChannels.wait();
+                        syncRoot.wait();
                     }
                     catch (InterruptedException ie)
                     {
                         // I don't know that we care about the interrupted state
-                        // of the current thread because that the method
-                        // runInAcceptThread() is pretty much the whole
-                        // execution of the current thread that could
-                        // potentially care about the interrupted state and it
-                        // doesn't.
+                        // of the current thread because the method
+                        // runInSelectorThread() is (or at least should be)
+                        // pretty much the whole execution of the current thread
+                        // that could potentially care about the interrupted
+                        // state and it doesn't (or at least shouldn't).
                     }
                     continue;
                 }
             }
 
-            // Wait for a new iteration of acceptance. (The value of the local
-            // variable select is guaranteed to be true.)
+            // Wait for a new change in the state(s) of at least one element of
+            // channels. (The value of the local variable select is guaranteed
+            // to be true here.)
             try
             {
                 sel.select();
@@ -753,8 +851,7 @@ class MuxingServerSocketChannel
      *
      * @param channel the added <tt>MuxServerSocketChannel</tt>
      */
-    protected void muxServerSocketChannelAdded(
-            MuxServerSocketChannel channel)
+    protected void muxServerSocketChannelAdded(MuxServerSocketChannel channel)
     {
     }
 
@@ -765,136 +862,34 @@ class MuxingServerSocketChannel
      */
     protected void runInReadThread()
     {
-        do
-        {
-            Selector sel;
-            boolean select = false;
-
-            synchronized (syncRoot)
-            {
-                if (!Thread.currentThread().equals(readThread))
-                    break;
-
-                sel = this.readSelector;
-                if (!sel.isOpen())
-                    break;
-
-                for (Iterator<SocketChannel> i = readQ.iterator();
-                     i.hasNext();)
+        runInSelectorThread(
+                /* syncRoot */ syncRoot,
+                /* threadSupplier */ new Supplier<Thread>()
                 {
-                    SocketChannel ch = i.next();
-                    boolean remove = false;
-
-                    if (ch.isOpen())
+                    @Override
+                    public Thread get()
                     {
-                        SelectionKey sk = ch.keyFor(sel);
-
-                        if (sk == null)
-                        {
-                            // Make sure that all SocketChannels in readQ are
-                            // registered with readSelector.
-                            try
-                            {
-                                sk = ch.register(sel, SelectionKey.OP_READ);
-                            }
-                            catch (ClosedChannelException cce)
-                            {
-                                // The cce will be handled at the end of the
-                                // loop by removing ch from readQ.
-                            }
-                        }
-                        if (sk != null && sk.isValid())
-                        {
-                            // Try to read from ch.
-                            DatagramBuffer db
-                                = (DatagramBuffer) sk.attachment();
-
-                            if (db == null)
-                            {
-                                db
-                                    = new DatagramBuffer(
-                                            SOCKET_CHANNEL_READ_CAPACITY);
-                                sk.attach(db);
-                            }
-
-                            int read = maybeRead(ch, db.getByteBuffer());
-
-                            // Try to filter ch (into a MuxServerSocketChannel).
-                            if (ch.isOpen())
-                            {
-                                // Maintain a record of when the SocketChannel
-                                // last provided readable data in order to weed
-                                // out abandoned ones.
-                                long now = System.currentTimeMillis();
-
-                                if (read > 0 || db.timestamp == -1)
-                                    db.timestamp = now;
-
-                                DatagramPacket pkt = db.getDatagramPacket();
-
-                                if (pkt.getLength() > 0
-                                        && filterAccept(pkt, ch))
-                                {
-                                    sk.cancel();
-                                    remove = true;
-                                }
-                                else if (read <= 0
-                                        && now - db.timestamp
-                                            > SOCKET_CHANNEL_READ_TIMEOUT)
-                                {
-                                    // The SocketChannel appears to have been
-                                    // abandoned by the client.
-                                    closeNoExceptions(ch);
-                                }
-                            }
-                        }
+                        return readThread;
                     }
-
-                    if (remove || !ch.isOpen())
-                        i.remove();
-                    else
-                        select = true;
-                }
-                // We've read from all SocketChannels in readQ.
-                sel.selectedKeys().clear();
-
-                // If there are no SocketChannels in readQ, we will wait until
-                // there are.
-                if (!select)
+                },
+                /* selectorSupplier */ new Supplier<Selector>()
                 {
-                    try
+                    @Override
+                    public Selector get()
                     {
-                        syncRoot.wait();
+                        return readSelector;
                     }
-                    catch (InterruptedException ie)
+                },
+                /* selectionKeyOps */ SelectionKey.OP_READ,
+                /* channels */ readQ,
+                /* predicate */ new BiPredicate<SocketChannel, SelectionKey>()
+                {
+                    @Override
+                    public boolean test(SocketChannel ch, SelectionKey sk)
                     {
-                        // I don't know that we care about the interrupted state
-                        // of the current thread because that the method
-                        // runInReadThread() is pretty much the whole execution
-                        // of the current thread that could potentially care
-                        // about the interrupted state and it doesn't.
+                        return testRunInReadThreadPredicate(ch, sk);
                     }
-                    continue;
-                }
-            }
-
-            // Wait for a new iteration of acceptance. (The value of the local
-            // variable select is guaranteed to be true.)
-            try
-            {
-                sel.select();
-            }
-            catch (ClosedSelectorException cse)
-            {
-                break;
-            }
-            catch (IOException ioe)
-            {
-                // Well, we're selecting from multiple SelectableChannels so
-                // we're not sure what the IOException signals here.
-            }
-        }
-        while (true);
+                });
     }
 
     /**
@@ -950,5 +945,65 @@ class MuxingServerSocketChannel
                     sel.wakeup();
             }
         }
+    }
+
+    /**
+     * Implements {@link BiPredicate#test(Object, Object)} of the
+     * {@code BiPredicate} utilized by {@link #runInReadThread()}. The method is
+     * defined explicitly for the purposes of reducing excessive indentation and
+     * bettering readability. Reads from {@code ch} and attempts to
+     * classify/filter it into a {@link MuxServerSocketChannel} for acceptance.
+     * If {@code ch} has not provided readable data within
+     * {@link #SOCKET_CHANNEL_READ_TIMEOUT}, it is forcibly closed.
+     *
+     * @param ch the {@code SocketChannel} to read from and to classify/filter
+     * into a {@code MuxServerSocketChannel} for acceptance
+     * @param sk the {@code SelectionKey} associated with {@code ch} in the
+     * {@code Selector} which awaits changes in the state(s) of {@code ch}
+     * @return {@code true} if {@code ch} is to no longer be tested; otherwise,
+     * {@code false}
+     */
+    private boolean testRunInReadThreadPredicate(
+            SocketChannel ch,
+            SelectionKey sk)
+    {
+        // Try to read from ch.
+        DatagramBuffer db = (DatagramBuffer) sk.attachment();
+
+        if (db == null)
+        {
+            db = new DatagramBuffer(SOCKET_CHANNEL_READ_CAPACITY);
+            sk.attach(db);
+        }
+
+        int read = maybeRead(ch, db.getByteBuffer());
+        boolean remove = false;
+
+        // Try to filter ch (into a MuxServerSocketChannel).
+        if (ch.isOpen())
+        {
+            // Maintain a record of when the SocketChannel last provided
+            // readable data in order to weed out abandoned ones.
+            long now = System.currentTimeMillis();
+
+            if (read > 0 || db.timestamp == -1)
+                db.timestamp = now;
+
+            DatagramPacket pkt = db.getDatagramPacket();
+
+            if (pkt.getLength() > 0 && filterAccept(pkt, ch))
+            {
+                remove = true;
+            }
+            else if (read <= 0
+                    && now - db.timestamp > SOCKET_CHANNEL_READ_TIMEOUT)
+            {
+                // The SocketChannel appears to have been abandoned by the
+                // client.
+                closeNoExceptions(ch);
+            }
+        }
+
+        return remove;
     }
 }
