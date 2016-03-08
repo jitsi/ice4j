@@ -844,6 +844,46 @@ class MuxingServerSocketChannel
             {
                 accepted.configureBlocking(false);
 
+                // If there is only one (open) MuxServerSocketChannel, it is
+                // inefficient to read from it in a separate thread and then
+                // either deliver the accepted to the MuxServerSocketChannel or
+                // close the accepted. The situation is pretty much like no
+                // functionality enabled by MuxServerSocketChannel is needed:
+                // whoever has invoked accept() on this ServerSocketChannel is
+                // going to read from the accepted and either figure out that it
+                // is in an expected format or close it.
+                MuxServerSocketChannel oneAndOnly = null;
+
+                for (MuxServerSocketChannel ch : muxServerSocketChannels)
+                {
+                    if (ch.isOpen())
+                    {
+                        if (oneAndOnly == null)
+                        {
+                            oneAndOnly = ch;
+                        }
+                        else
+                        {
+                            oneAndOnly = null;
+                            break;
+                        }
+                    }
+                }
+                if (oneAndOnly != null && oneAndOnly.qAccept(accepted))
+                {
+                    // It shouldn't matter much whether null or accepted is
+                    // returned. It sounds reasonable to return null from the
+                    // standpoint that accepted was classified/filtered into a
+                    // MuxServerSocketChannel and, consequently, this
+                    // MuxingServerSocketChannel no longer possesses it.
+                    return null;
+                }
+
+                // There are multiple (open) MuxServerSocketChannels (or none
+                // but then the situation is weird and it's more easily handled
+                // as the situation with multiple) and this instance is to read
+                // from accepted in orde to determine where it's to be
+                // classified/filtered.
                 readQ.add(accepted);
                 syncRoot.notifyAll();
 

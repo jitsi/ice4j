@@ -297,7 +297,7 @@ public class MuxServerSocketChannel
      * @return {@code true} if {@code channel} was queued for acceptance through
      * this instance; otherwise, {@code false}
      */
-    private boolean qAccept(SocketChannel channel)
+    boolean qAccept(SocketChannel channel)
     {
         boolean b;
 
