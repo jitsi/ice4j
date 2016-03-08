@@ -1037,7 +1037,6 @@ class MuxingServerSocketChannel
         }
 
         int read = maybeRead(ch, db.getByteBuffer());
-        boolean remove = false;
 
         // Try to filter ch (into a MuxServerSocketChannel).
         if (ch.isOpen())
@@ -1050,20 +1049,37 @@ class MuxingServerSocketChannel
                 db.timestamp = now;
 
             DatagramPacket p = db.getDatagramPacket();
+            int len = p.getLength();
 
-            if (p.getLength() > 0 && filterAccept(p, ch))
+            if (len > 0)
             {
-                remove = true;
+                if (filterAccept(p, ch))
+                {
+                    // A MuxServerSocketChannel has accepted ch so this
+                    // MuxingServerSocketChannel is no longer responsible for
+                    // ch.
+                    return true;
+                }
+                else if (len >= SOCKET_CHANNEL_READ_CAPACITY)
+                {
+                    // This MuxingServerSocketChannel has read from ch as much
+                    // as it will ever read and no existing
+                    // MuxServerSocketChannel has accepted ch. There is no point
+                    // in waiting anymore.
+                    closeNoExceptions(ch);
+                    // Allow this MuxingServerSocketChannel to clean ch up.
+                    return false;
+                }
             }
-            else if (read <= 0
-                    && now - db.timestamp >= SOCKET_CHANNEL_READ_TIMEOUT)
+
+            if (read <= 0 && now - db.timestamp >= SOCKET_CHANNEL_READ_TIMEOUT)
             {
-                // The SocketChannel appears to have been abandoned by the
-                // client.
+                // It appears ch has been abandoned by the client.
                 closeNoExceptions(ch);
+                return false;
             }
         }
 
-        return remove;
+        return false;
     }
 }
