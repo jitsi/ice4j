@@ -323,9 +323,7 @@ public class TurnCandidateHarvest
             EvenPortAttribute evenPortAttribute
                 = (EvenPortAttribute) request.getAttribute(Attribute.EVEN_PORT);
             boolean rFlag
-                = (evenPortAttribute == null)
-                    ? false
-                    : evenPortAttribute.isRFlag();
+                = (evenPortAttribute != null) && evenPortAttribute.isRFlag();
 
             return
                 MessageFactory.createAllocateRequest(

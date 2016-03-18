@@ -270,7 +270,7 @@ class PseudoTcpSocketImpl
         throw new UnsupportedOperationException("Not supported yet.");
     }
 
-    private Map<Integer, Object> options = new HashMap<Integer,Object>();   
+    private Map<Integer, Object> options = new HashMap<>();
     public void setOption(int optID, Object value) 
         throws SocketException
     {
@@ -353,7 +353,7 @@ class PseudoTcpSocketImpl
             synchronized (state_notify)
             {
                 while (pseudoTcp.getState() != PseudoTcpState.TCP_ESTABLISHED
-                    &&  (noTimeout ? true : (elapsed < timeout)) )
+                    &&  (noTimeout || (elapsed < timeout)) )
                 {
                     long start = System.currentTimeMillis();
                     state_notify.wait(timeout);

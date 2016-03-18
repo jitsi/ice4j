@@ -57,13 +57,13 @@ class ConnectivityCheckClient
     /**
      * The {@link PaceMaker}s that are currently running checks in this client.
      */
-    private final List<PaceMaker> paceMakers = new LinkedList<PaceMaker>();
+    private final List<PaceMaker> paceMakers = new LinkedList<>();
 
     /**
      * Timer that is used to let some seconds before a CheckList is considered
      * as FAILED.
      */
-    private Map<String, Timer> timers = new HashMap<String, Timer>();
+    private Map<String, Timer> timers = new HashMap<>();
 
     /**
      * A flag that determines whether we have received a STUN response or not.
@@ -611,7 +611,7 @@ class ConnectivityCheckClient
         synchronized(this)
         {
             Vector<CandidatePair> parentCheckList
-                = new Vector<CandidatePair>(parentStream.getCheckList());
+                = new Vector<>(parentStream.getCheckList());
 
             for(CandidatePair pair : parentCheckList)
                 if ((pair.getState() == CandidatePairState.FROZEN)

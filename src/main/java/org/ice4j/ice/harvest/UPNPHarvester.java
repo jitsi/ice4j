@@ -87,7 +87,7 @@ public class UPNPHarvester
      */
     public synchronized Collection<LocalCandidate> harvest(Component component)
     {
-        Collection<LocalCandidate> candidates = new HashSet<LocalCandidate>();
+        Collection<LocalCandidate> candidates = new HashSet<>();
         int retries = 0;
 
         logger.fine("Begin UPnP harvesting");
@@ -213,9 +213,9 @@ public class UPNPHarvester
             String externalIP, int port, Component cmp, GatewayDevice device)
         throws Exception
     {
-        List<LocalCandidate> ret = new ArrayList<LocalCandidate>();
-        TransportAddress addr = new TransportAddress(externalIP, port,
-                Transport.UDP);
+        List<LocalCandidate> ret = new ArrayList<>();
+        TransportAddress addr
+            = new TransportAddress(externalIP, port, Transport.UDP);
 
         HostCandidate base = new HostCandidate(socket, cmp);
 

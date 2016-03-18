@@ -51,7 +51,7 @@ public class StunCandidateHarvester
      * completed i.e. have harvested <tt>Candidate</tt>s.
      */
     private final List<StunCandidateHarvest> completedHarvests
-        = new LinkedList<StunCandidateHarvest>();
+        = new LinkedList<>();
 
     /**
      * The username used by this <tt>StunCandidateHarvester</tt> for the
@@ -65,7 +65,7 @@ public class StunCandidateHarvester
      * not completed yet so {@link #harvest(Component)} has to wait for them.
      */
     private final List<StunCandidateHarvest> startedHarvests
-        = new LinkedList<StunCandidateHarvest>();
+        = new LinkedList<>();
 
     /**
      * The address of the STUN server that we will be sending our requests to.
@@ -255,7 +255,7 @@ public class StunCandidateHarvester
          * Report the LocalCandidates gathered by this CandidateHarvester so
          * that the harvest is sure to be considered successful.
          */
-        Collection<LocalCandidate> candidates = new HashSet<LocalCandidate>();
+        Collection<LocalCandidate> candidates = new HashSet<>();
 
         synchronized (completedHarvests)
         {

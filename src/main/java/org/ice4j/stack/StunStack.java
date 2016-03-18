@@ -81,7 +81,7 @@ public class StunStack
      */
     private final Hashtable<TransactionID, StunClientTransaction>
         clientTransactions
-            = new Hashtable<TransactionID, StunClientTransaction>();
+            = new Hashtable<>();
 
     /**
      * The <tt>Thread</tt> which expires the <tt>StunServerTransaction</tt>s of
@@ -96,7 +96,7 @@ public class StunStack
      */
     private final Hashtable<TransactionID, StunServerTransaction>
         serverTransactions
-            = new Hashtable<TransactionID, StunServerTransaction>();
+            = new Hashtable<>();
 
     /**
      * A dispatcher for incoming requests event;
@@ -310,8 +310,7 @@ public class StunStack
                      */
                     if (clientTransactionsToCancel == null)
                     {
-                        clientTransactionsToCancel
-                            = new LinkedList<StunClientTransaction>();
+                        clientTransactionsToCancel = new LinkedList<>();
                     }
                     clientTransactionsToCancel.add(tran);
                 }
@@ -352,8 +351,7 @@ public class StunStack
 
                         if (serverTransactionsToExpire == null)
                         {
-                            serverTransactionsToExpire
-                                    = new LinkedList<StunServerTransaction>();
+                            serverTransactionsToExpire = new LinkedList<>();
                         }
                         serverTransactionsToExpire.add(tran);
                     }
@@ -1079,8 +1077,7 @@ public class StunStack
         synchronized (clientTransactions)
         {
             clientTransactionsToCancel
-                = new ArrayList<StunClientTransaction>(
-                        clientTransactions.values());
+                = new ArrayList<>(clientTransactions.values());
             clientTransactions.clear();
         }
         /*
@@ -1097,8 +1094,7 @@ public class StunStack
         synchronized (serverTransactions)
         {
             serverTransactionsToExpire
-                = new ArrayList<StunServerTransaction>(
-                        serverTransactions.values());
+                = new ArrayList<>(serverTransactions.values());
             serverTransactions.clear();
         }
         for (StunServerTransaction tran : serverTransactionsToExpire)

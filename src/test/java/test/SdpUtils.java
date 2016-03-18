@@ -18,13 +18,11 @@
 package test;
 
 import java.util.*;
-import java.util.StringTokenizer;
 
 import javax.sdp.*;
 
 import org.ice4j.*;
 import org.ice4j.ice.*;
-import org.ice4j.ice.Agent;
 import org.ice4j.ice.sdp.*;
 
 /**

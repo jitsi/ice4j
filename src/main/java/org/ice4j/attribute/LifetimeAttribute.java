@@ -144,7 +144,7 @@ public class LifetimeAttribute
             throw new StunException("length invalid");
         }
 
-        lifetime = ((attributeValue[offset + 0] << 24) & 0xff000000) +
+        lifetime = ((attributeValue[offset] << 24) & 0xff000000) +
             ((attributeValue[offset + 1] << 16) & 0x00ff0000) +
             ((attributeValue[offset + 2] << 8) & 0x0000ff00) +
             (attributeValue[offset + 3] & 0x000000ff);

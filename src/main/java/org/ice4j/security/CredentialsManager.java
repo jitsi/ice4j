@@ -41,8 +41,7 @@ public class CredentialsManager
      * The list of <tt>CredentialsAuthority</tt>s registered with this manager
      * as being able to provide credentials.
      */
-    private final List<CredentialsAuthority> authorities =
-        new LinkedList<CredentialsAuthority>();
+    private final List<CredentialsAuthority> authorities = new LinkedList<>();
 
     /**
      * The list of <tt>CredentialsAuthority</tt>s registered with this manager

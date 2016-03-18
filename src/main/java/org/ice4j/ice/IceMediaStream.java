@@ -75,8 +75,7 @@ public class IceMediaStream
      * address; a media stream may require multiple components, each of which
      * has to work for the media stream as a whole to work.
      */
-    private final Map<Integer, Component> components
-        = new LinkedHashMap<Integer, Component>();
+    private final Map<Integer, Component> components = new LinkedHashMap<>();
 
     /**
      * An ordered set of candidate pairs for a media stream that have been
@@ -84,8 +83,7 @@ public class IceMediaStream
      * start of ICE processing, and fills as checks are performed, resulting in
      * valid candidate pairs.
      */
-    private final TreeSet<CandidatePair> validList
-                                    = new TreeSet<CandidatePair>();
+    private final TreeSet<CandidatePair> validList = new TreeSet<>();
 
     /**
      * The id that was last assigned to a component. The next id that we give
@@ -110,7 +108,7 @@ public class IceMediaStream
      * Agent} and following the various events it may be generating.
      */
     private final List<PropertyChangeListener> streamListeners
-        = new LinkedList<PropertyChangeListener>();
+        = new LinkedList<>();
 
     /**
      * The maximum number of candidate pairs that we should have in our check
@@ -163,9 +161,7 @@ public class IceMediaStream
         synchronized (components)
         {
             component = new Component(++lastComponentID, this);
-            components.put(
-                    Integer.valueOf(component.getComponentID()),
-                    component);
+            components.put(component.getComponentID(), component);
         }
 
         return component;
@@ -231,7 +227,7 @@ public class IceMediaStream
     {
         synchronized(components)
         {
-            return new ArrayList<Component>(components.values());
+            return new ArrayList<>(components.values());
         }
     }
 
@@ -261,7 +257,7 @@ public class IceMediaStream
     {
         synchronized(components)
         {
-            return new ArrayList<Integer>(components.keySet());
+            return new ArrayList<>(components.keySet());
         }
     }
 
@@ -436,8 +432,7 @@ public class IceMediaStream
     {
         //a list that we only use for storing pairs that we've already gone
         //through. The list is destroyed at the end of this method.
-        List<CandidatePair> tmpCheckList
-            = new ArrayList<CandidatePair>(checkList.size());
+        List<CandidatePair> tmpCheckList = new ArrayList<>(checkList.size());
 
         Iterator<CandidatePair> ckListIter = checkList.iterator();
 

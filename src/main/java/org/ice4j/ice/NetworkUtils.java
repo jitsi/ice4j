@@ -707,8 +707,7 @@ public class NetworkUtils
         {
             Method method = iface.getClass().getMethod("isLoopback");
 
-            return ((Boolean)method.invoke(iface, new Object[]{}))
-                        .booleanValue();
+            return (Boolean) method.invoke(iface);
         }
         catch(Throwable t)
         {
@@ -739,7 +738,7 @@ public class NetworkUtils
         {
             Method method = iface.getClass().getMethod("isUp");
 
-            return ((Boolean)method.invoke(iface)).booleanValue();
+            return (Boolean) method.invoke(iface);
         }
         catch(Throwable t)
         {
@@ -769,7 +768,7 @@ public class NetworkUtils
         {
             Method method = iface.getClass().getMethod("isVirtual");
 
-            return ((Boolean)method.invoke(iface)).booleanValue();
+            return (Boolean) method.invoke(iface);
         }
         catch(Throwable t)
         {

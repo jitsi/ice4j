@@ -121,7 +121,7 @@ public class SoftwareAttribute
 
         byte[] copy = new byte[software.length];
         System.arraycopy(software, 0, copy, 0, software.length);
-        return software;
+        return copy;
     }
 
     /**

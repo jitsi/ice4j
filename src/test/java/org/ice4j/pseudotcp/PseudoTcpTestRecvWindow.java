@@ -67,8 +67,8 @@ public class PseudoTcpTestRecvWindow extends PseudoTcpTestBase
         Thread.setDefaultUncaughtExceptionHandler(this);
         testDataSize = size;
         long start, elapsed;
-        send_position = new ArrayList<Integer>();
-        recv_position = new ArrayList<Integer>();
+        send_position = new ArrayList<>();
+        recv_position = new ArrayList<>();
         // Create some dummy data
         byte[] dummy = createDummyData(size);
         send_stream = new ByteFifoBuffer(size);

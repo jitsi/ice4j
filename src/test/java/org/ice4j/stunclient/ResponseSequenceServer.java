@@ -46,7 +46,7 @@ public class ResponseSequenceServer
     /**
      * The sequence of responses to send.
      */
-    private Vector<Object> messageSequence = new Vector<Object>();
+    private Vector<Object> messageSequence = new Vector<>();
 
     /**
      * The <tt>StunStack</tt> used by this instance for the purposes of STUN
@@ -110,7 +110,7 @@ public class ResponseSequenceServer
         if (response == null)
         {
             //leave a mark to skip a message
-            messageSequence.add(new Boolean(false));
+            messageSequence.add(false);
         }
         else
             messageSequence.add(response);

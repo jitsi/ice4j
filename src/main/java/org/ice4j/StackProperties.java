@@ -245,7 +245,7 @@ public class StackProperties
         String[] parts = str.split(regex);
 
         // Remove mal-formatted entries.
-        List<String> res = new ArrayList<String>();
+        List<String> res = new ArrayList<>();
         for (String s : parts)
             if (s != null && s.trim().length() != 0)
                 res.add(s);

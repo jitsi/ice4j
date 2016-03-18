@@ -83,7 +83,7 @@ public class TcpHarvester
             List<NetworkInterface> interfaces)
         throws IOException
     {
-        List<TransportAddress> addresses = new LinkedList<TransportAddress>();
+        List<TransportAddress> addresses = new LinkedList<>();
 
         for (NetworkInterface iface : interfaces)
         {
@@ -126,34 +126,32 @@ public class TcpHarvester
      * <tt>Component</tt>s from being freed.
      */
     private final Map<String, WeakReference<Component>> components
-        = new HashMap<String, WeakReference<Component>>();
+        = new HashMap<>();
 
     /**
      * The list of transport addresses which we have found to be listening on,
      * and which we will advertise as candidates in
      * {@link #harvest(org.ice4j.ice.Component)}
      */
-    private final List<TransportAddress> localAddresses
-        = new LinkedList<TransportAddress>();
+    private final List<TransportAddress> localAddresses = new LinkedList<>();
 
     /**
      * Maps a public address to a local address.
      */
     private final Map<InetAddress, InetAddress> mappedAddresses
-        = new HashMap<InetAddress, InetAddress>();
+        = new HashMap<>();
 
     /**
      * Sets of additional ports, for which server reflexive candidates will be
      * added.
      */
-    private final Set<Integer> mappedPorts = new HashSet<Integer>();
+    private final Set<Integer> mappedPorts = new HashSet<>();
 
     /**
      * Channels pending to be added to the list that {@link #readThread} reads
      * from.
      */
-    private final List<SocketChannel> newChannels
-        = new LinkedList<SocketChannel>();
+    private final List<SocketChannel> newChannels = new LinkedList<>();
 
     /**
      * A counter used to decide when to purge {@link #components}.
@@ -175,7 +173,7 @@ public class TcpHarvester
      * on.
      */
     private final List<ServerSocketChannel> serverSocketChannels
-        = new LinkedList<ServerSocketChannel>();
+        = new LinkedList<>();
 
     /**
      * Whether or not to use ssltcp.
@@ -421,8 +419,7 @@ public class TcpHarvester
      */
     private List<LocalCandidate> createLocalCandidates(Component component)
     {
-        List<TcpHostCandidate> hostCandidates
-            = new LinkedList<TcpHostCandidate>();
+        List<TcpHostCandidate> hostCandidates = new LinkedList<>();
 
         // Add the host candidates for the addresses we really listen on
         for (TransportAddress transportAddress : localAddresses)
@@ -438,8 +435,7 @@ public class TcpHarvester
         }
 
         // Add srflx candidates for any mapped addresses
-        List<LocalCandidate> mappedCandidates
-            = new LinkedList<LocalCandidate>();
+        List<LocalCandidate> mappedCandidates = new LinkedList<>();
 
         for (Map.Entry<InetAddress, InetAddress> mapping
                 : mappedAddresses.entrySet())
@@ -473,8 +469,7 @@ public class TcpHarvester
         }
 
         // Add srflx candidates for mapped ports
-        List<LocalCandidate> portMappedCandidates
-            = new LinkedList<LocalCandidate>();
+        List<LocalCandidate> portMappedCandidates = new LinkedList<>();
 
         for (TcpHostCandidate base : hostCandidates)
         {
@@ -524,8 +519,7 @@ public class TcpHarvester
             }
         }
 
-        LinkedList<LocalCandidate> allCandidates
-            = new LinkedList<LocalCandidate>();
+        LinkedList<LocalCandidate> allCandidates = new LinkedList<>();
 
         allCandidates.addAll(hostCandidates);
         allCandidates.addAll(mappedCandidates);
@@ -589,7 +583,7 @@ public class TcpHarvester
              */
             logger.info(
                     "More than one Component for an Agent, cannot harvest.");
-            return new LinkedList<LocalCandidate>();
+            return new LinkedList<>();
         }
 
         List<LocalCandidate> candidates = createLocalCandidates(component);
@@ -599,8 +593,9 @@ public class TcpHarvester
 
         synchronized (components)
         {
-            components.put(agent.getLocalUfrag(),
-                           new WeakReference<Component>(component));
+            components.put(
+                    agent.getLocalUfrag(),
+                    new WeakReference<>(component));
             purgeComponents();
         }
 
@@ -807,8 +802,7 @@ public class TcpHarvester
                 }
 
                 IOException exception = null;
-                List<SocketChannel> channelsToAdd
-                    = new LinkedList<SocketChannel>();
+                List<SocketChannel> channelsToAdd = new LinkedList<>();
                 // Allow to go on, so we can quit if closed.
                 long selectTimeout = 3000;
 

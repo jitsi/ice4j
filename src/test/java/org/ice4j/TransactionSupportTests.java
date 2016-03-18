@@ -515,7 +515,7 @@ public class TransactionSupportTests extends TestCase
          *
          */
         private Vector<StunMessageEvent> receivedRequestsVector
-                                            = new Vector<StunMessageEvent>();
+            = new Vector<>();
 
         /**
          * Logs the newly received request.
@@ -543,7 +543,7 @@ public class TransactionSupportTests extends TestCase
          */
         public Vector<StunMessageEvent> getRequestsForTransaction(byte[] tranid)
         {
-            Vector<StunMessageEvent> newVec = new Vector<StunMessageEvent>();
+            Vector<StunMessageEvent> newVec = new Vector<>();
 
             for (StunMessageEvent evt : receivedRequestsVector)
             {
@@ -581,7 +581,7 @@ public class TransactionSupportTests extends TestCase
         /**
          * The responses we've collected so far.
          */
-        public final Vector<Object> receivedResponses = new Vector<Object>();
+        public final Vector<Object> receivedResponses = new Vector<>();
 
         /**
          * Notifies this <tt>ResponseCollector</tt> that a transaction described by

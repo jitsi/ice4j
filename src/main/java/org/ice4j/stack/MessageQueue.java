@@ -38,7 +38,7 @@ class MessageQueue
 
     // not sure whether Vector is the best choice here since we explicitly
     //sync all methods ... review later
-    private Vector<RawMessage> queue = new Vector<RawMessage>();
+    private final Vector<RawMessage> queue = new Vector<>();
 
     //keep a copy of the fifo size and make it accessible for concurrent
     // queries.

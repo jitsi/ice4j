@@ -97,7 +97,7 @@ public class IceDistributed
             = new BufferedReader(new InputStreamReader(System.in));
 
         StringBuffer buff = new StringBuffer();
-        String line = new String();
+        String line;
 
         while ( (line = reader.readLine()) != null)
         {

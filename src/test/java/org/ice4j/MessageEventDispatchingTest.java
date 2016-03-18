@@ -260,8 +260,7 @@ public class MessageEventDispatchingTest extends TestCase
     private class PlainRequestCollector implements RequestListener
     {
         /** all requests we've received so far. */
-        public Vector<StunMessageEvent> receivedRequests
-            = new Vector<StunMessageEvent>();
+        public final Vector<StunMessageEvent> receivedRequests = new Vector<>();
 
         /**
          * Stores incoming requests.
@@ -299,7 +298,7 @@ public class MessageEventDispatchingTest extends TestCase
     private static class PlainResponseCollector
         extends AbstractResponseCollector
     {
-        public final Vector<Object> receivedResponses = new Vector<Object>();
+        public final Vector<Object> receivedResponses = new Vector<>();
 
         /**
          * Notifies this <tt>ResponseCollector</tt> that a transaction described by
