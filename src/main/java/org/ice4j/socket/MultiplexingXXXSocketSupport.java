@@ -570,7 +570,7 @@ abstract class MultiplexingXXXSocketSupport
                     if (socketFilter.accept(p))
                     {
                         if (toMove == null)
-                            toMove = new LinkedList<DatagramPacket>();
+                            toMove = new LinkedList<>();
                         toMove.add(p);
 
                         // XXX In the method receive, we allow multiple filters

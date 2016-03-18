@@ -174,7 +174,7 @@ public class PseudoTCPBase
      * control flags. If segment contains any data it is stored in the receive
      * buffer.
      */
-    List<RSegment> m_rlist = new ArrayList<RSegment>();
+    List<RSegment> m_rlist = new ArrayList<>();
     /**
      * Last receive timestamp
      */
@@ -203,7 +203,7 @@ public class PseudoTCPBase
     /**
      * Outgoing segments list
      */
-    List<SSegment> m_slist = new ArrayList<SSegment>();
+    List<SSegment> m_slist = new ArrayList<>();
     /**
      * Last send timestamp
      */
@@ -429,7 +429,7 @@ public class PseudoTCPBase
         // Check if it's time to retransmit a segment
         if (m_rto_base > 0 && (timeDiff(m_rto_base + m_rx_rto, now) <= 0))
         {
-            assert m_slist.isEmpty() == false;
+            assert !m_slist.isEmpty();
             // retransmit segments
             if (logger.isLoggable(Level.FINER))
             {
@@ -1399,7 +1399,7 @@ public class PseudoTCPBase
 
 
                     Iterator<RSegment> iter = m_rlist.iterator();
-                    List<RSegment> toBeRemoved = new ArrayList<RSegment>();
+                    List<RSegment> toBeRemoved = new ArrayList<>();
                     while (iter.hasNext())
                     {
                         RSegment it = iter.next();
@@ -1903,7 +1903,7 @@ public class PseudoTCPBase
      */
     boolean parseOptions(byte[] data, int offset, int len)
     {
-        List<Short> options_specified = new ArrayList<Short>();
+        List<Short> options_specified = new ArrayList<>();
 
         // See http://www.freesoft.org/CIE/Course/Section4/8.htm for
         // parsing the options list.

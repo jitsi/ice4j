@@ -38,8 +38,7 @@ public class TcpHostCandidate
     /**
      * List of <tt>accept</tt>ed sockets for this <tt>TcpHostCandidate</tt>.
      */
-    private final List<IceSocketWrapper> sockets
-        = new LinkedList<IceSocketWrapper>();
+    private final List<IceSocketWrapper> sockets = new LinkedList<>();
 
     /**
      * Initializes a new <tt>TcpHostCandidate</tt>.

@@ -131,7 +131,7 @@ public class ReservationTokenAttribute
 
         byte[] copy = new byte[reservationToken.length];
         System.arraycopy(reservationToken, 0, copy, 0, reservationToken.length);
-        return reservationToken;
+        return copy;
       }
 
     /**
@@ -196,8 +196,8 @@ public class ReservationTokenAttribute
 
         for(int i = 0; i < b; i++)
         {
-            token.reservationToken[i]   = (byte)((left  >> (i * 8)) & 0xFFl);
-            token.reservationToken[i + b] = (byte)((right >> (i * 8)) & 0xFFl);
+            token.reservationToken[i]   = (byte)((left  >> (i * 8)) & 0xFFL);
+            token.reservationToken[i + b] = (byte)((right >> (i * 8)) & 0xFFL);
         }
 
         //calculate hashcode for Hashtable storage.

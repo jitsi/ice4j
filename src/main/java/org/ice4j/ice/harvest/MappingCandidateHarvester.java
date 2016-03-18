@@ -84,7 +84,7 @@ public class MappingCandidateHarvester
          * Report the LocalCandidates gathered by this CandidateHarvester so
          * that the harvest is sure to be considered successful.
          */
-        Collection<LocalCandidate> candidates = new HashSet<LocalCandidate>();
+        Collection<LocalCandidate> candidates = new HashSet<>();
 
         for (Candidate<?> cand : component.getLocalCandidates())
         {

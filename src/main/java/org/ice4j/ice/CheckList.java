@@ -56,8 +56,7 @@ public class CheckList
      * A pair would get into a triggered check queue as soon as we receive
      * a check on its local candidate.
      */
-    private final List<CandidatePair> triggeredCheckQueue
-                                          = new LinkedList<CandidatePair>();
+    private final List<CandidatePair> triggeredCheckQueue = new LinkedList<>();
 
     /**
      * A reference to the {@link IceMediaStream} that we belong to.
@@ -69,14 +68,14 @@ public class CheckList
      * Agent} and following its changes of state.
      */
     private final List<PropertyChangeListener> stateListeners
-        = new LinkedList<PropertyChangeListener>();
+        = new LinkedList<>();
 
     /**
      * Contains {@link PropertyChangeListener}s registered with this {@link
      * Agent} and following its changes of state.
      */
     private final List<PropertyChangeListener> checkListeners
-        = new LinkedList<PropertyChangeListener>();
+        = new LinkedList<>();
 
     /**
      * The name of the {@link PropertyChangeEvent} that we use to deliver
@@ -297,8 +296,7 @@ public class CheckList
      */
     protected synchronized void computeInitialCheckListPairStates()
     {
-        Map<String, CandidatePair> pairsToWait
-                                    = new Hashtable<String, CandidatePair>();
+        Map<String, CandidatePair> pairsToWait = new Hashtable<>();
 
         //first, determine the pairs that we'd need to put in the waiting state.
         for(CandidatePair pair : this)
@@ -508,8 +506,7 @@ public class CheckList
 
         synchronized(stateListeners)
         {
-            listenersCopy
-                = new LinkedList<PropertyChangeListener>(stateListeners);
+            listenersCopy = new LinkedList<>(stateListeners);
         }
 
         PropertyChangeEvent evt = new PropertyChangeEvent(
@@ -564,8 +561,7 @@ public class CheckList
 
         synchronized(checkListeners)
         {
-            listenersCopy
-                = new LinkedList<PropertyChangeListener>(checkListeners);
+            listenersCopy = new LinkedList<>(checkListeners);
         }
 
         PropertyChangeEvent evt = new PropertyChangeEvent(

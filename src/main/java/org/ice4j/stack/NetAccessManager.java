@@ -59,7 +59,7 @@ class NetAccessManager
      */
     private final Map<TransportAddress, Map<TransportAddress, Connector>>
         udpConnectors
-            = new HashMap<TransportAddress, Map<TransportAddress, Connector>>();
+            = new HashMap<>();
 
     /**
      * All <tt>Connectors</tt> currently in use with TCP. The table maps a local
@@ -74,7 +74,7 @@ class NetAccessManager
      */
     private final Map<TransportAddress, Map<TransportAddress, Connector>>
         tcpConnectors
-            = new HashMap<TransportAddress, Map<TransportAddress, Connector>>();
+            = new HashMap<>();
 
     /**
      * A synchronized FIFO where incoming messages are stocked for processing.
@@ -84,8 +84,7 @@ class NetAccessManager
     /**
      * A thread pool of message processors.
      */
-    private Vector<MessageProcessor> messageProcessors
-                                            = new Vector<MessageProcessor>();
+    private final Vector<MessageProcessor> messageProcessors = new Vector<>();
 
     /**
      * The instance that should be notified when an incoming message has been
@@ -332,8 +331,7 @@ class NetAccessManager
 
             if (connectorsForLocalAddress == null)
             {
-                connectorsForLocalAddress
-                    = new HashMap<TransportAddress, Connector>();
+                connectorsForLocalAddress = new HashMap<>();
                 connectorsMap.put(localAddress, connectorsForLocalAddress);
             }
 

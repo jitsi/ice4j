@@ -74,14 +74,14 @@ public abstract class IceControlAttribute
         // the attributeValue array
 
         // Reading in the network byte order (Big-Endian)
-        tieBreaker = ((attributeValue[offset++] & 0xffl) << 56)
-                  | ((attributeValue[offset++] & 0xffl) << 48)
-                  | ((attributeValue[offset++] & 0xffl) << 40)
-                  | ((attributeValue[offset++] & 0xffl) << 32)
-                  | ((attributeValue[offset++] & 0xffl) << 24)
-                  | ((attributeValue[offset++] & 0xffl) << 16)
-                  | ((attributeValue[offset++] & 0xffl) <<  8)
-                  | (attributeValue[offset++]  & 0xffl);
+        tieBreaker = ((attributeValue[offset++] & 0xffL) << 56)
+                  | ((attributeValue[offset++] & 0xffL) << 48)
+                  | ((attributeValue[offset++] & 0xffL) << 40)
+                  | ((attributeValue[offset++] & 0xffL) << 32)
+                  | ((attributeValue[offset++] & 0xffL) << 24)
+                  | ((attributeValue[offset++] & 0xffL) << 16)
+                  | ((attributeValue[offset++] & 0xffL) <<  8)
+                  | (attributeValue[offset]  & 0xffL);
     }
 
     /**

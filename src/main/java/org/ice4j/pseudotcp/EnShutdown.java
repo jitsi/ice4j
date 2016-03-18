@@ -36,4 +36,4 @@ enum EnShutdown
      * There was a forceful shutdown
      */
     SD_FORCEFUL
-};
+}

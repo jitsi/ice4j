@@ -65,7 +65,7 @@ public class RtcpDemuxPacketFilter
             byte[] data = p.getData();
             int off = p.getOffset();
 
-            if (((data[off + 0] & 0xc0) >> 6) == 2) //RTP/RTCP version field
+            if (((data[off] & 0xc0) >> 6) == 2) //RTP/RTCP version field
             {
                 int pt = data[off + 1] & 0xff;
 

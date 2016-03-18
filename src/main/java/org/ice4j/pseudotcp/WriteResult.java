@@ -35,4 +35,4 @@ public enum WriteResult
      * Write failed
      */
     WR_FAIL
-};
+}

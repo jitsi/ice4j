@@ -80,7 +80,7 @@ public class TrickleIce
         localAgent.startCandidateTrickle(printer);
 
 
-        List<Component> allComponents = new LinkedList<Component>();
+        List<Component> allComponents = new LinkedList<>();
         int allCandidates = 0;
         for (IceMediaStream stream : localAgent.getStreams())
         {
@@ -139,7 +139,7 @@ public class TrickleIce
 
             if(iceCandidates == null)
             {
-                try{Thread.sleep(1000);}catch(Exception e){};
+                try{Thread.sleep(1000);}catch(Exception e){}
 
                 logger.info("ICE stats: time="
                     + agent.getTotalHarvestingTime() + "ms");

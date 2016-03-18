@@ -85,10 +85,9 @@ public class SinglePortUdpHarvester
     public static List<SinglePortUdpHarvester>
         createHarvesters(int port)
     {
-        List<SinglePortUdpHarvester> harvesters
-           = new LinkedList<SinglePortUdpHarvester>();
+        List<SinglePortUdpHarvester> harvesters = new LinkedList<>();
 
-        List<TransportAddress> addresses = new LinkedList<TransportAddress>();
+        List<TransportAddress> addresses = new LinkedList<>();
         boolean isIPv6Disabled = StackProperties.getBoolean(
                 StackProperties.DISABLE_IPv6,
                 false);
@@ -158,7 +157,7 @@ public class SinglePortUdpHarvester
      * other threads remove entries when candidates are freed.
      */
     private final Map<SocketAddress, MySocket> sockets
-            = new ConcurrentHashMap<SocketAddress, MySocket>();
+            = new ConcurrentHashMap<>();
 
     /**
      * The map which keeps all currently active <tt>Candidate</tt>s created by
@@ -166,14 +165,14 @@ public class SinglePortUdpHarvester
      * the components for which the candidates are harvested.
      */
     private final Map<String, MyCandidate> candidates
-            = new ConcurrentHashMap<String, MyCandidate>();
+            = new ConcurrentHashMap<>();
 
     /**
      * A pool of <tt>Buffer</tt> instances used to avoid creating of new java
      * objects.
      */
     private final ArrayBlockingQueue<Buffer> pool
-        = new ArrayBlockingQueue<Buffer>(POOL_SIZE);
+        = new ArrayBlockingQueue<>(POOL_SIZE);
 
     /**
      * The local address that this harvester is bound to.
@@ -235,7 +234,7 @@ public class SinglePortUdpHarvester
         MySocket destinationSocket;
         InetSocketAddress remoteAddress;
 
-        while (true)
+        do
         {
             // TODO: implement stopping the thread with a switch?
 
@@ -303,21 +302,19 @@ public class SinglePortUdpHarvester
                     catch (SocketException se)
                     {
                         logger.info("Could not create a socket: " + se);
-                        continue;
                     }
                     catch (IOException ioe)
                     {
                         logger.info("Failed to handle new socket: " + ioe);
-                        continue;
                     }
                 }
                 else
                 {
                     // A STUN Binding Request with an unknown USERNAME. Drop it.
-                    continue;
                 }
             }
         }
+        while (true);
 
         // TODO we are all done, clean up.
     }
@@ -431,7 +428,7 @@ public class SinglePortUdpHarvester
              */
             logger.info(
                     "More than one Component for an Agent, cannot harvest.");
-            return new LinkedList<LocalCandidate>();
+            return new LinkedList<>();
         }
 
         MyCandidate candidate = new MyCandidate(component, ufrag);
@@ -470,7 +467,7 @@ public class SinglePortUdpHarvester
          * The FIFO which acts as a buffer for this socket.
          */
         private final ArrayBlockingQueue<Buffer> queue
-            = new ArrayBlockingQueue<Buffer>(QUEUE_SIZE);
+            = new ArrayBlockingQueue<>(QUEUE_SIZE);
 
         /**
          * The {@link QueueStatistics} instance optionally used to collect and
@@ -721,7 +718,7 @@ public class SinglePortUdpHarvester
          * a corresponding socket in {@link #sockets}.
          */
         private final Map<SocketAddress, IceSocketWrapper> candidateSockets
-                = new HashMap<SocketAddress, IceSocketWrapper>();
+                = new HashMap<>();
 
         /**
          * The collection of <tt>DatagramSocket</tt>s added to this candidate.
@@ -731,7 +728,7 @@ public class SinglePortUdpHarvester
          * the STUN stack or the user of ice4j.
          */
         private final Map<SocketAddress, DatagramSocket> sockets
-                = new HashMap<SocketAddress, DatagramSocket>();
+                = new HashMap<>();
 
         /**
          * Initializes a new <tt>MyCandidate</tt> instance with the given

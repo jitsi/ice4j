@@ -68,8 +68,7 @@ public class StunCandidateHarvest
      * The list of <tt>Candidate</tt>s harvested for {@link #hostCandidate} by
      * this harvest.
      */
-    private final List<LocalCandidate> candidates
-        = new LinkedList<LocalCandidate>();
+    private final List<LocalCandidate> candidates = new LinkedList<>();
 
     /**
      * The indicator which determines whether this <tt>StunCandidateHarvest</tt>
@@ -104,8 +103,7 @@ public class StunCandidateHarvest
      * to which a STUN <tt>Response</tt> responds available though it is known
      * in <tt>StunClientTransaction</tt>.
      */
-    private final Map<TransactionID, Request> requests
-        = new HashMap<TransactionID, Request>();
+    private final Map<TransactionID, Request> requests = new HashMap<>();
 
     /**
      * The interval in milliseconds at which a new STUN keep-alive message is to
@@ -1448,7 +1446,7 @@ public class StunCandidateHarvest
          */
         public SendKeepAliveMessageThread(StunCandidateHarvest harvest)
         {
-            this.harvest = new WeakReference<StunCandidateHarvest>(harvest);
+            this.harvest = new WeakReference<>(harvest);
         }
 
         @Override

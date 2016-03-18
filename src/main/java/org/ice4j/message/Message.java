@@ -342,7 +342,7 @@ public abstract class Message
      */
     //not sure this is the best solution but I'm trying to keep entry order
     protected LinkedHashMap<Character, Attribute> attributes
-                                = new LinkedHashMap<Character, Attribute>();
+        = new LinkedHashMap<>();
 
     /**
      * Attribute presentity is a thing of RFC 3489 and no longer exists in
@@ -619,7 +619,7 @@ public abstract class Message
     {
         synchronized(attributes)
         {
-            return new LinkedList<Attribute>(attributes.values());
+            return new LinkedList<>(attributes.values());
         }
     }
 
@@ -941,8 +941,7 @@ public abstract class Message
             offset += RFC3489_TRANSACTION_ID_LENGTH;
         }
 
-        Vector<Map.Entry<Character, Attribute>> v =
-            new Vector<Map.Entry<Character, Attribute>>();
+        Vector<Map.Entry<Character, Attribute>> v = new Vector<>();
         Iterator<Map.Entry<Character, Attribute>> iter = null;
         char dataLengthForContentDependentAttribute = 0;
 

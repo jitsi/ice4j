@@ -52,7 +52,7 @@ public class UnknownAttributesAttribute extends Attribute
     /**
      * A list of attribute types that were not understood by the server.
      */
-    private ArrayList<Character> unknownAttributes = new ArrayList<Character>();
+    private ArrayList<Character> unknownAttributes = new ArrayList<>();
 
     /**
      * Constructor.
@@ -100,7 +100,7 @@ public class UnknownAttributesAttribute extends Attribute
         //some attributes may be repeated for padding
         //(packet length should be divisable by 4)
         if(!contains(attributeID))
-            unknownAttributes.add(new Character(attributeID));
+            unknownAttributes.add(attributeID);
     }
 
     /**
@@ -110,7 +110,7 @@ public class UnknownAttributesAttribute extends Attribute
      */
     public boolean contains(char attributeID)
     {
-        return unknownAttributes.contains(new Character(attributeID));
+        return unknownAttributes.contains(attributeID);
     }
 
     /**
@@ -140,7 +140,7 @@ public class UnknownAttributesAttribute extends Attribute
      */
     public char getAttribute(int index )
     {
-        return (unknownAttributes.get(index)).charValue();
+        return unknownAttributes.get(index);
     }
 
     /**
@@ -164,7 +164,7 @@ public class UnknownAttributesAttribute extends Attribute
         Iterator<Character> attributes = getAttributes();
         while (attributes.hasNext())
         {
-            char att = attributes.next().charValue();
+            char att = attributes.next();
             binValue[offset++] = (byte)(att >> 8);
             binValue[offset++] = (byte)(att & 0x00FF);
         }

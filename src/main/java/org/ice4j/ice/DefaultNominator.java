@@ -50,8 +50,7 @@ public class DefaultNominator
      * Map that will remember association between validated relayed candidate
      * and a timer. It is use with the NOMINATE_FIRST_HIGHEST_VALID strategy.
      */
-    private final Map<String, TimerTask> validatedCandidates
-        = new HashMap<String, TimerTask>();
+    private final Map<String, TimerTask> validatedCandidates = new HashMap<>();
 
     /**
      * Creates a new instance of this nominator using <tt>parentAgent</tt> as
