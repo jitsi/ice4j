@@ -141,7 +141,7 @@ public class Component
      */
     public boolean addLocalCandidate(LocalCandidate candidate)
     {
-        Agent agent = getParentStream().getParentAgent();
+        BaseAgent agent = getParentStream().getParentAgent();
 
         //assign foundation.
         agent.getFoundationsRegistry().assignFoundation(candidate);

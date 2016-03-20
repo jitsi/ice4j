@@ -63,7 +63,7 @@ class ConnectivityCheckServer
     /**
      * The agent that created us.
      */
-    private final Agent parentAgent;
+    private final BaseAgent parentAgent;
 
     /**
      * The indicator which determines whether this
@@ -88,7 +88,7 @@ class ConnectivityCheckServer
      *
      * @param parentAgent the <tt>Agent</tt> that is creating this instance.
      */
-    public ConnectivityCheckServer(Agent parentAgent)
+    public ConnectivityCheckServer(BaseAgent parentAgent)
     {
         this.parentAgent = parentAgent;
 
@@ -139,7 +139,7 @@ class ConnectivityCheckServer
 
         //ignore incoming requests that are not meant for the local user.
         //normally the stack will get rid of faulty user names but we could
-        //still see messages not meant for this server if both peers or running
+        //still see messages not meant for this server if both peers are running
         //on this same instance of the stack.
         UsernameAttribute uname = (UsernameAttribute)request
             .getAttribute(Attribute.USERNAME);

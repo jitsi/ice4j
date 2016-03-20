@@ -64,6 +64,19 @@ public class IceMediaStream
     public static final String PROPERTY_PAIR_VALIDATED = "PairValidated";
 
     /**
+     * Use builder pattern to provide an immutable IceMediaStream instance.
+     *
+     * @param name the name of the media stream
+     * @param parentAgent the agent that is handling the session that this
+     * media stream is a part of
+     * @return IceMediaStream
+     */
+    public static IceMediaStream build(BaseAgent parentAgent, String name)
+    {
+        return new IceMediaStream(parentAgent, name);
+    }
+
+    /**
      * The name of this media stream. The name is equal to the value specified
      * in the SDP description.
      */
@@ -101,7 +114,7 @@ public class IceMediaStream
     /**
      * The agent that this media stream belongs to.
      */
-    private final Agent parentAgent;
+    private final BaseAgent parentAgent;
 
     /**
      * Contains {@link PropertyChangeListener}s registered with this {@link
@@ -138,7 +151,7 @@ public class IceMediaStream
      * @param parentAgent the agent that is handling the session that this
      * media stream is a part of
      */
-    protected IceMediaStream(Agent parentAgent, String name)
+    protected IceMediaStream(BaseAgent parentAgent, String name)
     {
         this.name = name;
         this.parentAgent = parentAgent;
@@ -278,7 +291,7 @@ public class IceMediaStream
      *
      * @return a reference to the <tt>Agent</tt> that this stream belongs to.
      */
-    public Agent getParentAgent()
+    public BaseAgent getParentAgent()
     {
         return parentAgent;
     }
@@ -898,18 +911,4 @@ public class IceMediaStream
     {
         return remotePassword;
     }
-    
-    /**
-     * Use builder pattern to provide an immutable IceMediaStream instance.
-     *
-     * @param name the name of the media stream
-     * @param parentAgent the agent that is handling the session that this
-     * media stream is a part of
-     * @return IceMediaStream
-     */
-    public static IceMediaStream build(Agent parentAgent, String name)
-    {
-        return new IceMediaStream(parentAgent, name);
-    }
-
 }

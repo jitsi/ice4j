@@ -19,9 +19,6 @@ package org.ice4j.ice;
 
 import java.beans.*;
 import java.io.*;
-import java.math.*;
-import java.net.*;
-import java.security.*;
 import java.util.*;
 import java.util.logging.*;
 
@@ -51,6 +48,7 @@ import org.ice4j.stack.*;
  * @author Boris Grozev
  */
 public class Agent
+    extends BaseAgent
 {
     /**
      * The maximum number of retransmissions of a STUN Binding request without
@@ -103,27 +101,6 @@ public class Agent
                                             = "IceProcessingState";
 
     /**
-     * The LinkedHashMap used to store the media streams
-     * This map preserves the insertion order of the media streams.
-     */
-    private final Map<String, IceMediaStream> mediaStreams
-        = new LinkedHashMap<>();
-
-    /**
-     * The candidate harvester that we use to gather candidate on the local
-     * machine.
-     */
-    private final HostCandidateHarvester hostCandidateHarvester
-                                                = new HostCandidateHarvester();
-
-    /**
-     * A list of additional <tt>CandidateHarvester</tt>s which will be used to
-     * harvest candidates synchronously, and previously to harvesting by
-     * {@link #harvesters}.
-     */
-    private final List<CandidateHarvester> hostHarvesters = new LinkedList<>();
-
-    /**
      * The set of harvesters (i.e. STUN, TURN, and others) that the agent should
      * use when gathering candidates for components.
      */
@@ -134,14 +111,6 @@ public class Agent
      * Manages statistics about harvesting time.
      */
 //    private final HarvestStatistics harvestStats = new HarvestStatistics();
-
-    /**
-     * We use the <tt>FoundationsRegistry</tt> to keep track of the foundations
-     * we assign within a session (i.e. the entire life time of an
-     * <tt>Agent</tt>)
-     */
-    private final FoundationsRegistry foundationsRegistry
-                                          = new FoundationsRegistry();
 
     /**
      * Our internal nominator implementing several nomination strategies.
@@ -172,16 +141,6 @@ public class Agent
     private final Object startLock = new Object();
 
     /**
-     * The user fragment that we should use for the ice-ufrag attribute.
-     */
-    private final String ufrag;
-
-    /**
-     * The password that we should use for the ice-pwd attribute.
-     */
-    private final String password;
-
-    /**
      * The tie-breaker number is used in connectivity checks to detect and
      * repair the case where both agents believe to have the controlling or the
      * controlled role.
@@ -189,19 +148,9 @@ public class Agent
     private long tieBreaker;
 
     /**
-     * Determines whether this is the controlling agent in a an ICE interaction.
-     */
-    private boolean isControlling = true;
-
-    /**
      * The entity that will be taking care of outgoing connectivity checks.
      */
     private final ConnectivityCheckClient connCheckClient;
-
-    /**
-     * The entity that will be taking care of incoming connectivity checks.
-     */
-    private final ConnectivityCheckServer connCheckServer;
 
     /**
      * Indicates the state of ICE processing in this <tt>Agent</tt>. An
@@ -227,12 +176,6 @@ public class Agent
      */
     private final List<PropertyChangeListener> stateListeners
         = new LinkedList<>();
-
-    /**
-     * The <tt>StunStack</tt> used by this <tt>Agent</tt>.
-     */
-    private StunStack stunStack;
-
     /**
      * The thread that we use for moving from COMPLETED into a TERMINATED state.
      */
@@ -282,41 +225,19 @@ public class Agent
     private boolean performConsentFreshness = false;
 
     /**
-     * The flag which specifies whether {@link #hostCandidateHarvester} should
-     * be used or not.
-     */
-    private Boolean useHostHarvester = null;
-
-    /**
      * Creates an empty <tt>Agent</tt> with no streams, and no address.
      */
     public Agent()
     {
-        SecureRandom random = new SecureRandom();
-
-        connCheckServer = new ConnectivityCheckServer(this);
         connCheckClient = new ConnectivityCheckClient(this);
-
-        //add the FINGERPRINT attribute to all messages.
-        System.setProperty(StackProperties.ALWAYS_SIGN, "true");
-
-        //add the software attribute to all messages
-        if (StackProperties.getString(StackProperties.SOFTWARE) == null)
-            System.setProperty(StackProperties.SOFTWARE, "ice4j.org");
-
-        ufrag
-            = ensureIceAttributeLength(
-                    new BigInteger(24, random).toString(32)
-                        + BigInteger.valueOf(
-                            System.currentTimeMillis()).toString(32),
-                    /* min */ 4, /* max */ 256);
-        password
-            = ensureIceAttributeLength(
-                    new BigInteger(128, random).toString(32),
-                    /* min */ 22, /* max */ 256);
 
         tieBreaker = Math.abs(random.nextLong());
         nominator = new DefaultNominator(this);
+
+        // The default value of controlling was true before the class BaseAgent
+        // was split out of the class Agent. BaseAgent defaults to false for
+        // controlling since it is unable to perform connectivity checks.
+        setControlling(true);
     }
 
     /**
@@ -333,93 +254,25 @@ public class Agent
      * Creates a new media stream and stores it.
      *
      * @param mediaStreamName the name of the media stream
-     *
      * @return the newly created and stored <tt>IceMediaStream</tt>
      */
+    @Override
     public IceMediaStream createMediaStream(String mediaStreamName)
     {
-        logger.fine("Create media stream for " + mediaStreamName);
-        IceMediaStream mediaStream
-            = new IceMediaStream(Agent.this, mediaStreamName);
+        IceMediaStream mediaStream = super.createMediaStream(mediaStreamName);
 
-        mediaStreams.put(mediaStreamName, mediaStream);
-
-        // Since we add a new stream, we must wait to add the component and the
-        // remote candidates before starting to "RUN" this Agent.
-        // This is useful if this Agent is already in COMPLETED state
-        // (isStarted() == true) due to a previous successful ICE procedure:
-        // this way incoming connectivity checks are registered in the
-        // preDiscoveredPairsQueue until this Agent is in RUNNING state.
-        this.setState(IceProcessingState.WAITING);
+        if (mediaStream != null)
+        {
+            // Since we add a new stream, we must wait to add the component and
+            // the remote candidates before starting to "RUN" this Agent.
+            // This is useful if this Agent is already in COMPLETED state
+            // (isStarted() == true) due to a previous successful ICE procedure:
+            // this way incoming connectivity checks are registered in the
+            // preDiscoveredPairsQueue until this Agent is in RUNNING state.
+            setState(IceProcessingState.WAITING);
+        }
 
         return mediaStream;
-    }
-
-    /**
-     * Creates a new {@link Component} for the specified <tt>stream</tt> and
-     * allocates potentially all local candidates that should belong to it.
-     *
-     * @param stream the {@link IceMediaStream} that the new {@link Component}
-     * should belong to.
-     * @param transport the transport protocol used by the component
-     * @param preferredPort the port number that should be tried first when
-     * binding local <tt>Candidate</tt> sockets for this <tt>Component</tt>.
-     * @param minPort the port number where we should first try to bind before
-     * moving to the next one (i.e. <tt>minPort + 1</tt>)
-     * @param maxPort the maximum port number where we should try binding
-     * before giving up and throwing an exception.
-     *
-     * @return the newly created {@link Component} and with a list containing
-     * all and only local candidates.
-     *
-     * @throws IllegalArgumentException if either <tt>minPort</tt> or
-     * <tt>maxPort</tt> is not a valid port number or if <tt>minPort >
-     * maxPort</tt>, or if <tt>transport</tt> is not currently supported.
-     * @throws IOException if an error occurs while the underlying resolver lib
-     * is using sockets.
-     * @throws BindException if we couldn't find a free port between
-     * <tt>minPort</tt> and <tt>maxPort</tt> before reaching the maximum allowed
-     * number of retries.
-     */
-    public Component createComponent(  IceMediaStream stream,
-                                       Transport      transport,
-                                       int            preferredPort,
-                                       int            minPort,
-                                       int            maxPort)
-        throws IllegalArgumentException,
-               IOException,
-               BindException
-    {
-        if(transport != Transport.UDP)
-        {
-            throw new IllegalArgumentException(
-                    "This implementation does not currently support transport: "
-                        + transport);
-        }
-
-        Component component = stream.createComponent();
-
-        gatherCandidates(component, preferredPort, minPort, maxPort);
-
-        for(Candidate<?> candidate : component.getLocalCandidates())
-        {
-            logger.info("\t" + candidate.getTransportAddress() + " (" +
-                    candidate.getType() + ")");
-        }
-
-        /*
-         * Lyubomir: After we've gathered the LocalCandidate for a Component and
-         * before we've made them available to the caller, we have to make sure
-         * that the ConnectivityCheckServer is started. If there's been a
-         * previous connectivity establishment which has completed, it has
-         * stopped the ConnectivityCheckServer. If the ConnectivityCheckServer is
-         * not started after we've made the gathered LocalCandidates available
-         * to the caller, the caller may send them and a connectivity check may
-         * arrive from the remote Agent.
-         */
-        connCheckServer.start();
-
-        return component;
     }
 
     /**
@@ -445,56 +298,21 @@ public class Agent
      * @throws IOException if an error occurs while the underlying resolver lib
      * is gathering candidates and we end up without even a single one.
      */
-    private void gatherCandidates( Component      component,
-                                   int            preferredPort,
-                                   int            minPort,
-                                   int            maxPort)
+    @Override
+    protected void gatherCandidates(
+            Component component,
+            int preferredPort, int minPort, int maxPort)
         throws IllegalArgumentException,
                IOException
     {
-        logger.info("Gather candidates for component " +
-                component.toShortString());
+        super.gatherCandidates(component, preferredPort, minPort, maxPort);
 
-        if (useHostHarvester())
+        // in case we are not trickling, apply other harvesters here
+        if (!isTrickling())
         {
-            hostCandidateHarvester.harvest(
-                    component,
-                    preferredPort, minPort, maxPort, Transport.UDP);
-        }
-        else
-        {
-            if (hostHarvesters.isEmpty())
-                logger.warning("No host harvesters available!");
-        }
-
-        for (CandidateHarvester harvester : hostHarvesters)
-        {
-            harvester.harvest(component);
-        }
-
-        if (component.getLocalCandidateCount() == 0)
-            logger.warning("Failed to gather any host candidates!");
-
-        //in case we are not trickling, apply other harvesters here
-        if(!isTrickling())
-        {
-            harvestingStarted = true; //raise a flag to warn on a second call.
+            harvestingStarted = true; // raise a flag to warn on a second call.
             harvesters.harvest(component);
         }
-
-        logger.fine("Candidate count in first harvest: " +
-            component.getLocalCandidateCount());
-
-        // Emil: Because of trickle, we now assign foundations, compute
-        // priorities, and eliminate redundancies while adding candidates on a
-        // component. This means that we no longer need to do it here, where we
-        // did before.
-        //computeFoundations(component);
-        //component.prioritizeCandidates();
-        //component.eliminateRedundantCandidates();
-
-        //select the candidate to put in the media line.
-        component.selectDefaultCandidate();
     }
 
     /**
@@ -744,7 +562,11 @@ public class Agent
      */
     private boolean setState(IceProcessingState newState)
     {
+        if (newState == null)
+            throw new NullPointerException("newState");
+
         IceProcessingState oldState;
+
         synchronized (stateSyncRoot)
         {
             oldState = state;
@@ -753,8 +575,8 @@ public class Agent
 
         if (!oldState.equals(newState))
         {
-            logger.info("ICE state changed from " + oldState + " to "
-                                + newState);
+            logger.info(
+                    "ICE state changed from " + oldState + " to " + newState);
             fireStateChange(oldState, newState);
 
             return true;
@@ -819,7 +641,7 @@ public class Agent
     public void addCandidateHarvester(CandidateHarvester harvester)
     {
         if (harvester.isHostHarvester())
-            hostHarvesters.add(harvester);
+            addHostHarvester(harvester);
         else
             harvesters.add(harvester);
     }
@@ -832,30 +654,6 @@ public class Agent
     public CandidateHarvesterSet getHarvesters()
     {
         return harvesters;
-    }
-
-    /**
-     * Returns that user name that should be advertised in session descriptions
-     * containing ICE data from this agent.
-     *
-     * @return that user name that should be advertised in session descriptions
-     * containing ICE data from this agent.
-     */
-    public String getLocalUfrag()
-    {
-        return ufrag;
-    }
-
-    /**
-     * Returns that password that should be advertised in session descriptions
-     * containing ICE data from this agent.
-     *
-     * @return that password that should be advertised in session descriptions
-     * containing ICE data from this agent.
-     */
-    public String getLocalPassword()
-    {
-        return password;
     }
 
     /**
@@ -997,83 +795,6 @@ public class Agent
     }
 
     /**
-     * Returns the {@link FoundationsRegistry} this agent is using to assign
-     * candidate foundations. We use the <tt>FoundationsRegistry</tt> to keep
-     * track of the foundations we assign within a session (i.e. the entire life
-     * time of an <tt>Agent</tt>)
-     */
-    public final FoundationsRegistry getFoundationsRegistry()
-    {
-        return foundationsRegistry;
-    }
-
-    /**
-     * Returns the <tt>IceMediaStream</tt> with the specified <tt>name</tt> or
-     * <tt>null</tt> if no such stream has been registered with this
-     * <tt>Agent</tt> yet.
-     *
-     * @param name the name of the stream that we'd like to obtain a reference
-     * to.
-     *
-     * @return the <tt>IceMediaStream</tt> with the specified <tt>name</tt> or
-     * <tt>null</tt> if no such stream has been registered with this
-     * <tt>Agent</tt> yet.
-     */
-    public IceMediaStream getStream(String name)
-    {
-        synchronized(mediaStreams)
-        {
-            return mediaStreams.get(name);
-        }
-    }
-
-    /**
-     * Returns a <tt>List</tt> containing the names of all currently registered
-     * media streams.
-     *
-     * @return a <tt>List</tt> containing the names of all currently registered
-     * media streams.
-     */
-    public List<String> getStreamNames()
-    {
-        synchronized(mediaStreams)
-        {
-            return new LinkedList<>(mediaStreams.keySet());
-        }
-    }
-
-    /**
-     * Returns a <tt>List</tt> containing all <tt>IceMediaStream</tt>s currently
-     * registered with this agent.
-     *
-     * @return a <tt>List</tt> containing all <tt>IceMediaStream</tt>s currently
-     * registered with this agent.
-     */
-    public List<IceMediaStream> getStreams()
-    {
-        synchronized(mediaStreams)
-        {
-            return new LinkedList<>(mediaStreams.values());
-        }
-    }
-
-    /**
-     * Returns the number of <tt>IceMediaStream</tt>s currently registered with
-     * this agent.
-     *
-     * @return  the number of <tt>IceMediaStream</tt>s currently registered with
-     * this agent.
-     *
-     */
-    public int getStreamCount()
-    {
-        synchronized(mediaStreams)
-        {
-            return mediaStreams.size();
-        }
-    }
-
-    /**
      * Gets the <tt>IceMediaStream</tt>s registered with this <tt>Agent</tt> for
      * which connectivity establishment is pending. For example, after a set of
      * <tt>IceMediaStream</tt>s is registered with this <tt>Agent</tt>,
@@ -1108,29 +829,6 @@ public class Agent
                 streamIter.remove();
         }
         return streams;
-    }
-
-    /**
-     * Gets the <tt>StunStack</tt> used by this <tt>Agent</tt>.
-     *
-     * @return the <tt>StunStack</tt> used by this <tt>Agent</tt>
-     */
-    public synchronized StunStack getStunStack()
-    {
-        if (stunStack == null)
-            stunStack = new StunStack();
-        return stunStack;
-    }
-    
-    /**
-     * Sets the <tt>StunStack</tt> used by this <tt>Agent</tt>.
-     * 
-     * @param stunStack the stunStack to be used by this Agent.
-     * 
-     */
-    public void setStunStack(StunStack stunStack)
-    {
-        this.stunStack = stunStack;
     }
 
     /**
@@ -1191,14 +889,12 @@ public class Agent
     }
 
     /**
-     * Specifies whether this agent has the controlling role in an ICE exchange.
-     *
-     * @param isControlling <tt>true</tt> if this is to be the controlling
-     * <tt>Agent</tt> and <tt>false</tt> otherwise.
+     * {@inheritDoc}
      */
-    public void setControlling(boolean isControlling)
+    @Override
+    public void setControlling(boolean controlling)
     {
-        this.isControlling = isControlling;
+        super.setControlling(controlling);
 
         //in case we have already initialized our check lists we'd need to
         //recompute pair priorities.
@@ -1209,96 +905,6 @@ public class Agent
             if (list != null)
                 list.recomputePairPriorities();
         }
-    }
-
-    /**
-     * Removes <tt>stream</tt> and all its child <tt>Component</tt>s and
-     * <tt>Candidate</tt>s from the this agent and releases all resources that
-     * they had allocated (like sockets for example)
-     *
-     * @param stream the <tt>Component</tt> we'd like to remove and free.
-     */
-    public void removeStream(IceMediaStream stream)
-    {
-        synchronized (mediaStreams)
-        {
-            mediaStreams.remove(stream.getName());
-        }
-        /*
-         * XXX The invocation of IceMediaStream#free() on stream has been moved
-         * out of the synchronized block in order to reduce the chances of a
-         * deadlock. There was no obvious reason why it should stay in the
-         * synchronized block at the time of the modification.
-         */
-        stream.free();
-    }
-
-    /**
-     * Determines whether this agent has the controlling role in an ICE
-     * exchange.
-     *
-     * @return <tt>true</tt> if this is to be the controlling <tt>Agent</tt>
-     * and <tt>false</tt> otherwise.
-     */
-    public boolean isControlling()
-    {
-        return isControlling;
-    }
-
-    /**
-     * Returns the local <tt>LocalCandidate</tt> with the specified
-     * <tt>localAddress</tt> if it belongs to any of this {@link Agent}'s
-     * streams or <tt>null</tt> if it doesn't.
-     *
-     * @param localAddress the {@link TransportAddress} we are looking for.
-     *
-     * @return the local <tt>LocalCandidate</tt> with the specified
-     * <tt>localAddress</tt> if it belongs to any of this {@link Agent}'s
-     * streams or <tt>null</tt> if it doesn't.
-     */
-    public LocalCandidate findLocalCandidate(TransportAddress localAddress)
-    {
-        for(IceMediaStream stream : mediaStreams.values())
-        {
-            LocalCandidate cnd = stream.findLocalCandidate(localAddress);
-
-            if(cnd != null)
-                return cnd;
-        }
-        return null;
-    }
-
-    /**
-     * Returns the local <tt>LocalCandidate</tt> with the specified
-     * <tt>localAddress</tt> if it belongs to any of this {@link Agent}'s
-     * streams or <tt>null</tt> if it doesn't.
-     *
-     * @param localAddress the {@link TransportAddress} we are looking for.
-     * @param ufrag local ufrag
-     * @return the local <tt>LocalCandidate</tt> with the specified
-     * <tt>localAddress</tt> if it belongs to any of this {@link Agent}'s
-     * streams or <tt>null</tt> if it doesn't.
-     */
-    public LocalCandidate findLocalCandidate(
-            TransportAddress localAddress,
-            String ufrag)
-    {
-        for(IceMediaStream stream : mediaStreams.values())
-        {
-            for(Component c : stream.getComponents())
-            {
-                for(LocalCandidate cnd : c.getLocalCandidates())
-                {
-                    if(cnd != null
-                            && cnd.getUfrag() != null
-                            && cnd.getUfrag().equals(ufrag))
-                    {
-                        return cnd;
-                    }
-                }
-            }
-        }
-        return null;
     }
 
     /**
@@ -1433,22 +1039,25 @@ public class Agent
         Component parentComponent = localCandidate.getParentComponent();
         RemoteCandidate remoteCandidate = null;
 
-        remoteCandidate = new RemoteCandidate(
-                remoteAddress,
-                parentComponent,
-                CandidateType.PEER_REFLEXIVE_CANDIDATE,
-                foundationsRegistry.obtainFoundationForPeerReflexiveCandidate(),
-                priority,
-                // We can not know the related candidate of a remote peer
-                // reflexive candidate. We must set it to "null".
-                null,
-                ufrag);
+        remoteCandidate
+            = new RemoteCandidate(
+                    remoteAddress,
+                    parentComponent,
+                    CandidateType.PEER_REFLEXIVE_CANDIDATE,
+                    getFoundationsRegistry()
+                        .obtainFoundationForPeerReflexiveCandidate(),
+                    priority,
+                    // We can not know the related candidate of a remote peer
+                    // reflexive candidate. We must set it to "null".
+                    null,
+                    ufrag);
 
         CandidatePair triggeredPair
             = new CandidatePair(localCandidate, remoteCandidate);
 
-        logger.fine("set use-candidate " + useCandidate + " for pair " +
-            triggeredPair.toShortString());
+        logger.fine(
+                "set use-candidate " + useCandidate + " for pair "
+                    + triggeredPair.toShortString());
         if(useCandidate)
         {
             triggeredPair.setUseCandidateReceived();
@@ -1462,8 +1071,10 @@ public class Agent
                 //so it's now safe to go and see whether this is a new PR cand.
                 if(triggeredPair.getParentComponent().getSelectedPair() == null)
                 {
-                    logger.info("Received check from " +
-                        triggeredPair.toShortString() + " triggered a check");
+                    logger.info(
+                            "Received check from "
+                                + triggeredPair.toShortString()
+                                + " triggered a check");
                 }
                 triggerCheck(triggeredPair);
             }
@@ -1821,26 +1432,6 @@ public class Agent
     }
 
     /**
-     * Returns the number of host {@link Candidate}s in this {@link Agent}.
-     *
-     * @return the number of host {@link Candidate}s in this {@link Agent}.
-     */
-    protected int countHostCandidates()
-    {
-        int num = 0;
-
-        synchronized (mediaStreams)
-        {
-            Collection<IceMediaStream> streamsCol = mediaStreams.values();
-
-            for( IceMediaStream stream : streamsCol)
-                num += stream.countHostCandidates();
-        }
-
-        return num;
-    }
-
-    /**
      * Lets the application specify a custom value for the <tt>Ta</tt> timer
      * so that we don't calculate one.
      *
@@ -2074,57 +1665,6 @@ public class Agent
         //connCheckServer.stop();
 
         setState(terminationState);
-    }
-
-    /**
-     * Adds or removes ICE characters (i.e. ALPHA, DIGIT, +, or /) to or from a
-     * specific <tt>String</tt> in order to produce a <tt>String</tt> with a
-     * length within a specific range.
-     *
-     * @param s the <tt>String</tt> to add or remove characters to or from in
-     * case its length is less than <tt>min</tt> or greater than <tt>max</tt>
-     * @param min the minimum length in (ICE) characters of the returned
-     * <tt>String</tt>
-     * @param max the maximum length in (ICE) characters of the returned
-     * <tt>String</tt>
-     * @return <tt>s</tt> if its length is greater than or equal to
-     * <tt>min</tt> and less than or equal to <tt>max</tt>; a new
-     * <tt>String</tt> which is equal to <tt>s</tt> with prepended ICE
-     * characters if the length of <tt>s</tt> is less than <tt>min</tt>; a new
-     * <tt>String</tt> which is composed of the first <tt>max</tt> characters of
-     * <tt>s</tt> if the length of <tt>s</tt> is greater than <tt>max</tt>
-     * @throws IllegalArgumentException if <tt>min</tt> is negative or
-     * <tt>max</tt> is less than <tt>min</tt>
-     * @throws NullPointerException if <tt>s</tt> is equal to <tt>null</tt>
-     */
-    private String ensureIceAttributeLength(String s, int min, int max)
-    {
-        if (s == null)
-            throw new NullPointerException("s");
-        if (min < 0)
-            throw new IllegalArgumentException("min " + min);
-        if (max < min)
-            throw new IllegalArgumentException("max " + max);
-
-        int length = s.length();
-        int numberOfIceCharsToAdd = min - length;
-
-        if (numberOfIceCharsToAdd > 0)
-        {
-            StringBuilder sb = new StringBuilder(min);
-
-            for (; numberOfIceCharsToAdd > 0; --numberOfIceCharsToAdd)
-            {
-                sb.append('0');
-            }
-            sb.append(s);
-            s = sb.toString();
-        }
-        else if (max < length)
-        {
-            s = s.substring(0, max);
-        }
-        return s;
     }
 
     /**
@@ -2375,7 +1915,6 @@ public class Agent
         this.trickle = trickle;
     }
 
-
     /**
      * Returns the harvesting time (in ms) for the harvester given in parameter.
      *
@@ -2401,7 +1940,6 @@ public class Agent
                 }
             }
         }
-
         return 0;
     }
 
@@ -2433,7 +1971,6 @@ public class Agent
                 }
             }
         }
-
         return 0;
     }
 
@@ -2451,7 +1988,6 @@ public class Agent
             harvestDuration
                 += harvester.getHarvestStatistics().getHarvestDuration();
         }
-
         return harvestDuration;
     }
 
@@ -2471,7 +2007,6 @@ public class Agent
         {
             harvestCount += harvester.getHarvestStatistics().getHarvestCount();
         }
-
         return harvestCount;
     }
 
@@ -2497,33 +2032,5 @@ public class Agent
     public void setPerformConsentFreshness(boolean performConsentFreshness)
     {
         this.performConsentFreshness = performConsentFreshness;
-    }
-
-    /**
-     * Checks whether the dynamic host harvester should be used or not.
-     * @return <tt>true</tt> if the dynamic host harvester should be used and
-     * <tt>false</tt> otherwise.
-     */
-    public boolean useHostHarvester()
-    {
-        if (useHostHarvester == null)
-        {
-            useHostHarvester
-                = StackProperties.getBoolean(
-                       StackProperties.USE_DYNAMIC_HOST_HARVESTER,
-                       true);
-        }
-
-        return useHostHarvester;
-    }
-
-    /**
-     * Sets the flag which indicates whether the dynamic host harvester will
-     * be used or not by this <tt>Agent</tt>.
-     * @param useHostHarvester the value to set.
-     */
-    public void setUseHostHarvester(boolean useHostHarvester)
-    {
-        this.useHostHarvester = useHostHarvester;
     }
 }

@@ -131,10 +131,9 @@ public class RemoteCandidate
     {
         Component parentCmp = getParentComponent();
 
-        if (parentCmp == null)
-            return false;
-
-        return equals(parentCmp.getDefaultRemoteCandidate());
+        return
+            (parentCmp != null)
+                && equals(parentCmp.getDefaultRemoteCandidate());
     }
 
     /**

@@ -571,7 +571,7 @@ public class TcpHarvester
     public Collection<LocalCandidate> harvest(Component component)
     {
         IceMediaStream stream = component.getParentStream();
-        Agent agent = stream.getParentAgent();
+        BaseAgent agent = stream.getParentAgent();
 
         if (stream.getComponentCount() != 1 || agent.getStreamCount() != 1)
         {
@@ -583,7 +583,7 @@ public class TcpHarvester
              */
             logger.info(
                     "More than one Component for an Agent, cannot harvest.");
-            return new LinkedList<>();
+            return Collections.EMPTY_LIST;
         }
 
         List<LocalCandidate> candidates = createLocalCandidates(component);
@@ -1080,8 +1080,8 @@ public class TcpHarvester
         }
 
         /**
-         * Adds the channels from {@link #newChannels} to {@link #channels} and
-         * registers them in {@link #readSelector}.
+         * Registers the channels from {@link #newChannels} with
+         * {@link #readSelector}.
          */
         private void checkForNewChannels()
         {
@@ -1108,8 +1108,9 @@ public class TcpHarvester
         }
 
         /**
-         * Checks {@link #channels} for channels which have been added over
-         * {@link #READ_TIMEOUT} milliseconds ago and closes them.
+         * Checks {@link #readSelector} for channels which have been added over
+         * {@link MuxServerSocketChannelFactory#SOCKET_CHANNEL_READ_TIMEOUT}
+         * milliseconds ago and closes them.
          */
         private void cleanup()
         {

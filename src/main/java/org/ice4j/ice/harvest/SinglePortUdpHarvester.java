@@ -414,7 +414,7 @@ public class SinglePortUdpHarvester
     public Collection<LocalCandidate> harvest(Component component)
     {
         IceMediaStream stream = component.getParentStream();
-        Agent agent = stream.getParentAgent();
+        BaseAgent agent = stream.getParentAgent();
         String ufrag = agent.getLocalUfrag();
 
         if (stream.getComponentCount() != 1 || agent.getStreamCount() != 1)
