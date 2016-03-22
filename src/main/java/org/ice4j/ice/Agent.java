@@ -423,6 +423,28 @@ public class Agent
     }
 
     /**
+     * Initializes a new {@link CandidatePair} instance from a
+     * {@link LocalCandidate} and a {@link RemoteCandidate}. The method
+     * represents a {@code CandidatePair} factory and is preferable to
+     * explicitly calling the {@code CandidatePair} constructor because it
+     * allows this {@code Agent} to easily track the initialization of its
+     * {@code CandidatePair}s.
+     *
+     * @param local the {@code LocalCandidate} to initialize the new instance
+     * with
+     * @param remote the {@code RemoteCandidate} to initialize the new instance
+     * with
+     * @return a new {@code CandidatePair} instance initializes with
+     * {@code local} and {@code remote}
+     */
+    protected CandidatePair createCandidatePair(
+            LocalCandidate local,
+            RemoteCandidate remote)
+    {
+        return new CandidatePair(local, remote);
+    }
+
+    /**
      * Uses all <tt>CandidateHarvester</tt>s currently registered with this
      * <tt>Agent</tt> to obtain whatever addresses they can discover.
      * <p>
@@ -1445,7 +1467,7 @@ public class Agent
                 ufrag);
 
         CandidatePair triggeredPair
-            = new CandidatePair(localCandidate, remoteCandidate);
+            = createCandidatePair(localCandidate, remoteCandidate);
 
         logger.fine("set use-candidate " + useCandidate + " for pair " +
             triggeredPair.toShortString());

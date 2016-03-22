@@ -575,7 +575,9 @@ class ConnectivityCheckClient
         // by a STUN connectivity check.
         CandidatePair validPair
             = (existingPair == null)
-                ? new CandidatePair(validLocalCandidate, validRemoteCandidate)
+                ? parentAgent.createCandidatePair(
+                        validLocalCandidate,
+                        validRemoteCandidate)
                 : existingPair;
 
         // we synchronize here because the same pair object can be processed (in

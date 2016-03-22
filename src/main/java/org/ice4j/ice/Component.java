@@ -289,7 +289,7 @@ public class Component
      */
     public void updateRemoteCandidates()
     {
-        List<CandidatePair> checkList = null;
+        List<CandidatePair> checkList;
         List<RemoteCandidate> newRemoteCandidates;
 
         synchronized(remoteUpdateCandidates)
@@ -342,7 +342,9 @@ public class Component
                         */
 
                         CandidatePair pair
-                            = new CandidatePair(localCnd, remoteCnd);
+                            = getParentStream()
+                                .getParentAgent()
+                                    .createCandidatePair(localCnd, remoteCnd);
                         logger.info("new Pair added: " + pair.toShortString());
                         checkList.add(pair);
                     }

@@ -394,8 +394,9 @@ public class IceMediaStream
                 if(localCnd.canReach(remoteCnd)
                         && remoteCnd.getTransportAddress().getPort() != 0)
                 {
-                    CandidatePair pair = new CandidatePair(localCnd,
-                        remoteCnd);
+                    CandidatePair pair
+                        = getParentAgent()
+                            .createCandidatePair(localCnd, remoteCnd);
                     checkList.add(pair);
                 }
             }
