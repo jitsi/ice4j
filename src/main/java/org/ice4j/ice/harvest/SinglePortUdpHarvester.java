@@ -23,6 +23,7 @@ import org.ice4j.ice.*;
 import org.ice4j.message.*;
 import org.ice4j.socket.*;
 import org.ice4j.stack.*;
+import org.ice4j.util.*;
 
 import java.io.*;
 import java.net.*;
@@ -472,6 +473,12 @@ public class SinglePortUdpHarvester
             = new ArrayBlockingQueue<Buffer>(QUEUE_SIZE);
 
         /**
+         * The {@link QueueStatistics} instance optionally used to collect and
+         * print detailed statistics about {@link #queue}.
+         */
+        private final QueueStatistics queueStatistics;
+
+        /**
          * The remote address that is associated with this socket.
          */
         private SocketAddress remoteAddress;
@@ -496,6 +503,15 @@ public class SinglePortUdpHarvester
             super((SocketAddress)null);
 
             this.remoteAddress = remoteAddress;
+            if (logger.isLoggable(Level.FINEST))
+            {
+                queueStatistics = new QueueStatistics(
+                    "SinglePort" + remoteAddress.toString().replace('/', '-'));
+            }
+            else
+            {
+                queueStatistics = null;
+            }
         }
 
         /**
@@ -511,9 +527,18 @@ public class SinglePortUdpHarvester
                 if (queue.size() == QUEUE_SIZE)
                 {
                     logger.info("Dropping a packet because the queue is full.");
+                    if (queueStatistics != null)
+                    {
+                        queueStatistics.remove(System.currentTimeMillis());
+                    }
                     queue.poll();
                 }
+
                 queue.offer(buf);
+                if (queueStatistics != null)
+                {
+                    queueStatistics.add(System.currentTimeMillis());
+                }
 
                 queue.notifyAll();
             }
@@ -607,6 +632,10 @@ public class SinglePortUdpHarvester
                     }
 
                     buf = queue.poll();
+                    if (queueStatistics != null)
+                    {
+                        queueStatistics.remove(System.currentTimeMillis());
+                    }
                 }
             }
 
