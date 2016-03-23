@@ -71,16 +71,10 @@ public abstract class PacketQueue<T>
 
     /**
      * Whether this {@link PacketQueue} should store the {@code byte[]} or
-     * {@code T} instances added to it via on of the {@code add} methods (of
+     * {@code T} instances added to it via one of the {@code add} methods (if
      * {@code false}), or create and store a copy (if {@code true}).
      */
     private final boolean copy;
-
-    /**
-     * A cache optionally used to reduce the allocation of new {@code byte[]}
-     * instances.
-     */
-    private final Queue<byte[]> cache;
 
     /**
      * The capacity of this {@link PacketQueue}. If one of the {@code add}
@@ -147,14 +141,12 @@ public abstract class PacketQueue<T>
     public PacketQueue(
         boolean enableStatistics, String id, PacketHandler<T> packetHandler)
     {
-        this(DEFAULT_CAPACITY, true, true, enableStatistics, id, packetHandler);
+        this(DEFAULT_CAPACITY, true, enableStatistics, id, packetHandler);
     }
 
     /**
      * Initializes a new {@link PacketQueue} instance.
      * @param capacity the capacity of the queue.
-     * @param enableCache whether caching of unused {@code byte[]} instances
-     * should be enabled.
      * @param copy whether the queue is to store the instances it is given via
      * the various {@code add} methods, or create a copy.
      * @param enableStatistics whether detailed statistics should be calculated
@@ -168,7 +160,7 @@ public abstract class PacketQueue<T>
      * created, and the queue will provide access to the head element via
      * {@link #get()} and {@link #poll()}.
      */
-    public PacketQueue(int capacity, boolean enableCache, boolean copy,
+    public PacketQueue(int capacity, boolean copy,
                        boolean enableStatistics, String id,
                        PacketHandler<T> packetHandler)
     {
@@ -179,10 +171,6 @@ public abstract class PacketQueue<T>
 
         queueStatistics
             = enableStatistics ? new QueueStatistics(id) : null;
-
-        cache
-            = enableCache
-                ? new ArrayBlockingQueue<byte[]>(CACHE_CAPACITY) : null;
 
         if (packetHandler != null)
         {
@@ -322,14 +310,6 @@ public abstract class PacketQueue<T>
      */
     private byte[] getByteArray(int len)
     {
-        if (cache != null)
-        {
-            byte[] buf = cache.poll();
-            if (buf != null && buf.length >= len)
-            {
-                return buf;
-            }
-        }
         return new byte[len];
     }
 
@@ -358,12 +338,6 @@ public abstract class PacketQueue<T>
                     {
                         logger.warning(
                             "Packets dropped (id=" + id + "): " + numDroppedPackets);
-
-                    }
-
-                    if (cache != null && copy)
-                    {
-                        cache.offer(getBuffer(p));
                     }
                 }
             }
