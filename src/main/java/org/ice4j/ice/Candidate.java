@@ -956,24 +956,24 @@ public abstract class Candidate<T extends Candidate<?>>
             TransportAddress relatedAddress = null;
             switch (getType())
             {
-                case SERVER_REFLEXIVE_CANDIDATE:
-                    if(getBase() != null)
-                    {
-                        relatedAddress = getBase().getTransportAddress();
-                    }
-                    break;
-                case PEER_REFLEXIVE_CANDIDATE:
-                    if(getBase() != null)
-                    {
-                        relatedAddress = getBase().getTransportAddress();
-                    }
-                    break;
-                case RELAYED_CANDIDATE:
-                    relatedAddress = getMappedAddress();
-                    break;
-                default:
-                    //host candidate
-                    return null;
+            case SERVER_REFLEXIVE_CANDIDATE:
+                if(getBase() != null)
+                {
+                    relatedAddress = getBase().getTransportAddress();
+                }
+                break;
+            case PEER_REFLEXIVE_CANDIDATE:
+                if(getBase() != null)
+                {
+                    relatedAddress = getBase().getTransportAddress();
+                }
+                break;
+            case RELAYED_CANDIDATE:
+                relatedAddress = getMappedAddress();
+                break;
+            default:
+                //host candidate
+                return null;
             }
             // Update the related candidate conforming to the related address.
             this.relatedCandidate = findRelatedCandidate(relatedAddress);

@@ -707,7 +707,7 @@ public class Agent
         synchronized(stateListeners)
         {
             if(!stateListeners.contains(l))
-                this.stateListeners.add(l);
+                stateListeners.add(l);
         }
     }
 
@@ -721,7 +721,7 @@ public class Agent
     {
         synchronized(stateListeners)
         {
-            this.stateListeners.remove(l);
+            stateListeners.remove(l);
         }
     }
 
@@ -1637,23 +1637,24 @@ public class Agent
     public synchronized void nominate(CandidatePair pair)
         throws IllegalStateException
     {
-        if(! isControlling() )
-            throw new IllegalStateException("Only controlling agents can "
-                            +"nominate pairs");
+        if(!isControlling())
+        {
+            throw new IllegalStateException(
+                    "Only controlling agents can nominate pairs");
+        }
 
         Component parentComponent = pair.getParentComponent();
         IceMediaStream parentStream = parentComponent.getParentStream();
 
         //If the pair is not already nominated and if its parent component
         //does not already contain a nominated pair - nominate it.
-        if(!pair.isNominated()
+        if (!pair.isNominated()
               && !parentStream.validListContainsNomineeForComponent(
                       parentComponent))
         {
             logger.info("verify if nominated pair answer again");
             pair.nominate();
-            pair.getParentComponent().getParentStream()
-                .getCheckList().scheduleTriggeredCheck(pair);
+            parentStream.getCheckList().scheduleTriggeredCheck(pair);
         }
     }
 

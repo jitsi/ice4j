@@ -690,9 +690,9 @@ public class IceMediaStream
      */
     protected boolean validListContainsNomineeForComponent(Component component)
     {
-        synchronized(validList)
+        synchronized (validList)
         {
-            for(CandidatePair pair : validList)
+            for (CandidatePair pair : validList)
             {
                 if (pair.isNominated()
                         && pair.getParentComponent() == component)
@@ -742,9 +742,9 @@ public class IceMediaStream
 
         synchronized (validList)
         {
-            for(CandidatePair pair : validList)
+            for (CandidatePair pair : validList)
             {
-                if(pair.isNominated())
+                if (pair.isNominated())
                     components.remove(pair.getParentComponent());
             }
         }

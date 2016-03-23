@@ -131,7 +131,6 @@ public class CandidatePair
     public CandidatePair(LocalCandidate localCandidate,
                          RemoteCandidate remoteCandidate)
     {
-
         this.localCandidate = localCandidate;
         this.remoteCandidate = remoteCandidate;
 
@@ -449,9 +448,9 @@ public class CandidatePair
 
         CandidatePair candidatePair = (CandidatePair) obj;
 
-        //DO NOT change this method to also depend on other pair properties
-        //because the Conn Check Client counts on it only using the candidates
-        //for comparisons.
+        // XXX DO NOT change this method to also depend on other pair properties
+        // because ConnectivityCheckClient counts on it only using the
+        // candidates for comparisons.
         return
             localCandidate.equals(candidatePair.localCandidate)
                 && remoteCandidate.equals(candidatePair.remoteCandidate);
@@ -616,8 +615,8 @@ public class CandidatePair
         getParentComponent().getParentStream().firePairPropertyChange(
                 this,
                 IceMediaStream.PROPERTY_PAIR_NOMINATED,
-                false,
-                true);
+                /* oldValue */ false,
+                /* newValue */ true);
     }
 
     /**

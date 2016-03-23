@@ -248,7 +248,7 @@ class ConnectivityCheckClient
 
             //if we are the controlling agent then we need to indicate our
             //nominated pairs.
-            if(candidatePair.isNominated())
+            if (candidatePair.isNominated())
             {
                 logger.fine(
                         "Add USE-CANDIDATE in check for: "
@@ -485,7 +485,7 @@ class ConnectivityCheckClient
 
         TransportAddress mappedAddress = null;
 
-        if(! response.containsAttribute(Attribute.XOR_MAPPED_ADDRESS))
+        if (!response.containsAttribute(Attribute.XOR_MAPPED_ADDRESS))
         {
             logger.fine("Received a success response with no "
                     + "XOR_MAPPED_ADDRESS attribute.");
@@ -496,14 +496,14 @@ class ConnectivityCheckClient
         }
 
         XorMappedAddressAttribute mappedAddressAttr
-            = (XorMappedAddressAttribute)response
-                .getAttribute(Attribute.XOR_MAPPED_ADDRESS);
+            = (XorMappedAddressAttribute)
+                response.getAttribute(Attribute.XOR_MAPPED_ADDRESS);
 
-        mappedAddress = mappedAddressAttr
-            .getAddress(response.getTransactionID());
+        mappedAddress
+            = mappedAddressAttr.getAddress(response.getTransactionID());
 
         // XXX AddressAttribute always returns UDP based TransportAddress
-        if(checkedPair.getLocalCandidate().getTransport() == Transport.TCP)
+        if (checkedPair.getLocalCandidate().getTransport() == Transport.TCP)
         {
             mappedAddress
                 = new TransportAddress(
@@ -514,8 +514,7 @@ class ConnectivityCheckClient
 
         LocalCandidate validLocalCandidate = null;
 
-        validLocalCandidate = parentAgent
-            .findLocalCandidate(mappedAddress);
+        validLocalCandidate = parentAgent.findLocalCandidate(mappedAddress);
 
         RemoteCandidate validRemoteCandidate = checkedPair.getRemoteCandidate();
 
@@ -523,7 +522,7 @@ class ConnectivityCheckClient
         // response. If the transport address does not match any of the
         // local candidates that the agent knows about, the mapped address
         // represents a new candidate -- a peer reflexive candidate.
-        if ( validLocalCandidate == null)
+        if (validLocalCandidate == null)
         {
             //Like other candidates, PEER-REFLEXIVE candidates have a type,
             //base, priority, and foundation.  They are computed as follows:
@@ -557,9 +556,12 @@ class ConnectivityCheckClient
             //generated from it momentarily
             validLocalCandidate = peerReflexiveCandidate;
 
-            if(checkedPair.getParentComponent().getSelectedPair() == null)
-                logger.info("Receive a peer-reflexive candidate: " +
-                    peerReflexiveCandidate.getTransportAddress());
+            if (checkedPair.getParentComponent().getSelectedPair() == null)
+            {
+                logger.info(
+                        "Receive a peer-reflexive candidate: "
+                            + peerReflexiveCandidate.getTransportAddress());
+            }
         }
 
         //check if the resulting valid pair was already in our check lists.
@@ -588,27 +590,27 @@ class ConnectivityCheckClient
         // (for the same check) from other peer come at the very same time, that
         // we will trigger the nominationConfirmed (that will pass the pair as
         // as selected if it is the first time).
-        synchronized(checkedPair)
+        synchronized (checkedPair)
         {
             //The agent sets the state of the pair that *generated* the check to
             //Succeeded.  Note that, the pair which *generated* the check may be
             //different than the valid pair constructed above
-            if(checkedPair.getParentComponent().getSelectedPair() == null)
+            if (checkedPair.getParentComponent().getSelectedPair() == null)
                 logger.info("Pair succeeded: " + checkedPair.toShortString());
             checkedPair.setStateSucceeded();
         }
 
-        if(! validPair.isValid())
+        if (!validPair.isValid())
         {
-            if(validPair.getParentComponent().getSelectedPair() == null)
+            if (validPair.getParentComponent().getSelectedPair() == null)
                 logger.info("Pair validated: " + validPair.toShortString());
             parentAgent.validatePair(validPair);
         }
 
         //The agent changes the states for all other Frozen pairs for the
         //same media stream and same foundation to Waiting.
-        IceMediaStream parentStream = checkedPair.getParentComponent()
-            .getParentStream();
+        IceMediaStream parentStream
+            = checkedPair.getParentComponent().getParentStream();
 
         synchronized(this)
         {
@@ -616,10 +618,14 @@ class ConnectivityCheckClient
                 = new Vector<>(parentStream.getCheckList());
 
             for(CandidatePair pair : parentCheckList)
-                if ((pair.getState() == CandidatePairState.FROZEN)
+            {
+                if (pair.getState() == CandidatePairState.FROZEN
                         && checkedPair.getFoundation().equals(
                                 pair.getFoundation()))
+                {
                     pair.setStateWaiting();
+                }
+            }
         }
 
         // The agent examines the check list for all other streams in turn. If
@@ -636,7 +642,7 @@ class ConnectivityCheckClient
 
             synchronized (checkList)
             {
-                for(CandidatePair pair : checkList)
+                for (CandidatePair pair : checkList)
                 {
                     if (parentStream.validListContainsFoundation(
                                 pair.getFoundation())
@@ -652,7 +658,7 @@ class ConnectivityCheckClient
             //foundation, and for each group, sets the state of the pair with
             //the lowest component ID to Waiting.  If there is more than one
             //such pair, the one with the highest priority is used.
-            if(checkList.isFrozen())
+            if (checkList.isFrozen())
                 checkList.computeInitialCheckListPairStates();
 
             if (wasFrozen)
@@ -663,7 +669,7 @@ class ConnectivityCheckClient
             }
         }
 
-        if(validPair.getParentComponent().getSelectedPair() == null)
+        if (validPair.getParentComponent().getSelectedPair() == null)
         {
             logger.info("IsControlling: "  + parentAgent.isControlling() +
                 " USE-CANDIDATE:" +
@@ -674,8 +680,8 @@ class ConnectivityCheckClient
         //If the agent was a controlling agent, and it had included a USE-
         //CANDIDATE attribute in the Binding request, the valid pair generated
         //from that check has its nominated flag set to true.
-        if((parentAgent.isControlling()
-                    && request.containsAttribute(Attribute.USE_CANDIDATE)))
+        if (parentAgent.isControlling()
+                && request.containsAttribute(Attribute.USE_CANDIDATE))
         {
             if(validPair.getParentComponent().getSelectedPair() == null)
             {
@@ -695,7 +701,7 @@ class ConnectivityCheckClient
         //itself had the USE-CANDIDATE attribute.  This case is described in
         //Section 7.2.1.5, and may now result in setting the nominated flag for
         //the pair learned from the original request.
-        else if(!parentAgent.isControlling()
+        else if (!parentAgent.isControlling()
                 && checkedPair.useCandidateReceived()
                 && !checkedPair.isNominated())
         {
@@ -704,7 +710,7 @@ class ConnectivityCheckClient
                 logger.info(
                         "Nomination confirmed for pair: "
                             + validPair.toShortString());
-                parentAgent.nominationConfirmed( checkedPair );
+                parentAgent.nominationConfirmed(checkedPair);
             }
             else
             {

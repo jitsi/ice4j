@@ -383,9 +383,9 @@ public class CheckList
             return;
         }
 
-        logger.info("Selected pair for stream " +
-                cmp.toShortString() + ": " +
-                nominatedPair.toShortString());
+        logger.info(
+                "Selected pair for stream " + cmp.toShortString() + ": "
+                    + nominatedPair.toShortString());
 
         cmp.setSelectedPair(nominatedPair);
 
