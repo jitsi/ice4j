@@ -457,6 +457,20 @@ public class CandidatePair
     }
 
     /**
+     * {@inheritDoc}
+     */
+    @Override
+    public int hashCode()
+    {
+        // Even if the following hashCode algorithm has drawbacks because of it
+        // simplicity, it is better than nothing because at least it allows
+        // CandidatePair to be used as a HashMap key.
+        // XXX While localCandidate is not final, the parentComponent is
+        // supposedly effectively final.
+        return getLocalCandidate().getParentComponent().hashCode();
+    }
+
+    /**
      * Returns a String representation of this <tt>CandidatePair</tt>.
      *
      * @return a String representation of the object.

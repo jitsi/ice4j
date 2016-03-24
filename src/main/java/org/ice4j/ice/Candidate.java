@@ -342,6 +342,20 @@ public abstract class Candidate<T extends Candidate<?>>
     }
 
     /**
+     * {@inheritDoc}
+     */
+    @Override
+    public int hashCode()
+    {
+        // Even if the following hashCode algorithm has drawbacks because of it
+        // simplicity, it is better than nothing because at least it allows
+        // Candidate and, respectively, CandidatePair to be used as HashMap
+        // keys.
+        return
+            getParentComponent().hashCode() + getTransportAddress().hashCode();
+    }
+
+    /**
      * Returns a reference to the <tt>Component</tt> that this candidate belongs
      * to.
      *
