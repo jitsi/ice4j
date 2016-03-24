@@ -62,7 +62,7 @@ public abstract class Candidate<T extends Candidate<?>>
     /**
      * The transport address represented by this candidate.
      */
-    private TransportAddress transportAddress = null;
+    private final TransportAddress transportAddress;
 
     /**
      * The type of this candidate. At this point the ICE specification (and
@@ -70,7 +70,7 @@ public abstract class Candidate<T extends Candidate<?>>
      * server reflexive, peer reflexive and relayed candidates. Others may be
      * added in the future.
      */
-    private CandidateType candidateType = null;
+    private CandidateType candidateType;
 
     /**
      * An arbitrary string that is the same for two candidates
