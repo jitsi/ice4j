@@ -464,7 +464,7 @@ public class SinglePortUdpHarvester
         /**
          * The size of {@link #queue}.
          */
-        private static final int QUEUE_SIZE = 64;
+        private static final int QUEUE_SIZE = 128;
 
         /**
          * The FIFO which acts as a buffer for this socket.
