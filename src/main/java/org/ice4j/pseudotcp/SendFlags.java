@@ -24,5 +24,5 @@ package org.ice4j.pseudotcp;
  */
 enum SendFlags
 {
-    sfNone, sfImmediateAck, sfDelayedAck;
+    sfNone, sfImmediateAck, sfDelayedAck
 }

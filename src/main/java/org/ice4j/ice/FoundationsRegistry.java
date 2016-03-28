@@ -44,7 +44,7 @@ public class FoundationsRegistry
      * Contains mappings between a type+baseIP+server+transport
      * <tt>String</tt>s and the foundation that has been assigned to them.
      */
-    private Map<String, String> foundations = new Hashtable<String, String>();
+    private Map<String, String> foundations = new Hashtable<>();
 
     /**
      * Assigns to <tt>candidate</tt> the foundation that corresponds to its

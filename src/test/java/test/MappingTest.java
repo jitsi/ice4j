@@ -78,8 +78,7 @@ public class MappingTest
         MappingCandidateHarvester natHarvester
             = new MappingCandidateHarvester(publicAddress, localAddress);
 
-        List<CandidateHarvester> harvesters
-            = new ArrayList<CandidateHarvester>();
+        List<CandidateHarvester> harvesters = new ArrayList<>();
         harvesters.add(natHarvester);
 
         Agent localAgent = createAgent(2020, false, harvesters);

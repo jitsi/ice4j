@@ -27,7 +27,6 @@ import java.util.logging.*;
 
 import org.ice4j.*;
 import org.ice4j.ice.harvest.*;
-import org.ice4j.ice.harvest.TrickleCallback;
 import org.ice4j.stack.*;
 
 /**
@@ -108,7 +107,7 @@ public class Agent
      * This map preserves the insertion order of the media streams.
      */
     private final Map<String, IceMediaStream> mediaStreams
-        = new LinkedHashMap<String, IceMediaStream>();
+        = new LinkedHashMap<>();
 
     /**
      * The candidate harvester that we use to gather candidate on the local
@@ -122,8 +121,7 @@ public class Agent
      * harvest candidates synchronously, and previously to harvesting by
      * {@link #harvesters}.
      */
-    private final List<CandidateHarvester> hostHarvesters
-            = new LinkedList<CandidateHarvester>();
+    private final List<CandidateHarvester> hostHarvesters = new LinkedList<>();
 
     /**
      * The set of harvesters (i.e. STUN, TURN, and others) that the agent should
@@ -166,7 +164,7 @@ public class Agent
      * the necessary triggered checks.
      */
     private final List<CandidatePair> preDiscoveredPairsQueue
-        = new LinkedList<CandidatePair>();
+        = new LinkedList<>();
 
     /**
      * The lock that we use while starting connectivity establishment.
@@ -228,7 +226,7 @@ public class Agent
      * Agent} and following its changes of state.
      */
     private final List<PropertyChangeListener> stateListeners
-        = new LinkedList<PropertyChangeListener>();
+        = new LinkedList<>();
 
     /**
      * The <tt>StunStack</tt> used by this <tt>Agent</tt>.
@@ -425,6 +423,28 @@ public class Agent
     }
 
     /**
+     * Initializes a new {@link CandidatePair} instance from a
+     * {@link LocalCandidate} and a {@link RemoteCandidate}. The method
+     * represents a {@code CandidatePair} factory and is preferable to
+     * explicitly calling the {@code CandidatePair} constructor because it
+     * allows this {@code Agent} to easily track the initialization of its
+     * {@code CandidatePair}s.
+     *
+     * @param local the {@code LocalCandidate} to initialize the new instance
+     * with
+     * @param remote the {@code RemoteCandidate} to initialize the new instance
+     * with
+     * @return a new {@code CandidatePair} instance initializes with
+     * {@code local} and {@code remote}
+     */
+    protected CandidatePair createCandidatePair(
+            LocalCandidate local,
+            RemoteCandidate remote)
+    {
+        return new CandidatePair(local, remote);
+    }
+
+    /**
      * Uses all <tt>CandidateHarvester</tt>s currently registered with this
      * <tt>Agent</tt> to obtain whatever addresses they can discover.
      * <p>
@@ -525,7 +545,7 @@ public class Agent
         }
 
         //create a list of components and start harvesting
-        List<Component> components = new LinkedList<Component>();
+        List<Component> components = new LinkedList<>();
 
         for (IceMediaStream stream : getStreams())
         {
@@ -571,14 +591,12 @@ public class Agent
                         "Trigger checks for pairs that were received before "
                             + "running state");
 
-                Iterator<CandidatePair> it = preDiscoveredPairsQueue.iterator();
-
-                while(it.hasNext())
+                for (CandidatePair cp : preDiscoveredPairsQueue)
                 {
-                    triggerCheck(it.next());
+                    triggerCheck(cp);
                 }
 
-                this.preDiscoveredPairsQueue.clear();
+                preDiscoveredPairsQueue.clear();
             }
 
             connCheckClient.startChecks();
@@ -663,9 +681,9 @@ public class Agent
      */
     public boolean isOver()
     {
-        return state == IceProcessingState.COMPLETED
-            || state == IceProcessingState.TERMINATED
-            || state == IceProcessingState.FAILED;
+        IceProcessingState state = getState();
+
+        return (state != null) && state.isOver();
     }
 
     /**
@@ -689,7 +707,7 @@ public class Agent
         synchronized(stateListeners)
         {
             if(!stateListeners.contains(l))
-                this.stateListeners.add(l);
+                stateListeners.add(l);
         }
     }
 
@@ -703,7 +721,7 @@ public class Agent
     {
         synchronized(stateListeners)
         {
-            this.stateListeners.remove(l);
+            stateListeners.remove(l);
         }
     }
 
@@ -1042,7 +1060,7 @@ public class Agent
     {
         synchronized(mediaStreams)
         {
-            return new LinkedList<String>(mediaStreams.keySet());
+            return new LinkedList<>(mediaStreams.keySet());
         }
     }
 
@@ -1057,7 +1075,7 @@ public class Agent
     {
         synchronized(mediaStreams)
         {
-            return new LinkedList<IceMediaStream>(mediaStreams.values());
+            return new LinkedList<>(mediaStreams.values());
         }
     }
 
@@ -1449,7 +1467,7 @@ public class Agent
                 ufrag);
 
         CandidatePair triggeredPair
-            = new CandidatePair(localCandidate, remoteCandidate);
+            = createCandidatePair(localCandidate, remoteCandidate);
 
         logger.fine("set use-candidate " + useCandidate + " for pair " +
             triggeredPair.toShortString());
@@ -1619,23 +1637,24 @@ public class Agent
     public synchronized void nominate(CandidatePair pair)
         throws IllegalStateException
     {
-        if(! isControlling() )
-            throw new IllegalStateException("Only controlling agents can "
-                            +"nominate pairs");
+        if(!isControlling())
+        {
+            throw new IllegalStateException(
+                    "Only controlling agents can nominate pairs");
+        }
 
         Component parentComponent = pair.getParentComponent();
         IceMediaStream parentStream = parentComponent.getParentStream();
 
         //If the pair is not already nominated and if its parent component
         //does not already contain a nominated pair - nominate it.
-        if(!pair.isNominated()
+        if (!pair.isNominated()
               && !parentStream.validListContainsNomineeForComponent(
                       parentComponent))
         {
             logger.info("verify if nominated pair answer again");
             pair.nominate();
-            pair.getParentComponent().getParentStream()
-                .getCheckList().scheduleTriggeredCheck(pair);
+            parentStream.getCheckList().scheduleTriggeredCheck(pair);
         }
     }
 

@@ -62,7 +62,7 @@ public abstract class Candidate<T extends Candidate<?>>
     /**
      * The transport address represented by this candidate.
      */
-    private TransportAddress transportAddress = null;
+    private final TransportAddress transportAddress;
 
     /**
      * The type of this candidate. At this point the ICE specification (and
@@ -70,7 +70,7 @@ public abstract class Candidate<T extends Candidate<?>>
      * server reflexive, peer reflexive and relayed candidates. Others may be
      * added in the future.
      */
-    private CandidateType candidateType = null;
+    private CandidateType candidateType;
 
     /**
      * An arbitrary string that is the same for two candidates
@@ -339,6 +339,20 @@ public abstract class Candidate<T extends Candidate<?>>
                 && getPriority() == candidate.getPriority()
                 && getType() == candidate.getType()
                 && getFoundation().equals(candidate.getFoundation());
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public int hashCode()
+    {
+        // Even if the following hashCode algorithm has drawbacks because of it
+        // simplicity, it is better than nothing because at least it allows
+        // Candidate and, respectively, CandidatePair to be used as HashMap
+        // keys.
+        return
+            getParentComponent().hashCode() + getTransportAddress().hashCode();
     }
 
     /**
@@ -956,24 +970,24 @@ public abstract class Candidate<T extends Candidate<?>>
             TransportAddress relatedAddress = null;
             switch (getType())
             {
-                case SERVER_REFLEXIVE_CANDIDATE:
-                    if(getBase() != null)
-                    {
-                        relatedAddress = getBase().getTransportAddress();
-                    }
-                    break;
-                case PEER_REFLEXIVE_CANDIDATE:
-                    if(getBase() != null)
-                    {
-                        relatedAddress = getBase().getTransportAddress();
-                    }
-                    break;
-                case RELAYED_CANDIDATE:
-                    relatedAddress = getMappedAddress();
-                    break;
-                default:
-                    //host candidate
-                    return null;
+            case SERVER_REFLEXIVE_CANDIDATE:
+                if(getBase() != null)
+                {
+                    relatedAddress = getBase().getTransportAddress();
+                }
+                break;
+            case PEER_REFLEXIVE_CANDIDATE:
+                if(getBase() != null)
+                {
+                    relatedAddress = getBase().getTransportAddress();
+                }
+                break;
+            case RELAYED_CANDIDATE:
+                relatedAddress = getMappedAddress();
+                break;
+            default:
+                //host candidate
+                return null;
             }
             // Update the related candidate conforming to the related address.
             this.relatedCandidate = findRelatedCandidate(relatedAddress);

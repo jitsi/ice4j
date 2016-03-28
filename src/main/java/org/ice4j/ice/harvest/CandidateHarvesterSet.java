@@ -44,7 +44,7 @@ public class CandidateHarvesterSet
      * <tt>Set</tt>.
      */
     private final Collection<CandidateHarvesterSetElement> elements
-        = new LinkedList<CandidateHarvesterSetElement>();
+        = new LinkedList<>();
 
     /**
      * A pool of thread used for gathering process.
@@ -95,7 +95,7 @@ public class CandidateHarvesterSet
      */
     public void harvest(Component component)
     {
-        harvest(Arrays.asList(new Component[]{component}), null);
+        harvest(Arrays.asList(component), null);
     }
 
 
@@ -145,8 +145,7 @@ public class CandidateHarvesterSet
          * Start asynchronously executing the
          * CandidateHarvester#harvest(Component) method of the harvesters.
          */
-        Map<CandidateHarvesterSetTask, Future<?>> tasks
-            = new HashMap<CandidateHarvesterSetTask, Future<?>>();
+        Map<CandidateHarvesterSetTask, Future<?>> tasks = new HashMap<>();
 
         while (true)
         {
@@ -171,7 +170,7 @@ public class CandidateHarvesterSet
 
             synchronized (components)
             {
-                componentsCopy = new ArrayList<Component>(components);
+                componentsCopy = new ArrayList<>(components);
             }
 
             // Asynchronously start gathering candidates using the harvester.
@@ -194,7 +193,7 @@ public class CandidateHarvesterSet
                 = taskIter.next();
             Future<?> future = task.getValue();
 
-            while (true)
+            do
             {
                 try
                 {
@@ -232,9 +231,9 @@ public class CandidateHarvesterSet
                 }
                 catch (InterruptedException ie)
                 {
-                    continue;
                 }
             }
+            while (true);
             taskIter.remove();
         }
     }

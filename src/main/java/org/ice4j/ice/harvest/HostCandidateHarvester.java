@@ -194,7 +194,7 @@ public class HostCandidateHarvester
                     }
 
                     if (allowedAddresses == null)
-                        allowedAddresses = new ArrayList<InetAddress>();
+                        allowedAddresses = new ArrayList<>();
 
                     allowedAddresses.add(address);
                 }
@@ -220,7 +220,7 @@ public class HostCandidateHarvester
                     }
 
                     if (blockedAddresses == null)
-                        blockedAddresses = new ArrayList<InetAddress>();
+                        blockedAddresses = new ArrayList<>();
 
                     blockedAddresses.add(address);
                 }

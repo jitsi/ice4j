@@ -58,8 +58,7 @@ public class GoogleRelayedCandidateDelegate
      * {@link #receive(DatagramPacket)} method. They have been received from the
      * TURN server in the form of Data indications.
      */
-    private final List<DatagramPacket> packetsToReceive =
-        new LinkedList<DatagramPacket>();
+    private final List<DatagramPacket> packetsToReceive = new LinkedList<>();
 
     /**
      * The <tt>DatagramSocket</tt>s which have been sent through this
@@ -67,8 +66,7 @@ public class GoogleRelayedCandidateDelegate
      * and which are to be relayed through its associated TURN server in the
      * form of Send indications.
      */
-    private final List<DatagramPacket> packetsToSend =
-        new LinkedList<DatagramPacket>();
+    private final List<DatagramPacket> packetsToSend = new LinkedList<>();
 
     /**
      * The <tt>Thread</tt> which is to send the {@link #packetsToSend} to the
@@ -315,7 +313,7 @@ public class GoogleRelayedCandidateDelegate
     {
         synchronized (packetsToReceive)
         {
-            while (true)
+            do
             {
                 /*
                  * According to the javadoc of DatagramSocket#close(), any
@@ -337,7 +335,6 @@ public class GoogleRelayedCandidateDelegate
                     catch (InterruptedException iex)
                     {
                     }
-                    continue;
                 }
                 else
                 {
@@ -348,6 +345,7 @@ public class GoogleRelayedCandidateDelegate
                     break;
                 }
             }
+            while (true);
         }
     }
 

@@ -35,6 +35,7 @@ package org.ice4j.ice;
  * refer to with "Terminated".
  *
  * @author Emil Ivov
+ * @author Lyubomir Marinov
  */
 public enum IceProcessingState
 {
@@ -97,6 +98,21 @@ public enum IceProcessingState
     public String toString()
     {
         return stateName;
+    }
+
+    /**
+     * Determines whether an {@link Agent} in this state has finished its ICE
+     * processing.
+     *
+     * @return {@code true} if an {@code Agent} in this state has finished its
+     * ICE processing; otherwise, {@code false}
+     */
+    public boolean isOver()
+    {
+        return
+            COMPLETED.equals(this)
+                || FAILED.equals(this)
+                || TERMINATED.equals(this);
     }
 
     /**

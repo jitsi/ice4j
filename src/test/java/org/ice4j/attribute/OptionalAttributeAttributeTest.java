@@ -109,7 +109,7 @@ public class OptionalAttributeAttributeTest extends TestCase
         assertEquals("failed null comparison", expectedReturn, actualReturn);
 
         //wrong type comparison
-        obj = new String("hehe :)");
+        obj = "hehe :)";
         actualReturn = optionalAttribute.equals(obj);
         assertEquals("failed wrong type comparison", expectedReturn,
                      actualReturn);

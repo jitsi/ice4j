@@ -273,8 +273,8 @@ public class IceSdpUtils
 
             //m lines
             List<IceMediaStream> streams = agent.getStreams();
-            Vector<MediaDescription> mDescs = new Vector<MediaDescription>(
-                            agent.getStreamCount());
+            Vector<MediaDescription> mDescs
+                = new Vector<>(agent.getStreamCount());
             for(IceMediaStream stream : streams)
             {
                MediaDescription mLine = sdpFactory.createMediaDescription(
@@ -320,15 +320,14 @@ public class IceSdpUtils
 
         if(localCandidates == null || localCandidates.size() == 0)
         {
-            trickleUpdate = new ArrayList<Attribute>(1);
+            trickleUpdate = new ArrayList<>(1);
             trickleUpdate.add(
                 sdpFactory.createAttribute(END_OF_CANDIDATES, null));
 
             return trickleUpdate;
         }
 
-        trickleUpdate
-            = new ArrayList<Attribute>(localCandidates.size() + 1);
+        trickleUpdate = new ArrayList<>(localCandidates.size() + 1);
 
         String streamName = null;
 

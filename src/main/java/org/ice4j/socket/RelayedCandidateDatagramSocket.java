@@ -112,7 +112,7 @@ public class RelayedCandidateDatagramSocket
      * <tt>RelayedCandidateDatagramSocket</tt>s relays data send to it to
      * peer <tt>TransportAddress</tt>es.
      */
-    private final List<Channel> channels = new LinkedList<Channel>();
+    private final List<Channel> channels = new LinkedList<>();
 
     /**
      * The indicator which determines whether this instance has started
@@ -143,8 +143,7 @@ public class RelayedCandidateDatagramSocket
      * {@link #receive(DatagramPacket)} method. They have been received from the
      * TURN server in the form of Data indications.
      */
-    private final List<DatagramPacket> packetsToReceive
-        = new LinkedList<DatagramPacket>();
+    private final List<DatagramPacket> packetsToReceive = new LinkedList<>();
 
     /**
      * The <tt>DatagramSocket</tt>s which have been sent through this
@@ -152,8 +151,7 @@ public class RelayedCandidateDatagramSocket
      * and which are to be relayed through its associated TURN server in the
      * form of Send indications.
      */
-    private final List<DatagramPacket> packetsToSend
-        = new LinkedList<DatagramPacket>();
+    private final List<DatagramPacket> packetsToSend = new LinkedList<>();
 
     /**
      * The <tt>Thread</tt> which receives <tt>DatagramPacket</tt>s from
@@ -704,7 +702,7 @@ public class RelayedCandidateDatagramSocket
     {
         synchronized (packetsToReceive)
         {
-            while (true)
+            do
             {
                 /*
                  * According to the javadoc of DatagramSocket#close(), any
@@ -728,7 +726,6 @@ public class RelayedCandidateDatagramSocket
                     catch (InterruptedException iex)
                     {
                     }
-                    continue;
                 }
                 else
                 {
@@ -739,6 +736,7 @@ public class RelayedCandidateDatagramSocket
                     break;
                 }
             }
+            while (true);
         }
     }
 

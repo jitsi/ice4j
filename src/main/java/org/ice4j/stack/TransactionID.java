@@ -131,8 +131,8 @@ public class TransactionID
 
         for(int i = 0; i < b; i++)
         {
-            tid.transactionID[i]   = (byte)((left  >> (i * 8)) & 0xFFl);
-            tid.transactionID[i + b] = (byte)((right >> (i * 8)) & 0xFFl);
+            tid.transactionID[i]   = (byte)((left  >> (i * 8)) & 0xFFL);
+            tid.transactionID[i + b] = (byte)((right >> (i * 8)) & 0xFFL);
         }
 
         //calculate hashcode for Hashtable storage.

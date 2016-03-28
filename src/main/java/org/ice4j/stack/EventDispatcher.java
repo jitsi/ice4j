@@ -39,7 +39,7 @@ public class EventDispatcher
      * <tt>EventDispatcher</tt>.
      */
     private final List<MessageTypeEventHandler<?>> messageListeners
-        = new Vector<MessageTypeEventHandler<?>>();
+        = new Vector<>();
 
     /**
      * The <tt>Map</tt> of <tt>EventDispatcher</tt>s which keep the
@@ -48,7 +48,7 @@ public class EventDispatcher
      * <tt>TransportAddress<tt>es.
      */
     private final Map<TransportAddress, EventDispatcher> children
-        = new Hashtable<TransportAddress, EventDispatcher>();
+        = new Hashtable<>();
 
     /**
      * Initializes a new <tt>EventDispatcher</tt> instance.

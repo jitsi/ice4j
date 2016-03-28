@@ -48,4 +48,4 @@ public enum Option
      * Timeout in ms for write operations(0 - no timeout)
      */
     OPT_WRITE_TIMEOUT
-};
+}

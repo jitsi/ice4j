@@ -60,8 +60,7 @@ public class AwsTest
         }
         AwsCandidateHarvester mch = new AwsCandidateHarvester();
 
-        List<CandidateHarvester> harvesters
-            = new ArrayList<CandidateHarvester>();
+        List<CandidateHarvester> harvesters = new ArrayList<>();
         harvesters.add(mch);
 
         Agent localAgent = createAgent(2020, false, harvesters);

@@ -253,8 +253,8 @@ public class UnknownAttributesAttributeTest extends TestCase
 
         Iterator<Character> iterator = unknownAttributesAttribute.getAttributes();
 
-        actualId1 = iterator.next().charValue();
-        actualId2 = iterator.next().charValue();;
+        actualId1 = iterator.next();
+        actualId2 = iterator.next();
 
         assertEquals("getAttributes() return value mismatch", expectedId1, actualId1);
         assertEquals("getAttributes() return value mismatch", expectedId2, actualId2);

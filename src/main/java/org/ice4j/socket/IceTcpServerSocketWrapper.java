@@ -62,7 +62,7 @@ public class IceTcpServerSocketWrapper
     /**
      * List of TCP client sockets.
      */
-    private final List<Socket> sockets = new ArrayList<Socket>();
+    private final List<Socket> sockets = new ArrayList<>();
 
     /**
      * Initializes a new <tt>IceTcpServerSocketWrapper</tt>.
