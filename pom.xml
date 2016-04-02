@@ -19,8 +19,12 @@
 
   <dependencies>
     <dependency>
-      <groupId>javax.sdp</groupId>
-      <artifactId>jain-sdp</artifactId>
+      <groupId>org.opentelecoms.sdp</groupId>
+      <artifactId>java-sdp-nist-bridge</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>org.jitsi</groupId>
+      <artifactId>jain-sip-ri-ossonly</artifactId>
     </dependency>
     <dependency>
       <groupId>org.bitlet</groupId>
