@@ -6,8 +6,8 @@
 
   <parent>
     <groupId>org.jitsi</groupId>
-    <artifactId>jitsi-universe</artifactId>
-    <version>1.0-20160202.203332-11</version>
+    <artifactId>jitsi-universe-public</artifactId>
+    <version>1.0</version>
   </parent>
 
   <artifactId>ice4j</artifactId>
@@ -21,12 +21,10 @@
     <dependency>
       <groupId>org.opentelecoms.sdp</groupId>
       <artifactId>java-sdp-nist-bridge</artifactId>
-      <version>1.1</version>
     </dependency>
     <dependency>
       <groupId>org.jitsi</groupId>
       <artifactId>jain-sip-ri-ossonly</artifactId>
-      <version>1.2.98c7f8c-jitsi-oss1</version>
     </dependency>
     <dependency>
       <groupId>org.bitlet</groupId>
@@ -78,31 +76,4 @@
       </build>
     </profile>
   </profiles>
-
-  <repositories>
-    <repository>
-      <id>jitsi-maven-repository-releases</id>
-      <layout>default</layout>
-      <name>Jitsi Maven Repository (Releases)</name>
-      <releases>
-        <enabled>true</enabled>
-      </releases>
-      <snapshots>
-        <enabled>false</enabled>
-      </snapshots>
-      <url>https://github.com/jitsi/jitsi-maven-repository/raw/master/releases/</url>
-    </repository>
-    <repository>
-      <id>jitsi-maven-repository-snapshots</id>
-      <layout>default</layout>
-      <name>Jitsi Maven Repository (Snapshots)</name>
-      <releases>
-        <enabled>false</enabled>
-      </releases>
-      <snapshots>
-        <enabled>true</enabled>
-      </snapshots>
-      <url>https://github.com/jitsi/jitsi-maven-repository/raw/master/snapshots/</url>
-    </repository>
-  </repositories>
 </project>
