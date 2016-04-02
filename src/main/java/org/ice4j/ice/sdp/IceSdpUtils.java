@@ -19,6 +19,7 @@ package org.ice4j.ice.sdp;
 
 import org.ice4j.*;
 import org.ice4j.ice.*;
+import org.opentelecoms.javax.sdp.*;
 
 import javax.sdp.*;
 import java.util.*;
@@ -71,7 +72,7 @@ public class IceSdpUtils
     /**
      * A reference to the currently valid SDP factory instance.
      */
-    private static final SdpFactory sdpFactory = SdpFactory.getInstance();
+    private static final SdpFactory sdpFactory = new NistSdpFactory();
 
     /**
      * The <tt>Logger</tt> used by the <tt>IceSdpUtils</tt>
@@ -138,6 +139,7 @@ public class IceSdpUtils
      * @param iceMediaStream the media stream where we should extract candidates
      * from.
      */
+    @SuppressWarnings({ "rawtypes", "unchecked" })
     public static void initMediaDescription(MediaDescription mediaDescription,
                                             IceMediaStream   iceMediaStream)
     {
@@ -156,10 +158,10 @@ public class IceSdpUtils
                 if(firstComponent == null)
                     firstComponent = component;
 
+                Vector attributes = mediaDescription.getAttributes(true);
                 for(Candidate<?> candidate : component.getLocalCandidates())
                 {
-                    mediaDescription.addAttribute(
-                        new CandidateAttribute(candidate));
+                    attributes.add(new CandidateAttribute(candidate));
                 }
             }
 
