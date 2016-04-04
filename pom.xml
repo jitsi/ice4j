@@ -16,6 +16,11 @@
 
   <name>ice4j</name>
   <url>https://github.com/jitsi/ice4j</url>
+  <scm>
+    <url>https://github.com/jitsi/ice4j</url>
+    <connection>scm:git:https://github.com/jitsi/ice4j.git</connection>
+    <developerConnection>scm:git:https://github.com/jitsi/ice4j.git</developerConnection>
+  </scm>
 
   <dependencies>
     <dependency>
