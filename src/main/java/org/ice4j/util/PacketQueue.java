@@ -15,9 +15,10 @@
  */
 package org.ice4j.util;
 
-import java.util.*;
-import java.util.concurrent.*;
+import java.util.concurrent.atomic.*;
 import java.util.logging.Logger; // Disambiguation.
+
+import org.ice4j.util.concurrent.*;
 
 /**
  * An abstract queue of packets. This is meant to eventually be able to be used
@@ -65,9 +66,9 @@ public abstract class PacketQueue<T>
     }
 
     /**
-     * The underlying {@link Queue} which holds packets.
+     * The underlying {@link ClosableEvictingQueue} which holds packets.
      */
-    private final Queue<T> queue;
+    private final ClosableEvictingQueue<T> queue;
 
     /**
      * Whether this {@link PacketQueue} should store the {@code byte[]} or
@@ -107,15 +108,10 @@ public abstract class PacketQueue<T>
     private final String id;
 
     /**
-     * Whether this queue has been closed.
-     */
-    private boolean closed = false;
-
-    /**
      * The number of packets which were dropped from this {@link PacketQueue} as
      * a result of a packet being added while the queue is at full capacity.
      */
-    private int numDroppedPackets = 0;
+    private AtomicInteger numDroppedPackets = new AtomicInteger();
 
     /**
      * Initializes a new {@link PacketQueue} instance.
@@ -167,7 +163,7 @@ public abstract class PacketQueue<T>
         this.copy = copy;
         this.capacity = capacity;
         this.id = id;
-        queue = new ArrayBlockingQueue<>(capacity);
+        queue = new ClosableEvictingQueue<>(capacity);
 
         queueStatistics
             = enableStatistics ? new QueueStatistics(id) : null;
@@ -215,25 +211,24 @@ public abstract class PacketQueue<T>
             return;
         }
 
-        while (!closed)
+        while (true)
         {
             T pkt;
 
-            synchronized (queue)
+            try
             {
-                pkt = queue.poll();
-                if (pkt == null)
-                {
-                    try
-                    {
-                        queue.wait(100);
-                    }
-                    catch (InterruptedException ie)
-                    {
-                    }
-                    continue;
-                }
+                pkt = queue.take();
             }
+            catch (QueueClosedException e)
+            {
+                break;
+            }
+            catch (InterruptedException ie)
+            {
+                pkt = null;
+            }
+            if (pkt == null)
+                continue;
 
             if (queueStatistics != null)
             {
@@ -319,37 +314,35 @@ public abstract class PacketQueue<T>
      */
     private void doAdd(T pkt)
     {
-        if (closed)
-            return;
-
-        synchronized (queue)
+        T drop = null;
+        try
         {
-            if (queue.size() >= capacity)
-            {
-                // Drop from the head of the queue.
-                T p = queue.poll();
-                if (p != null)
-                {
-                    if (queueStatistics != null)
-                    {
-                        queueStatistics.remove(System.currentTimeMillis());
-                    }
-                    if (logDroppedPacket(++numDroppedPackets))
-                    {
-                        logger.warning(
-                            "Packets dropped (id=" + id + "): " + numDroppedPackets);
-                    }
-                }
-            }
+            drop = queue.insert(pkt);
+        }
+        catch (QueueClosedException e)
+        {
+            return;
+        }
 
+        if (drop != null)
+        {
             if (queueStatistics != null)
             {
-                queueStatistics.add(System.currentTimeMillis());
+                queueStatistics.remove(System.currentTimeMillis());
             }
-            queue.offer(pkt);
-
-            queue.notifyAll();
+            int num = this.numDroppedPackets.incrementAndGet();
+            if (logDroppedPacket(num))
+            {
+                logger.warning(
+                    "Packets dropped (id=" + id + "): " + num);
+            }
         }
+
+        if (queueStatistics != null)
+        {
+            queueStatistics.add(System.currentTimeMillis());
+        }
+
     }
 
     /**
@@ -369,30 +362,25 @@ public abstract class PacketQueue<T>
                 "Trying to read from a queue with a configured handler.");
         }
 
-        while (true)
+        T pkt;
+        try
         {
-            if (closed)
-                return null;
-            synchronized (queue)
-            {
-                T pkt = queue.poll();
-                if (pkt != null)
-                {
-                    if (queueStatistics != null)
-                    {
-                        queueStatistics.remove(System.currentTimeMillis());
-                    }
-                    return pkt;
-                }
-
-                try
-                {
-                    queue.wait();
-                }
-                catch (InterruptedException ie)
-                {}
-            }
+            pkt = queue.take();
         }
+        catch (QueueClosedException e)
+        {
+            return null;
+        }
+        catch (InterruptedException e)
+        {
+            return null;
+        }
+
+        if (queueStatistics != null)
+        {
+            queueStatistics.remove(System.currentTimeMillis());
+        }
+        return pkt;
     }
 
     /**
@@ -404,9 +392,6 @@ public abstract class PacketQueue<T>
      */
     public T poll()
     {
-        if (closed)
-            return null;
-
         if (handler != null)
         {
             // If the queue was configured with a handler, it is running its
@@ -416,29 +401,26 @@ public abstract class PacketQueue<T>
                 "Trying to read from a queue with a configured handler.");
         }
 
-        synchronized (queue)
+        T pkt;
+        try
         {
-            T pkt = queue.poll();
-            if (pkt != null && queueStatistics != null)
-            {
-                queueStatistics.remove(System.currentTimeMillis());
-            }
-
-            return pkt;
+            pkt = queue.poll();
         }
+        catch (QueueClosedException e)
+        {
+            return null;
+        }
+        if (pkt != null && queueStatistics != null)
+        {
+            queueStatistics.remove(System.currentTimeMillis());
+        }
+
+        return pkt;
     }
 
     public void close()
     {
-        if (!closed)
-        {
-            closed = true;
-
-            synchronized (queue)
-            {
-                queue.notifyAll();
-            }
-        }
+        queue.close();
     }
 
     /**
