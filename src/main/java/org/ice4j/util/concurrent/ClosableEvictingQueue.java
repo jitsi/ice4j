@@ -41,6 +41,9 @@ import java.util.concurrent.locks.ReentrantLock;
  * Instead of blocking (with {@link put}) or failing (with {@link offer})
  * to insert when this queue is full, we can drop the head ({@link insert}).
  *
+ * <p>This class support closing with {@link close} function. When this queue
+ * is closed read and write operations throw {@link QueueClosedException}
+ *
  * @author Doug Lea
  * @author Etienne Champetier
  * @param <E> the type of elements held in this queue
@@ -58,6 +61,9 @@ public class ClosableEvictingQueue<E> {
 
     /** Number of elements in the queue */
     int count;
+
+    /** is this queue closed */
+    boolean closed = false;
 
     /*
      * Concurrency control uses the classic two-condition algorithm
@@ -151,12 +157,15 @@ public class ClosableEvictingQueue<E> {
      * is full.
      *
      * @throws NullPointerException {@inheritDoc}
+     * @throws QueueClosedException - if queue is closed
      */
     public boolean offer(E e) {
         if (e == null) throw new NullPointerException();
         final ReentrantLock lock = this.lock;
         lock.lock();
         try {
+            if (closed)
+                throw new QueueClosedException();
             if (count == items.length)
                 return false;
             else {
@@ -175,12 +184,15 @@ public class ClosableEvictingQueue<E> {
      * @see offer for non evicting/dropping version
      * @return null if this queue was not full, else head
      * @throws NullPointerException {@inheritDoc}
+     * @throws QueueClosedException - if queue is closed
      */
     public E insert(E e) {
         if (e == null) throw new NullPointerException();
         final ReentrantLock lock = this.lock;
         lock.lock();
         try {
+            if (closed)
+                throw new QueueClosedException();
             if (count == items.length) {
                 /*
                  * we could call dequeue & enqueue here but that would
@@ -215,14 +227,20 @@ public class ClosableEvictingQueue<E> {
      *
      * @throws InterruptedException {@inheritDoc}
      * @throws NullPointerException {@inheritDoc}
+     * @throws QueueClosedException - if queue is closed
      */
-    public void put(E e) throws InterruptedException {
+    public void put(E e) throws InterruptedException, QueueClosedException {
         if (e == null) throw new NullPointerException();
         final ReentrantLock lock = this.lock;
         lock.lockInterruptibly();
         try {
-            while (count == items.length)
+            while (true) {
+                if (closed)
+                    throw new QueueClosedException();
+                if (count != items.length)
+                    break;
                 notFull.await();
+            }
             enqueue(e);
         } finally {
             lock.unlock();
@@ -236,16 +254,21 @@ public class ClosableEvictingQueue<E> {
      *
      * @throws InterruptedException {@inheritDoc}
      * @throws NullPointerException {@inheritDoc}
+     * @throws QueueClosedException - if queue is closed
      */
     public boolean offer(E e, long timeout, TimeUnit unit)
-        throws InterruptedException {
+        throws InterruptedException, QueueClosedException {
 
         if (e == null) throw new NullPointerException();
         long nanos = unit.toNanos(timeout);
         final ReentrantLock lock = this.lock;
         lock.lockInterruptibly();
         try {
-            while (count == items.length) {
+            while (true) {
+                if (closed)
+                    throw new QueueClosedException();
+                if (count != items.length)
+                    break;
                 if (nanos <= 0)
                     return false;
                 nanos = notFull.awaitNanos(nanos);
@@ -262,11 +285,14 @@ public class ClosableEvictingQueue<E> {
      * queue is empty.
      *
      * @return the head of this queue, or null if this queue is empty
+     * @throws QueueClosedException - if queue is closed
      */
-    public E poll() {
+    public E poll() throws QueueClosedException {
         final ReentrantLock lock = this.lock;
         lock.lock();
         try {
+            if (closed)
+                throw new QueueClosedException();
             return (count == 0) ? null : dequeue();
         } finally {
             lock.unlock();
@@ -279,13 +305,19 @@ public class ClosableEvictingQueue<E> {
      *
      * @return the head of this queue
      * @throws InterruptedException - {@inheritDoc}
+     * @throws QueueClosedException - if queue is closed
      */
-    public E take() throws InterruptedException {
+    public E take() throws InterruptedException, QueueClosedException {
         final ReentrantLock lock = this.lock;
         lock.lockInterruptibly();
         try {
-            while (count == 0)
+            while (true) {
+                if (closed)
+                    throw new QueueClosedException();
+                if (count != 0)
+                    break;
                 notEmpty.await();
+            }
             return dequeue();
         } finally {
             lock.unlock();
@@ -302,13 +334,20 @@ public class ClosableEvictingQueue<E> {
      * @return the head of this queue, or null if the specified waiting time
      *         elapses before an element is available
      * @throws InterruptedException - {@inheritDoc}
+     * @throws QueueClosedException - if queue is closed
      */
-    public E poll(long timeout, TimeUnit unit) throws InterruptedException {
+    public E poll(long timeout, TimeUnit unit)
+        throws InterruptedException, QueueClosedException {
+
         long nanos = unit.toNanos(timeout);
         final ReentrantLock lock = this.lock;
         lock.lockInterruptibly();
         try {
-            while (count == 0) {
+            while (true) {
+                if (closed)
+                    throw new QueueClosedException();
+                if (count != 0)
+                    break;
                 if (nanos <= 0)
                     return null;
                 nanos = notEmpty.awaitNanos(nanos);
@@ -324,11 +363,14 @@ public class ClosableEvictingQueue<E> {
      * if this queue is empty.
      *
      * @return the head of this queue, or null if this queue is empty
+     * @throws QueueClosedException - if queue is closed
      */
-    public E peek() {
+    public E peek() throws QueueClosedException {
         final ReentrantLock lock = this.lock;
         lock.lock();
         try {
+            if (closed)
+                throw new QueueClosedException();
             return itemAt(takeIndex); // null when queue is empty
         } finally {
             lock.unlock();
@@ -412,6 +454,45 @@ public class ClosableEvictingQueue<E> {
                 for (; k > 0 && lock.hasWaiters(notFull); k--)
                     notFull.signal();
             }
+        } finally {
+            lock.unlock();
+        }
+    }
+
+    /**
+     * Atomically close the queue and drop remaining items.
+     * This also wake up all waiting thread.
+     */
+    public void close() {
+        final ReentrantLock lock = this.lock;
+        lock.lock();
+        try {
+            if (closed)
+                return;
+            //Close the queue
+            closed = true;
+            //Drop current items
+            final Object[] items = this.items;
+            for (int i=0; i < items.length; i++)
+                items[i] = null;
+            takeIndex = putIndex = count = 0;
+
+            //Wake up every waiting thread
+            notFull.signalAll();
+            notEmpty.signalAll();
+        } finally {
+            lock.unlock();
+        }
+    }
+
+    /**
+     * Return whether this queue is closed or not
+     */
+    public boolean isClosed() {
+        final ReentrantLock lock = this.lock;
+        lock.lock();
+        try {
+            return closed;
         } finally {
             lock.unlock();
         }
