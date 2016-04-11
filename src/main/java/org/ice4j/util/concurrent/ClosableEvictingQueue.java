@@ -37,6 +37,9 @@ import java.util.concurrent.locks.ReentrantLock;
  * generally decreases throughput but reduces variability and avoids
  * starvation.
  *
+ * <p>This class supports evicting with {@link insert} function.
+ * Instead of blocking (with {@link put}) or failing (with {@link offer})
+ * to insert when this queue is full, we can drop the head ({@link insert}).
  *
  * @author Doug Lea
  * @author Etienne Champetier
@@ -159,6 +162,47 @@ public class ClosableEvictingQueue<E> {
             else {
                 enqueue(e);
                 return true;
+            }
+        } finally {
+            lock.unlock();
+        }
+    }
+
+    /**
+     * Inserts the specified element at the tail of this queue. If this queue is
+     * full we will return the element at the head of this queue, else null.
+     *
+     * @see offer for non evicting/dropping version
+     * @return null if this queue was not full, else head
+     * @throws NullPointerException {@inheritDoc}
+     */
+    public E insert(E e) {
+        if (e == null) throw new NullPointerException();
+        final ReentrantLock lock = this.lock;
+        lock.lock();
+        try {
+            if (count == items.length) {
+                /*
+                 * we could call dequeue & enqueue here but that would
+                 * unecesserally signal (notEmpty, notFull)
+                 */
+                final Object[] items = this.items;
+                /*
+                 * dequeue without signaling
+                 */
+                @SuppressWarnings("unchecked")
+                E drop = (E) items[takeIndex];
+                if (++takeIndex == items.length) takeIndex = 0;
+                /*
+                 * enqueue without signaling
+                 */
+                items[putIndex] = e;
+                if (++putIndex == items.length) putIndex = 0;
+
+                return drop;
+            } else {
+                enqueue(e);
+                return null;
             }
         } finally {
             lock.unlock();
