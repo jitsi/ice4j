@@ -40,8 +40,7 @@ public class MultiplexingDatagramSocket
      */
     private final MultiplexingXXXSocketSupport<MultiplexedDatagramSocket>
         multiplexingXXXSocketSupport
-            = new MultiplexingXXXSocketSupport<MultiplexedDatagramSocket>(
-                    MultiplexedDatagramSocket.class)
+            = new MultiplexingXXXSocketSupport<MultiplexedDatagramSocket>()
             {
                 /**
                  * {@inheritDoc}
