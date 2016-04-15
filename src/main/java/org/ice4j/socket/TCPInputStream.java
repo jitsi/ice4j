@@ -85,7 +85,7 @@ public class TCPInputStream
     /**
      * Initializes a new <tt>TCPInputStream</tt>.
      *
-     * @param socket
+     * @param socket The inputStream for this instance.
      */
     public TCPInputStream(MultiplexingSocket socket)
     {

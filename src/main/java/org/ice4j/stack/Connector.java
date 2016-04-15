@@ -84,6 +84,8 @@ class Connector
      * Creates a network access point.
      * @param socket the socket that this access point is supposed to use for
      * communication.
+     * @param remoteAddress the remote address of the socket of this
+     * {@link Connector} if it is a TCP socket, or null if it is UDP.
      * @param messageQueue the FIFO list where incoming messages should be queued
      * @param errorHandler the instance to notify when errors occur.
      */

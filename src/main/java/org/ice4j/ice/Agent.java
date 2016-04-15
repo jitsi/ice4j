@@ -373,7 +373,7 @@ public class Agent
      * all and only local candidates.
      *
      * @throws IllegalArgumentException if either <tt>minPort</tt> or
-     * <tt>maxPort</tt> is not a valid port number or if <tt>minPort >
+     * <tt>maxPort</tt> is not a valid port number or if <tt>minPort &gt;
      * maxPort</tt>, or if <tt>transport</tt> is not currently supported.
      * @throws IOException if an error occurs while the underlying resolver lib
      * is using sockets.
@@ -1023,6 +1023,7 @@ public class Agent
      * candidate foundations. We use the <tt>FoundationsRegistry</tt> to keep
      * track of the foundations we assign within a session (i.e. the entire life
      * time of an <tt>Agent</tt>)
+     * @return the {@link FoundationsRegistry} of this agent
      */
     public final FoundationsRegistry getFoundationsRegistry()
     {
@@ -1891,7 +1892,6 @@ public class Agent
      * @return the value of the <tt>Ta</tt> pace timer according to the
      * number and type of {@link IceMediaStream}s this agent will be using or
      * a pre-configured value if the application has set one.
-     * <p>
      */
     protected long calculateTa()
     {

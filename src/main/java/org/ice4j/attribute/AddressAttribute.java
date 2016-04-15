@@ -24,34 +24,32 @@ import org.ice4j.*;
 /**
  * This class is used to represent Stun attributes that contain an address. Such
  * attributes are:
- *<p>
- * MAPPED-ADDRESS <br/>
- * RESPONSE-ADDRESS <br/>
- * SOURCE-ADDRESS <br/>
- * CHANGED-ADDRESS <br/>
- * REFLECTED-FROM <br/>
- * ALTERNATE-SERVER <br/>
- * XOR-PEER-ADDRESS <br/>
- * XOR-RELAYED-ADDRESS <br/>
- *</p>
+ *<ul>
+ * <li>MAPPED-ADDRESS
+ * <li>RESPONSE-ADDRESS
+ * <li>SOURCE-ADDRESS
+ * <li>CHANGED-ADDRESS
+ * <li>REFLECTED-FROM
+ * <li>ALTERNATE-SERVER
+ * <li>XOR-PEER-ADDRESS
+ * <li>XOR-RELAYED-ADDRESS
+ *</ul>
  *<p>
  * The different attributes are distinguished by the attributeType of
- * org.ice4j.attribute.Attribute.
- *</p>
+ * {@link Attribute}.
  *<p>
  * Address attributes indicate the mapped IP address and
  * port.  They consist of an eight bit address family, and a sixteen bit
  * port, followed by a fixed length value representing the IP address.
- *<code>
- *  0                   1                   2                   3          <br/>
- *  0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1        <br/>
- * +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+       <br/>
- * |x x x x x x x x|    Family     |           Port                |       <br/>
- * +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+       <br/>
- * |                             Address                           |       <br/>
- * +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+       <br/>
- *                                                                         <br/>
- * </p>
+ *<pre>
+ *  0                   1                   2                   3   
+ *  0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 
+ * +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+ * |x x x x x x x x|    Family     |           Port                |
+ * +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+ * |                             Address                           |
+ * +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+ * </pre>
  * <p>
  * The port is a network byte ordered representation of the mapped port.
  * The address family is always 0x01, corresponding to IPv4.  The first

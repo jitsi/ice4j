@@ -27,7 +27,7 @@ import java.util.*;
  * possible users (such as STUN/TURN servers) or others that would only work
  * with a few, like for example an ICE implementation.
  *
- * @todo just throwing a user name at the manager and expecting it to find
+ * TODO: just throwing a user name at the manager and expecting it to find
  * an authority that knows about it may lead to ambiguities so we may need
  * to add other parameters in here that would allow us to better select an
  * authority.

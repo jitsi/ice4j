@@ -52,7 +52,7 @@ public class DataAttribute
     private final boolean padding;
 
     /**
-     * Constructor.
+     * Creates a new instance of this class with padding enabled.
      */
     protected DataAttribute()
     {
@@ -60,7 +60,9 @@ public class DataAttribute
     }
 
     /**
-     * Constructor.
+     * Creates a new instance of this class.
+     * @param padding true to pad the data if the length is not on a word
+     * boundary.
      */
     protected DataAttribute(boolean padding)
     {

@@ -52,7 +52,7 @@ public class PseudoTcpSocket extends Socket
      * Set conversation ID for the socket
      * Must be called on unconnected socket
      * 
-     * @param convID
+     * @param convID the conversation ID to set
      * @throws IllegalStateException when called on connected or closed socket
      */
     public void setConversationID(long convID)
@@ -62,8 +62,8 @@ public class PseudoTcpSocket extends Socket
     }
 	
     /**
-     * Sets MTU value
-     * @param mtu
+     * Sets MTU (maximum transmission unit) value
+     * @param mtu  the MTU value
      */
 	public void setMTU(int mtu)
 	{
@@ -71,7 +71,7 @@ public class PseudoTcpSocket extends Socket
 	}
 	
 	/**
-	 * 
+	 * Gets MTU (maximum transmission unit) value
 	 * @return MTU value
 	 */
 	public int getMTU()
@@ -80,9 +80,10 @@ public class PseudoTcpSocket extends Socket
 	}
 	
 	/**
-	 * 
+	 * Sets an {@link Option} on this socket.
 	 * @return PseudoTCP option value
 	 * 
+	 * @param option the option to set on this socket.
 	 * @see Option
 	 */
 	public long getOption(Option option)
@@ -116,7 +117,7 @@ public class PseudoTcpSocket extends Socket
 
 	/**
      * Sets debug name that will be displayed in log messages for this socket
-     * @param debugName 
+     * @param debugName the name of this socket for debug messages
      */
     public void setDebugName(String debugName)
     {
@@ -265,6 +266,7 @@ public class PseudoTcpSocket extends Socket
      *                      accepted as remote packet's source
      * @param timeout connection accept timeout value in milliseconds, after
      *                which the exception will be thrown.
+     * @throws IOException if socket is closed or timeout expires
      */
     public void accept(SocketAddress remoteAddress, int timeout)
             throws IOException

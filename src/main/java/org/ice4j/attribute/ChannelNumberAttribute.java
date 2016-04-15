@@ -169,7 +169,7 @@ public class ChannelNumberAttribute extends Attribute
     /**
      * Determines if the channelNo is in valid range.
      * @param channelNo the channelNo to validate.
-     * @return true if channnelNo is >= 0x4000.
+     * @return true if channnelNo is &gt;= 0x4000.
      */
     public static boolean isValidRange(char channelNo)
     {

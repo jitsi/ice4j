@@ -67,9 +67,10 @@ public class PseudoTcpSocketFactory
 
     /**
      * Creates socket bound to local <tt>sockAddr</tt>
-     * @param sockAddr
+     * @param sockAddr address for the pseudo socket
      * @return socket bound to local address
-     * @throws IOException
+     * @throws IOException if the socket could not be opened, or the socket
+     * could not bind to the specified local port.
      */
     public Socket createBoundSocket(InetSocketAddress sockAddr) 
         throws IOException
@@ -110,9 +111,10 @@ public class PseudoTcpSocketFactory
     /**
      * Creates a socket that will run on given <tt>datagramSocket</tt>
      * 
-     * @param datagramSocket
+     * @param datagramSocket the socket to run on
      * @return new socket running on given <tt>datagramSocket</tt>
-     * @throws SocketException 
+     * @throws SocketException if there is an error in the underlying protocol,
+     * such as a TCP error.
      */
     public PseudoTcpSocket createSocket(DatagramSocket datagramSocket) 
         throws SocketException

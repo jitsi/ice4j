@@ -1353,6 +1353,7 @@ public class MessageFactory
      * mandatory headers.
      * @throws IllegalArgumentException if there was something wrong with the
      * way we are trying to create the Request.
+     * @throws StunException when the transaction id is not valid.
      */
     public static Indication createConnectionAttemptIndication(
         int connectionIdValue, TransportAddress peerAddress,

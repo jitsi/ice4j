@@ -248,7 +248,7 @@ public class HostCandidateHarvester
      * @param transport transport protocol used
      *
      * @throws IllegalArgumentException if either <tt>minPort</tt> or
-     * <tt>maxPort</tt> is not a valid port number, <tt>minPort >
+     * <tt>maxPort</tt> is not a valid port number, <tt>minPort &gt;
      * maxPort</tt> or if transport is not supported.
      * @throws IOException if an error occurs while the underlying resolver lib
      * is using sockets.

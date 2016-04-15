@@ -37,7 +37,6 @@ import org.ice4j.stack.*;
  * The key for the HMAC depends on whether long-term or short-term
  * credentials are in use.  For long-term credentials, the key is 16
  * bytes:
- * <p>
  * <pre>
  *          key = MD5(username ":" realm ":" SASLprep(password))
  * </pre>
@@ -54,7 +53,6 @@ import org.ice4j.stack.*;
  * 0x8493fbc53ba582fb4c044c456bdc40eb.
  * <p>
  * For short-term credentials:
- * <p>
  * <pre>
  *                        key = SASLprep(password)
  * </pre>

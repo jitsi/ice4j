@@ -544,7 +544,8 @@ public class AttributeFactory
      *
      * @param priority the priority value
      * @return the created PriorityAttribute
-     * @throws IllegalArgumentException if priority < 0 or priority > (2^31 - 1)
+     * @throws IllegalArgumentException if priority &lt; 0 or priority &gt;
+     *             (2^31 - 1)
      */
     public static PriorityAttribute createPriorityAttribute(long priority)
                     throws IllegalArgumentException

@@ -306,6 +306,9 @@ class NetAccessManager
      * has no effect.
      *
      * @param  socket   the socket that the access point should use.
+     * @param remoteAddress the remote address of the socket of the
+     * {@link Connector} to be created if it is a TCP socket, or null if it
+     * is UDP.
      */
     protected void addSocket(IceSocketWrapper socket,
                              TransportAddress remoteAddress)

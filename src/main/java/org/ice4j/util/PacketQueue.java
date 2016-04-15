@@ -22,12 +22,12 @@ import java.util.logging.*;
 /**
  * An abstract queue of packets. This is meant to eventually be able to be used
  * in the following classes (in ice4j and libjitsi) in place of their ad-hoc
- * queue implementations (which is the reason the class is parametrized):
- *     <br/> RTPConnectorOutputStream.Queue
- *     <br/> PushSourceStreamImpl#readQ
- *     <br/> OutputDataStreamImpl#writeQ
- *     <br/> SinglePortHarvester.MySocket#queue
- *     <br/> MultiplexingSocket#received (and the rest of Multiplex* classes).
+ * queue implementations (which is the reason the class is parameterized):
+ *     <br> RTPConnectorOutputStream.Queue
+ *     <br> PushSourceStreamImpl#readQ
+ *     <br> OutputDataStreamImpl#writeQ
+ *     <br> SinglePortHarvester.MySocket#queue
+ *     <br> MultiplexingSocket#received (and the rest of Multiplex* classes).
  *
  * @author Boris Grozev
  */

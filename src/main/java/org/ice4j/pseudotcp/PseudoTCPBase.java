@@ -364,9 +364,9 @@ public class PseudoTCPBase
     }
 
     /**
-     * Set the MTU value
+     * Set the MTU (maximum transmission unit) value
      *
-     * @param mtu
+     * @param mtu the new MTU value
      */
     public void notifyMTU(int mtu)
     {
@@ -680,11 +680,13 @@ public class PseudoTCPBase
     }
 
     /**
-     *
-     * @param buffer
-     * @param len
+     * Reads the data available in receive buffer. This method returns 0 if
+     * there's no data available at the moment.
+     * 
+     * @param buffer destination buffer
+     * @param len bytes to be read
      * @return received byte count
-     * @throws IOException
+     * @throws IOException if the protocol is not in the connected state
      */
     public int recv(byte[] buffer, int len) throws IOException
     {
@@ -692,11 +694,12 @@ public class PseudoTCPBase
     }
 
     /**
-     *
-     * @param buffer
-     * @param len
+     * Enqueues data in the send buffer
+     * 
+     * @param buffer source data buffer
+     * @param len bytes count to be sent
      * @return sent byte count
-     * @throws IOException
+     * @throws IOException if the protocol is not in connected state
      */
     public int send(byte[] buffer, int len) throws IOException
     {
@@ -875,6 +878,9 @@ public class PseudoTCPBase
 
     /**
      * Method can be used in debugging utilities to parse PTCP segment
+     * @param buffer data to parse
+     * @param size length of the data in the buffer
+     * @return the parsed segment
      */
     public static Segment parseSeg(byte[] buffer, int size)
     {
@@ -898,11 +904,11 @@ public class PseudoTCPBase
         
         return seg;
     }
-    
+
     /**
      * Can be used to convert segments to text
      * 
-     * @param seg
+     * @param seg the {@link Segment} to format
      * @return segment in readable text form
      */
     public static String segToStr(Segment seg)
