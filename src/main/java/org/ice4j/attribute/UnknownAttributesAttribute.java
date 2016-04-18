@@ -229,8 +229,8 @@ public class UnknownAttributesAttribute extends Attribute
         char originalOffset = offset;
         for(int i = offset; i < originalOffset + length; i += 2)
         {
-            char attributeID = (char)( (attributeValue[offset++] << 8) |
-                               (attributeValue[offset++]) );
+            char attributeID = (char) (((attributeValue[offset++] & 0xFF) << 8)
+                | (attributeValue[offset++] & 0xFF));
             addAttributeID(attributeID);
         }
     }

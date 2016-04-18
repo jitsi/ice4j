@@ -282,7 +282,8 @@ public class MessageIntegrityAttribute
         binValue[3] = (byte)(getDataLength() & 0x00FF);
 
         byte[] key = null;
-        char msgType = (char)((content[0] << 8) + content[1]);
+        char msgType =
+            (char) (((content[0] & 0xFF) << 8) | (content[1] & 0xFF));
 
         if(Message.isRequestType(msgType))
         {

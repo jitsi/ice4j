@@ -54,10 +54,10 @@ public class AttributeDecoder
         }
 
         //Discover attribute type
-        char attributeType   = (char)((bytes[offset] << 8) | bytes[offset + 1]);
-        int len1 = bytes[offset + 2] & 0xff;
-        int len2 = bytes[offset + 3] & 0xff;
-        char attributeLength = (char)((len1 << 8) | len2);
+        char attributeType = (char)
+            (((bytes[offset] & 0xFF) << 8) | (bytes[offset + 1] & 0xFF));
+        char attributeLength = (char)
+            (((bytes[offset + 2] & 0xFF) << 8) | (bytes[offset + 3] & 0xFF));
 
         if(attributeLength > bytes.length - offset )
             throw new StunException( StunException.ILLEGAL_ARGUMENT,
