@@ -100,25 +100,24 @@ public class ChannelData
     }
 
     /**
-     * Get the data length.
+     * Get the data length (without padding).
      *
      * @return data length
      */
     public char getDataLength()
     {
-        char length = 0;
         if(data == null)
-        {
-            return length;
-        }
-
-        /* pad to a multiple of four */
-        if((length % 4) > 0)
-        {
-            length += (4 - (length % 4));
-        }
+            return 0;
 
         return (char)data.length;
+    }
+
+    /**
+     * @return num padded to 4
+     */
+    private static int padTo4(int num)
+    {
+        return (num + 3) & ~3;
     }
 
     /**
@@ -136,13 +135,27 @@ public class ChannelData
     }
 
     /**
-     * Returns a binary representation of this message.
-     * @return a binary representation of this message.
+     * Returns a non padded binary representation of this message.
+     * @return a non padded binary representation of this message.
      * @throws StunException if the channel number is invalid
+     * @deprecated
      */
     public byte[] encode() throws StunException
     {
-        char dataLength = getDataLength();
+        return encode(false);
+    }
+
+    /**
+     * Returns a binary representation of this message.
+     * @param pad determine if we pad this message
+     * @return a binary representation of this message.
+     * @throws StunException if the channel number is invalid
+     */
+    public byte[] encode(boolean pad) throws StunException
+    {
+        int dataLength = getDataLength();
+        if (pad)
+            dataLength = padTo4(dataLength);
         byte binMsg[] = new byte[HEADER_LENGTH + dataLength];
         int offset = 0;
 
