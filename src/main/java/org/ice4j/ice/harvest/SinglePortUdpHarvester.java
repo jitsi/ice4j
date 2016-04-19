@@ -24,6 +24,7 @@ import org.ice4j.message.*;
 import org.ice4j.socket.*;
 import org.ice4j.stack.*;
 import org.ice4j.util.*;
+import org.ice4j.util.concurrent.*;
 
 import java.io.*;
 import java.net.*;
@@ -467,8 +468,8 @@ public class SinglePortUdpHarvester
         /**
          * The FIFO which acts as a buffer for this socket.
          */
-        private final ArrayBlockingQueue<Buffer> queue
-            = new ArrayBlockingQueue<>(QUEUE_SIZE);
+        private final ClosableEvictingQueue<Buffer> queue
+            = new ClosableEvictingQueue<>(QUEUE_SIZE);
 
         /**
          * The {@link QueueStatistics} instance optionally used to collect and
@@ -480,12 +481,6 @@ public class SinglePortUdpHarvester
          * The remote address that is associated with this socket.
          */
         private SocketAddress remoteAddress;
-
-        /**
-         * The flag which indicates that this <tt>DatagramSocket</tt> has been
-         * closed.
-         */
-        private boolean closed = false;
 
         /**
          * Initializes a new <tt>MySocket</tt> instance with the given
@@ -518,27 +513,24 @@ public class SinglePortUdpHarvester
          */
         private void addBuffer(Buffer buf)
         {
-            synchronized (queue)
-            {
-                // Drop the first rather than the current packet, so that
-                // receivers can notice the loss earlier.
-                if (queue.size() == QUEUE_SIZE)
-                {
-                    logger.info("Dropping a packet because the queue is full.");
-                    if (queueStatistics != null)
-                    {
-                        queueStatistics.remove(System.currentTimeMillis());
-                    }
-                    queue.poll();
-                }
-
-                queue.offer(buf);
+            Buffer drop = null;
+            try {
+                drop = queue.insert(buf);
+            } catch(QueueClosedException e) {
+                pool.offer(buf);
+                return;
+            }
+            if (drop != null) {
+                logger.info("Dropping a packet because the queue is full.");
                 if (queueStatistics != null)
                 {
-                    queueStatistics.add(System.currentTimeMillis());
+                    queueStatistics.remove(System.currentTimeMillis());
                 }
-
-                queue.notifyAll();
+                pool.offer(drop);
+            }
+            if (queueStatistics != null)
+            {
+                queueStatistics.add(System.currentTimeMillis());
             }
         }
 
@@ -584,13 +576,7 @@ public class SinglePortUdpHarvester
         @Override
         public void close()
         {
-            closed = true;
-
-            synchronized (queue)
-            {
-                // Wake up any threads still in receive()
-                queue.notifyAll();
-            }
+            queue.close();
 
             // We could be called by the super-class constructor, in which
             // case this.removeAddress is not initialized yet.
@@ -614,27 +600,22 @@ public class SinglePortUdpHarvester
 
             while (buf == null)
             {
-                if (closed)
-                    throw new SocketException("Socket closed");
-
-                synchronized (queue)
+                try
                 {
-                    if (queue.isEmpty())
-                    {
-                        try
-                        {
-                            queue.wait();
-                        }
-                        catch (InterruptedException ie)
-                        {}
-                    }
-
-                    buf = queue.poll();
-                    if (queueStatistics != null)
-                    {
-                        queueStatistics.remove(System.currentTimeMillis());
-                    }
+                    buf = queue.take();
                 }
+                catch (QueueClosedException e)
+                {
+                    throw new SocketException("Socket closed");
+                }
+                catch (InterruptedException e)
+                {
+                }
+            }
+
+            if (queueStatistics != null)
+            {
+                queueStatistics.remove(System.currentTimeMillis());
             }
 
             byte[] pData = p.getData();
