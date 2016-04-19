@@ -122,7 +122,7 @@ public class FingerprintAttribute
      */
     public boolean equals(Object obj)
     {
-        if (! (obj instanceof FingerprintAttribute) || obj == null)
+        if (! (obj instanceof FingerprintAttribute))
             return false;
 
         if (obj == this)

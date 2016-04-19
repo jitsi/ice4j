@@ -62,8 +62,7 @@ public class EvenPortAttribute extends Attribute
      */
     public boolean equals(Object obj)
     {
-        if (! (obj instanceof EvenPortAttribute)
-                || obj == null)
+        if (! (obj instanceof EvenPortAttribute))
             return false;
 
         if (obj == this)

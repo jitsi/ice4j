@@ -89,8 +89,7 @@ public class UseCandidateAttribute
      */
     public boolean equals(Object obj)
     {
-        if(!(obj instanceof UseCandidateAttribute)
-            || obj == null)
+        if(!(obj instanceof UseCandidateAttribute))
             return false;
 
         if(obj == this)

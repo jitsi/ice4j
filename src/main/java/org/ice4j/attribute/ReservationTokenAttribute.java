@@ -216,8 +216,7 @@ public class ReservationTokenAttribute
     @Override
     public boolean equals(Object obj)
     {
-        if (! (obj instanceof ReservationTokenAttribute)
-              || obj == null)
+        if (! (obj instanceof ReservationTokenAttribute))
             return false;
 
         if (obj == this)

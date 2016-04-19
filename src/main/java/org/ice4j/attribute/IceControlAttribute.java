@@ -125,8 +125,7 @@ public abstract class IceControlAttribute
      */
     public boolean equals(Object obj)
     {
-        if(!(obj instanceof IceControlAttribute)
-            || obj == null)
+        if(!(obj instanceof IceControlAttribute))
             return false;
 
         if(obj == this)

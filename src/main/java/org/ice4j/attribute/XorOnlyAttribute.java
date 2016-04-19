@@ -111,8 +111,7 @@ public class XorOnlyAttribute
 
     public boolean equals(Object obj)
     {
-        if (! (obj instanceof XorOnlyAttribute)
-            || obj == null)
+        if (! (obj instanceof XorOnlyAttribute))
             return false;
 
         if (obj == this)

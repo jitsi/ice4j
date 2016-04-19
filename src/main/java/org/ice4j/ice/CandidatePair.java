@@ -443,7 +443,7 @@ public class CandidatePair
     @Override
     public boolean equals(Object obj)
     {
-        if ((obj == null) || !(obj instanceof CandidatePair))
+        if (! (obj instanceof CandidatePair))
             return false;
 
         CandidatePair candidatePair = (CandidatePair) obj;

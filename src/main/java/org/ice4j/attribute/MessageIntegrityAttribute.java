@@ -335,7 +335,7 @@ public class MessageIntegrityAttribute
      */
     public boolean equals(Object obj)
     {
-        if (! (obj instanceof MessageIntegrityAttribute) || obj == null)
+        if (! (obj instanceof MessageIntegrityAttribute))
             return false;
 
         if (obj == this)

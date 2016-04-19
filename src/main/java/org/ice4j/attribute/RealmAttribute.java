@@ -141,7 +141,7 @@ public class RealmAttribute extends Attribute
      */
     public boolean equals(Object obj)
     {
-        if (! (obj instanceof RealmAttribute) || obj == null)
+        if (! (obj instanceof RealmAttribute))
             return false;
 
         if (obj == this)

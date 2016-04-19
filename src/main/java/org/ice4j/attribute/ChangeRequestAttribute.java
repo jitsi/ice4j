@@ -100,8 +100,7 @@ public class ChangeRequestAttribute
      */
      public boolean equals(Object obj)
      {
-         if (! (obj instanceof ChangeRequestAttribute)
-             || obj == null)
+         if (! (obj instanceof ChangeRequestAttribute))
              return false;
 
          if (obj == this)

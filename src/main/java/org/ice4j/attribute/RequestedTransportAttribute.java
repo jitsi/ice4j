@@ -70,8 +70,7 @@ public class RequestedTransportAttribute extends Attribute
     @Override
     public boolean equals(Object obj)
     {
-        if (! (obj instanceof RequestedTransportAttribute)
-                || obj == null)
+        if (! (obj instanceof RequestedTransportAttribute))
             return false;
 
         if (obj == this)
