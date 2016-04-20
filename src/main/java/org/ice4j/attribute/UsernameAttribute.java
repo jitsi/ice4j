@@ -147,7 +147,7 @@ public class UsernameAttribute extends Attribute
      */
     public boolean equals(Object obj)
     {
-        if (! (obj instanceof UsernameAttribute) || obj == null)
+        if (! (obj instanceof UsernameAttribute))
             return false;
 
         if (obj == this)

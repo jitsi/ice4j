@@ -161,8 +161,7 @@ abstract class AddressAttribute extends Attribute
     */
     public boolean equals(Object obj)
     {
-        if (! (obj instanceof AddressAttribute)
-            || obj == null)
+        if (! (obj instanceof AddressAttribute))
             return false;
 
         if (obj == this)

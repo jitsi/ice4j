@@ -54,11 +54,8 @@ public class DontFragmentAttribute extends Attribute
      */
     public boolean equals(Object obj)
     {
-        if (! (obj instanceof DontFragmentAttribute)
-                || obj == null)
-        {
+        if (! (obj instanceof DontFragmentAttribute))
             return false;
-        }
 
         return true;
     }

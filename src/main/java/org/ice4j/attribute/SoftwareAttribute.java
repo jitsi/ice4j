@@ -151,8 +151,7 @@ public class SoftwareAttribute
      */
     public boolean equals(Object obj)
     {
-        if (! (obj instanceof SoftwareAttribute)
-                || obj == null)
+        if (! (obj instanceof SoftwareAttribute))
             return false;
 
         if (obj == this)

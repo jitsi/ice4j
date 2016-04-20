@@ -83,8 +83,7 @@ public class MagicCookieAttribute
      */
     public boolean equals(Object obj)
     {
-        if (! (obj instanceof LifetimeAttribute)
-                || obj == null)
+        if (! (obj instanceof MagicCookieAttribute))
             return false;
 
         if (obj == this)

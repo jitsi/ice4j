@@ -118,8 +118,7 @@ public class PriorityAttribute
      */
     public boolean equals(Object obj)
     {
-        if (! (obj instanceof PriorityAttribute)
-            || obj == null)
+        if (! (obj instanceof PriorityAttribute))
             return false;
 
         if (obj == this)

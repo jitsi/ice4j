@@ -867,8 +867,7 @@ public abstract class Message
     @Override
     public boolean equals(Object obj)
     {
-        if(!(obj instanceof Message)
-           || obj == null)
+        if(!(obj instanceof Message))
             return false;
 
         if(obj == this)

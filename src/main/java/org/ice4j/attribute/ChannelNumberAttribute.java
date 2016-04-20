@@ -60,8 +60,7 @@ public class ChannelNumberAttribute extends Attribute
     @Override
     public boolean equals(Object obj)
     {
-        if (! (obj instanceof ChannelNumberAttribute)
-                || obj == null)
+        if (! (obj instanceof ChannelNumberAttribute))
             return false;
 
         if (obj == this)

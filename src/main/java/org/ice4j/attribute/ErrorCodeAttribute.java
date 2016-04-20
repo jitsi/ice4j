@@ -488,8 +488,7 @@ public class ErrorCodeAttribute extends Attribute
      @Override
     public boolean equals(Object obj)
      {
-         if (! (obj instanceof ErrorCodeAttribute)
-             || obj == null)
+         if (! (obj instanceof ErrorCodeAttribute))
              return false;
 
          if (obj == this)

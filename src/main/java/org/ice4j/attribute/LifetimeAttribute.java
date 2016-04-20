@@ -61,8 +61,7 @@ public class LifetimeAttribute
     @Override
     public boolean equals(Object obj)
     {
-        if (! (obj instanceof LifetimeAttribute)
-                || obj == null)
+        if (! (obj instanceof LifetimeAttribute))
             return false;
 
         if (obj == this)

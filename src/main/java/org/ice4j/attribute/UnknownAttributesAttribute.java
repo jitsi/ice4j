@@ -191,8 +191,7 @@ public class UnknownAttributesAttribute extends Attribute
      */
     public boolean equals(Object obj)
     {
-        if (! (obj instanceof UnknownAttributesAttribute)
-            || obj == null)
+        if (! (obj instanceof UnknownAttributesAttribute))
             return false;
 
         if (obj == this)

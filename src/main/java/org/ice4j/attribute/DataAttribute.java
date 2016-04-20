@@ -170,8 +170,7 @@ public class DataAttribute
 
     public boolean equals(Object obj)
     {
-        if (! (obj instanceof DataAttribute)
-                || obj == null)
+        if (! (obj instanceof DataAttribute))
             return false;
 
         if (obj == this)

@@ -129,8 +129,7 @@ public class StunDiscoveryReport
      */
     public boolean equals(Object obj)
     {
-        if(obj == null
-           || !(obj instanceof StunDiscoveryReport))
+        if(! (obj instanceof StunDiscoveryReport))
            return false;
 
         if(obj == this)
