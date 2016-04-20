@@ -100,7 +100,7 @@ public class StunMappingCandidateHarvester
                 StunCandidateHarvester stunHarv = new StunCandidateHarvester(
                     new TransportAddress(
                             addressAndPort[0],
-                            Integer.valueOf(addressAndPort[1]),
+                            Integer.parseInt(addressAndPort[1]),
                             Transport.UDP));
 
                 Agent agent = new Agent();
