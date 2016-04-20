@@ -530,7 +530,7 @@ public class NetworkUtils
         if (isMappedIPv4Addr(addr))
         {
             byte[] newAddr = new byte[IN4_ADDR_SIZE];
-            System.arraycopy(addr, 12, newAddr, 0, IN6_ADDR_SIZE);
+            System.arraycopy(addr, 12, newAddr, 0, IN4_ADDR_SIZE);
             return newAddr;
         }
 
