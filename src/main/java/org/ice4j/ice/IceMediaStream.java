@@ -422,7 +422,7 @@ public class IceMediaStream
      *  candidate with its base. Once this has been done, we remove each pair
      *  where the local and remote candidates are identical to the local and
      *  remote candidates of a pair higher up on the priority list.
-     *  <p/>
+     *  <br>
      *  In addition, in order to limit the attacks described in Section 18.5.2
      *  of the ICE spec, we limit the total number of pairs and hence
      *  (connectivity checks) to a specific value, (a total of 100 by default).

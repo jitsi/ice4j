@@ -361,27 +361,27 @@ public abstract class Message
      *
      * For classic STUN :
      *
-     *
-     *                                         Binding  Shared  Shared  Shared        <br/>
-     *                       Binding  Binding  Error    Secret  Secret  Secret        <br/>
-     *   Att.                Req.     Resp.    Resp.    Req.    Resp.   Error         <br/>
-     *                                                                  Resp.         <br/>
-     *   _____________________________________________________________________        <br/>
-     *   MAPPED-ADDRESS      N/A      M        N/A      N/A     N/A     N/A           <br/>
-     *   RESPONSE-ADDRESS    O        N/A      N/A      N/A     N/A     N/A           <br/>
-     *   CHANGE-REQUEST      O        N/A      N/A      N/A     N/A     N/A           <br/>
-     *   SOURCE-ADDRESS      N/A      M        N/A      N/A     N/A     N/A           <br/>
-     *   CHANGED-ADDRESS     N/A      M        N/A      N/A     N/A     N/A           <br/>
-     *   USERNAME            O        N/A      N/A      N/A     M       N/A           <br/>
-     *   PASSWORD            N/A      N/A      N/A      N/A     M       N/A           <br/>
-     *   MESSAGE-INTEGRITY   O        O        N/A      N/A     N/A     N/A           <br/>
-     *   ERROR-CODE          N/A      N/A      M        N/A     N/A     M             <br/>
-     *   UNKNOWN-ATTRIBUTES  N/A      N/A      C        N/A     N/A     C             <br/>
-     *   REFLECTED-FROM      N/A      C        N/A      N/A     N/A     N/A           <br/>
-     *   XOR-MAPPED-ADDRESS  N/A      M        N/A      N/A     N/A     N/A           <br/>
-     *   XOR-ONLY            O        N/A      N/A      N/A     N/A     N/A           <br/>
-     *   SOFTWARE            N/A      O        O        N/A     O       O             <br/>
-     *
+     * <pre>
+     *                                         Binding  Shared  Shared  Shared
+     *                       Binding  Binding  Error    Secret  Secret  Secret
+     *   Att.                Req.     Resp.    Resp.    Req.    Resp.   Error 
+     *                                                                  Resp. 
+     *   _____________________________________________________________________
+     *   MAPPED-ADDRESS      N/A      M        N/A      N/A     N/A     N/A   
+     *   RESPONSE-ADDRESS    O        N/A      N/A      N/A     N/A     N/A   
+     *   CHANGE-REQUEST      O        N/A      N/A      N/A     N/A     N/A   
+     *   SOURCE-ADDRESS      N/A      M        N/A      N/A     N/A     N/A   
+     *   CHANGED-ADDRESS     N/A      M        N/A      N/A     N/A     N/A   
+     *   USERNAME            O        N/A      N/A      N/A     M       N/A   
+     *   PASSWORD            N/A      N/A      N/A      N/A     M       N/A   
+     *   MESSAGE-INTEGRITY   O        O        N/A      N/A     N/A     N/A   
+     *   ERROR-CODE          N/A      N/A      M        N/A     N/A     M     
+     *   UNKNOWN-ATTRIBUTES  N/A      N/A      C        N/A     N/A     C     
+     *   REFLECTED-FROM      N/A      C        N/A      N/A     N/A     N/A   
+     *   XOR-MAPPED-ADDRESS  N/A      M        N/A      N/A     N/A     N/A   
+     *   XOR-ONLY            O        N/A      N/A      N/A     N/A     N/A   
+     *   SOFTWARE            N/A      O        O        N/A     O       O     
+     * </pre>
      */
     public static final byte N_A = 0;
 
@@ -710,9 +710,9 @@ public abstract class Message
      *
      * @param attributeType the id of the attribute to check .
      *
-     * @return Message.N_A - for not applicable <br/>
-     *         Message.C   - for case depending <br/>
-     *         Message.N_A - for not applicable <br/>
+     * @return Message.N_A - for not applicable <br>
+     *         Message.C   - for case depending <br>
+     *         Message.N_A - for not applicable <br>
      */
     protected byte getAttributePresentity(char attributeType)
     {

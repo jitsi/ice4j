@@ -155,8 +155,9 @@ public class DelegatingSocket
     /**
      * Initializes a new <tt>DelegatingSocket</tt>.
      *
-     * @param address
-     * @param port
+     * @param address ignored
+     * @param port ignored
+     * @throws IOException never thrown
      * @see Socket#Socket(InetAddress, int)
      */
     public DelegatingSocket(InetAddress address, int port)
@@ -168,11 +169,12 @@ public class DelegatingSocket
     /**
      * Initializes a new <tt>DelegatingSocket</tt>.
      *
-     * @param address
-     * @param port
-     * @param localAddr
-     * @param localPort
+     * @param address ignored
+     * @param port ignored
+     * @param localAddr ignored
+     * @param localPort ignored
      * @see Socket#Socket(InetAddress, int, InetAddress, int)
+     * @throws IOException never thrown
      */
     public DelegatingSocket(
             InetAddress address, int port,
@@ -185,7 +187,7 @@ public class DelegatingSocket
     /**
      * Initializes a new <tt>DelegatingSocket</tt>.
      *
-     * @param proxy
+     * @param proxy ignored
      * @see Socket#Socket(Proxy)
      */
     public DelegatingSocket(Proxy proxy)
@@ -243,7 +245,8 @@ public class DelegatingSocket
     /**
      * Initializes a new <tt>DelegatingSocket</tt>.
      *
-     * @param impl
+     * @param impl  ignored
+     * @throws SocketException never thrown
      * @see Socket#Socket(SocketImpl)
      */
     protected DelegatingSocket(SocketImpl impl)
@@ -255,8 +258,10 @@ public class DelegatingSocket
     /**
      * Initializes a new <tt>DelegatingSocket</tt>.
      *
-     * @param host
-     * @param port
+     * @param host ignored
+     * @param port ignored
+     * @throws UnknownHostException never thrown
+     * @throws IOException never thrown
      * @see Socket#Socket(String, int)
      */
     public DelegatingSocket(String host, int port)
@@ -268,10 +273,10 @@ public class DelegatingSocket
     /**
      * Initializes a new <tt>DelegatingSocket</tt>.
      *
-     * @param host
-     * @param port
-     * @param localAddr
-     * @param localPort
+     * @param host ignored
+     * @param port ignored
+     * @param localAddr ignored
+     * @param localPort ignored
      * @see Socket#Socket(String, int, InetAddress, int)
      */
     public DelegatingSocket(

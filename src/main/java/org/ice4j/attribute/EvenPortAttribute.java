@@ -24,8 +24,8 @@ import org.ice4j.*;
  * server to allocate an even port and optionally allocate
  * the next higher port number.
  *
- * There are one flag supported : <br/>
- * R : ask to reserve a second port.<br/>
+ * There is one flag supported: <br>
+ * R : ask to reserve a second port.
  *
  * @author Sebastien Vincent
  */

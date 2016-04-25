@@ -74,6 +74,8 @@ public enum CandidateTcpType
      * Parses the string <tt>candidateTcpTypeName</tt> and return the
      * corresponding <tt>CandidateTcpType</tt> instance.
      *
+     * @param candidateTcpTypeName the string to parse
+     * @return candidateTcpTypeName as an Enum
      * @throws IllegalArgumentException in case <tt>candidateTcpTypeName</tt> is
      * not a valid or currently supported candidate TCP type.
      */

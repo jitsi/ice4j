@@ -20,17 +20,17 @@ package org.ice4j.ice;
 /**
  * Everty <tt>CheckList</tt> is associated with a state, which captures the
  * state of ICE checks for that media stream. There are three states:
- * <p/>
+ * <br>
  * Running:  In this state, ICE checks are still in progress for this
  * media stream.
- * <p/>
+ * <br>
  * Completed:  In this state, ICE checks have produced nominated pairs
  * for each component of the media stream.  Consequently, ICE has succeeded and
  * media can be sent.
- * <p/>
+ * <br>
  * Failed:  In this state, the ICE checks have not completed successfully for
  * this media stream.
- * <p/>
+ * <br>
  * When a check list is first constructed as the consequence of an offer/answer
  * exchange, it is placed in the Running state.
  *

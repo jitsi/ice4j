@@ -367,7 +367,7 @@ public class CandidatePair
      * agent. Let D be the priority for the candidate provided by the
      * controlled agent. The priority for a pair is computed as:
      * <p>
-     * <i>pair priority = 2^32*MIN(G,D) + 2*MAX(G,D) + (G>D?1:0)</i>
+     * <i>pair priority = 2^32*MIN(G,D) + 2*MAX(G,D) + (G&gt;D?1:0)</i>
      * <p>
      * This formula ensures a unique priority for each pair. Once the priority
      * is assigned, the agent sorts the candidate pairs in decreasing order of

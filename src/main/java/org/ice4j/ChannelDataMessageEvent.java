@@ -106,10 +106,13 @@ public class ChannelDataMessageEvent
     {
         return this.remoteAddress;
     }
-    
+
     /**
      * Gets the <tt>TransportAddress</tt> which is local address on which this
      * event was received.
+     * 
+     * @return the <tt>TransportAddress</tt> which is local address on which
+     *         this event was received.
      */
     public TransportAddress getLocalAddress()
     {

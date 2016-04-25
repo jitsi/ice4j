@@ -216,7 +216,7 @@ public class TransportAddress
      * address if both the InetAddresses (or hostnames if it is unresolved),
      * port numbers, and <tt>Transport</tt>s are equal.
      *
-     * If both addresses are unresolved, then the hostname, the port & and
+     * If both addresses are unresolved, then the hostname, the port and
      * the <tt>Transport</tt> are compared.
      *
      * @param   obj   the object to compare against.

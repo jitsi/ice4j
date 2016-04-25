@@ -36,18 +36,23 @@ public class RtcpDemuxPacketFilter
      *
      * RTP/RTCP packets are distinguished from other packets (such as STUN,
      * DTLS or ZRTP) by the value of their first byte. See
-     * {@link "http://tools.ietf.org/html/rfc5764#section-5.1.2"} and
-     * {@link "http://tools.ietf.org/html/rfc6189#section-5"}.
+     * <a href="http://tools.ietf.org/html/rfc5764#section-5.1.2">
+     * RFC5764, Section 5.1.2</a> and
+     * <a href="http://tools.ietf.org/html/rfc6189#section-5">RFC6189,
+     * Section 5</a>.
      *
      * RTCP packets are distinguished from RTP packet based on the second byte
      * (either Packet Type (RTCP) or M-bit and Payload Type (RTP). See
-     * {@link "http://tools.ietf.org/html/rfc5761#section-4"}
+     * <a href="http://tools.ietf.org/html/rfc5761#section-4">RFC5761, Section
+     * 4</a>
      *
      * We assume that RTCP packets have a packet type in [200, 211]. This means
      * that RTP packets with Payload Types in [72, 83] (which should not
      * appear, because these PTs are reserved or unassigned by IANA, see
-     * {@link "http://www.iana.org/assignments/rtp-parameters/rtp-parameters.xhtml"}
-     * ) with the M-bit set will be misidentified as RTCP packets.
+     * <a href="http://www.iana.org/assignments/rtp-parameters/rtp-parameters.xhtml">
+     * IANA RTP Parameters</a>) with the M-bit set will be misidentified as
+     * RTCP packets.
+     * 
      * Also, any RTCP packets with Packet Types not in [200, 211] will be
      * misidentified as RTP packets.
      *

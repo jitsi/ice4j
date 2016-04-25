@@ -29,35 +29,35 @@ public interface PseudoTcpNotify
 {
     /**
      * Called when TCP enters opened state
-     * @param tcp 
+     * @param tcp the socket that was opened
      */
     void onTcpOpen(PseudoTCPBase tcp);
 
     /**
      * Called when any data is available in read buffer
-     * @param tcp 
+     * @param tcp the socket that became readable
      */
     void onTcpReadable(PseudoTCPBase tcp);
 
     /**
      * Called when there is free space available in the send buffer
-     * @param tcp 
+     * @param tcp the socket that became writable
      */
     void onTcpWriteable(PseudoTCPBase tcp);
 
     /**
      * Called when tcp enters closed state
-     * @param tcp
+     * @param tcp the socket that was closed
      * @param e null means no error
      */
     void onTcpClosed(PseudoTCPBase tcp, IOException e);
 
     /**
      * Called when protocol requests packet transfer through the network.
-     * @param tcp
-     * @param buffer data
+     * @param tcp the socket on which the write occurred
+     * @param buffer the data that was written
      * @param len data length
      * @return the result, see {@link WriteResult} description for more info
-     */    
+     */
     WriteResult tcpWritePacket(PseudoTCPBase tcp, byte[] buffer, int len);
 }

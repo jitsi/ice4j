@@ -47,7 +47,7 @@ public class DelegatingServerSocket
      *
      * @param delegate the {@code ServerSocket} the new instance is to delegate
      * (it method calls) to
-     * @throws IOException
+     * @throws IOException never thrown
      */
     public DelegatingServerSocket(ServerSocket delegate)
         throws IOException
@@ -64,7 +64,7 @@ public class DelegatingServerSocket
      * (it method calls) to
      * @param channel the {@code ServerSocketChannel} to be reported by the new
      * instance or {@code null} to report the one of {@code delegate}
-     * @throws IOException
+     * @throws IOException never thrown
      */
     public DelegatingServerSocket(
             ServerSocket delegate,

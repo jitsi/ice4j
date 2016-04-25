@@ -21,7 +21,7 @@ import java.net.*;
 import java.util.*;
 
 /**
- * Implements a list of <tt>DatagramPacket<tt>s received by a
+ * Implements a list of <tt>DatagramPacket</tt>s received by a
  * <tt>DatagramSocket</tt> or a <tt>Socket</tt>. The list enforces the
  * <tt>SO_RCVBUF</tt> option for the associated <tt>DatagramSocket</tt> or
  * <tt>Socket</tt>.
