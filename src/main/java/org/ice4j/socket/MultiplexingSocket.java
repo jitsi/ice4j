@@ -53,8 +53,7 @@ public class MultiplexingSocket
      */
     private final MultiplexingXXXSocketSupport<MultiplexedSocket>
         multiplexingXXXSocketSupport
-            = new MultiplexingXXXSocketSupport<MultiplexedSocket>(
-                    MultiplexedSocket.class)
+            = new MultiplexingXXXSocketSupport<MultiplexedSocket>()
             {
                 /**
                  * {@inheritDoc}

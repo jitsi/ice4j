@@ -42,34 +42,6 @@ abstract class MultiplexingXXXSocketSupport
         = Logger.getLogger(MultiplexingXXXSocketSupport.class.getName());
 
     /**
-     * Adds/appends a new element to an existing array.
-     *
-     * @param <T> the component type of {@code array} and the type of
-     * {@code element}
-     * @param array the array to which {@code element} is to be added/appended
-     * @param element the new element to add/append to {@code array}
-     * @return an array which is a concatenation of {@code array} and
-     * {@code element}
-     */
-    static <T> T[] add(T[] array, T element)
-    {
-        int length = array.length;
-        @SuppressWarnings("unchecked")
-        T[] newArray
-            = (T[])
-                Array.newInstance(
-                        array.getClass().getComponentType(),
-                        length + 1);
-
-        if (length != 0)
-        {
-            System.arraycopy(array, 0, newArray, 0, length);
-        }
-        newArray[length] = element;
-        return newArray;
-    }
-
-    /**
      * Initializes a new <tt>DatagramPacket</tt> instance which is a clone of a
      * specific <tt>DatagramPacket</tt> i.e. the properties of the clone
      * <tt>DatagramPacket</tt> are clones of the specified
@@ -226,18 +198,6 @@ abstract class MultiplexingXXXSocketSupport
     private boolean inReceive = false;
 
     /**
-     * The {@code Class} of the multiplexed sockets supported by this instance.
-     */
-    private final Class<MultiplexedXXXSocketT> multiplexedXXXSocketClass;
-
-    /**
-     * The constant which represents an empty array with
-     * <tt>MultiplexedDatagramSocket</tt> element type. Explicitly defined in
-     * order to reduce allocations.
-     */
-    private final MultiplexedXXXSocketT[] NO_SOCKETS;
-
-    /**
      * The value with which {@link DatagramSocket#setReceiveBufferSize(int)} is
      * to be invoked if {@link #setReceiveBufferSize} is <tt>true</tt>. 
      */
@@ -259,29 +219,13 @@ abstract class MultiplexingXXXSocketSupport
      * The IP sockets filtering {@code DatagramPacket}s away from this IP
      * socket.
      */
-    private MultiplexedXXXSocketT[] sockets;
-
-    /**
-     * The {@code Object} which synchronizes the access to the {@link #sockets}
-     * field of this instance.
-     */
-    private final Object socketsSyncRoot = new Object();
+    private final List<MultiplexedXXXSocketT> sockets = new ArrayList<>();
 
     /**
      * Initializes a new {@code MultiplexingXXXSocketSupport} instance.
-     *
-     * @param multiplexedXXXSocketClass the {@code Class} of the multiplexed
-     * sockets supported by the new instance
      */
-    protected MultiplexingXXXSocketSupport(
-            Class<MultiplexedXXXSocketT> multiplexedXXXSocketClass)
+    protected MultiplexingXXXSocketSupport()
     {
-        this.multiplexedXXXSocketClass = multiplexedXXXSocketClass;
-
-        NO_SOCKETS
-            = (MultiplexedXXXSocketT[])
-                Array.newInstance(multiplexedXXXSocketClass, 0);
-        sockets = NO_SOCKETS;
     }
 
     /**
@@ -295,7 +239,7 @@ abstract class MultiplexingXXXSocketSupport
      */
     private void acceptBySocketsOrThis(DatagramPacket p)
     {
-        synchronized (socketsSyncRoot)
+        synchronized (sockets)
         {
             boolean accepted = false;
 
@@ -338,36 +282,9 @@ abstract class MultiplexingXXXSocketSupport
      */
     void close(MultiplexedXXXSocketT multiplexed)
     {
-        synchronized (socketsSyncRoot)
+        synchronized (sockets)
         {
-            int socketCount = sockets.length;
-
-            for (int i = 0; i < socketCount; i++)
-            {
-                if (sockets[i].equals(multiplexed))
-                {
-                    if (socketCount == 1)
-                    {
-                        sockets = NO_SOCKETS;
-                    }
-                    else
-                    {
-                        MultiplexedXXXSocketT[] newSockets
-                            = (MultiplexedXXXSocketT[])
-                                Array.newInstance(
-                                        multiplexedXXXSocketClass,
-                                        socketCount - 1);
-
-                        System.arraycopy(sockets, 0, newSockets, 0, i);
-                        System.arraycopy(
-                                sockets, i + 1,
-                                newSockets, i,
-                                newSockets.length - i);
-                        sockets = newSockets;
-                    }
-                    break;
-                }
-            }
+            sockets.remove(multiplexed);
         }
     }
 
@@ -497,7 +414,7 @@ abstract class MultiplexingXXXSocketSupport
         if (filter == null)
             throw new NullPointerException("filter");
 
-        synchronized (socketsSyncRoot)
+        synchronized (sockets)
         {
             // If a socket for the specified filter exists already, do not
             // create a new one and return the existing.
@@ -516,7 +433,7 @@ abstract class MultiplexingXXXSocketSupport
             // Remember the new socket.
             if (socket != null)
             {
-                sockets = add(sockets, socket);
+                sockets.add(socket);
 
                 // A multiplexed socket may be created after packets matching
                 // its filter have been received. Pull them out of the
