@@ -20,6 +20,7 @@ package org.ice4j.stack;
 import java.io.*;
 import java.net.*;
 import java.nio.channels.*;
+import java.util.concurrent.*;
 import java.util.logging.*;
 
 import org.ice4j.*;
@@ -45,7 +46,7 @@ class Connector
     /**
      * The message queue is where incoming messages are added.
      */
-    private final MessageQueue messageQueue;
+    private final BlockingQueue<RawMessage> messageQueue;
 
     /**
      * The socket object that used by this access point to access the network.
@@ -86,12 +87,12 @@ class Connector
      * communication.
      * @param remoteAddress the remote address of the socket of this
      * {@link Connector} if it is a TCP socket, or null if it is UDP.
-     * @param messageQueue the FIFO list where incoming messages should be queued
+     * @param messageQueue the Queue where incoming messages should be queued
      * @param errorHandler the instance to notify when errors occur.
      */
     protected Connector(IceSocketWrapper socket,
                         TransportAddress remoteAddress,
-                        MessageQueue   messageQueue,
+                        BlockingQueue<RawMessage> messageQueue,
                         ErrorHandler   errorHandler)
     {
         this.sock = socket;

@@ -20,6 +20,7 @@ package org.ice4j.stack;
 import java.io.*;
 import java.net.*;
 import java.util.*;
+import java.util.concurrent.*;
 import java.util.logging.*;
 
 import org.ice4j.*;
@@ -79,7 +80,7 @@ class NetAccessManager
     /**
      * A synchronized FIFO where incoming messages are stocked for processing.
      */
-    private final MessageQueue messageQueue = new MessageQueue();
+    private final BlockingQueue<RawMessage> messageQueue = new LinkedBlockingQueue<>();
 
     /**
      * A thread pool of message processors.
@@ -196,13 +197,13 @@ class NetAccessManager
     }
 
     /**
-     * Gets the <tt>MessageQueue</tt> of this <tt>NetAccessManager</tt> in which
+     * Gets the <tt>BlockingQueue</tt> of this <tt>NetAccessManager</tt> in which
      * incoming messages are stocked for processing.
      *
-     * @return the <tt>MessageQueue</tt> of this <tt>NetAccessManager</tt> in
+     * @return the <tt>BlockingQueue</tt> of this <tt>NetAccessManager</tt> in
      * which incoming messages are stocked for processing
      */
-    MessageQueue getMessageQueue()
+    BlockingQueue<RawMessage> getMessageQueue()
     {
         return messageQueue;
     }

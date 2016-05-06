@@ -17,6 +17,7 @@
  */
 package org.ice4j.stack;
 
+import java.util.concurrent.*;
 import java.util.logging.*;
 
 import org.ice4j.*;
@@ -45,7 +46,7 @@ class MessageProcessor
     /**
      * The queue where we store incoming messages until they are collected.
      */
-    private final MessageQueue messageQueue;
+    private final BlockingQueue<RawMessage> messageQueue;
 
     /**
      * The listener that will be retrieving <tt>MessageEvent</tt>s
@@ -73,7 +74,7 @@ class MessageProcessor
      *
      * @param netAccessManager the <tt>NetAccessManager</tt> which is creating
      * the new instance, is going to be its owner, specifies the
-     * <tt>MessageQueue</tt> which is to store incoming messages, specifies the
+     * <tt>BlockingQueue</tt> which is to store incoming messages, specifies the
      * <tt>MessageEventHandler</tt> and represents the <tt>ErrorHandler</tt> to
      * handle exceptions in the new instance
      * @throws IllegalArgumentException if any of the mentioned properties of
@@ -85,7 +86,7 @@ class MessageProcessor
         if (netAccessManager == null)
             throw new NullPointerException("netAccessManager");
 
-        MessageQueue messageQueue = netAccessManager.getMessageQueue();
+        BlockingQueue<RawMessage> messageQueue = netAccessManager.getMessageQueue();
 
         if (messageQueue == null)
         {
@@ -125,7 +126,7 @@ class MessageProcessor
 
                 try
                 {
-                    rawMessage = messageQueue.remove();
+                    rawMessage = messageQueue.take();
                 }
                 catch (InterruptedException ex)
                 {
