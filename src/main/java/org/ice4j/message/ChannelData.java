@@ -100,25 +100,24 @@ public class ChannelData
     }
 
     /**
-     * Get the data length.
+     * Get the data length (without padding).
      *
      * @return data length
      */
     public char getDataLength()
     {
-        char length = 0;
         if(data == null)
-        {
-            return length;
-        }
-
-        /* pad to a multiple of four */
-        if((length % 4) > 0)
-        {
-            length += (4 - (length % 4));
-        }
+            return 0;
 
         return (char)data.length;
+    }
+
+    /**
+     * @return num padded to 4
+     */
+    private static int padTo4(int num)
+    {
+        return (num + 3) & ~3;
     }
 
     /**
@@ -136,13 +135,27 @@ public class ChannelData
     }
 
     /**
-     * Returns a binary representation of this message.
-     * @return a binary representation of this message.
+     * Returns a non padded binary representation of this message.
+     * @return a non padded binary representation of this message.
      * @throws StunException if the channel number is invalid
+     * @deprecated
      */
     public byte[] encode() throws StunException
     {
-        char dataLength = getDataLength();
+        return encode(false);
+    }
+
+    /**
+     * Returns a binary representation of this message.
+     * @param pad determine if we pad this message
+     * @return a binary representation of this message.
+     * @throws StunException if the channel number is invalid
+     */
+    public byte[] encode(boolean pad) throws StunException
+    {
+        int dataLength = getDataLength();
+        if (pad)
+            dataLength = padTo4(dataLength);
         byte binMsg[] = new byte[HEADER_LENGTH + dataLength];
         int offset = 0;
 
@@ -175,15 +188,29 @@ public class ChannelData
      * @return a Message object constructed from the binMessage array
      * @throws StunException ILLEGAL_ARGUMENT if one or more of the arguments
      * have invalid values.
+     * @deprecated
      */
     public static ChannelData decode(byte binMessage[], char offset, char arrayLen) throws StunException
+    {
+        return decode(binMessage, offset);
+    }
+
+    /**
+     * Constructs a message from its binary representation.
+     * @param binMessage the binary array that contains the encoded message
+     * @param offset the index where the message starts.
+     * @return a Message object constructed from the binMessage array
+     * @throws StunException ILLEGAL_ARGUMENT if one or more of the arguments
+     * have invalid values.
+     */
+    public static ChannelData decode(byte binMessage[], char offset) throws StunException
     {
         char msgLen = 0;
         char channelNumber = 0;
         ChannelData channelData = null;
         byte data[] = null;
 
-        if(arrayLen < 4)
+        if((binMessage.length - offset) < HEADER_LENGTH)
         {
             throw new StunException(StunException.ILLEGAL_ARGUMENT, "Size too short");
         }
@@ -196,7 +223,7 @@ public class ChannelData
         }
 
         msgLen = (char)((binMessage[offset++]<<8) | (binMessage[offset++]&0xFF));
-        if(msgLen != (binMessage.length - 4))
+        if (msgLen > (binMessage.length - offset))
         {
             throw new StunException(StunException.ILLEGAL_ARGUMENT, "Size mismatch");
         }

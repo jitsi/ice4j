@@ -587,7 +587,9 @@ class NetAccessManager
         throws IllegalArgumentException,
                IOException, StunException
     {
-        sendMessage(channelData.encode(), srcAddr, remoteAddr);
+        boolean pad = srcAddr.getTransport() == Transport.TCP
+            || srcAddr.getTransport() == Transport.TLS;
+        sendMessage(channelData.encode(pad), srcAddr, remoteAddr);
     }
 
     /**
