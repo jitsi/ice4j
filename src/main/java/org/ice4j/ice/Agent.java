@@ -315,7 +315,7 @@ public class Agent
                     new BigInteger(128, random).toString(32),
                     /* min */ 22, /* max */ 256);
 
-        tieBreaker = Math.abs(random.nextLong());
+        tieBreaker = random.nextLong() & 0x7FFFFFFFFFFFFFFFL;
         nominator = new DefaultNominator(this);
     }
 
