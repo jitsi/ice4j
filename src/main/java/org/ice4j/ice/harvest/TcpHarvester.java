@@ -1098,8 +1098,8 @@ public class TcpHarvester
         }
 
         /**
-         * Adds the channels from {@link #newChannels} to {@link #channels} and
-         * registers them in {@link #readSelector}.
+         * Registers the channels from {@link #newChannels} in
+         * {@link #readSelector}.
          */
         private void checkForNewChannels()
         {
@@ -1126,8 +1126,11 @@ public class TcpHarvester
         }
 
         /**
-         * Checks {@link #channels} for channels which have been added over
-         * {@link #READ_TIMEOUT} milliseconds ago and closes them.
+         * Closes any inactive channels registered with {@link #readSelector}.
+         * A channel is considered inactive if it hasn't been available for
+         * reading for
+         * {@link MuxServerSocketChannelFactory#SOCKET_CHANNEL_READ_TIMEOUT}
+         * milliseconds.
          */
         private void cleanup()
         {
@@ -1223,10 +1226,8 @@ public class TcpHarvester
             if (!IceProcessingState.WAITING.equals(state)
                     && !IceProcessingState.RUNNING.equals(state))
             {
-                logger.info(
-                        "Not adding a socket to an ICE agent with state "
-                            + state);
-                return;
+                throw new IllegalStateException(
+                    "The associated Agent is in state " + state);
             }
 
             // Socket to add to the candidate
@@ -1430,19 +1431,11 @@ public class TcpHarvester
                     }
                 }
             }
-            catch (IOException ioe)
+            catch (IOException | StunException | IllegalStateException e)
             {
                 logger.info(
                         "Failed to handle TCP socket "
-                            + channel.channel.socket() + ": " + ioe);
-                key.cancel();
-                closeNoExceptions(channel.channel);
-            }
-            catch (StunException se)
-            {
-                logger.info(
-                        "Failed to handle TCP socket "
-                            + channel.channel.socket() + ": " + se);
+                            + channel.channel.socket() + ": " + e.getMessage());
                 key.cancel();
                 closeNoExceptions(channel.channel);
             }
