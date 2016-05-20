@@ -1226,10 +1226,8 @@ public class TcpHarvester
             if (!IceProcessingState.WAITING.equals(state)
                     && !IceProcessingState.RUNNING.equals(state))
             {
-                logger.info(
-                        "Not adding a socket to an ICE agent with state "
-                            + state);
-                return;
+                throw new IllegalStateException(
+                    "The associated Agent is in state " + state);
             }
 
             // Socket to add to the candidate
@@ -1433,19 +1431,11 @@ public class TcpHarvester
                     }
                 }
             }
-            catch (IOException ioe)
+            catch (IOException | StunException | IllegalStateException e)
             {
                 logger.info(
                         "Failed to handle TCP socket "
-                            + channel.channel.socket() + ": " + ioe);
-                key.cancel();
-                closeNoExceptions(channel.channel);
-            }
-            catch (StunException se)
-            {
-                logger.info(
-                        "Failed to handle TCP socket "
-                            + channel.channel.socket() + ": " + se);
+                            + channel.channel.socket() + ": " + e.getMessage());
                 key.cancel();
                 closeNoExceptions(channel.channel);
             }
