@@ -1098,8 +1098,8 @@ public class TcpHarvester
         }
 
         /**
-         * Adds the channels from {@link #newChannels} to {@link #channels} and
-         * registers them in {@link #readSelector}.
+         * Registers the channels from {@link #newChannels} in
+         * {@link #readSelector}.
          */
         private void checkForNewChannels()
         {
@@ -1126,8 +1126,11 @@ public class TcpHarvester
         }
 
         /**
-         * Checks {@link #channels} for channels which have been added over
-         * {@link #READ_TIMEOUT} milliseconds ago and closes them.
+         * Closes any inactive channels registered with {@link #readSelector}.
+         * A channel is considered inactive if it hasn't been available for
+         * reading for
+         * {@link MuxServerSocketChannelFactory#SOCKET_CHANNEL_READ_TIMEOUT}
+         * milliseconds.
          */
         private void cleanup()
         {
