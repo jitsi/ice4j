@@ -1,8 +1,19 @@
 /*
  * ice4j, the OpenSource Java Solution for NAT and Firewall Traversal.
- * Maintained by the SIP Communicator community (http://sip-communicator.org).
  *
- * Distributable under LGPL license. See terms of license at gnu.org.
+ * Copyright @ 2015 Atlassian Pty Ltd
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  */
 package org.ice4j.attribute;
 
@@ -63,14 +74,14 @@ public abstract class IceControlAttribute
         // the attributeValue array
 
         // Reading in the network byte order (Big-Endian)
-        tieBreaker = ((attributeValue[offset++] & 0xffl) << 56)
-                  | ((attributeValue[offset++] & 0xffl) << 48)
-                  | ((attributeValue[offset++] & 0xffl) << 40)
-                  | ((attributeValue[offset++] & 0xffl) << 32)
-                  | ((attributeValue[offset++] & 0xffl) << 24)
-                  | ((attributeValue[offset++] & 0xffl) << 16)
-                  | ((attributeValue[offset++] & 0xffl) <<  8)
-                  | (attributeValue[offset++]  & 0xffl);
+        tieBreaker = ((attributeValue[offset++] & 0xffL) << 56)
+                  | ((attributeValue[offset++] & 0xffL) << 48)
+                  | ((attributeValue[offset++] & 0xffL) << 40)
+                  | ((attributeValue[offset++] & 0xffL) << 32)
+                  | ((attributeValue[offset++] & 0xffL) << 24)
+                  | ((attributeValue[offset++] & 0xffL) << 16)
+                  | ((attributeValue[offset++] & 0xffL) <<  8)
+                  | (attributeValue[offset]  & 0xffL);
     }
 
     /**
@@ -114,8 +125,7 @@ public abstract class IceControlAttribute
      */
     public boolean equals(Object obj)
     {
-        if(!(obj instanceof IceControlAttribute)
-            || obj == null)
+        if(!(obj instanceof IceControlAttribute))
             return false;
 
         if(obj == this)

@@ -1,13 +1,25 @@
 /*
  * ice4j, the OpenSource Java Solution for NAT and Firewall Traversal.
- * Maintained by the Jitsi community (https://jitsi.org).
  *
- * Distributable under LGPL license. See terms of license at gnu.org.
+ * Copyright @ 2015 Atlassian Pty Ltd
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  */
 package org.ice4j.ice.sdp;
 
 import org.ice4j.*;
 import org.ice4j.ice.*;
+import org.opentelecoms.javax.sdp.*;
 
 import javax.sdp.*;
 import java.util.*;
@@ -60,7 +72,7 @@ public class IceSdpUtils
     /**
      * A reference to the currently valid SDP factory instance.
      */
-    private static final SdpFactory sdpFactory = SdpFactory.getInstance();
+    private static final SdpFactory sdpFactory = new NistSdpFactory();
 
     /**
      * The <tt>Logger</tt> used by the <tt>IceSdpUtils</tt>
@@ -127,6 +139,7 @@ public class IceSdpUtils
      * @param iceMediaStream the media stream where we should extract candidates
      * from.
      */
+    @SuppressWarnings({ "rawtypes", "unchecked" })
     public static void initMediaDescription(MediaDescription mediaDescription,
                                             IceMediaStream   iceMediaStream)
     {
@@ -145,10 +158,10 @@ public class IceSdpUtils
                 if(firstComponent == null)
                     firstComponent = component;
 
+                Vector attributes = mediaDescription.getAttributes(true);
                 for(Candidate<?> candidate : component.getLocalCandidates())
                 {
-                    mediaDescription.addAttribute(
-                        new CandidateAttribute(candidate));
+                    attributes.add(new CandidateAttribute(candidate));
                 }
             }
 
@@ -262,8 +275,8 @@ public class IceSdpUtils
 
             //m lines
             List<IceMediaStream> streams = agent.getStreams();
-            Vector<MediaDescription> mDescs = new Vector<MediaDescription>(
-                            agent.getStreamCount());
+            Vector<MediaDescription> mDescs
+                = new Vector<>(agent.getStreamCount());
             for(IceMediaStream stream : streams)
             {
                MediaDescription mLine = sdpFactory.createMediaDescription(
@@ -309,15 +322,14 @@ public class IceSdpUtils
 
         if(localCandidates == null || localCandidates.size() == 0)
         {
-            trickleUpdate = new ArrayList<Attribute>(1);
+            trickleUpdate = new ArrayList<>(1);
             trickleUpdate.add(
                 sdpFactory.createAttribute(END_OF_CANDIDATES, null));
 
             return trickleUpdate;
         }
 
-        trickleUpdate
-            = new ArrayList<Attribute>(localCandidates.size() + 1);
+        trickleUpdate = new ArrayList<>(localCandidates.size() + 1);
 
         String streamName = null;
 

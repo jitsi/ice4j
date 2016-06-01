@@ -1,8 +1,19 @@
  /*
  * ice4j, the OpenSource Java Solution for NAT and Firewall Traversal.
- * Maintained by the SIP Communicator community (http://sip-communicator.org).
  *
- * Distributable under LGPL license. See terms of license at gnu.org.
+ * Copyright @ 2015 Atlassian Pty Ltd
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  */
 package org.ice4j.attribute;
 
@@ -41,7 +52,7 @@ public class UnknownAttributesAttribute extends Attribute
     /**
      * A list of attribute types that were not understood by the server.
      */
-    private ArrayList<Character> unknownAttributes = new ArrayList<Character>();
+    private ArrayList<Character> unknownAttributes = new ArrayList<>();
 
     /**
      * Constructor.
@@ -89,7 +100,7 @@ public class UnknownAttributesAttribute extends Attribute
         //some attributes may be repeated for padding
         //(packet length should be divisable by 4)
         if(!contains(attributeID))
-            unknownAttributes.add(new Character(attributeID));
+            unknownAttributes.add(attributeID);
     }
 
     /**
@@ -99,7 +110,7 @@ public class UnknownAttributesAttribute extends Attribute
      */
     public boolean contains(char attributeID)
     {
-        return unknownAttributes.contains(new Character(attributeID));
+        return unknownAttributes.contains(attributeID);
     }
 
     /**
@@ -129,7 +140,7 @@ public class UnknownAttributesAttribute extends Attribute
      */
     public char getAttribute(int index )
     {
-        return (unknownAttributes.get(index)).charValue();
+        return unknownAttributes.get(index);
     }
 
     /**
@@ -153,7 +164,7 @@ public class UnknownAttributesAttribute extends Attribute
         Iterator<Character> attributes = getAttributes();
         while (attributes.hasNext())
         {
-            char att = attributes.next().charValue();
+            char att = attributes.next();
             binValue[offset++] = (byte)(att >> 8);
             binValue[offset++] = (byte)(att & 0x00FF);
         }
@@ -180,8 +191,7 @@ public class UnknownAttributesAttribute extends Attribute
      */
     public boolean equals(Object obj)
     {
-        if (! (obj instanceof UnknownAttributesAttribute)
-            || obj == null)
+        if (! (obj instanceof UnknownAttributesAttribute))
             return false;
 
         if (obj == this)
@@ -218,8 +228,8 @@ public class UnknownAttributesAttribute extends Attribute
         char originalOffset = offset;
         for(int i = offset; i < originalOffset + length; i += 2)
         {
-            char attributeID = (char)( (attributeValue[offset++] << 8) |
-                               (attributeValue[offset++]) );
+            char attributeID = (char) (((attributeValue[offset++] & 0xFF) << 8)
+                | (attributeValue[offset++] & 0xFF));
             addAttributeID(attributeID);
         }
     }

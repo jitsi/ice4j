@@ -1,9 +1,19 @@
 /*
  * ice4j, the OpenSource Java Solution for NAT and Firewall Traversal.
- * Maintained by the SIP Communicator community (http://sip-communicator.org).
  *
- * Distributable under LGPL license.
- * See terms of license at gnu.org.
+ * Copyright @ 2015 Atlassian Pty Ltd
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  */
 package org.ice4j.ice;
 
@@ -52,7 +62,7 @@ public abstract class Candidate<T extends Candidate<?>>
     /**
      * The transport address represented by this candidate.
      */
-    private TransportAddress transportAddress = null;
+    private final TransportAddress transportAddress;
 
     /**
      * The type of this candidate. At this point the ICE specification (and
@@ -60,7 +70,7 @@ public abstract class Candidate<T extends Candidate<?>>
      * server reflexive, peer reflexive and relayed candidates. Others may be
      * added in the future.
      */
-    private CandidateType candidateType = null;
+    private CandidateType candidateType;
 
     /**
      * An arbitrary string that is the same for two candidates
@@ -329,6 +339,20 @@ public abstract class Candidate<T extends Candidate<?>>
                 && getPriority() == candidate.getPriority()
                 && getType() == candidate.getType()
                 && getFoundation().equals(candidate.getFoundation());
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public int hashCode()
+    {
+        // Even if the following hashCode algorithm has drawbacks because of it
+        // simplicity, it is better than nothing because at least it allows
+        // Candidate and, respectively, CandidatePair to be used as HashMap
+        // keys.
+        return
+            getParentComponent().hashCode() + getTransportAddress().hashCode();
     }
 
     /**
@@ -946,24 +970,24 @@ public abstract class Candidate<T extends Candidate<?>>
             TransportAddress relatedAddress = null;
             switch (getType())
             {
-                case SERVER_REFLEXIVE_CANDIDATE:
-                    if(getBase() != null)
-                    {
-                        relatedAddress = getBase().getTransportAddress();
-                    }
-                    break;
-                case PEER_REFLEXIVE_CANDIDATE:
-                    if(getBase() != null)
-                    {
-                        relatedAddress = getBase().getTransportAddress();
-                    }
-                    break;
-                case RELAYED_CANDIDATE:
-                    relatedAddress = getMappedAddress();
-                    break;
-                default:
-                    //host candidate
-                    return null;
+            case SERVER_REFLEXIVE_CANDIDATE:
+                if(getBase() != null)
+                {
+                    relatedAddress = getBase().getTransportAddress();
+                }
+                break;
+            case PEER_REFLEXIVE_CANDIDATE:
+                if(getBase() != null)
+                {
+                    relatedAddress = getBase().getTransportAddress();
+                }
+                break;
+            case RELAYED_CANDIDATE:
+                relatedAddress = getMappedAddress();
+                break;
+            default:
+                //host candidate
+                return null;
             }
             // Update the related candidate conforming to the related address.
             this.relatedCandidate = findRelatedCandidate(relatedAddress);

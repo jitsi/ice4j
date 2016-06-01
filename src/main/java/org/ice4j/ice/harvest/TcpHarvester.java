@@ -1,8 +1,19 @@
 /*
  * ice4j, the OpenSource Java Solution for NAT and Firewall Traversal.
- * Maintained by the SIP Communicator community (http://sip-communicator.org).
  *
- * Distributable under LGPL license. See terms of license at gnu.org.
+ * Copyright @ 2015 Atlassian Pty Ltd
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  */
 package org.ice4j.ice.harvest;
 
@@ -34,14 +45,14 @@ import org.ice4j.socket.*;
  * @author Boris Grozev
  * @author Lyubomir Marinov
  */
-public class MultiplexingTcpHostHarvester
+public class TcpHarvester
     extends CandidateHarvester
 {
     /**
      * Our class logger.
      */
     private static final Logger logger
-        = Logger.getLogger(MultiplexingTcpHostHarvester.class.getName());
+        = Logger.getLogger(TcpHarvester.class.getName());
 
     /**
      * The constant which specifies how often to perform purging on
@@ -72,7 +83,7 @@ public class MultiplexingTcpHostHarvester
             List<NetworkInterface> interfaces)
         throws IOException
     {
-        List<TransportAddress> addresses = new LinkedList<TransportAddress>();
+        List<TransportAddress> addresses = new LinkedList<>();
 
         for (NetworkInterface iface : interfaces)
         {
@@ -115,34 +126,32 @@ public class MultiplexingTcpHostHarvester
      * <tt>Component</tt>s from being freed.
      */
     private final Map<String, WeakReference<Component>> components
-        = new HashMap<String, WeakReference<Component>>();
+        = new HashMap<>();
 
     /**
      * The list of transport addresses which we have found to be listening on,
      * and which we will advertise as candidates in
      * {@link #harvest(org.ice4j.ice.Component)}
      */
-    private final List<TransportAddress> localAddresses
-        = new LinkedList<TransportAddress>();
+    private final List<TransportAddress> localAddresses = new LinkedList<>();
 
     /**
      * Maps a public address to a local address.
      */
     private final Map<InetAddress, InetAddress> mappedAddresses
-        = new HashMap<InetAddress, InetAddress>();
+        = new HashMap<>();
 
     /**
      * Sets of additional ports, for which server reflexive candidates will be
      * added.
      */
-    private final Set<Integer> mappedPorts = new HashSet<Integer>();
+    private final Set<Integer> mappedPorts = new HashSet<>();
 
     /**
      * Channels pending to be added to the list that {@link #readThread} reads
      * from.
      */
-    private final List<SocketChannel> newChannels
-        = new LinkedList<SocketChannel>();
+    private final List<SocketChannel> newChannels = new LinkedList<>();
 
     /**
      * A counter used to decide when to purge {@link #components}.
@@ -164,7 +173,7 @@ public class MultiplexingTcpHostHarvester
      * on.
      */
     private final List<ServerSocketChannel> serverSocketChannels
-        = new LinkedList<ServerSocketChannel>();
+        = new LinkedList<>();
 
     /**
      * Whether or not to use ssltcp.
@@ -172,27 +181,33 @@ public class MultiplexingTcpHostHarvester
     private final boolean ssltcp;
 
     /**
-     * Initializes a new <tt>MultiplexingTcpHostHarvester</tt>, which is to
+     * Initializes a new <tt>TcpHarvester</tt>, which is to
      * listen on port number <tt>port</tt> on all IP addresses on all available
      * interfaces.
      *
      * @param port the port to listen on.
+     * @throws IOException when {@link StackProperties#ALLOWED_ADDRESSES} or
+     * {@link StackProperties#BLOCKED_ADDRESSES} contains invalid values, or
+     * if an I/O error occurs.
      */
-    public MultiplexingTcpHostHarvester(int port)
+    public TcpHarvester(int port)
         throws IOException
     {
         this(port, /* ssltcp */ false);
     }
 
     /**
-     * Initializes a new <tt>MultiplexingTcpHostHarvester</tt>, which is to
+     * Initializes a new <tt>TcpHarvester</tt>, which is to
      * listen on port number <tt>port</tt> on all IP addresses on all available
      * interfaces.
      *
      * @param port the port to listen on.
      * @param ssltcp <tt>true</tt> to use ssltcp; otherwise, <tt>false</tt>
+     * @throws IOException when {@link StackProperties#ALLOWED_ADDRESSES} or
+     * {@link StackProperties#BLOCKED_ADDRESSES} contains invalid values, or
+     * if an I/O error occurs.
      */
-    public MultiplexingTcpHostHarvester(int port, boolean ssltcp)
+    public TcpHarvester(int port, boolean ssltcp)
             throws IOException
     {
         this(port,
@@ -201,15 +216,18 @@ public class MultiplexingTcpHostHarvester
     }
 
     /**
-     * Initializes a new <tt>MultiplexingTcpHostHarvester</tt>, which is to
+     * Initializes a new <tt>TcpHarvester</tt>, which is to
      * listen on port number <tt>port</tt> on all the IP addresses on the
      * specified <tt>NetworkInterface</tt>s.
      *
      * @param port the port to listen on.
      * @param interfaces the interfaces to listen on.
      * @param ssltcp <tt>true</tt> to use ssltcp; otherwise, <tt>false</tt>
+     * @throws IOException when {@link StackProperties#ALLOWED_ADDRESSES} or
+     * {@link StackProperties#BLOCKED_ADDRESSES} contains invalid values, or
+     * if an I/O error occurs.
      */
-    public MultiplexingTcpHostHarvester(int port,
+    public TcpHarvester(int port,
                                         List<NetworkInterface> interfaces,
                                         boolean ssltcp)
         throws IOException
@@ -218,12 +236,15 @@ public class MultiplexingTcpHostHarvester
     }
 
     /**
-     * Initializes a new <tt>MultiplexingTcpHostHarvester</tt>, which is to
+     * Initializes a new <tt>TcpHarvester</tt>, which is to
      * listen on the specified list of <tt>TransportAddress</tt>es.
      *
      * @param transportAddresses the transport addresses to listen on.
+     * @throws IOException when {@link StackProperties#ALLOWED_ADDRESSES} or
+     * {@link StackProperties#BLOCKED_ADDRESSES} contains invalid values, or
+     * if an I/O error occurs.
      */
-    public MultiplexingTcpHostHarvester(
+    public TcpHarvester(
             List<TransportAddress> transportAddresses)
         throws IOException
     {
@@ -231,13 +252,16 @@ public class MultiplexingTcpHostHarvester
     }
 
     /**
-     * Initializes a new <tt>MultiplexingTcpHostHarvester</tt>, which is to
+     * Initializes a new <tt>TcpHarvester</tt>, which is to
      * listen on the specified list of <tt>TransportAddress</tt>es.
      *
      * @param transportAddresses the transport addresses to listen on.
      * @param ssltcp <tt>true</tt> to use ssltcp; otherwise, <tt>false</tt>
+     * @throws IOException when {@link StackProperties#ALLOWED_ADDRESSES} or
+     * {@link StackProperties#BLOCKED_ADDRESSES} contains invalid values, or
+     * if an I/O error occurs.
      */
-    public MultiplexingTcpHostHarvester(
+    public TcpHarvester(
             List<TransportAddress> transportAddresses,
             boolean ssltcp)
         throws IOException
@@ -253,6 +277,8 @@ public class MultiplexingTcpHostHarvester
      * allocation.
      *
      * @param transportAddresses the list of addresses to add.
+     * @throws IOException when {@link StackProperties#ALLOWED_ADDRESSES} or
+     * {@link StackProperties#BLOCKED_ADDRESSES} contains invalid values.
      */
     private void addLocalAddresses(List<TransportAddress> transportAddresses)
         throws IOException
@@ -400,18 +426,17 @@ public class MultiplexingTcpHostHarvester
 
     /**
      * Creates and returns the list of <tt>LocalCandidate</tt>s which are to be
-     * added by this <tt>MultiplexingTcpHostHarvester</tt> to a specific
+     * added by this <tt>TcpHarvester</tt> to a specific
      * <tt>Component</tt>.
      *
      * @param component the <tt>Component</tt> for which to create candidates.
      * @return the list of <tt>LocalCandidate</tt>s which are to be added by
-     * this <tt>MultiplexingTcpHostHarvester</tt> to a specific
+     * this <tt>TcpHarvester</tt> to a specific
      * <tt>Component</tt>.
      */
     private List<LocalCandidate> createLocalCandidates(Component component)
     {
-        List<TcpHostCandidate> hostCandidates
-            = new LinkedList<TcpHostCandidate>();
+        List<TcpHostCandidate> hostCandidates = new LinkedList<>();
 
         // Add the host candidates for the addresses we really listen on
         for (TransportAddress transportAddress : localAddresses)
@@ -427,8 +452,7 @@ public class MultiplexingTcpHostHarvester
         }
 
         // Add srflx candidates for any mapped addresses
-        List<LocalCandidate> mappedCandidates
-            = new LinkedList<LocalCandidate>();
+        List<LocalCandidate> mappedCandidates = new LinkedList<>();
 
         for (Map.Entry<InetAddress, InetAddress> mapping
                 : mappedAddresses.entrySet())
@@ -462,8 +486,7 @@ public class MultiplexingTcpHostHarvester
         }
 
         // Add srflx candidates for mapped ports
-        List<LocalCandidate> portMappedCandidates
-            = new LinkedList<LocalCandidate>();
+        List<LocalCandidate> portMappedCandidates = new LinkedList<>();
 
         for (TcpHostCandidate base : hostCandidates)
         {
@@ -513,8 +536,7 @@ public class MultiplexingTcpHostHarvester
             }
         }
 
-        LinkedList<LocalCandidate> allCandidates
-            = new LinkedList<LocalCandidate>();
+        LinkedList<LocalCandidate> allCandidates = new LinkedList<>();
 
         allCandidates.addAll(hostCandidates);
         allCandidates.addAll(mappedCandidates);
@@ -571,14 +593,14 @@ public class MultiplexingTcpHostHarvester
         if (stream.getComponentCount() != 1 || agent.getStreamCount() != 1)
         {
             /*
-             * MultiplexingTcpHostHarvester only works with streams with a
+             * TcpHarvester only works with streams with a
              * single component, and agents with a single stream. This is
              * because we use the local "ufrag" to de-multiplex the accept()-ed
              * sockets between the known components.
              */
             logger.info(
                     "More than one Component for an Agent, cannot harvest.");
-            return new LinkedList<LocalCandidate>();
+            return new LinkedList<>();
         }
 
         List<LocalCandidate> candidates = createLocalCandidates(component);
@@ -588,8 +610,9 @@ public class MultiplexingTcpHostHarvester
 
         synchronized (components)
         {
-            components.put(agent.getLocalUfrag(),
-                           new WeakReference<Component>(component));
+            components.put(
+                    agent.getLocalUfrag(),
+                    new WeakReference<>(component));
             purgeComponents();
         }
 
@@ -599,6 +622,7 @@ public class MultiplexingTcpHostHarvester
     /**
      * Initializes {@link #serverSocketChannels}, creates and starts the threads
      * used by this instance.
+     * @throws IOException if an I/O error occurs
      */
     private void init()
         throws IOException
@@ -628,17 +652,6 @@ public class MultiplexingTcpHostHarvester
             serverSocketChannels.add(channel);
         }
 
-        // Automatically add a mapping if we're on EC2
-        TransportAddress ec2Face = AwsCandidateHarvester.getFace();
-        TransportAddress ec2Mask;
-        if (ec2Face != null &&
-                (ec2Mask = AwsCandidateHarvester.getMask()) != null)
-        {
-            addMappedAddress(ec2Mask.getAddress(), ec2Face.getAddress());
-            logger.info("Adding an EC2 mapping for TCP: "
-                                + ec2Face + "->" + ec2Mask);
-        }
-
         acceptThread = new AcceptThread();
         acceptThread.start();
 
@@ -649,7 +662,7 @@ public class MultiplexingTcpHostHarvester
     /**
      * Determines whether a specific {@link DatagramPacket} is the first
      * expected (i.e. supported) to be received from an accepted
-     * {@link SocketChannel} by this {@code MultiplexingTcpHostHarvester}. If
+     * {@link SocketChannel} by this {@code TcpHarvester}. If
      * {@link #ssltcp} signals that Google TURN SSLTCP is to be expected, then
      * {@code p} must be
      * {@link GoogleTurnSSLCandidateHarvester#SSL_CLIENT_HANDSHAKE}. Otherwise,
@@ -658,7 +671,7 @@ public class MultiplexingTcpHostHarvester
      * @param p the {@code DatagramPacket} to examine
      * @return {@code true} if {@code p} looks like the first
      * {@code DatagramPacket} expected to be received from an accepted
-     * {@code SocketChannel} by this {@code MultiplexingTcpHostHarvester};
+     * {@code SocketChannel} by this {@code TcpHarvester};
      * otherwise, {@code false}
      */
     private boolean isFirstDatagramPacket(DatagramPacket p)
@@ -671,28 +684,27 @@ public class MultiplexingTcpHostHarvester
             byte[] buf = p.getData();
             int off = p.getOffset();
 
-            if (ssltcp)
-            {
-                // Google TURN SSLTCP
-                final byte[] googleTurnSslTcp
-                    = GoogleTurnSSLCandidateHarvester.SSL_CLIENT_HANDSHAKE;
+            // Check for Google TURN SSLTCP
+            final byte[] googleTurnSslTcp
+                = GoogleTurnSSLCandidateHarvester.SSL_CLIENT_HANDSHAKE;
 
-                if (len >= googleTurnSslTcp.length)
+            if (len >= googleTurnSslTcp.length)
+            {
+                b = true;
+                for (int i = 0, iEnd = googleTurnSslTcp.length, j = off;
+                        i < iEnd;
+                        i++, j++)
                 {
-                    b = true;
-                    for (int i = 0, iEnd = googleTurnSslTcp.length, j = off;
-                            i < iEnd;
-                            i++, j++)
+                    if (googleTurnSslTcp[i] != buf[j])
                     {
-                        if (googleTurnSslTcp[i] != buf[j])
-                        {
-                            b = false;
-                            break;
-                        }
+                        b = false;
+                        break;
                     }
                 }
             }
-            else
+
+            // nothing found, lets check for stun binding requests
+            if (!b)
             {
                 // 2 bytes    uint16 length
                 // STUN Binding request:
@@ -775,7 +787,7 @@ public class MultiplexingTcpHostHarvester
         public AcceptThread()
             throws IOException
         {
-            setName("MultiplexingTcpHostHarvester AcceptThread");
+            setName("TcpHarvester AcceptThread");
             setDaemon(true);
 
             selector = Selector.open();
@@ -808,8 +820,7 @@ public class MultiplexingTcpHostHarvester
                 }
 
                 IOException exception = null;
-                List<SocketChannel> channelsToAdd
-                    = new LinkedList<SocketChannel>();
+                List<SocketChannel> channelsToAdd = new LinkedList<>();
                 // Allow to go on, so we can quit if closed.
                 long selectTimeout = 3000;
 
@@ -917,9 +928,16 @@ public class MultiplexingTcpHostHarvester
         ByteBuffer buffer = null;
 
         /**
-         * Whether or not the initial "pseudo" SSL handshake has been read.
+         * Whether we had checked for initial "pseudo" SSL handshake.
          */
-        boolean sslHandshakeRead = false;
+        boolean checkedForSSLHandshake = false;
+
+        /**
+         * Buffer to use if we had read some data in advance and want to process
+         * it after next read, used when we are checking for "pseudo" SSL and
+         * we haven't found some, but had read data to check for it.
+         */
+        byte[] preBuffered = null;
 
         /**
          * The value of the RFC4571 "length" field read from the channel, or
@@ -1075,13 +1093,13 @@ public class MultiplexingTcpHostHarvester
         public ReadThread()
             throws IOException
         {
-            setName("MultiplexingTcpHostHarvester ReadThread");
+            setName("TcpHarvester ReadThread");
             setDaemon(true);
         }
 
         /**
-         * Adds the channels from {@link #newChannels} to {@link #channels} and
-         * registers them in {@link #readSelector}.
+         * Registers the channels from {@link #newChannels} in
+         * {@link #readSelector}.
          */
         private void checkForNewChannels()
         {
@@ -1108,8 +1126,11 @@ public class MultiplexingTcpHostHarvester
         }
 
         /**
-         * Checks {@link #channels} for channels which have been added over
-         * {@link #READ_TIMEOUT} milliseconds ago and closes them.
+         * Closes any inactive channels registered with {@link #readSelector}.
+         * A channel is considered inactive if it hasn't been available for
+         * reading for
+         * {@link MuxServerSocketChannelFactory#SOCKET_CHANNEL_READ_TIMEOUT}
+         * milliseconds.
          */
         private void cleanup()
         {
@@ -1154,7 +1175,7 @@ public class MultiplexingTcpHostHarvester
          * local transport address of <tt>socket</tt>.
          *
          * We expect to find such a candidate, which has been added by this
-         * <tt>MultiplexingTcpHostHarvester</tt> while harvesting.
+         * <tt>TcpHarvester</tt> while harvesting.
          *
          * @param component the <tt>Component</tt> to search.
          * @param socket the <tt>Socket</tt> to match the local transport
@@ -1205,10 +1226,8 @@ public class MultiplexingTcpHostHarvester
             if (!IceProcessingState.WAITING.equals(state)
                     && !IceProcessingState.RUNNING.equals(state))
             {
-                logger.info(
-                        "Not adding a socket to an ICE agent with state "
-                            + state);
-                return;
+                throw new IllegalStateException(
+                    "The associated Agent is in state " + state);
             }
 
             // Socket to add to the candidate
@@ -1272,7 +1291,7 @@ public class MultiplexingTcpHostHarvester
          * If a STUN message is successfully read, and it contains a USERNAME
          * attribute, the local &quot;ufrag&quot; is extracted from the
          * attribute value and the socket is passed on to the <tt>Component</tt>
-         * that this <tt>MultiplexingTcpHostHarvester</tt> has associated with
+         * that this <tt>TcpHarvester</tt> has associated with
          * that &quot;ufrag&quot;.
          *
          * @param channel the <tt>SocketChannel</tt> to read from.
@@ -1286,7 +1305,7 @@ public class MultiplexingTcpHostHarvester
             {
                 // Set up a buffer with a pre-determined size
 
-                if (ssltcp && !channel.sslHandshakeRead)
+                if (!channel.checkedForSSLHandshake && channel.length == -1)
                 {
                     channel.buffer
                         = ByteBuffer.allocate(
@@ -1315,7 +1334,7 @@ public class MultiplexingTcpHostHarvester
                 if (!channel.buffer.hasRemaining())
                 {
                     // We've filled in the buffer.
-                    if (ssltcp && !channel.sslHandshakeRead)
+                    if (!channel.checkedForSSLHandshake)
                     {
                         byte[] bytesRead
                             = new byte[GoogleTurnSSLCandidateHarvester
@@ -1327,7 +1346,7 @@ public class MultiplexingTcpHostHarvester
                         // Set to null, so that we re-allocate it for the next
                         // stage
                         channel.buffer = null;
-                        channel.sslHandshakeRead = true;
+                        channel.checkedForSSLHandshake = true;
 
                         if (Arrays.equals(bytesRead,
                                           GoogleTurnSSLCandidateHarvester
@@ -1340,8 +1359,29 @@ public class MultiplexingTcpHostHarvester
                         }
                         else
                         {
-                            throw new IOException("Expected a pseudo ssl"
-                                + " handshake, but received something else.");
+                            int fb = bytesRead[0];
+                            int sb = bytesRead[1];
+
+                            channel.length = (((fb & 0xff) << 8) | (sb & 0xff));
+
+                            byte[] preBuffered
+                                = Arrays.copyOfRange(
+                                    bytesRead, 2, bytesRead.length);
+
+                            // if we had read enough data
+                            if(channel.length <= bytesRead.length - 2)
+                            {
+                                processStunBindingRequest(
+                                    preBuffered, channel, key);
+                            }
+                            else
+                            {
+                                // not enough data, store what was read
+                                // and continue
+                                channel.preBuffered = preBuffered;
+
+                                channel.length -= channel.preBuffered.length;
+                            }
                         }
                     }
                     else if (channel.length == -1)
@@ -1364,73 +1404,114 @@ public class MultiplexingTcpHostHarvester
                         channel.buffer.flip();
                         channel.buffer.get(bytesRead);
 
-                        // Does this look like a STUN binding request?
-                        // What's the username?
-                        Message stunMessage
-                            = Message.decode(bytesRead,
-                                             (char) 0,
-                                             (char) bytesRead.length);
-
-                        if (stunMessage.getMessageType()
-                                != Message.BINDING_REQUEST)
+                        if(channel.preBuffered != null)
                         {
-                            throw new IOException("Not a binding request");
+                            // will store preBuffered and currently read data
+                            byte[] newBytesRead = new byte[
+                                channel.preBuffered.length + bytesRead.length];
+
+                            // copy old data
+                            System.arraycopy(
+                                channel.preBuffered, 0,
+                                newBytesRead, 0,
+                                channel.preBuffered.length);
+                            // and new data
+                            System.arraycopy(
+                                bytesRead, 0,
+                                newBytesRead, channel.preBuffered.length,
+                                bytesRead.length);
+
+                            // use that data for processing
+                            bytesRead = newBytesRead;
+
+                            channel.preBuffered = null;
                         }
 
-                        UsernameAttribute usernameAttribute
-                            = (UsernameAttribute)
-                                stunMessage.getAttribute(Attribute.USERNAME);
-
-                        if (usernameAttribute == null)
-                        {
-                            throw new IOException(
-                                    "No USERNAME attribute present.");
-                        }
-
-                        String usernameString
-                            = new String(usernameAttribute.getUsername());
-                        String localUfrag = usernameString.split(":")[0];
-                        Component component = getComponent(localUfrag);
-
-                        if (component == null)
-                            throw new IOException("No component found.");
-
-                        // The rest of the stack will read from the socket's
-                        // InputStream. We cannot change the blocking mode
-                        // before the channel is removed from the selector (by
-                        // cancelling the key)
-                        key.cancel();
-                        channel.channel.configureBlocking(true);
-
-                        // Construct a DatagramPacket from the just-read packet
-                        // which is to be pushed back
-                        DatagramPacket p
-                            = new DatagramPacket(bytesRead, bytesRead.length);
-                        Socket socket = channel.channel.socket();
-
-                        p.setAddress(socket.getInetAddress());
-                        p.setPort(socket.getPort());
-
-                        handSocketToComponent(socket, component, p);
+                        processStunBindingRequest(bytesRead, channel, key);
                     }
                 }
             }
-            catch (IOException ioe)
+            catch (IOException | StunException | IllegalStateException e)
             {
                 logger.info(
                         "Failed to handle TCP socket "
-                            + channel.channel.socket() + ": " + ioe);
+                            + channel.channel.socket() + ": " + e.getMessage());
                 key.cancel();
                 closeNoExceptions(channel.channel);
             }
-            catch (StunException se)
+        }
+
+        /**
+         * Process the readed bytes as stun binding request.
+         *
+         * If a STUN message is successfully read, and it contains a USERNAME
+         * attribute, the local &quot;ufrag&quot; is extracted from the
+         * attribute value and the socket is passed on to the <tt>Component</tt>
+         * that this <tt>TcpHarvester</tt> has associated with
+         * that &quot;ufrag&quot;.
+         *
+         * @param bytesRead bytes to be processed
+         * @param channel the <tt>SocketChannel</tt> to read from.
+         * @param key the <tt>SelectionKey</tt> associated with
+         * <tt>channel</tt>, which is to be canceled in case no further
+         * reading is required from the channel.
+         * @throws StunException error decoding package
+         * @throws IOException missing attributes (username, component or
+         *                     wrong type)
+         */
+        private void processStunBindingRequest(
+            byte[] bytesRead,
+            ChannelDesc channel, SelectionKey key)
+            throws StunException, IOException
+        {
+            // Does this look like a STUN binding request?
+            // What's the username?
+            Message stunMessage
+                = Message.decode(bytesRead,
+                (char) 0,
+                (char) bytesRead.length);
+
+            if (stunMessage.getMessageType()
+                != Message.BINDING_REQUEST)
             {
-                logger.info(
-                        "Failed to handle TCP socket "
-                            + channel.channel.socket() + ": " + se);
-                key.cancel();
-                closeNoExceptions(channel.channel);
+                throw new IOException("Not a binding request");
             }
+
+            UsernameAttribute usernameAttribute
+                = (UsernameAttribute)
+                stunMessage.getAttribute(Attribute.USERNAME);
+
+            if (usernameAttribute == null)
+            {
+                throw new IOException(
+                    "No USERNAME attribute present.");
+            }
+
+            String usernameString
+                = new String(usernameAttribute.getUsername());
+            String localUfrag = usernameString.split(":")[0];
+            Component component = getComponent(localUfrag);
+
+            if (component == null)
+                throw new IOException("No component found.");
+
+            // The rest of the stack will read from the socket's
+            // InputStream. We cannot change the blocking mode
+            // before the channel is removed from the selector (by
+            // cancelling the key)
+            key.cancel();
+            channel.channel.configureBlocking(true);
+
+            // Construct a DatagramPacket from the just-read packet
+            // which is to be pushed back
+            DatagramPacket p
+                = new DatagramPacket(bytesRead, bytesRead.length);
+            Socket socket = channel.channel.socket();
+
+            p.setAddress(socket.getInetAddress());
+            p.setPort(socket.getPort());
+
+            handSocketToComponent(socket, component, p);
         }
 
         /**
@@ -1441,7 +1522,7 @@ public class MultiplexingTcpHostHarvester
         {
             do
             {
-                synchronized (MultiplexingTcpHostHarvester.this)
+                synchronized (TcpHarvester.this)
                 {
                     if (close)
                         break;

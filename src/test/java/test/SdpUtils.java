@@ -1,20 +1,30 @@
 /*
  * ice4j, the OpenSource Java Solution for NAT and Firewall Traversal.
- * Maintained by the Jitsi community (https://jitsi.org).
  *
- * Distributable under LGPL license. See terms of license at gnu.org.
+ * Copyright @ 2015 Atlassian Pty Ltd
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  */
 package test;
 
 import java.util.*;
-import java.util.StringTokenizer;
 
 import javax.sdp.*;
 
 import org.ice4j.*;
 import org.ice4j.ice.*;
-import org.ice4j.ice.Agent;
 import org.ice4j.ice.sdp.*;
+import org.opentelecoms.javax.sdp.*;
 
 /**
  * Utilities for manipulating SDP. Some of the utilities in this method <b>do
@@ -44,7 +54,7 @@ public class SdpUtils
      */
     public static String createSDPDescription(Agent agent) throws Throwable
     {
-        SdpFactory factory = SdpFactory.getInstance();
+        SdpFactory factory = new NistSdpFactory();
         SessionDescription sdess = factory.createSessionDescription();
 
         IceSdpUtils.initSessionDescription(sdess, agent);
@@ -66,7 +76,7 @@ public class SdpUtils
     public static void parseSDP(Agent localAgent, String sdp)
         throws Exception
     {
-        SdpFactory factory = SdpFactory.getInstance();
+        SdpFactory factory = new NistSdpFactory();
         SessionDescription sdess = factory.createSessionDescription(sdp);
 
         for(IceMediaStream stream : localAgent.getStreams())

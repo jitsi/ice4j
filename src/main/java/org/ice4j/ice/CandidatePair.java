@@ -1,8 +1,19 @@
 /*
  * ice4j, the OpenSource Java Solution for NAT and Firewall Traversal.
- * Maintained by the SIP Communicator community (http://sip-communicator.org).
  *
- * Distributable under LGPL license. See terms of license at gnu.org.
+ * Copyright @ 2015 Atlassian Pty Ltd
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  */
 package org.ice4j.ice;
 
@@ -120,7 +131,6 @@ public class CandidatePair
     public CandidatePair(LocalCandidate localCandidate,
                          RemoteCandidate remoteCandidate)
     {
-
         this.localCandidate = localCandidate;
         this.remoteCandidate = remoteCandidate;
 
@@ -357,7 +367,7 @@ public class CandidatePair
      * agent. Let D be the priority for the candidate provided by the
      * controlled agent. The priority for a pair is computed as:
      * <p>
-     * <i>pair priority = 2^32*MIN(G,D) + 2*MAX(G,D) + (G>D?1:0)</i>
+     * <i>pair priority = 2^32*MIN(G,D) + 2*MAX(G,D) + (G&gt;D?1:0)</i>
      * <p>
      * This formula ensures a unique priority for each pair. Once the priority
      * is assigned, the agent sorts the candidate pairs in decreasing order of
@@ -433,17 +443,31 @@ public class CandidatePair
     @Override
     public boolean equals(Object obj)
     {
-        if ((obj == null) || !(obj instanceof CandidatePair))
+        if (! (obj instanceof CandidatePair))
             return false;
 
         CandidatePair candidatePair = (CandidatePair) obj;
 
-        //DO NOT change this method to also depend on other pair properties
-        //because the Conn Check Client counts on it only using the candidates
-        //for comparisons.
+        // XXX DO NOT change this method to also depend on other pair properties
+        // because ConnectivityCheckClient counts on it only using the
+        // candidates for comparisons.
         return
             localCandidate.equals(candidatePair.localCandidate)
                 && remoteCandidate.equals(candidatePair.remoteCandidate);
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public int hashCode()
+    {
+        // Even if the following hashCode algorithm has drawbacks because of it
+        // simplicity, it is better than nothing because at least it allows
+        // CandidatePair to be used as a HashMap key.
+        // XXX While localCandidate is not final, the parentComponent is
+        // supposedly effectively final.
+        return getLocalCandidate().getParentComponent().hashCode();
     }
 
     /**
@@ -605,8 +629,8 @@ public class CandidatePair
         getParentComponent().getParentStream().firePairPropertyChange(
                 this,
                 IceMediaStream.PROPERTY_PAIR_NOMINATED,
-                false,
-                true);
+                /* oldValue */ false,
+                /* newValue */ true);
     }
 
     /**

@@ -1,8 +1,19 @@
 /*
  * ice4j, the OpenSource Java Solution for NAT and Firewall Traversal.
- * Maintained by the SIP Communicator community (http://sip-communicator.org).
  *
- * Distributable under LGPL license. See terms of license at gnu.org.
+ * Copyright @ 2015 Atlassian Pty Ltd
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  */
 package org.ice4j.security;
 
@@ -16,7 +27,7 @@ import java.util.*;
  * possible users (such as STUN/TURN servers) or others that would only work
  * with a few, like for example an ICE implementation.
  *
- * @todo just throwing a user name at the manager and expecting it to find
+ * TODO: just throwing a user name at the manager and expecting it to find
  * an authority that knows about it may lead to ambiguities so we may need
  * to add other parameters in here that would allow us to better select an
  * authority.
@@ -30,8 +41,7 @@ public class CredentialsManager
      * The list of <tt>CredentialsAuthority</tt>s registered with this manager
      * as being able to provide credentials.
      */
-    private final List<CredentialsAuthority> authorities =
-        new LinkedList<CredentialsAuthority>();
+    private final List<CredentialsAuthority> authorities = new LinkedList<>();
 
     /**
      * The list of <tt>CredentialsAuthority</tt>s registered with this manager

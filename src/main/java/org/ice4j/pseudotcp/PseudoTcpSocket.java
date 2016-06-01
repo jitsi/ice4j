@@ -1,9 +1,19 @@
 /*
  * ice4j, the OpenSource Java Solution for NAT and Firewall Traversal.
- * Maintained by the Jitsi community (https://jitsi.org).
  *
- * Distributable under LGPL license.
- * See terms of license at gnu.org.
+ * Copyright @ 2015 Atlassian Pty Ltd
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  */
 package org.ice4j.pseudotcp;
 
@@ -42,7 +52,7 @@ public class PseudoTcpSocket extends Socket
      * Set conversation ID for the socket
      * Must be called on unconnected socket
      * 
-     * @param convID
+     * @param convID the conversation ID to set
      * @throws IllegalStateException when called on connected or closed socket
      */
     public void setConversationID(long convID)
@@ -52,8 +62,8 @@ public class PseudoTcpSocket extends Socket
     }
 	
     /**
-     * Sets MTU value
-     * @param mtu
+     * Sets MTU (maximum transmission unit) value
+     * @param mtu  the MTU value
      */
 	public void setMTU(int mtu)
 	{
@@ -61,7 +71,7 @@ public class PseudoTcpSocket extends Socket
 	}
 	
 	/**
-	 * 
+	 * Gets MTU (maximum transmission unit) value
 	 * @return MTU value
 	 */
 	public int getMTU()
@@ -70,9 +80,10 @@ public class PseudoTcpSocket extends Socket
 	}
 	
 	/**
-	 * 
+	 * Sets an {@link Option} on this socket.
 	 * @return PseudoTCP option value
 	 * 
+	 * @param option the option to set on this socket.
 	 * @see Option
 	 */
 	public long getOption(Option option)
@@ -106,7 +117,7 @@ public class PseudoTcpSocket extends Socket
 
 	/**
      * Sets debug name that will be displayed in log messages for this socket
-     * @param debugName 
+     * @param debugName the name of this socket for debug messages
      */
     public void setDebugName(String debugName)
     {
@@ -255,6 +266,7 @@ public class PseudoTcpSocket extends Socket
      *                      accepted as remote packet's source
      * @param timeout connection accept timeout value in milliseconds, after
      *                which the exception will be thrown.
+     * @throws IOException if socket is closed or timeout expires
      */
     public void accept(SocketAddress remoteAddress, int timeout)
             throws IOException

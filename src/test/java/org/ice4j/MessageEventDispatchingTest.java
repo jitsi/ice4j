@@ -1,8 +1,19 @@
 /*
  * ice4j, the OpenSource Java Solution for NAT and Firewall Traversal.
- * Maintained by the SIP Communicator community (http://sip-communicator.org).
  *
- * Distributable under LGPL license. See terms of license at gnu.org.
+ * Copyright @ 2015 Atlassian Pty Ltd
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  */
 package org.ice4j;
 
@@ -249,8 +260,7 @@ public class MessageEventDispatchingTest extends TestCase
     private class PlainRequestCollector implements RequestListener
     {
         /** all requests we've received so far. */
-        public Vector<StunMessageEvent> receivedRequests
-            = new Vector<StunMessageEvent>();
+        public final Vector<StunMessageEvent> receivedRequests = new Vector<>();
 
         /**
          * Stores incoming requests.
@@ -288,7 +298,7 @@ public class MessageEventDispatchingTest extends TestCase
     private static class PlainResponseCollector
         extends AbstractResponseCollector
     {
-        public final Vector<Object> receivedResponses = new Vector<Object>();
+        public final Vector<Object> receivedResponses = new Vector<>();
 
         /**
          * Notifies this <tt>ResponseCollector</tt> that a transaction described by

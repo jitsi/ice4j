@@ -1,8 +1,19 @@
 /*
  * ice4j, the OpenSource Java Solution for NAT and Firewall Traversal.
- * Maintained by the SIP Communicator community (http://sip-communicator.org).
  *
- * Distributable under LGPL license. See terms of license at gnu.org.
+ * Copyright @ 2015 Atlassian Pty Ltd
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  */
 package org.ice4j.attribute;
 
@@ -26,7 +37,6 @@ import org.ice4j.stack.*;
  * The key for the HMAC depends on whether long-term or short-term
  * credentials are in use.  For long-term credentials, the key is 16
  * bytes:
- * <p>
  * <pre>
  *          key = MD5(username ":" realm ":" SASLprep(password))
  * </pre>
@@ -43,7 +53,6 @@ import org.ice4j.stack.*;
  * 0x8493fbc53ba582fb4c044c456bdc40eb.
  * <p>
  * For short-term credentials:
- * <p>
  * <pre>
  *                        key = SASLprep(password)
  * </pre>
@@ -271,7 +280,8 @@ public class MessageIntegrityAttribute
         binValue[3] = (byte)(getDataLength() & 0x00FF);
 
         byte[] key = null;
-        char msgType = (char)((content[0] << 8) + content[1]);
+        char msgType =
+            (char) (((content[0] & 0xFF) << 8) | (content[1] & 0xFF));
 
         if(Message.isRequestType(msgType))
         {
@@ -324,7 +334,7 @@ public class MessageIntegrityAttribute
      */
     public boolean equals(Object obj)
     {
-        if (! (obj instanceof MessageIntegrityAttribute) || obj == null)
+        if (! (obj instanceof MessageIntegrityAttribute))
             return false;
 
         if (obj == this)

@@ -1,8 +1,19 @@
 /*
  * ice4j, the OpenSource Java Solution for NAT and Firewall Traversal.
- * Maintained by the SIP Communicator community (http://sip-communicator.org).
  *
- * Distributable under LGPL license. See terms of license at gnu.org.
+ * Copyright @ 2015 Atlassian Pty Ltd
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  */
 package org.ice4j.ice.harvest;
 
@@ -12,6 +23,7 @@ import org.ice4j.ice.*;
 import org.ice4j.message.*;
 import org.ice4j.socket.*;
 import org.ice4j.stack.*;
+import org.ice4j.util.*;
 
 import java.io.*;
 import java.net.*;
@@ -73,10 +85,9 @@ public class SinglePortUdpHarvester
     public static List<SinglePortUdpHarvester>
         createHarvesters(int port)
     {
-        List<SinglePortUdpHarvester> harvesters
-           = new LinkedList<SinglePortUdpHarvester>();
+        List<SinglePortUdpHarvester> harvesters = new LinkedList<>();
 
-        List<TransportAddress> addresses = new LinkedList<TransportAddress>();
+        List<TransportAddress> addresses = new LinkedList<>();
         boolean isIPv6Disabled = StackProperties.getBoolean(
                 StackProperties.DISABLE_IPv6,
                 false);
@@ -122,20 +133,12 @@ public class SinglePortUdpHarvester
             logger.info("Failed to get network interfaces: " + se);
         }
 
-        TransportAddress ec2Mask = AwsCandidateHarvester.getMask();
         for (TransportAddress address : addresses)
         {
-            TransportAddress publicAddress = null;
-            if (ec2Mask != null
-                    && ec2Mask.getAddress().equals(address.getAddress()))
-            {
-                publicAddress = AwsCandidateHarvester.getFace();
-            }
-
             try
             {
                 harvesters.add(
-                    new SinglePortUdpHarvester(address, publicAddress));
+                    new SinglePortUdpHarvester(address));
             }
             catch (IOException ioe)
             {
@@ -154,7 +157,7 @@ public class SinglePortUdpHarvester
      * other threads remove entries when candidates are freed.
      */
     private final Map<SocketAddress, MySocket> sockets
-            = new ConcurrentHashMap<SocketAddress, MySocket>();
+            = new ConcurrentHashMap<>();
 
     /**
      * The map which keeps all currently active <tt>Candidate</tt>s created by
@@ -162,14 +165,14 @@ public class SinglePortUdpHarvester
      * the components for which the candidates are harvested.
      */
     private final Map<String, MyCandidate> candidates
-            = new ConcurrentHashMap<String, MyCandidate>();
+            = new ConcurrentHashMap<>();
 
     /**
      * A pool of <tt>Buffer</tt> instances used to avoid creating of new java
      * objects.
      */
     private final ArrayBlockingQueue<Buffer> pool
-        = new ArrayBlockingQueue<Buffer>(POOL_SIZE);
+        = new ArrayBlockingQueue<>(POOL_SIZE);
 
     /**
      * The local address that this harvester is bound to.
@@ -182,11 +185,6 @@ public class SinglePortUdpHarvester
     private final DatagramSocket socket;
 
     /**
-     * The public address that this harvester will use for reflexive candidates.
-     */
-    private TransportAddress publicAddress = null;
-
-    /**
      * The thread reading from {@link #socket}.
      */
     private final Thread thread;
@@ -195,12 +193,9 @@ public class SinglePortUdpHarvester
      * Initializes a new <tt>SinglePortUdpHarvester</tt> instance which is to
      * bind on the specified local address.
      * @param localAddress the address to bind to.
-     * @param publicAddress the public address that this harvester will use for
-     * reflexive candidates.
      * @throws IOException if initialization fails.
      */
-    public SinglePortUdpHarvester(TransportAddress localAddress,
-                                  TransportAddress publicAddress)
+    public SinglePortUdpHarvester(TransportAddress localAddress)
         throws IOException
     {
         this.localAddress = localAddress;
@@ -223,18 +218,6 @@ public class SinglePortUdpHarvester
     }
 
     /**
-     * Initializes a new <tt>SinglePortUdpHarvester</tt> instance which is to
-     * bind on the specified local address.
-     * @param localAddress the address to bind to.
-     * @throws IOException if initialization fails.
-     */
-    public SinglePortUdpHarvester(TransportAddress localAddress)
-        throws IOException
-    {
-        this(localAddress, null);
-    }
-
-    /**
      * Perpetually reads datagrams from {@link #socket} and handles them
      * accordingly.
      *
@@ -251,7 +234,7 @@ public class SinglePortUdpHarvester
         MySocket destinationSocket;
         InetSocketAddress remoteAddress;
 
-        while (true)
+        do
         {
             // TODO: implement stopping the thread with a switch?
 
@@ -319,21 +302,19 @@ public class SinglePortUdpHarvester
                     catch (SocketException se)
                     {
                         logger.info("Could not create a socket: " + se);
-                        continue;
                     }
                     catch (IOException ioe)
                     {
                         logger.info("Failed to handle new socket: " + ioe);
-                        continue;
                     }
                 }
                 else
                 {
                     // A STUN Binding Request with an unknown USERNAME. Drop it.
-                    continue;
                 }
             }
         }
+        while (true);
 
         // TODO we are all done, clean up.
     }
@@ -355,7 +336,7 @@ public class SinglePortUdpHarvester
 
     /**
      * Tries to parse the bytes in <tt>buf</tt> at offset <tt>off</tt> (and
-     * length <tt>len</tt>) and a STUN Binding Request message. If successful,
+     * length <tt>len</tt>) as a STUN Binding Request message. If successful,
      * looks for a USERNAME attribute and returns the local username fragment
      * part (see RFC5245 Section 7.1.2.3).
      * In case of any failure returns <tt>null</tt>.
@@ -368,6 +349,29 @@ public class SinglePortUdpHarvester
      */
     private String getUfrag(byte[] buf, int off, int len)
     {
+        // RFC5389, Section 6:
+        // All STUN messages MUST start with a 20-byte header followed by zero
+        // or more Attributes.
+        if (buf == null || buf.length < off + len || len < 20)
+        {
+            return null;
+        }
+
+        // RFC5389, Section 6:
+        // The magic cookie field MUST contain the fixed value 0x2112A442 in
+        // network byte order.
+        if ( !( (buf[off + 4] & 0xFF) == 0x21 &&
+                (buf[off + 5] & 0xFF) == 0x12 &&
+                (buf[off + 6] & 0xFF) == 0xA4 &&
+                (buf[off + 7] & 0xFF) == 0x42))
+        {
+            if (logger.isLoggable(Level.FINE))
+            {
+                logger.fine("Not a STUN packet, magic cookie not found.");
+            }
+            return null;
+        }
+
         try
         {
             Message stunMessage
@@ -395,7 +399,10 @@ public class SinglePortUdpHarvester
         {
             // Catch everything. We are going to log, and then drop the packet
             // anyway.
-            logger.info("Failed to extract local ufrag: " + e);
+            if (logger.isLoggable(Level.FINE))
+            {
+                logger.fine("Failed to extract local ufrag: " + e);
+            }
         }
 
         return null;
@@ -421,24 +428,13 @@ public class SinglePortUdpHarvester
              */
             logger.info(
                     "More than one Component for an Agent, cannot harvest.");
-            return new LinkedList<LocalCandidate>();
+            return new LinkedList<>();
         }
 
         MyCandidate candidate = new MyCandidate(component, ufrag);
 
         candidates.put(ufrag, candidate);
         component.addLocalCandidate(candidate);
-
-        if (publicAddress != null)
-        {
-            ServerReflexiveCandidate mappedCandidate
-                = new ServerReflexiveCandidate(
-                    publicAddress,
-                    candidate,
-                    candidate.getStunServerAddress(),
-                    CandidateExtendedType.STATICALLY_MAPPED_CANDIDATE);
-            component.addLocalCandidate(mappedCandidate);
-        }
 
         return new ArrayList<LocalCandidate>(Arrays.asList(candidate));
     }
@@ -465,13 +461,19 @@ public class SinglePortUdpHarvester
         /**
          * The size of {@link #queue}.
          */
-        private static final int QUEUE_SIZE = 64;
+        private static final int QUEUE_SIZE = 128;
 
         /**
          * The FIFO which acts as a buffer for this socket.
          */
         private final ArrayBlockingQueue<Buffer> queue
-            = new ArrayBlockingQueue<Buffer>(QUEUE_SIZE);
+            = new ArrayBlockingQueue<>(QUEUE_SIZE);
+
+        /**
+         * The {@link QueueStatistics} instance optionally used to collect and
+         * print detailed statistics about {@link #queue}.
+         */
+        private final QueueStatistics queueStatistics;
 
         /**
          * The remote address that is associated with this socket.
@@ -498,6 +500,15 @@ public class SinglePortUdpHarvester
             super((SocketAddress)null);
 
             this.remoteAddress = remoteAddress;
+            if (logger.isLoggable(Level.FINEST))
+            {
+                queueStatistics = new QueueStatistics(
+                    "SinglePort" + remoteAddress.toString().replace('/', '-'));
+            }
+            else
+            {
+                queueStatistics = null;
+            }
         }
 
         /**
@@ -513,9 +524,18 @@ public class SinglePortUdpHarvester
                 if (queue.size() == QUEUE_SIZE)
                 {
                     logger.info("Dropping a packet because the queue is full.");
+                    if (queueStatistics != null)
+                    {
+                        queueStatistics.remove(System.currentTimeMillis());
+                    }
                     queue.poll();
                 }
+
                 queue.offer(buf);
+                if (queueStatistics != null)
+                {
+                    queueStatistics.add(System.currentTimeMillis());
+                }
 
                 queue.notifyAll();
             }
@@ -609,6 +629,10 @@ public class SinglePortUdpHarvester
                     }
 
                     buf = queue.poll();
+                    if (queueStatistics != null)
+                    {
+                        queueStatistics.remove(System.currentTimeMillis());
+                    }
                 }
             }
 
@@ -694,7 +718,7 @@ public class SinglePortUdpHarvester
          * a corresponding socket in {@link #sockets}.
          */
         private final Map<SocketAddress, IceSocketWrapper> candidateSockets
-                = new HashMap<SocketAddress, IceSocketWrapper>();
+                = new HashMap<>();
 
         /**
          * The collection of <tt>DatagramSocket</tt>s added to this candidate.
@@ -704,7 +728,7 @@ public class SinglePortUdpHarvester
          * the STUN stack or the user of ice4j.
          */
         private final Map<SocketAddress, DatagramSocket> sockets
-                = new HashMap<SocketAddress, DatagramSocket>();
+                = new HashMap<>();
 
         /**
          * Initializes a new <tt>MyCandidate</tt> instance with the given

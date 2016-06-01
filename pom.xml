@@ -1,27 +1,33 @@
-<project
-    xmlns="http://maven.apache.org/POM/4.0.0"
-    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-    xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
   <modelVersion>4.0.0</modelVersion>
 
   <parent>
     <groupId>org.jitsi</groupId>
-    <artifactId>jitsi-universe</artifactId>
-    <version>1.0-SNAPSHOT</version>
-    <relativePath>../jitsi-universe/pom.xml</relativePath>
+    <artifactId>jitsi-universe-public</artifactId>
+    <version>1.0</version>
   </parent>
 
   <artifactId>ice4j</artifactId>
-  <version>1.0-SNAPSHOT</version>
-  <packaging>jar</packaging>
+  <version>1.1-SNAPSHOT</version>
+  <packaging>bundle</packaging>
 
   <name>ice4j</name>
   <url>https://github.com/jitsi/ice4j</url>
+  <scm>
+    <url>https://github.com/jitsi/ice4j</url>
+    <connection>scm:git:https://github.com/jitsi/ice4j.git</connection>
+    <developerConnection>scm:git:https://github.com/jitsi/ice4j.git</developerConnection>
+    <tag>HEAD</tag>
+  </scm>
 
   <dependencies>
     <dependency>
-      <groupId>javax.sdp</groupId>
-      <artifactId>jain-sdp</artifactId>
+      <groupId>org.opentelecoms.sdp</groupId>
+      <artifactId>java-sdp-nist-bridge</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>org.jitsi</groupId>
+      <artifactId>jain-sip-ri-ossonly</artifactId>
     </dependency>
     <dependency>
       <groupId>org.bitlet</groupId>
@@ -46,7 +52,36 @@
           </includes>
         </configuration>
       </plugin>
+      <plugin>
+        <groupId>org.apache.felix</groupId>
+        <artifactId>maven-bundle-plugin</artifactId>
+      </plugin>
     </plugins>
+
+    <pluginManagement>
+      <plugins>
+        <plugin>
+          <groupId>org.codehaus.mojo</groupId>
+          <artifactId>exec-maven-plugin</artifactId>
+          <executions>
+            <execution>
+              <goals>
+                <goal>java</goal>
+              </goals>
+            </execution>
+          </executions>
+          <configuration>
+            <classpathScope>test</classpathScope>
+            <systemProperties>
+              <systemProperty>
+                <key>java.util.logging.config.file</key>
+                <value>logging.properties</value>
+              </systemProperty>
+            </systemProperties>
+          </configuration>
+        </plugin>
+      </plugins>
+    </pluginManagement>
   </build>
 
   <profiles>
@@ -68,32 +103,110 @@
         </plugins>
       </build>
     </profile>
-  </profiles>
 
-  <repositories>
-    <repository>
-      <id>jitsi-maven-repository-releases</id>
-      <layout>default</layout>
-      <name>Jitsi Maven Repository (Releases)</name>
-      <releases>
-        <enabled>true</enabled>
-      </releases>
-      <snapshots>
-        <enabled>false</enabled>
-      </snapshots>
-      <url>https://github.com/jitsi/jitsi-maven-repository/raw/master/releases/</url>
-    </repository>
-    <repository>
-      <id>jitsi-maven-repository-snapshots</id>
-      <layout>default</layout>
-      <name>Jitsi Maven Repository (Snapshots)</name>
-      <releases>
-        <enabled>false</enabled>
-      </releases>
-      <snapshots>
-        <enabled>true</enabled>
-      </snapshots>
-      <url>https://github.com/jitsi/jitsi-maven-repository/raw/master/snapshots/</url>
-    </repository>
-  </repositories>
+    <profile>
+      <id>run-sample</id>
+      <build>
+        <plugins>
+          <plugin>
+            <groupId>org.codehaus.mojo</groupId>
+            <artifactId>exec-maven-plugin</artifactId>
+            <configuration>
+                <mainClass>test.Ice</mainClass>
+            </configuration>
+          </plugin>
+        </plugins>
+      </build>
+    </profile>
+
+    <profile>
+      <id>run-pseudotcp</id>
+      <build>
+        <plugins>
+          <plugin>
+            <groupId>org.codehaus.mojo</groupId>
+            <artifactId>exec-maven-plugin</artifactId>
+            <configuration>
+                <mainClass>test.IcePseudoTcp</mainClass>
+            </configuration>
+          </plugin>
+        </plugins>
+      </build>
+    </profile>
+
+    <profile>
+      <id>run-dist</id>
+      <build>
+        <plugins>
+          <plugin>
+            <groupId>org.codehaus.mojo</groupId>
+            <artifactId>exec-maven-plugin</artifactId>
+            <configuration>
+                <mainClass>test.IceDistributed</mainClass>
+            </configuration>
+          </plugin>
+        </plugins>
+      </build>
+    </profile>
+
+    <profile>
+      <id>run-trickle</id>
+      <build>
+        <plugins>
+          <plugin>
+            <groupId>org.codehaus.mojo</groupId>
+            <artifactId>exec-maven-plugin</artifactId>
+            <configuration>
+                <mainClass>test.TrickleIce</mainClass>
+            </configuration>
+          </plugin>
+        </plugins>
+      </build>
+    </profile>
+
+    <profile>
+      <id>run-lite</id>
+      <build>
+        <plugins>
+          <plugin>
+            <groupId>org.codehaus.mojo</groupId>
+            <artifactId>exec-maven-plugin</artifactId>
+            <configuration>
+                <mainClass>test.IceLite</mainClass>
+            </configuration>
+          </plugin>
+        </plugins>
+      </build>
+    </profile>
+
+    <profile>
+      <id>run-map</id>
+      <build>
+        <plugins>
+          <plugin>
+            <groupId>org.codehaus.mojo</groupId>
+            <artifactId>exec-maven-plugin</artifactId>
+            <configuration>
+                <mainClass>test.MappingTest</mainClass>
+            </configuration>
+          </plugin>
+        </plugins>
+      </build>
+    </profile>
+
+    <profile>
+      <id>run-aws</id>
+      <build>
+        <plugins>
+          <plugin>
+            <groupId>org.codehaus.mojo</groupId>
+            <artifactId>exec-maven-plugin</artifactId>
+            <configuration>
+                <mainClass>test.AwsTest</mainClass>
+            </configuration>
+          </plugin>
+        </plugins>
+      </build>
+    </profile>
+  </profiles>
 </project>

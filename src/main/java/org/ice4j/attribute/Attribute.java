@@ -1,8 +1,19 @@
 /*
  * ice4j, the OpenSource Java Solution for NAT and Firewall Traversal.
- * Maintained by the SIP Communicator community (http://sip-communicator.org).
  *
- * Distributable under LGPL license. See terms of license at gnu.org.
+ * Copyright @ 2015 Atlassian Pty Ltd
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  */
 package org.ice4j.attribute;
 
@@ -11,53 +22,54 @@ import org.ice4j.*;
 /**
  * After the header are 0 or more attributes.  Each attribute is TLV
  * encoded, with a 16 bit type, 16 bit length, and variable value:
+ *<pre>
+ *     0                   1                   2                   3   
+ *     0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 
+ *    +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+ *    |         Type                  |            Length             |
+ *    +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+ *    |                             Value                             ....
+ *    +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
  *
- *     0                   1                   2                   3       <br/>
- *     0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1     <br/>
- *    +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+    <br/>
- *    |         Type                  |            Length             |    <br/>
- *    +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+    <br/>
- *    |                             Value                             .... <br/>
- *    +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+    <br/>
- *<br/>
- *    The following types are defined:<br/>
- *<br/>
- * STUN attributes:<br/>
- *    0x0001: MAPPED-ADDRESS                                               <br/>
- *    0x0002: RESPONSE-ADDRESS                                             <br/>
- *    0x0003: CHANGE-REQUEST                                               <br/>
- *    0x0004: SOURCE-ADDRESS                                               <br/>
- *    0x0005: CHANGED-ADDRESS                                              <br/>
- *    0x0006: USERNAME                                                     <br/>
- *    0x0007: PASSWORD                                                     <br/>
- *    0x0008: MESSAGE-INTEGRITY                                            <br/>
- *    0x0009: ERROR-CODE                                                   <br/>
- *    0x000a: UNKNOWN-ATTRIBUTES                                           <br/>
- *    0x000b: REFLECTED-FROM                                               <br/>
- *    0x0014: REALM                                                        <br/>
- *    0x0015: NONCE                                                        <br/>
- *    0x0020: XOR-MAPPED-ADDRESS                                           <br/>
- *    0x8022: SOFTWARE                                                     <br/>
- *    0x8023: ALTERNATE-SERVER                                             <br/>
- *    0x8028: FINGERPRINT                                                  <br/>
- *                                                                         <br/>
- * TURN attributes:<br/>
- *    0x000C: CHANNEL-NUMBER                                               <br/>
- *    0x000D: LIFETIME                                                     <br/>
- *    0x0012: XOR-PEER-ADDRESS                                             <br/>
- *    0x0013: DATA                                                         <br/>
- *    0x0016: XOR-RELAYED-ADDRESS                                          <br/>
- *    0x0018: EVEN-PORT                                                    <br/>
- *    0x0019: REQUESTED-TRANSPORT                                          <br/>
- *    0x001A: DONT-FRAGMENT                                                <br/>
- *    0x0022: RESERVATION-TOKEN                                            <br/>
+ *    The following types are defined:
  *
- * ICE attributes:<br/>
- *    0x0024: PRIORITY                                                     <br/>
- *    0x0025: USE-CANDIDATE                                                <br/>
- *    0x8029: ICE-CONTROLLED                                               <br/>
- *    0x802A: ICE-CONTROLLING                                              <br/>
+ * STUN attributes:
+ *    0x0001: MAPPED-ADDRESS
+ *    0x0002: RESPONSE-ADDRESS
+ *    0x0003: CHANGE-REQUEST
+ *    0x0004: SOURCE-ADDRESS
+ *    0x0005: CHANGED-ADDRESS
+ *    0x0006: USERNAME
+ *    0x0007: PASSWORD
+ *    0x0008: MESSAGE-INTEGRITY
+ *    0x0009: ERROR-CODE
+ *    0x000a: UNKNOWN-ATTRIBUTES
+ *    0x000b: REFLECTED-FROM
+ *    0x0014: REALM
+ *    0x0015: NONCE
+ *    0x0020: XOR-MAPPED-ADDRESS
+ *    0x8022: SOFTWARE
+ *    0x8023: ALTERNATE-SERVER
+ *    0x8028: FINGERPRINT
  *
+ * TURN attributes:
+ *    0x000C: CHANNEL-NUMBER
+ *    0x000D: LIFETIME
+ *    0x0012: XOR-PEER-ADDRESS
+ *    0x0013: DATA
+ *    0x0016: XOR-RELAYED-ADDRESS
+ *    0x0018: EVEN-PORT
+ *    0x0019: REQUESTED-TRANSPORT
+ *    0x001A: DONT-FRAGMENT
+ *    0x0022: RESERVATION-TOKEN
+ *
+ * ICE attributes:
+ *    0x0024: PRIORITY
+ *    0x0025: USE-CANDIDATE
+ *    0x8029: ICE-CONTROLLED
+ *    0x802A: ICE-CONTROLLING
+ * </pre>
+ * 
  * @author Emil Ivov
  * @author Sebastien Vincent
  * @author Namal Senarathne

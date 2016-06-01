@@ -1,14 +1,26 @@
 /*
  * ice4j, the OpenSource Java Solution for NAT and Firewall Traversal.
- * Maintained by the SIP Communicator community (http://sip-communicator.org).
  *
- * Distributable under LGPL license. See terms of license at gnu.org.
+ * Copyright @ 2015 Atlassian Pty Ltd
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  */
 package org.ice4j.stack;
 
 import java.io.*;
 import java.net.*;
 import java.nio.channels.*;
+import java.util.concurrent.*;
 import java.util.logging.*;
 
 import org.ice4j.*;
@@ -34,7 +46,7 @@ class Connector
     /**
      * The message queue is where incoming messages are added.
      */
-    private final MessageQueue messageQueue;
+    private final BlockingQueue<RawMessage> messageQueue;
 
     /**
      * The socket object that used by this access point to access the network.
@@ -73,12 +85,14 @@ class Connector
      * Creates a network access point.
      * @param socket the socket that this access point is supposed to use for
      * communication.
-     * @param messageQueue the FIFO list where incoming messages should be queued
+     * @param remoteAddress the remote address of the socket of this
+     * {@link Connector} if it is a TCP socket, or null if it is UDP.
+     * @param messageQueue the Queue where incoming messages should be queued
      * @param errorHandler the instance to notify when errors occur.
      */
     protected Connector(IceSocketWrapper socket,
                         TransportAddress remoteAddress,
-                        MessageQueue   messageQueue,
+                        BlockingQueue<RawMessage> messageQueue,
                         ErrorHandler   errorHandler)
     {
         this.sock = socket;
@@ -195,7 +209,14 @@ class Connector
                 if(!running)
                     return;
 
-                logger.finest("received datagram");
+                logger.finest(String.format("received datagram packet - addr: %s port: %d",
+                    packet.getAddress(), packet.getPort()));
+                if (packet.getPort() < 0)
+                {
+                    logger.warning("Out of range packet port, resetting to 0");
+                    // force a minimum port of 0 to prevent out of range errors
+                    packet.setPort(0);
+                }
 
                 RawMessage rawMessage
                     = new RawMessage(

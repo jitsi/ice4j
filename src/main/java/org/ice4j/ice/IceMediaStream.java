@@ -1,9 +1,19 @@
 /*
  * ice4j, the OpenSource Java Solution for NAT and Firewall Traversal.
- * Maintained by the SIP Communicator community (http://sip-communicator.org).
  *
- * Distributable under LGPL license.
- * See terms of license at gnu.org.
+ * Copyright @ 2015 Atlassian Pty Ltd
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  */
 package org.ice4j.ice;
 
@@ -65,8 +75,7 @@ public class IceMediaStream
      * address; a media stream may require multiple components, each of which
      * has to work for the media stream as a whole to work.
      */
-    private final Map<Integer, Component> components
-        = new LinkedHashMap<Integer, Component>();
+    private final Map<Integer, Component> components = new LinkedHashMap<>();
 
     /**
      * An ordered set of candidate pairs for a media stream that have been
@@ -74,8 +83,7 @@ public class IceMediaStream
      * start of ICE processing, and fills as checks are performed, resulting in
      * valid candidate pairs.
      */
-    private final TreeSet<CandidatePair> validList
-                                    = new TreeSet<CandidatePair>();
+    private final TreeSet<CandidatePair> validList = new TreeSet<>();
 
     /**
      * The id that was last assigned to a component. The next id that we give
@@ -100,7 +108,7 @@ public class IceMediaStream
      * Agent} and following the various events it may be generating.
      */
     private final List<PropertyChangeListener> streamListeners
-        = new LinkedList<PropertyChangeListener>();
+        = new LinkedList<>();
 
     /**
      * The maximum number of candidate pairs that we should have in our check
@@ -153,9 +161,7 @@ public class IceMediaStream
         synchronized (components)
         {
             component = new Component(++lastComponentID, this);
-            components.put(
-                    Integer.valueOf(component.getComponentID()),
-                    component);
+            components.put(component.getComponentID(), component);
         }
 
         return component;
@@ -221,7 +227,7 @@ public class IceMediaStream
     {
         synchronized(components)
         {
-            return new ArrayList<Component>(components.values());
+            return new ArrayList<>(components.values());
         }
     }
 
@@ -251,7 +257,7 @@ public class IceMediaStream
     {
         synchronized(components)
         {
-            return new ArrayList<Integer>(components.keySet());
+            return new ArrayList<>(components.keySet());
         }
     }
 
@@ -388,8 +394,9 @@ public class IceMediaStream
                 if(localCnd.canReach(remoteCnd)
                         && remoteCnd.getTransportAddress().getPort() != 0)
                 {
-                    CandidatePair pair = new CandidatePair(localCnd,
-                        remoteCnd);
+                    CandidatePair pair
+                        = getParentAgent()
+                            .createCandidatePair(localCnd, remoteCnd);
                     checkList.add(pair);
                 }
             }
@@ -415,7 +422,7 @@ public class IceMediaStream
      *  candidate with its base. Once this has been done, we remove each pair
      *  where the local and remote candidates are identical to the local and
      *  remote candidates of a pair higher up on the priority list.
-     *  <p/>
+     *  <br>
      *  In addition, in order to limit the attacks described in Section 18.5.2
      *  of the ICE spec, we limit the total number of pairs and hence
      *  (connectivity checks) to a specific value, (a total of 100 by default).
@@ -426,8 +433,7 @@ public class IceMediaStream
     {
         //a list that we only use for storing pairs that we've already gone
         //through. The list is destroyed at the end of this method.
-        List<CandidatePair> tmpCheckList
-            = new ArrayList<CandidatePair>(checkList.size());
+        List<CandidatePair> tmpCheckList = new ArrayList<>(checkList.size());
 
         Iterator<CandidatePair> ckListIter = checkList.iterator();
 
@@ -684,9 +690,9 @@ public class IceMediaStream
      */
     protected boolean validListContainsNomineeForComponent(Component component)
     {
-        synchronized(validList)
+        synchronized (validList)
         {
-            for(CandidatePair pair : validList)
+            for (CandidatePair pair : validList)
             {
                 if (pair.isNominated()
                         && pair.getParentComponent() == component)
@@ -736,9 +742,9 @@ public class IceMediaStream
 
         synchronized (validList)
         {
-            for(CandidatePair pair : validList)
+            for (CandidatePair pair : validList)
             {
-                if(pair.isNominated())
+                if (pair.isNominated())
                     components.remove(pair.getParentComponent());
             }
         }
@@ -893,4 +899,18 @@ public class IceMediaStream
     {
         return remotePassword;
     }
+    
+    /**
+     * Use builder pattern to provide an immutable IceMediaStream instance.
+     *
+     * @param name the name of the media stream
+     * @param parentAgent the agent that is handling the session that this
+     * media stream is a part of
+     * @return IceMediaStream
+     */
+    public static IceMediaStream build(Agent parentAgent, String name)
+    {
+        return new IceMediaStream(parentAgent, name);
+    }
+
 }

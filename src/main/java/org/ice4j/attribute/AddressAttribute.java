@@ -1,8 +1,19 @@
 /*
  * ice4j, the OpenSource Java Solution for NAT and Firewall Traversal.
- * Maintained by the SIP Communicator community (http://sip-communicator.org).
  *
- * Distributable under LGPL license. See terms of license at gnu.org.
+ * Copyright @ 2015 Atlassian Pty Ltd
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  */
 package org.ice4j.attribute;
 
@@ -13,34 +24,32 @@ import org.ice4j.*;
 /**
  * This class is used to represent Stun attributes that contain an address. Such
  * attributes are:
- *<p>
- * MAPPED-ADDRESS <br/>
- * RESPONSE-ADDRESS <br/>
- * SOURCE-ADDRESS <br/>
- * CHANGED-ADDRESS <br/>
- * REFLECTED-FROM <br/>
- * ALTERNATE-SERVER <br/>
- * XOR-PEER-ADDRESS <br/>
- * XOR-RELAYED-ADDRESS <br/>
- *</p>
+ *<ul>
+ * <li>MAPPED-ADDRESS
+ * <li>RESPONSE-ADDRESS
+ * <li>SOURCE-ADDRESS
+ * <li>CHANGED-ADDRESS
+ * <li>REFLECTED-FROM
+ * <li>ALTERNATE-SERVER
+ * <li>XOR-PEER-ADDRESS
+ * <li>XOR-RELAYED-ADDRESS
+ *</ul>
  *<p>
  * The different attributes are distinguished by the attributeType of
- * org.ice4j.attribute.Attribute.
- *</p>
+ * {@link Attribute}.
  *<p>
  * Address attributes indicate the mapped IP address and
  * port.  They consist of an eight bit address family, and a sixteen bit
  * port, followed by a fixed length value representing the IP address.
- *<code>
- *  0                   1                   2                   3          <br/>
- *  0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1        <br/>
- * +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+       <br/>
- * |x x x x x x x x|    Family     |           Port                |       <br/>
- * +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+       <br/>
- * |                             Address                           |       <br/>
- * +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+       <br/>
- *                                                                         <br/>
- * </p>
+ *<pre>
+ *  0                   1                   2                   3   
+ *  0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 
+ * +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+ * |x x x x x x x x|    Family     |           Port                |
+ * +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+ * |                             Address                           |
+ * +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+ * </pre>
  * <p>
  * The port is a network byte ordered representation of the mapped port.
  * The address family is always 0x01, corresponding to IPv4.  The first
@@ -150,8 +159,7 @@ abstract class AddressAttribute extends Attribute
     */
     public boolean equals(Object obj)
     {
-        if (! (obj instanceof AddressAttribute)
-            || obj == null)
+        if (! (obj instanceof AddressAttribute))
             return false;
 
         if (obj == this)

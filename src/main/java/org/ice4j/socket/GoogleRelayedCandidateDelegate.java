@@ -1,8 +1,19 @@
 /*
  * ice4j, the OpenSource Java Solution for NAT and Firewall Traversal.
- * Maintained by the SIP Communicator community (http://sip-communicator.org).
  *
- * Distributable under LGPL license. See terms of license at gnu.org.
+ * Copyright @ 2015 Atlassian Pty Ltd
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  */
 package org.ice4j.socket;
 
@@ -47,8 +58,7 @@ public class GoogleRelayedCandidateDelegate
      * {@link #receive(DatagramPacket)} method. They have been received from the
      * TURN server in the form of Data indications.
      */
-    private final List<DatagramPacket> packetsToReceive =
-        new LinkedList<DatagramPacket>();
+    private final List<DatagramPacket> packetsToReceive = new LinkedList<>();
 
     /**
      * The <tt>DatagramSocket</tt>s which have been sent through this
@@ -56,8 +66,7 @@ public class GoogleRelayedCandidateDelegate
      * and which are to be relayed through its associated TURN server in the
      * form of Send indications.
      */
-    private final List<DatagramPacket> packetsToSend =
-        new LinkedList<DatagramPacket>();
+    private final List<DatagramPacket> packetsToSend = new LinkedList<>();
 
     /**
      * The <tt>Thread</tt> which is to send the {@link #packetsToSend} to the
@@ -304,7 +313,7 @@ public class GoogleRelayedCandidateDelegate
     {
         synchronized (packetsToReceive)
         {
-            while (true)
+            do
             {
                 /*
                  * According to the javadoc of DatagramSocket#close(), any
@@ -326,17 +335,17 @@ public class GoogleRelayedCandidateDelegate
                     catch (InterruptedException iex)
                     {
                     }
-                    continue;
                 }
                 else
                 {
                     DatagramPacket packetToReceive = packetsToReceive.remove(0);
 
-                    MultiplexingDatagramSocket.copy(packetToReceive, p);
+                    MultiplexingXXXSocketSupport.copy(packetToReceive, p);
                     packetsToReceive.notifyAll();
                     break;
                 }
             }
+            while (true);
         }
     }
 
@@ -361,7 +370,7 @@ public class GoogleRelayedCandidateDelegate
             }
             else
             {
-                packetsToSend.add(MultiplexingDatagramSocket.clone(p));
+                packetsToSend.add(MultiplexingXXXSocketSupport.clone(p));
                 if (sendThread == null)
                     createSendThread();
                 else

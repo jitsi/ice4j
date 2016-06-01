@@ -1,9 +1,19 @@
 /*
  * ice4j, the OpenSource Java Solution for NAT and Firewall Traversal.
- * Maintained by the SIP Communicator community (http://sip-communicator.org).
  *
- * Distributable under LGPL license.
- * See terms of license at gnu.org.
+ * Copyright @ 2015 Atlassian Pty Ltd
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  */
 package org.ice4j.ice.harvest;
 
@@ -34,7 +44,7 @@ public class CandidateHarvesterSet
      * <tt>Set</tt>.
      */
     private final Collection<CandidateHarvesterSetElement> elements
-        = new LinkedList<CandidateHarvesterSetElement>();
+        = new LinkedList<>();
 
     /**
      * A pool of thread used for gathering process.
@@ -85,7 +95,7 @@ public class CandidateHarvesterSet
      */
     public void harvest(Component component)
     {
-        harvest(Arrays.asList(new Component[]{component}), null);
+        harvest(Arrays.asList(component), null);
     }
 
 
@@ -135,8 +145,7 @@ public class CandidateHarvesterSet
          * Start asynchronously executing the
          * CandidateHarvester#harvest(Component) method of the harvesters.
          */
-        Map<CandidateHarvesterSetTask, Future<?>> tasks
-            = new HashMap<CandidateHarvesterSetTask, Future<?>>();
+        Map<CandidateHarvesterSetTask, Future<?>> tasks = new HashMap<>();
 
         while (true)
         {
@@ -161,7 +170,7 @@ public class CandidateHarvesterSet
 
             synchronized (components)
             {
-                componentsCopy = new ArrayList<Component>(components);
+                componentsCopy = new ArrayList<>(components);
             }
 
             // Asynchronously start gathering candidates using the harvester.
@@ -184,7 +193,7 @@ public class CandidateHarvesterSet
                 = taskIter.next();
             Future<?> future = task.getValue();
 
-            while (true)
+            do
             {
                 try
                 {
@@ -222,9 +231,9 @@ public class CandidateHarvesterSet
                 }
                 catch (InterruptedException ie)
                 {
-                    continue;
                 }
             }
+            while (true);
             taskIter.remove();
         }
     }

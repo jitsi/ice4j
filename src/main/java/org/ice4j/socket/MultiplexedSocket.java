@@ -1,9 +1,19 @@
 /*
  * ice4j, the OpenSource Java Solution for NAT and Firewall Traversal.
- * Maintained by the SIP Communicator community (http://sip-communicator.org).
  *
- * Distributable under LGPL license.
- * See terms of license at gnu.org.
+ * Copyright @ 2015 Atlassian Pty Ltd
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  */
 package org.ice4j.socket;
 
@@ -25,6 +35,7 @@ import java.util.logging.*;
  */
 public class MultiplexedSocket
     extends DelegatingSocket
+    implements MultiplexedXXXSocket
 {
     /**
      * The <tt>Logger</tt> used by the <tt>MultiplexedSocket</tt> class and its
@@ -120,14 +131,9 @@ public class MultiplexedSocket
     }
 
     /**
-     * Gets the <tt>DatagramPacketFilter</tt> which determines which
-     * <tt>DatagramPacket</tt>s read from the network are to be received through
-     * this <tt>Socket</tt>.
-     *
-     * @return the <tt>DatagramPacketFilter</tt> which determines which
-     * <tt>DatagramPacket</tt>s read from the network are to be received through
-     * this <tt>Socket</tt>
+     * {@inheritDoc}
      */
+    @Override
     public DatagramPacketFilter getFilter()
     {
         return filter;

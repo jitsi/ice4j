@@ -1,9 +1,19 @@
 /*
  * ice4j, the OpenSource Java Solution for NAT and Firewall Traversal.
- * Maintained by the Jitsi community (https://jitsi.org).
  *
- * Distributable under LGPL license.
- * See terms of license at gnu.org.
+ * Copyright @ 2015 Atlassian Pty Ltd
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  */
 package org.ice4j.pseudotcp.util;
 
@@ -52,12 +62,12 @@ public class ByteFifoBuffer
     }
 
     /**
-     * Method reads <tt>count</tt> bytes into <tt>out_buffer</tt>. 
+     * Reads <tt>count</tt> bytes into <tt>out_buffer</tt>. 
      * Current read position is incremented by count of bytes 
      * that has been successfully read.
      *
-     * @param out_buffer
-     * @param count
+     * @param out_buffer read count bytes into this buffer
+     * @param count number of bytes to read into the out_buffer
      * @return bytes successfully read
      */
     public int read(byte[] out_buffer, int count)
@@ -67,8 +77,9 @@ public class ByteFifoBuffer
     
     /**
      * Read with buffer offset
-     * @param out_buffer
-     * @param buff_offset
+     * 
+     * @param out_buffer read count bytes into this buffer
+     * @param buff_offset offset where to start writing into out_buffer
      * @param count bytes to read
      * @return read byte count
      */
@@ -85,8 +96,8 @@ public class ByteFifoBuffer
 
     /**
      * Limits <tt>desiredReadCount</tt> to count that is actually available
-     * @param desiredReadCount
-     * @return 
+     * @param desiredReadCount desired amount of bytes to read
+     * @return min(buffered, desiredReadCount)
      */
     private int readLimit(int desiredReadCount)
     {
@@ -144,8 +155,8 @@ public class ByteFifoBuffer
     /**
      * Writes <tt>count</tt> of bytes from the <tt>buffer</tt>
      *
-     * @param buffer
-     * @param count
+     * @param buffer data to write into the buffer
+     * @param count number of bytes to read from the buffer
      * @return bytes successfully written to buffer
      */
     public int write(byte[] buffer, int count)
@@ -154,10 +165,11 @@ public class ByteFifoBuffer
     }
 
     /**
+     * Writes data into the buffer.
      *
      * @param data source data
      * @param offset source buffer's offset
-     * @param count
+     * @param count number of bytes to read from the buffer
      * @return byte count actually read
      */
     public int write(byte[] data, int offset, int count)
@@ -252,7 +264,7 @@ public class ByteFifoBuffer
     /**
      * Advances current buffer's write position by <tt>count</tt> bytes
      * 
-     * @param count
+     * @param count number of bytes to move forward
      */
     public void consumeWriteBuffer(int count)
         throws IllegalArgumentException,
@@ -276,7 +288,7 @@ public class ByteFifoBuffer
     /**
      * Sets new buffer's capacity
      *
-     * @param new_size
+     * @param new_size number of bytes
      * @return <tt>true</tt> if operation is possible to perform, that is if new
      * buffered data fits into new buffer
      */
@@ -295,7 +307,7 @@ public class ByteFifoBuffer
     /**
      * Aligns current read position by <tt>count</tt>
      *
-     * @param count
+     * @param count number of bytes to move the read position
      * @throws BufferUnderflowException if new position exceeds buffered data
      * count
      */
@@ -322,7 +334,7 @@ public class ByteFifoBuffer
     /**
      * Reads <tt>count</tt> bytes from buffer without storing new read position
      *
-     * @param dst_buff
+     * @param dst_buff buffer to write the read data to
      * @param dst_buff_offset offset of destination buffer
      * @param count bytes to read
      * @param offset from current read position
@@ -348,8 +360,8 @@ public class ByteFifoBuffer
      * Writes <tt>count</tt> bytes from <tt>data</tt> to the buffer without
      * affecting buffer's write position
      *
-     * @param data
-     * @param count
+     * @param data the data to write to the buffer
+     * @param count number of bytes to read from data
      * @param nOffset from buffer's write position
      * @return bytes successfully written
      */

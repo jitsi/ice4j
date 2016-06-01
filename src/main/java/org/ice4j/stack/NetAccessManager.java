@@ -1,14 +1,26 @@
 /*
  * ice4j, the OpenSource Java Solution for NAT and Firewall Traversal.
- * Maintained by the SIP Communicator community (http://sip-communicator.org).
- * 
- * Distributable under LGPL license. See terms of license at gnu.org.
+ *
+ * Copyright @ 2015 Atlassian Pty Ltd
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  */
 package org.ice4j.stack;
 
 import java.io.*;
 import java.net.*;
 import java.util.*;
+import java.util.concurrent.*;
 import java.util.logging.*;
 
 import org.ice4j.*;
@@ -48,7 +60,7 @@ class NetAccessManager
      */
     private final Map<TransportAddress, Map<TransportAddress, Connector>>
         udpConnectors
-            = new HashMap<TransportAddress, Map<TransportAddress, Connector>>();
+            = new HashMap<>();
 
     /**
      * All <tt>Connectors</tt> currently in use with TCP. The table maps a local
@@ -63,18 +75,17 @@ class NetAccessManager
      */
     private final Map<TransportAddress, Map<TransportAddress, Connector>>
         tcpConnectors
-            = new HashMap<TransportAddress, Map<TransportAddress, Connector>>();
+            = new HashMap<>();
 
     /**
      * A synchronized FIFO where incoming messages are stocked for processing.
      */
-    private final MessageQueue messageQueue = new MessageQueue();
+    private final BlockingQueue<RawMessage> messageQueue = new LinkedBlockingQueue<>();
 
     /**
      * A thread pool of message processors.
      */
-    private Vector<MessageProcessor> messageProcessors
-                                            = new Vector<MessageProcessor>();
+    private final Vector<MessageProcessor> messageProcessors = new Vector<>();
 
     /**
      * The instance that should be notified when an incoming message has been
@@ -186,13 +197,13 @@ class NetAccessManager
     }
 
     /**
-     * Gets the <tt>MessageQueue</tt> of this <tt>NetAccessManager</tt> in which
+     * Gets the <tt>BlockingQueue</tt> of this <tt>NetAccessManager</tt> in which
      * incoming messages are stocked for processing.
      *
-     * @return the <tt>MessageQueue</tt> of this <tt>NetAccessManager</tt> in
+     * @return the <tt>BlockingQueue</tt> of this <tt>NetAccessManager</tt> in
      * which incoming messages are stocked for processing
      */
-    MessageQueue getMessageQueue()
+    BlockingQueue<RawMessage> getMessageQueue()
     {
         return messageQueue;
     }
@@ -296,6 +307,9 @@ class NetAccessManager
      * has no effect.
      *
      * @param  socket   the socket that the access point should use.
+     * @param remoteAddress the remote address of the socket of the
+     * {@link Connector} to be created if it is a TCP socket, or null if it
+     * is UDP.
      */
     protected void addSocket(IceSocketWrapper socket,
                              TransportAddress remoteAddress)
@@ -321,8 +335,7 @@ class NetAccessManager
 
             if (connectorsForLocalAddress == null)
             {
-                connectorsForLocalAddress
-                    = new HashMap<TransportAddress, Connector>();
+                connectorsForLocalAddress = new HashMap<>();
                 connectorsMap.put(localAddress, connectorsForLocalAddress);
             }
 
@@ -575,7 +588,9 @@ class NetAccessManager
         throws IllegalArgumentException,
                IOException, StunException
     {
-        sendMessage(channelData.encode(), srcAddr, remoteAddr);
+        boolean pad = srcAddr.getTransport() == Transport.TCP
+            || srcAddr.getTransport() == Transport.TLS;
+        sendMessage(channelData.encode(pad), srcAddr, remoteAddr);
     }
 
     /**

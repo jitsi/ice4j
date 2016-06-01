@@ -1,8 +1,19 @@
 /*
  * ice4j, the OpenSource Java Solution for NAT and Firewall Traversal.
- * Maintained by the SIP Communicator community (http://sip-communicator.org).
  *
- * Distributable under LGPL license. See terms of license at gnu.org.
+ * Copyright @ 2015 Atlassian Pty Ltd
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  */
 package org.ice4j.socket;
 
@@ -44,9 +55,10 @@ public class MuxServerSocketChannelFactory
 
     /**
      * The name of the {@code boolean} property of the {@code socket} property
-     * of the {@code ServerSocketChannel} returned by {@link #openAndBind(Map,
-     * SocketAddress, int, DatagramPacketFilter)} which specifies the value of
-     * the {@code SO_REUSEADDR} socket option.
+     * of the {@code ServerSocketChannel} returned by
+     * {@link #openAndBindMuxServerSocketChannel(Map, SocketAddress, int,
+     * DatagramPacketFilter)} which specifies the value of the
+     * {@code SO_REUSEADDR} socket option.
      */
     public static final String SOCKET_REUSE_ADDRESS_PROPERTY_NAME
         = "socket.reuseAddress";
@@ -78,6 +90,7 @@ public class MuxServerSocketChannelFactory
                     "ICE4J does not support sharing of listening endpoints"
                         + " (probably because it is not running on JDK 8).");
         }
+
         Method method;
 
         if (clazz == null)
@@ -117,6 +130,8 @@ public class MuxServerSocketChannelFactory
         }
         catch (IOException ioe)
         {
+            // The whole idea of the method is to close a specific Channel
+            // without caring about any possible IOException.
         }
     }
 
@@ -234,7 +249,7 @@ public class MuxServerSocketChannelFactory
                     if (value == null)
                         on = false;
                     else if (value instanceof Boolean)
-                        on = ((Boolean) value).booleanValue();
+                        on = (Boolean) value;
                     else
                         on = Boolean.valueOf(value.toString());
 

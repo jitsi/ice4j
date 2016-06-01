@@ -1,8 +1,19 @@
 /*
  * ice4j, the OpenSource Java Solution for NAT and Firewall Traversal.
- * Maintained by the SIP Communicator community (http://sip-communicator.org).
  *
- * Distributable under LGPL license. See terms of license at gnu.org.
+ * Copyright @ 2015 Atlassian Pty Ltd
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  */
 package org.ice4j.message;
 
@@ -331,7 +342,7 @@ public abstract class Message
      */
     //not sure this is the best solution but I'm trying to keep entry order
     protected LinkedHashMap<Character, Attribute> attributes
-                                = new LinkedHashMap<Character, Attribute>();
+        = new LinkedHashMap<>();
 
     /**
      * Attribute presentity is a thing of RFC 3489 and no longer exists in
@@ -350,27 +361,27 @@ public abstract class Message
      *
      * For classic STUN :
      *
-     *
-     *                                         Binding  Shared  Shared  Shared        <br/>
-     *                       Binding  Binding  Error    Secret  Secret  Secret        <br/>
-     *   Att.                Req.     Resp.    Resp.    Req.    Resp.   Error         <br/>
-     *                                                                  Resp.         <br/>
-     *   _____________________________________________________________________        <br/>
-     *   MAPPED-ADDRESS      N/A      M        N/A      N/A     N/A     N/A           <br/>
-     *   RESPONSE-ADDRESS    O        N/A      N/A      N/A     N/A     N/A           <br/>
-     *   CHANGE-REQUEST      O        N/A      N/A      N/A     N/A     N/A           <br/>
-     *   SOURCE-ADDRESS      N/A      M        N/A      N/A     N/A     N/A           <br/>
-     *   CHANGED-ADDRESS     N/A      M        N/A      N/A     N/A     N/A           <br/>
-     *   USERNAME            O        N/A      N/A      N/A     M       N/A           <br/>
-     *   PASSWORD            N/A      N/A      N/A      N/A     M       N/A           <br/>
-     *   MESSAGE-INTEGRITY   O        O        N/A      N/A     N/A     N/A           <br/>
-     *   ERROR-CODE          N/A      N/A      M        N/A     N/A     M             <br/>
-     *   UNKNOWN-ATTRIBUTES  N/A      N/A      C        N/A     N/A     C             <br/>
-     *   REFLECTED-FROM      N/A      C        N/A      N/A     N/A     N/A           <br/>
-     *   XOR-MAPPED-ADDRESS  N/A      M        N/A      N/A     N/A     N/A           <br/>
-     *   XOR-ONLY            O        N/A      N/A      N/A     N/A     N/A           <br/>
-     *   SOFTWARE            N/A      O        O        N/A     O       O             <br/>
-     *
+     * <pre>
+     *                                         Binding  Shared  Shared  Shared
+     *                       Binding  Binding  Error    Secret  Secret  Secret
+     *   Att.                Req.     Resp.    Resp.    Req.    Resp.   Error 
+     *                                                                  Resp. 
+     *   _____________________________________________________________________
+     *   MAPPED-ADDRESS      N/A      M        N/A      N/A     N/A     N/A   
+     *   RESPONSE-ADDRESS    O        N/A      N/A      N/A     N/A     N/A   
+     *   CHANGE-REQUEST      O        N/A      N/A      N/A     N/A     N/A   
+     *   SOURCE-ADDRESS      N/A      M        N/A      N/A     N/A     N/A   
+     *   CHANGED-ADDRESS     N/A      M        N/A      N/A     N/A     N/A   
+     *   USERNAME            O        N/A      N/A      N/A     M       N/A   
+     *   PASSWORD            N/A      N/A      N/A      N/A     M       N/A   
+     *   MESSAGE-INTEGRITY   O        O        N/A      N/A     N/A     N/A   
+     *   ERROR-CODE          N/A      N/A      M        N/A     N/A     M     
+     *   UNKNOWN-ATTRIBUTES  N/A      N/A      C        N/A     N/A     C     
+     *   REFLECTED-FROM      N/A      C        N/A      N/A     N/A     N/A   
+     *   XOR-MAPPED-ADDRESS  N/A      M        N/A      N/A     N/A     N/A   
+     *   XOR-ONLY            O        N/A      N/A      N/A     N/A     N/A   
+     *   SOFTWARE            N/A      O        O        N/A     O       O     
+     * </pre>
      */
     public static final byte N_A = 0;
 
@@ -608,7 +619,7 @@ public abstract class Message
     {
         synchronized(attributes)
         {
-            return new LinkedList<Attribute>(attributes.values());
+            return new LinkedList<>(attributes.values());
         }
     }
 
@@ -699,9 +710,9 @@ public abstract class Message
      *
      * @param attributeType the id of the attribute to check .
      *
-     * @return Message.N_A - for not applicable <br/>
-     *         Message.C   - for case depending <br/>
-     *         Message.N_A - for not applicable <br/>
+     * @return Message.N_A - for not applicable <br>
+     *         Message.C   - for case depending <br>
+     *         Message.N_A - for not applicable <br>
      */
     protected byte getAttributePresentity(char attributeType)
     {
@@ -856,8 +867,7 @@ public abstract class Message
     @Override
     public boolean equals(Object obj)
     {
-        if(!(obj instanceof Message)
-           || obj == null)
+        if(!(obj instanceof Message))
             return false;
 
         if(obj == this)
@@ -930,8 +940,7 @@ public abstract class Message
             offset += RFC3489_TRANSACTION_ID_LENGTH;
         }
 
-        Vector<Map.Entry<Character, Attribute>> v =
-            new Vector<Map.Entry<Character, Attribute>>();
+        Vector<Map.Entry<Character, Attribute>> v = new Vector<>();
         Iterator<Map.Entry<Character, Attribute>> iter = null;
         char dataLengthForContentDependentAttribute = 0;
 

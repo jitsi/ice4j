@@ -1,8 +1,19 @@
 /*
  * ice4j, the OpenSource Java Solution for NAT and Firewall Traversal.
- * Maintained by the SIP Communicator community (http://sip-communicator.org).
  *
- * Distributable under LGPL license. See terms of license at gnu.org.
+ * Copyright @ 2015 Atlassian Pty Ltd
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  */
 package org.ice4j.ice;
 
@@ -45,8 +56,7 @@ public class CheckList
      * A pair would get into a triggered check queue as soon as we receive
      * a check on its local candidate.
      */
-    private final List<CandidatePair> triggeredCheckQueue
-                                          = new LinkedList<CandidatePair>();
+    private final List<CandidatePair> triggeredCheckQueue = new LinkedList<>();
 
     /**
      * A reference to the {@link IceMediaStream} that we belong to.
@@ -58,14 +68,14 @@ public class CheckList
      * Agent} and following its changes of state.
      */
     private final List<PropertyChangeListener> stateListeners
-        = new LinkedList<PropertyChangeListener>();
+        = new LinkedList<>();
 
     /**
      * Contains {@link PropertyChangeListener}s registered with this {@link
      * Agent} and following its changes of state.
      */
     private final List<PropertyChangeListener> checkListeners
-        = new LinkedList<PropertyChangeListener>();
+        = new LinkedList<>();
 
     /**
      * The name of the {@link PropertyChangeEvent} that we use to deliver
@@ -286,8 +296,7 @@ public class CheckList
      */
     protected synchronized void computeInitialCheckListPairStates()
     {
-        Map<String, CandidatePair> pairsToWait
-                                    = new Hashtable<String, CandidatePair>();
+        Map<String, CandidatePair> pairsToWait = new Hashtable<>();
 
         //first, determine the pairs that we'd need to put in the waiting state.
         for(CandidatePair pair : this)
@@ -374,9 +383,9 @@ public class CheckList
             return;
         }
 
-        logger.info("Selected pair for stream " +
-                cmp.toShortString() + ": " +
-                nominatedPair.toShortString());
+        logger.info(
+                "Selected pair for stream " + cmp.toShortString() + ": "
+                    + nominatedPair.toShortString());
 
         cmp.setSelectedPair(nominatedPair);
 
@@ -497,8 +506,7 @@ public class CheckList
 
         synchronized(stateListeners)
         {
-            listenersCopy
-                = new LinkedList<PropertyChangeListener>(stateListeners);
+            listenersCopy = new LinkedList<>(stateListeners);
         }
 
         PropertyChangeEvent evt = new PropertyChangeEvent(
@@ -553,8 +561,7 @@ public class CheckList
 
         synchronized(checkListeners)
         {
-            listenersCopy
-                = new LinkedList<PropertyChangeListener>(checkListeners);
+            listenersCopy = new LinkedList<>(checkListeners);
         }
 
         PropertyChangeEvent evt = new PropertyChangeEvent(

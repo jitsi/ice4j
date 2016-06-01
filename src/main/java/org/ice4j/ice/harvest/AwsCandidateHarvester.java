@@ -1,17 +1,26 @@
 /*
- * Jitsi Videobridge, OpenSource video conferencing.
+ * ice4j, the OpenSource Java Solution for NAT and Firewall Traversal.
  *
- * Distributable under LGPL license.
- * See terms of license at gnu.org.
+ * Copyright @ 2015 Atlassian Pty Ltd
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  */
 package org.ice4j.ice.harvest;
 
 import org.ice4j.*;
-import org.ice4j.ice.*;
 
 import java.io.*;
 import java.net.*;
-import java.util.*;
 import java.util.logging.*;
 
 /**
@@ -64,6 +73,11 @@ public class AwsCandidateHarvester
     private static TransportAddress face;
 
     /**
+     * Whether we have already checked and found the mapping addresses.
+     */
+    private static boolean addressChecked = false;
+
+    /**
      * Creates an AWS harvester. The actual addresses wil be retrieved later,
      * during the first harvest.
      */
@@ -73,76 +87,16 @@ public class AwsCandidateHarvester
     }
 
     /**
-     * Maps all candidates to this harvester's mask and adds them to
-     * <tt>component</tt>.
-     *
-     * @param component the {@link Component} that we'd like to map candidates
-     * to.
-     * @return  the <tt>LocalCandidate</tt>s gathered by this
-     * <tt>CandidateHarvester</tt> or <tt>null</tt> if no mask is specified.
-     */
-    public Collection<LocalCandidate> harvest(Component component)
-    {
-
-        if (mask == null || face == null)
-        {
-            if(!obtainEC2Addresses())
-                return null;
-        }
-
-
-        /*
-         * Report the LocalCandidates gathered by this CandidateHarvester so
-         * that the harvest is sure to be considered successful.
-         */
-        Collection<LocalCandidate> candidates = new HashSet<LocalCandidate>();
-
-        for (Candidate<?> cand : component.getLocalCandidates())
-        {
-            if (!(cand instanceof HostCandidate)
-                || !cand.getTransportAddress().getHostAddress()
-                            .equals(face.getHostAddress()))
-            {
-                continue;
-            }
-
-            TransportAddress mappedAddress = new TransportAddress(
-                mask.getHostAddress(),
-                cand.getHostAddress().getPort(),
-                cand.getHostAddress().getTransport());
-
-            ServerReflexiveCandidate mappedCandidate
-                = new ServerReflexiveCandidate(
-                    mappedAddress,
-                    (HostCandidate)cand,
-                    cand.getStunServerAddress(),
-                    CandidateExtendedType.STATICALLY_MAPPED_CANDIDATE);
-
-            //try to add the candidate to the component and then
-            //only add it to the harvest not redundant
-            if( !candidates.contains(mappedCandidate)
-                && component.addLocalCandidate(mappedCandidate))
-            {
-                candidates.add(mappedCandidate);
-            }
-        }
-
-        return candidates;
-    }
-
-    /**
      * Sends HTTP GET queries to
      * <tt>http://169.254.169.254/latest/meta-data/local-ipv4</tt> and
      * <tt>http://169.254.169.254/latest/meta-data/public-ipv4</tt> to learn the
      * private (face) and public (mask) addresses of this EC2 instance.
-     *
-     * @return <tt>true</tt> if we managed to obtain addresses or someone else
-     * had already achieved that before us, <tt>false</tt> otherwise.
      */
-    private static synchronized boolean obtainEC2Addresses()
+    private static synchronized void obtainEC2Addresses()
     {
-        if(mask != null && face != null)
-            return true;
+        if (addressChecked)
+            return;
+        addressChecked = true;
 
         String localIPStr = null;
         String publicIPStr = null;
@@ -164,22 +118,19 @@ public class AwsCandidateHarvester
         }
         catch (Exception exc)
         {
-            //whatever happens, we just log and bail
+            //whatever happens, we just log and fail
             logger.log(Level.INFO, "We failed to obtain EC2 instance addresses "
                 + "for the following reason: ", exc);
             logger.info("String for local IP: " + localIPStr);
             logger.info("String for public IP: " + publicIPStr);
-
         }
-
-        return true;
     }
 
     /**
-     * Returns the discovered public (mask) address, or null.
-     * @return the discovered public (mask) address, or null.
+     * Returns the public (mask) address, or null.
+     * @return the public (mask) address, or null.
      */
-    public static TransportAddress getMask()
+    public TransportAddress getMask()
     {
         if (smellsLikeAnEC2())
         {
@@ -190,10 +141,10 @@ public class AwsCandidateHarvester
     }
 
     /**
-     * Returns the discovered local (face) address, or null.
-     * @return the discovered local (face) address, or null.
+     * Returns the local (face) address, or null.
+     * @return the local (face) address, or null.
      */
-    public static TransportAddress getFace()
+    public TransportAddress getFace()
     {
         if (smellsLikeAnEC2())
         {

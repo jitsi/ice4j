@@ -1,9 +1,19 @@
 /*
  * ice4j, the OpenSource Java Solution for NAT and Firewall Traversal.
- * Maintained by the SIP Communicator community (http://sip-communicator.org).
  *
- * Distributable under LGPL license.
- * See terms of license at gnu.org.
+ * Copyright @ 2015 Atlassian Pty Ltd
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  */
 package org.ice4j.ice.harvest;
 
@@ -58,8 +68,7 @@ public class StunCandidateHarvest
      * The list of <tt>Candidate</tt>s harvested for {@link #hostCandidate} by
      * this harvest.
      */
-    private final List<LocalCandidate> candidates
-        = new LinkedList<LocalCandidate>();
+    private final List<LocalCandidate> candidates = new LinkedList<>();
 
     /**
      * The indicator which determines whether this <tt>StunCandidateHarvest</tt>
@@ -94,8 +103,7 @@ public class StunCandidateHarvest
      * to which a STUN <tt>Response</tt> responds available though it is known
      * in <tt>StunClientTransaction</tt>.
      */
-    private final Map<TransactionID, Request> requests
-        = new HashMap<TransactionID, Request>();
+    private final Map<TransactionID, Request> requests = new HashMap<>();
 
     /**
      * The interval in milliseconds at which a new STUN keep-alive message is to
@@ -1438,7 +1446,7 @@ public class StunCandidateHarvest
          */
         public SendKeepAliveMessageThread(StunCandidateHarvest harvest)
         {
-            this.harvest = new WeakReference<StunCandidateHarvest>(harvest);
+            this.harvest = new WeakReference<>(harvest);
         }
 
         @Override

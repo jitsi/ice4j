@@ -1,9 +1,19 @@
 /*
  * ice4j, the OpenSource Java Solution for NAT and Firewall Traversal.
- * Maintained by the Jitsi community (https://jitsi.org).
  *
- * Distributable under LGPL license.
- * See terms of license at gnu.org.
+ * Copyright @ 2015 Atlassian Pty Ltd
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  */
 package org.ice4j.ice;
 
@@ -17,7 +27,6 @@ import java.util.logging.*;
 
 import org.ice4j.*;
 import org.ice4j.ice.harvest.*;
-import org.ice4j.ice.harvest.TrickleCallback;
 import org.ice4j.stack.*;
 
 /**
@@ -98,7 +107,7 @@ public class Agent
      * This map preserves the insertion order of the media streams.
      */
     private final Map<String, IceMediaStream> mediaStreams
-        = new LinkedHashMap<String, IceMediaStream>();
+        = new LinkedHashMap<>();
 
     /**
      * The candidate harvester that we use to gather candidate on the local
@@ -112,8 +121,7 @@ public class Agent
      * harvest candidates synchronously, and previously to harvesting by
      * {@link #harvesters}.
      */
-    private final List<CandidateHarvester> hostHarvesters
-            = new LinkedList<CandidateHarvester>();
+    private final List<CandidateHarvester> hostHarvesters = new LinkedList<>();
 
     /**
      * The set of harvesters (i.e. STUN, TURN, and others) that the agent should
@@ -156,7 +164,7 @@ public class Agent
      * the necessary triggered checks.
      */
     private final List<CandidatePair> preDiscoveredPairsQueue
-        = new LinkedList<CandidatePair>();
+        = new LinkedList<>();
 
     /**
      * The lock that we use while starting connectivity establishment.
@@ -218,7 +226,7 @@ public class Agent
      * Agent} and following its changes of state.
      */
     private final List<PropertyChangeListener> stateListeners
-        = new LinkedList<PropertyChangeListener>();
+        = new LinkedList<>();
 
     /**
      * The <tt>StunStack</tt> used by this <tt>Agent</tt>.
@@ -307,7 +315,7 @@ public class Agent
                     new BigInteger(128, random).toString(32),
                     /* min */ 22, /* max */ 256);
 
-        tieBreaker = Math.abs(random.nextLong());
+        tieBreaker = random.nextLong() & 0x7FFFFFFFFFFFFFFFL;
         nominator = new DefaultNominator(this);
     }
 
@@ -365,7 +373,7 @@ public class Agent
      * all and only local candidates.
      *
      * @throws IllegalArgumentException if either <tt>minPort</tt> or
-     * <tt>maxPort</tt> is not a valid port number or if <tt>minPort >
+     * <tt>maxPort</tt> is not a valid port number or if <tt>minPort &gt;
      * maxPort</tt>, or if <tt>transport</tt> is not currently supported.
      * @throws IOException if an error occurs while the underlying resolver lib
      * is using sockets.
@@ -412,6 +420,28 @@ public class Agent
         connCheckServer.start();
 
         return component;
+    }
+
+    /**
+     * Initializes a new {@link CandidatePair} instance from a
+     * {@link LocalCandidate} and a {@link RemoteCandidate}. The method
+     * represents a {@code CandidatePair} factory and is preferable to
+     * explicitly calling the {@code CandidatePair} constructor because it
+     * allows this {@code Agent} to easily track the initialization of its
+     * {@code CandidatePair}s.
+     *
+     * @param local the {@code LocalCandidate} to initialize the new instance
+     * with
+     * @param remote the {@code RemoteCandidate} to initialize the new instance
+     * with
+     * @return a new {@code CandidatePair} instance initializes with
+     * {@code local} and {@code remote}
+     */
+    protected CandidatePair createCandidatePair(
+            LocalCandidate local,
+            RemoteCandidate remote)
+    {
+        return new CandidatePair(local, remote);
     }
 
     /**
@@ -515,7 +545,7 @@ public class Agent
         }
 
         //create a list of components and start harvesting
-        List<Component> components = new LinkedList<Component>();
+        List<Component> components = new LinkedList<>();
 
         for (IceMediaStream stream : getStreams())
         {
@@ -561,14 +591,12 @@ public class Agent
                         "Trigger checks for pairs that were received before "
                             + "running state");
 
-                Iterator<CandidatePair> it = preDiscoveredPairsQueue.iterator();
-
-                while(it.hasNext())
+                for (CandidatePair cp : preDiscoveredPairsQueue)
                 {
-                    triggerCheck(it.next());
+                    triggerCheck(cp);
                 }
 
-                this.preDiscoveredPairsQueue.clear();
+                preDiscoveredPairsQueue.clear();
             }
 
             connCheckClient.startChecks();
@@ -653,9 +681,9 @@ public class Agent
      */
     public boolean isOver()
     {
-        return state == IceProcessingState.COMPLETED
-            || state == IceProcessingState.TERMINATED
-            || state == IceProcessingState.FAILED;
+        IceProcessingState state = getState();
+
+        return (state != null) && state.isOver();
     }
 
     /**
@@ -679,7 +707,7 @@ public class Agent
         synchronized(stateListeners)
         {
             if(!stateListeners.contains(l))
-                this.stateListeners.add(l);
+                stateListeners.add(l);
         }
     }
 
@@ -693,7 +721,7 @@ public class Agent
     {
         synchronized(stateListeners)
         {
-            this.stateListeners.remove(l);
+            stateListeners.remove(l);
         }
     }
 
@@ -995,6 +1023,7 @@ public class Agent
      * candidate foundations. We use the <tt>FoundationsRegistry</tt> to keep
      * track of the foundations we assign within a session (i.e. the entire life
      * time of an <tt>Agent</tt>)
+     * @return the {@link FoundationsRegistry} of this agent
      */
     public final FoundationsRegistry getFoundationsRegistry()
     {
@@ -1032,7 +1061,7 @@ public class Agent
     {
         synchronized(mediaStreams)
         {
-            return new LinkedList<String>(mediaStreams.keySet());
+            return new LinkedList<>(mediaStreams.keySet());
         }
     }
 
@@ -1047,7 +1076,7 @@ public class Agent
     {
         synchronized(mediaStreams)
         {
-            return new LinkedList<IceMediaStream>(mediaStreams.values());
+            return new LinkedList<>(mediaStreams.values());
         }
     }
 
@@ -1439,7 +1468,7 @@ public class Agent
                 ufrag);
 
         CandidatePair triggeredPair
-            = new CandidatePair(localCandidate, remoteCandidate);
+            = createCandidatePair(localCandidate, remoteCandidate);
 
         logger.fine("set use-candidate " + useCandidate + " for pair " +
             triggeredPair.toShortString());
@@ -1505,29 +1534,6 @@ public class Agent
             //we already know about the remote address so we only need to
             //trigger a check for the existing pair
 
-            if(!isControlling())
-            {
-                logger.fine("set useCandidateReceived for " +
-                    triggerPair.toShortString());
-
-                // we synchronize here because the same pair object can be
-                // processed (in another thread) in ConnectivityCheckClient's
-                // processSuccessResponse. A controlled agent select its
-                // pair here if the pair state is succeeded (set in
-                // processSuccessResponse) or in processSuccessResponse if
-                // the pair has useCandidateReceived as true (set here). So be
-                // sure that if a binding response and a binding request (for
-                // the same check) from other peer come at the very same time,
-                // that we will trigger the nominationConfirmed (that will
-                // pass the pair as selected if it is the first time).
-                synchronized(triggerPair)
-                {
-                    //next time we will see a request it will be considered as
-                    //having USE-CANDIDATE
-                    triggerPair.setUseCandidateReceived();
-                }
-            }
-
             if (knownPair.getState() == CandidatePairState.SUCCEEDED )
             {
                 //7.2.1.5. Updating the Nominated Flag
@@ -1576,7 +1582,6 @@ public class Agent
             if(triggerPair.getParentComponent().getSelectedPair() == null)
                 logger.info("Add peer CandidatePair with new reflexive " +
                         "address to checkList: " + triggerPair);
-            triggerPair.setUseCandidateReceived();
             parentStream.addToCheckList(triggerPair);
         }
 
@@ -1633,23 +1638,24 @@ public class Agent
     public synchronized void nominate(CandidatePair pair)
         throws IllegalStateException
     {
-        if(! isControlling() )
-            throw new IllegalStateException("Only controlling agents can "
-                            +"nominate pairs");
+        if(!isControlling())
+        {
+            throw new IllegalStateException(
+                    "Only controlling agents can nominate pairs");
+        }
 
         Component parentComponent = pair.getParentComponent();
         IceMediaStream parentStream = parentComponent.getParentStream();
 
         //If the pair is not already nominated and if its parent component
         //does not already contain a nominated pair - nominate it.
-        if(!pair.isNominated()
+        if (!pair.isNominated()
               && !parentStream.validListContainsNomineeForComponent(
                       parentComponent))
         {
             logger.info("verify if nominated pair answer again");
             pair.nominate();
-            pair.getParentComponent().getParentStream()
-                .getCheckList().scheduleTriggeredCheck(pair);
+            parentStream.getCheckList().scheduleTriggeredCheck(pair);
         }
     }
 
@@ -1886,7 +1892,6 @@ public class Agent
      * @return the value of the <tt>Ta</tt> pace timer according to the
      * number and type of {@link IceMediaStream}s this agent will be using or
      * a pre-configured value if the application has set one.
-     * <p>
      */
     protected long calculateTa()
     {

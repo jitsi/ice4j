@@ -1,8 +1,19 @@
 /*
- * Jitsi Videobridge, OpenSource video conferencing.
+ * ice4j, the OpenSource Java Solution for NAT and Firewall Traversal.
  *
- * Distributable under LGPL license.
- * See terms of license at gnu.org.
+ * Copyright @ 2015 Atlassian Pty Ltd
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  */
 package org.ice4j.ice.harvest;
 
@@ -35,12 +46,12 @@ public class MappingCandidateHarvester
     /**
      * The addresses that we will use as a mask
      */
-    private TransportAddress mask;
+    protected TransportAddress mask;
 
     /**
      * The addresses that we will be masking
      */
-    private TransportAddress face;
+    protected TransportAddress face;
 
     /**
      * Creates a mapping harvester with the specified <tt>mask</tt>
@@ -54,6 +65,7 @@ public class MappingCandidateHarvester
         this.mask = mask;
         this.face = face;
     }
+
     /**
      * Maps all candidates to this harvester's mask and adds them to
      * <tt>component</tt>.
@@ -65,29 +77,28 @@ public class MappingCandidateHarvester
      */
     public Collection<LocalCandidate> harvest(Component component)
     {
-
-        if (mask == null || face == null)
+        if (getMask() == null || getFace() == null)
             return null;
 
         /*
          * Report the LocalCandidates gathered by this CandidateHarvester so
          * that the harvest is sure to be considered successful.
          */
-        Collection<LocalCandidate> candidates = new HashSet<LocalCandidate>();
+        Collection<LocalCandidate> candidates = new HashSet<>();
 
         for (Candidate<?> cand : component.getLocalCandidates())
         {
             if (!(cand instanceof HostCandidate)
                 || !cand.getTransportAddress().getHostAddress()
-                            .equals(face.getHostAddress())
-                || cand.getTransport() != face.getTransport())
+                            .equals(getFace().getHostAddress())
+                || cand.getTransport() != getFace().getTransport())
             {
                 continue;
             }
 
             HostCandidate hostCandidate = (HostCandidate) cand;
             TransportAddress mappedAddress = new TransportAddress(
-                mask.getHostAddress(),
+                getMask().getHostAddress(),
                 hostCandidate.getHostAddress().getPort(),
                 hostCandidate.getHostAddress().getTransport());
 
@@ -110,5 +121,23 @@ public class MappingCandidateHarvester
         }
 
         return candidates;
+    }
+
+    /**
+     * Returns the public (mask) address, or null.
+     * @return the public (mask) address, or null.
+     */
+    public TransportAddress getMask()
+    {
+        return this.mask;
+    }
+
+    /**
+     * Returns the local (face) address, or null.
+     * @return the local (face) address, or null.
+     */
+    public TransportAddress getFace()
+    {
+        return this.face;
     }
 }

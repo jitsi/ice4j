@@ -1,9 +1,19 @@
 /*
  * ice4j, the OpenSource Java Solution for NAT and Firewall Traversal.
- * Maintained by the Jitsi community (https://jitsi.org).
  *
- * Distributable under LGPL license.
- * See terms of license at gnu.org.
+ * Copyright @ 2015 Atlassian Pty Ltd
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  */
 package org.ice4j.pseudotcp;
 
@@ -164,7 +174,7 @@ public class PseudoTCPBase
      * control flags. If segment contains any data it is stored in the receive
      * buffer.
      */
-    List<RSegment> m_rlist = new ArrayList<RSegment>();
+    List<RSegment> m_rlist = new ArrayList<>();
     /**
      * Last receive timestamp
      */
@@ -193,7 +203,7 @@ public class PseudoTCPBase
     /**
      * Outgoing segments list
      */
-    List<SSegment> m_slist = new ArrayList<SSegment>();
+    List<SSegment> m_slist = new ArrayList<>();
     /**
      * Last send timestamp
      */
@@ -354,9 +364,9 @@ public class PseudoTCPBase
     }
 
     /**
-     * Set the MTU value
+     * Set the MTU (maximum transmission unit) value
      *
-     * @param mtu
+     * @param mtu the new MTU value
      */
     public void notifyMTU(int mtu)
     {
@@ -419,7 +429,7 @@ public class PseudoTCPBase
         // Check if it's time to retransmit a segment
         if (m_rto_base > 0 && (timeDiff(m_rto_base + m_rx_rto, now) <= 0))
         {
-            assert m_slist.isEmpty() == false;
+            assert !m_slist.isEmpty();
             // retransmit segments
             if (logger.isLoggable(Level.FINER))
             {
@@ -670,11 +680,13 @@ public class PseudoTCPBase
     }
 
     /**
-     *
-     * @param buffer
-     * @param len
+     * Reads the data available in receive buffer. This method returns 0 if
+     * there's no data available at the moment.
+     * 
+     * @param buffer destination buffer
+     * @param len bytes to be read
      * @return received byte count
-     * @throws IOException
+     * @throws IOException if the protocol is not in the connected state
      */
     public int recv(byte[] buffer, int len) throws IOException
     {
@@ -682,11 +694,12 @@ public class PseudoTCPBase
     }
 
     /**
-     *
-     * @param buffer
-     * @param len
+     * Enqueues data in the send buffer
+     * 
+     * @param buffer source data buffer
+     * @param len bytes count to be sent
      * @return sent byte count
-     * @throws IOException
+     * @throws IOException if the protocol is not in connected state
      */
     public int send(byte[] buffer, int len) throws IOException
     {
@@ -865,6 +878,9 @@ public class PseudoTCPBase
 
     /**
      * Method can be used in debugging utilities to parse PTCP segment
+     * @param buffer data to parse
+     * @param size length of the data in the buffer
+     * @return the parsed segment
      */
     public static Segment parseSeg(byte[] buffer, int size)
     {
@@ -888,11 +904,11 @@ public class PseudoTCPBase
         
         return seg;
     }
-    
+
     /**
      * Can be used to convert segments to text
      * 
-     * @param seg
+     * @param seg the {@link Segment} to format
      * @return segment in readable text form
      */
     public static String segToStr(Segment seg)
@@ -1389,7 +1405,7 @@ public class PseudoTCPBase
 
 
                     Iterator<RSegment> iter = m_rlist.iterator();
-                    List<RSegment> toBeRemoved = new ArrayList<RSegment>();
+                    List<RSegment> toBeRemoved = new ArrayList<>();
                     while (iter.hasNext())
                     {
                         RSegment it = iter.next();
@@ -1893,7 +1909,7 @@ public class PseudoTCPBase
      */
     boolean parseOptions(byte[] data, int offset, int len)
     {
-        List<Short> options_specified = new ArrayList<Short>();
+        List<Short> options_specified = new ArrayList<>();
 
         // See http://www.freesoft.org/CIE/Course/Section4/8.htm for
         // parsing the options list.

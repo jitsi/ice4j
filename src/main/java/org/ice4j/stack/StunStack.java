@@ -1,8 +1,19 @@
 /*
  * ice4j, the OpenSource Java Solution for NAT and Firewall Traversal.
- * Maintained by the SIP Communicator community (http://sip-communicator.org).
  *
- * Distributable under LGPL license. See terms of license at gnu.org.
+ * Copyright @ 2015 Atlassian Pty Ltd
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  */
 package org.ice4j.stack;
 
@@ -70,7 +81,7 @@ public class StunStack
      */
     private final Hashtable<TransactionID, StunClientTransaction>
         clientTransactions
-            = new Hashtable<TransactionID, StunClientTransaction>();
+            = new Hashtable<>();
 
     /**
      * The <tt>Thread</tt> which expires the <tt>StunServerTransaction</tt>s of
@@ -85,7 +96,7 @@ public class StunStack
      */
     private final Hashtable<TransactionID, StunServerTransaction>
         serverTransactions
-            = new Hashtable<TransactionID, StunServerTransaction>();
+            = new Hashtable<>();
 
     /**
      * A dispatcher for incoming requests event;
@@ -125,6 +136,9 @@ public class StunStack
      * specified socket and the specified remote address.
      *
      * @param sock The socket that the new access point should represent.
+     * @param remoteAddress the remote address of the socket of the
+     * {@link Connector} to be created if it is a TCP socket, or null if it
+     * is UDP.
      */
     public void addSocket(IceSocketWrapper sock, TransportAddress remoteAddress)
     {
@@ -299,8 +313,7 @@ public class StunStack
                      */
                     if (clientTransactionsToCancel == null)
                     {
-                        clientTransactionsToCancel
-                            = new LinkedList<StunClientTransaction>();
+                        clientTransactionsToCancel = new LinkedList<>();
                     }
                     clientTransactionsToCancel.add(tran);
                 }
@@ -341,8 +354,7 @@ public class StunStack
 
                         if (serverTransactionsToExpire == null)
                         {
-                            serverTransactionsToExpire
-                                    = new LinkedList<StunServerTransaction>();
+                            serverTransactionsToExpire = new LinkedList<>();
                         }
                         serverTransactionsToExpire.add(tran);
                     }
@@ -359,6 +371,13 @@ public class StunStack
     /**
      * Initializes a new <tt>StunStack</tt> instance with given
      * peerUdpMessageEventHandler and channelDataEventHandler.
+     * 
+     * @param peerUdpMessageEventHandler the <tt>PeerUdpMessageEventHandler</tt>
+     *            that will handle incoming UDP messages which are not STUN
+     *            messages and ChannelData messages.
+     * @param channelDataEventHandler the <tt>ChannelDataEventHandler</tt> that
+     *            will handle incoming UDP messages which are ChannelData
+     *            messages.
      */
     public StunStack(PeerUdpMessageEventHandler peerUdpMessageEventHandler,
             ChannelDataEventHandler channelDataEventHandler)
@@ -621,9 +640,13 @@ public class StunStack
      * @param transactionID the ID that we'd like the new transaction to use
      * in case the application created it in order to use it for application
      * data correlation.
-     * @param originalWaitInterval
-     * @param maxWaitInterval
-     * @param maxRetransmissions
+     * @param originalWaitInterval The number of milliseconds to wait before
+     * the first retransmission of the request.
+     * @param maxWaitInterval The maximum wait interval. Once this interval is
+     * reached we should stop doubling its value.
+     * @param maxRetransmissions Maximum number of retransmissions. Once this
+     * number is reached and if no response is received after maxWaitInterval
+     * milliseconds the request is considered unanswered.
      * @return the <tt>TransactionID</tt> of the <tt>StunClientTransaction</tt>
      * that we used in order to send the request.
      *
@@ -1068,8 +1091,7 @@ public class StunStack
         synchronized (clientTransactions)
         {
             clientTransactionsToCancel
-                = new ArrayList<StunClientTransaction>(
-                        clientTransactions.values());
+                = new ArrayList<>(clientTransactions.values());
             clientTransactions.clear();
         }
         /*
@@ -1086,8 +1108,7 @@ public class StunStack
         synchronized (serverTransactions)
         {
             serverTransactionsToExpire
-                = new ArrayList<StunServerTransaction>(
-                        serverTransactions.values());
+                = new ArrayList<>(serverTransactions.values());
             serverTransactions.clear();
         }
         for (StunServerTransaction tran : serverTransactionsToExpire)
@@ -1556,6 +1577,8 @@ public class StunStack
      * @param requestType the message type of Request.
      * @param errorCode the errorCode for Error Response object.
      * @param reasonPhrase the reasonPhrase for the Error Response object.
+     * @param unknownAttributes char[] array containing the ids of one or more
+     *            attributes that had not been recognized.
      * @return corresponding Error Response object.
      */
     public Response createCorrespondingErrorResponse(char requestType,

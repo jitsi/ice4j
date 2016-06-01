@@ -1,9 +1,19 @@
 /*
  * ice4j, the OpenSource Java Solution for NAT and Firewall Traversal.
- * Maintained by the SIP Communicator community (http://sip-communicator.org).
  *
- * Distributable under LGPL license.
- * See terms of license at gnu.org.
+ * Copyright @ 2015 Atlassian Pty Ltd
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  */
 package org.ice4j.ice;
 
@@ -63,21 +73,19 @@ public class Component
     /**
      * The list locally gathered candidates for this media stream.
      */
-    private final List<LocalCandidate> localCandidates
-        = new LinkedList<LocalCandidate>();
+    private final List<LocalCandidate> localCandidates = new LinkedList<>();
 
     /**
      * The list of candidates that the peer agent sent for this stream.
      */
-    private final List<RemoteCandidate> remoteCandidates
-        = new LinkedList<RemoteCandidate>();
+    private final List<RemoteCandidate> remoteCandidates = new LinkedList<>();
 
     /**
      * The list of candidates that the peer agent sent for this stream after
      * connectivity establishment.
      */
-    private final List<RemoteCandidate> remoteUpdateCandidates =
-        new LinkedList<RemoteCandidate>();
+    private final List<RemoteCandidate> remoteUpdateCandidates
+        = new LinkedList<>();
 
     /**
      * A <tt>Comparator</tt> that we use for sorting <tt>Candidate</tt>s by
@@ -175,7 +183,7 @@ public class Component
     {
         synchronized(localCandidates)
         {
-            return new ArrayList<LocalCandidate>(localCandidates);
+            return new ArrayList<>(localCandidates);
         }
     }
 
@@ -247,8 +255,7 @@ public class Component
         logger.info("Update remote candidate for " + toShortString() + ": " +
                 candidate.getTransportAddress());
 
-        List<RemoteCandidate> existingCandidates
-                = new LinkedList<RemoteCandidate>();
+        List<RemoteCandidate> existingCandidates = new LinkedList<>();
         synchronized (remoteCandidates)
         {
             existingCandidates.addAll(remoteCandidates);
@@ -282,7 +289,7 @@ public class Component
      */
     public void updateRemoteCandidates()
     {
-        List<CandidatePair> checkList = null;
+        List<CandidatePair> checkList;
         List<RemoteCandidate> newRemoteCandidates;
 
         synchronized(remoteUpdateCandidates)
@@ -290,8 +297,7 @@ public class Component
             if(remoteUpdateCandidates.size() == 0)
                 return;
 
-            newRemoteCandidates
-                    = new LinkedList<RemoteCandidate>(remoteUpdateCandidates);
+            newRemoteCandidates = new LinkedList<>(remoteUpdateCandidates);
 
             List<LocalCandidate> localCnds = getLocalCandidates();
 
@@ -305,7 +311,7 @@ public class Component
                 }
             }
 
-            checkList = new Vector<CandidatePair>();
+            checkList = new Vector<>();
 
             for(LocalCandidate localCnd : localCnds)
             {
@@ -336,7 +342,9 @@ public class Component
                         */
 
                         CandidatePair pair
-                            = new CandidatePair(localCnd, remoteCnd);
+                            = getParentStream()
+                                .getParentAgent()
+                                    .createCandidatePair(localCnd, remoteCnd);
                         logger.info("new Pair added: " + pair.toShortString());
                         checkList.add(pair);
                     }
@@ -381,7 +389,7 @@ public class Component
     {
         synchronized(remoteCandidates)
         {
-            return new ArrayList<RemoteCandidate>(remoteCandidates);
+            return new ArrayList<>(remoteCandidates);
         }
     }
 
@@ -449,15 +457,17 @@ public class Component
         StringBuffer buff
             = new StringBuffer("Component id=").append(getComponentID());
 
-        buff.append(" parent stream=" + getParentStream().getName());
+        buff.append(" parent stream=").append(getParentStream().getName());
 
         //local candidates
         int localCandidatesCount = getLocalCandidateCount();
 
         if(localCandidatesCount > 0)
         {
-            buff.append("\n" + localCandidatesCount + " Local candidates:");
-            buff.append("\ndefault candidate: " + getDefaultCandidate());
+            buff.append("\n")
+                .append(localCandidatesCount)
+                .append(" Local candidates:");
+            buff.append("\ndefault candidate: ").append(getDefaultCandidate());
 
             synchronized(localCandidates)
             {
@@ -477,14 +487,16 @@ public class Component
 
         if(remoteCandidatesCount > 0)
         {
-            buff.append("\n" + remoteCandidatesCount + " Remote candidates:");
-            buff.append("\ndefault remote candidate: "
-                                + getDefaultRemoteCandidate());
+            buff.append("\n")
+                .append(remoteCandidatesCount)
+                .append(" Remote candidates:");
+            buff.append("\ndefault remote candidate: ")
+                .append(getDefaultRemoteCandidate());
             synchronized(remoteCandidates)
             {
                 for (RemoteCandidate cand : remoteCandidates)
                 {
-                    buff.append("\n" + cand.toString());
+                    buff.append("\n").append(cand);
                 }
             }
         }
@@ -691,12 +703,8 @@ public class Component
     {
         synchronized(localCandidates)
         {
-            Iterator<LocalCandidate> localCandsIter = localCandidates.iterator();
-
-            while (localCandsIter.hasNext())
+            for (LocalCandidate cand : localCandidates)
             {
-                LocalCandidate cand = localCandsIter.next();
-
                 if ((defaultCandidate == null)
                         || (defaultCandidate.getDefaultPreference()
                                 < cand.getDefaultPreference()))
@@ -874,4 +882,19 @@ public class Component
         else
             return Integer.toString(componentID);
     }
+
+    /**
+     * Use builder pattern to allow creation of immutable Component instances,
+     * from outside the current package.
+     *
+     * @param componentID the id of this component.
+     * @param mediaStream the {@link IceMediaStream} instance that would be the
+     * parent of this component.
+     * @return Component
+     */
+    public static Component build(int componentID, IceMediaStream mediaStream)
+    {
+        return new Component(componentID, mediaStream);
+    }
+
 }

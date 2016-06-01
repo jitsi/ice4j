@@ -1,8 +1,19 @@
 /*
  * ice4j, the OpenSource Java Solution for NAT and Firewall Traversal.
- * Maintained by the SIP Communicator community (http://sip-communicator.org).
  *
- * Distributable under LGPL license. See terms of license at gnu.org.
+ * Copyright @ 2015 Atlassian Pty Ltd
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  */
 package org.ice4j.socket;
 
@@ -144,8 +155,9 @@ public class DelegatingSocket
     /**
      * Initializes a new <tt>DelegatingSocket</tt>.
      *
-     * @param address
-     * @param port
+     * @param address ignored
+     * @param port ignored
+     * @throws IOException never thrown
      * @see Socket#Socket(InetAddress, int)
      */
     public DelegatingSocket(InetAddress address, int port)
@@ -157,11 +169,12 @@ public class DelegatingSocket
     /**
      * Initializes a new <tt>DelegatingSocket</tt>.
      *
-     * @param address
-     * @param port
-     * @param localAddr
-     * @param localPort
+     * @param address ignored
+     * @param port ignored
+     * @param localAddr ignored
+     * @param localPort ignored
      * @see Socket#Socket(InetAddress, int, InetAddress, int)
+     * @throws IOException never thrown
      */
     public DelegatingSocket(
             InetAddress address, int port,
@@ -174,7 +187,7 @@ public class DelegatingSocket
     /**
      * Initializes a new <tt>DelegatingSocket</tt>.
      *
-     * @param proxy
+     * @param proxy ignored
      * @see Socket#Socket(Proxy)
      */
     public DelegatingSocket(Proxy proxy)
@@ -232,7 +245,8 @@ public class DelegatingSocket
     /**
      * Initializes a new <tt>DelegatingSocket</tt>.
      *
-     * @param impl
+     * @param impl  ignored
+     * @throws SocketException never thrown
      * @see Socket#Socket(SocketImpl)
      */
     protected DelegatingSocket(SocketImpl impl)
@@ -244,8 +258,10 @@ public class DelegatingSocket
     /**
      * Initializes a new <tt>DelegatingSocket</tt>.
      *
-     * @param host
-     * @param port
+     * @param host ignored
+     * @param port ignored
+     * @throws UnknownHostException never thrown
+     * @throws IOException never thrown
      * @see Socket#Socket(String, int)
      */
     public DelegatingSocket(String host, int port)
@@ -257,10 +273,10 @@ public class DelegatingSocket
     /**
      * Initializes a new <tt>DelegatingSocket</tt>.
      *
-     * @param host
-     * @param port
-     * @param localAddr
-     * @param localPort
+     * @param host ignored
+     * @param port ignored
+     * @param localAddr ignored
+     * @param localPort ignored
      * @see Socket#Socket(String, int, InetAddress, int)
      */
     public DelegatingSocket(
