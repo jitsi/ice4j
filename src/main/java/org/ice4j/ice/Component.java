@@ -41,7 +41,7 @@ public class Component
      * Our class logger.
      * Note that this shouldn't be used directly by instances of
      * {@link IceMediaStream}, because it doesn't take into account the
-     * per-instance log level. Instances should use {@link #logger} instead.
+     * per-instance log level.updateRemoteCandidates Instances should use {@link #logger} instead.
      */
     private static final java.util.logging.Logger classLogger
         = java.util.logging.Logger.getLogger(Component.class.getName());
@@ -357,7 +357,9 @@ public class Component
                             = getParentStream()
                                 .getParentAgent()
                                     .createCandidatePair(localCnd, remoteCnd);
-                        logger.info("new Pair added: " + pair.toShortString());
+                        logger.info("new Pair added: " + pair.toShortString()
+                            + ". Local ufrag "
+                            + parentStream.getParentAgent().getLocalUfrag());
                         checkList.add(pair);
                     }
                 }

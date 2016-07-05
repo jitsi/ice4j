@@ -126,7 +126,8 @@ class ConnectivityCheckClient
 
         if (streamsWithPendingConnectivityEstablishment.size() > 0)
         {
-            logger.info("Start connectivity checks!");
+            logger.info("Start connectivity checks. Local ufrag "
+                            + parentAgent.getLocalUfrag());
             startChecks(
                     streamsWithPendingConnectivityEstablishment
                         .get(0).getCheckList());
@@ -501,7 +502,8 @@ class ConnectivityCheckClient
             logger.fine("Received a success response with no "
                     + "XOR_MAPPED_ADDRESS attribute.");
             logger.info("Pair failed (no XOR-MAPPED-ADDRESS): "
-                    + checkedPair.toShortString());
+                    + checkedPair.toShortString() + ". Local ufrag"
+                    + parentAgent.getLocalUfrag());
             checkedPair.setStateFailed();
             return; //malformed error response
         }
@@ -569,9 +571,9 @@ class ConnectivityCheckClient
 
             if (checkedPair.getParentComponent().getSelectedPair() == null)
             {
-                logger.info(
-                        "Receive a peer-reflexive candidate: "
-                            + peerReflexiveCandidate.getTransportAddress());
+                logger.info("Receive a peer-reflexive candidate: "
+                    + peerReflexiveCandidate.getTransportAddress()
+                    + ". Local ufrag " + parentAgent.getLocalUfrag());
             }
         }
 
@@ -607,14 +609,16 @@ class ConnectivityCheckClient
             //Succeeded.  Note that, the pair which *generated* the check may be
             //different than the valid pair constructed above
             if (checkedPair.getParentComponent().getSelectedPair() == null)
-                logger.info("Pair succeeded: " + checkedPair.toShortString());
+                logger.info("Pair succeeded: " + checkedPair.toShortString()
+                    + ". Local ufrag " + parentAgent.getLocalUfrag());
             checkedPair.setStateSucceeded();
         }
 
         if (!validPair.isValid())
         {
             if (validPair.getParentComponent().getSelectedPair() == null)
-                logger.info("Pair validated: " + validPair.toShortString());
+                logger.info("Pair validated: " + validPair.toShortString()
+                    + ". Local ufrag " + parentAgent.getLocalUfrag());
             parentAgent.validatePair(validPair);
         }
 
@@ -685,7 +689,8 @@ class ConnectivityCheckClient
             logger.info("IsControlling: "  + parentAgent.isControlling() +
                 " USE-CANDIDATE:" +
                     (request.containsAttribute(Attribute.USE_CANDIDATE) ||
-                        checkedPair.useCandidateSent()));
+                        checkedPair.useCandidateSent())
+                + ". Local ufrag " + parentAgent.getLocalUfrag());
         }
 
         //If the agent was a controlling agent, and it had included a USE-
@@ -696,9 +701,9 @@ class ConnectivityCheckClient
         {
             if(validPair.getParentComponent().getSelectedPair() == null)
             {
-                logger.info(
-                        "Nomination confirmed for pair: "
-                            + validPair.toShortString());
+                logger.info("Nomination confirmed for pair: "
+                    + validPair.toShortString()
+                    + ". Loal ufrag " + parentAgent.getLocalUfrag());
                 parentAgent.nominationConfirmed( validPair );
             }
             else

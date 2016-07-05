@@ -488,8 +488,8 @@ public class Agent
         throws IllegalArgumentException,
                IOException
     {
-        logger.info("Gather candidates for component " +
-                component.toShortString());
+        logger.info("Gathering candidates for component " +
+                component.toShortString() +". Local ufrag " + getLocalUfrag());
 
         if (useHostHarvester())
         {
@@ -579,7 +579,8 @@ public class Agent
     {
         synchronized(startLock)
         {
-            logger.info("Start ICE connectivity establishment");
+            logger.info("Start ICE connectivity establishment. Local ufrag "
+                            + getLocalUfrag());
             shutdown = false;
             pruneNonMatchedStreams();
 
@@ -790,7 +791,7 @@ public class Agent
         if (!oldState.equals(newState))
         {
             logger.info("ICE state changed from " + oldState + " to "
-                                + newState);
+                            + newState + ". Local ufrag " + getLocalUfrag());
             fireStateChange(oldState, newState);
 
             return true;
@@ -1499,8 +1500,9 @@ public class Agent
                 //so it's now safe to go and see whether this is a new PR cand.
                 if(triggeredPair.getParentComponent().getSelectedPair() == null)
                 {
-                    logger.info("Received check from " +
-                        triggeredPair.toShortString() + " triggered a check");
+                    logger.info("Received check from "
+                        + triggeredPair.toShortString() + " triggered a check. "
+                        + "Local ufrag " + getLocalUfrag());
                 }
                 triggerCheck(triggeredPair);
             }
@@ -1820,7 +1822,8 @@ public class Agent
                 StringBuffer buf
                     = new StringBuffer( "Harvester used for selected pair for ");
                 buf.append(component.toShortString());
-                buf.append(": ");
+                buf.append(" (local ufrag ").append(getLocalUfrag());
+                buf.append("): ");
 
                 if(selectedPair == null)
                 {
