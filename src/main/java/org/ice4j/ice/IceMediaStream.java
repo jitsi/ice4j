@@ -20,8 +20,10 @@ package org.ice4j.ice;
 import java.beans.*;
 import java.util.*;
 import java.util.logging.*;
+import java.util.logging.Logger;
 
 import org.ice4j.*;
+import org.ice4j.util.*;
 
 /**
  * The class represents a media stream from the ICE perspective, i.e. a
@@ -33,9 +35,12 @@ import org.ice4j.*;
 public class IceMediaStream
 {
     /**
-     * Our class logger.
+     * Our class logger
+     * Note that this shouldn't be used directly by instances of
+     * {@link IceMediaStream}, because it doesn't take into account the
+     * per-instance log level. Instances should use {@link #logger} instead.
      */
-    private static final Logger logger =
+    private static final Logger classLogger =
         Logger.getLogger(IceMediaStream.class.getName());
 
     /**
@@ -132,6 +137,11 @@ public class IceMediaStream
     private String remotePassword = null;
 
     /**
+     * The {@link Logger} used by {@link IceMediaStream} instances.
+     */
+    private org.ice4j.util.Logger logger;
+
+    /**
      * Initializes a new <tt>IceMediaStream</tt> object.
      *
      * @param name the name of the media stream
@@ -140,6 +150,7 @@ public class IceMediaStream
      */
     protected IceMediaStream(Agent parentAgent, String name)
     {
+        logger = new org.ice4j.util.Logger(classLogger, parentAgent.getLogger());
         this.name = name;
         this.parentAgent = parentAgent;
         checkList = new CheckList(this);

@@ -17,7 +17,7 @@ package org.ice4j.util;
 
 import java.util.*;
 import java.util.concurrent.*;
-import java.util.logging.*;
+import java.util.logging.Logger; // Disambiguation.
 
 /**
  * An abstract queue of packets. This is meant to eventually be able to be used

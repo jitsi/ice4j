@@ -28,6 +28,7 @@ import java.util.logging.*;
 import org.ice4j.*;
 import org.ice4j.ice.harvest.*;
 import org.ice4j.stack.*;
+import org.ice4j.util.Logger; // Disambiguation.
 
 /**
  * An <tt>Agent</tt> could be described as the main class (i.e. the chef
@@ -89,11 +90,13 @@ public class Agent
         = new PropertyChangeListener[0];
 
     /**
-     * The <tt>Logger</tt> used by the <tt>Agent</tt> class and its instances
-     * for logging output.
+     * The {@link Logger} used by the {@link Agent} class for logging output.
+     * Note that this shouldn't be used directly by instances of {@link Agent},
+     * because it doesn't take into account the per-instance log level.
+     * Instances should use {@link #logger} instead.
      */
-    private static final Logger logger
-        = Logger.getLogger(Agent.class.getName());
+    private static final java.util.logging.Logger classLogger
+        = java.util.logging.Logger.getLogger(Agent.class.getName());
 
     /**
      * The name of the {@link PropertyChangeEvent} that we use to deliver
@@ -288,10 +291,26 @@ public class Agent
     private Boolean useHostHarvester = null;
 
     /**
+     * The {@link Logger} used by {@link Agent} instances.
+     */
+    private final Logger logger;
+
+    /**
      * Creates an empty <tt>Agent</tt> with no streams, and no address.
      */
     public Agent()
     {
+        this(Level.INFO);
+    }
+
+    /**
+     * Creates an empty <tt>Agent</tt> with no streams, and no address.
+     * @param loggingLevel the logging level to be used by the agent and all of
+     * its components.
+     */
+    public Agent(Level loggingLevel)
+    {
+        logger = new Logger(classLogger, loggingLevel);
         SecureRandom random = new SecureRandom();
 
         connCheckServer = new ConnectivityCheckServer(this);
@@ -338,7 +357,8 @@ public class Agent
      */
     public IceMediaStream createMediaStream(String mediaStreamName)
     {
-        logger.fine("Create media stream for " + mediaStreamName);
+        logger.debug("Create media stream for " + mediaStreamName);
+
         IceMediaStream mediaStream
             = new IceMediaStream(Agent.this, mediaStreamName);
 
@@ -400,12 +420,6 @@ public class Agent
         Component component = stream.createComponent();
 
         gatherCandidates(component, preferredPort, minPort, maxPort);
-
-        for(Candidate<?> candidate : component.getLocalCandidates())
-        {
-            logger.info("\t" + candidate.getTransportAddress() + " (" +
-                    candidate.getType() + ")");
-        }
 
         /*
          * Lyubomir: After we've gathered the LocalCandidate for a Component and
@@ -2015,64 +2029,6 @@ public class Agent
         }
     }
 
-    /**
-     * RFC 5245 says: Once ICE processing has reached the Completed state for
-     * all peers for media streams using those candidates, the agent SHOULD
-     * wait an additional three seconds, and then it MAY cease responding to
-     * checks or generating triggered checks on that candidate.  It MAY free
-     * the candidate at that time.
-     * <p>
-     * This <tt>TerminationThread</tt> is scheduling such a termination and
-     * garbage collection in three seconds.
-     */
-    private class TerminationThread
-        extends Thread
-    {
-
-        /**
-         * Creates a new termination timer.
-         */
-        private TerminationThread()
-        {
-            super("TerminationThread");
-        }
-
-        /**
-         * Waits for a period of three seconds (or whatever termination
-         * interval the user has specified) and then moves this <tt>Agent</tt>
-         * into the terminated state and frees all non-nominated candidates.
-         */
-        @Override
-        public synchronized void run()
-        {
-            long terminationDelay
-                = Integer.getInteger(
-                        StackProperties.TERMINATION_DELAY,
-                        DEFAULT_TERMINATION_DELAY);
-
-            if (terminationDelay >= 0)
-            {
-                try
-                {
-                    wait(terminationDelay);
-                }
-                catch (InterruptedException ie)
-                {
-                    logger.log(
-                            Level.FINEST, "Interrupted while waiting. Will "
-                                    +"speed up termination",
-                            ie);
-                }
-            }
-
-            terminate(IceProcessingState.TERMINATED);
-
-            synchronized (terminationThreadSyncRoot)
-            {
-                terminationThread = null;
-            }
-        }
-    }
 
     /**
      * Terminates this <tt>Agent</tt> by stopping the handling of connectivity
@@ -2548,5 +2504,88 @@ public class Agent
     public void setUseHostHarvester(boolean useHostHarvester)
     {
         this.useHostHarvester = useHostHarvester;
+    }
+
+    /**
+     * Sets the logging level for this {@link Agent} and its components.
+     * @param level the level to set.
+     */
+    public void setLoggingLevel(Level level)
+    {
+        logger.setLevel(level);
+    }
+
+    /**
+     * Gets the logging level for this {@link Agent} and its components.
+     */
+    public Level getLoggingLevel()
+    {
+        return logger.getLevel();
+    }
+
+    /**
+     * @return this {@link Agent}'s {@link Logger}.
+     */
+    protected Logger getLogger()
+    {
+        return logger;
+    }
+
+    /**
+     * RFC 5245 says: Once ICE processing has reached the Completed state for
+     * all peers for media streams using those candidates, the agent SHOULD
+     * wait an additional three seconds, and then it MAY cease responding to
+     * checks or generating triggered checks on that candidate.  It MAY free
+     * the candidate at that time.
+     * <p>
+     * This <tt>TerminationThread</tt> is scheduling such a termination and
+     * garbage collection in three seconds.
+     */
+    private class TerminationThread
+        extends Thread
+    {
+
+        /**
+         * Creates a new termination timer.
+         */
+        private TerminationThread()
+        {
+            super("TerminationThread");
+        }
+
+        /**
+         * Waits for a period of three seconds (or whatever termination
+         * interval the user has specified) and then moves this <tt>Agent</tt>
+         * into the terminated state and frees all non-nominated candidates.
+         */
+        @Override
+        public synchronized void run()
+        {
+            long terminationDelay
+                = Integer.getInteger(
+                StackProperties.TERMINATION_DELAY,
+                DEFAULT_TERMINATION_DELAY);
+
+            if (terminationDelay >= 0)
+            {
+                try
+                {
+                    wait(terminationDelay);
+                }
+                catch (InterruptedException ie)
+                {
+                    logger.log(Level.FINEST, "Interrupted while waiting. Will "
+                                   + "speed up termination",
+                               ie);
+                }
+            }
+
+            terminate(IceProcessingState.TERMINATED);
+
+            synchronized (terminationThreadSyncRoot)
+            {
+                terminationThread = null;
+            }
+        }
     }
 }

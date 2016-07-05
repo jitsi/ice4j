@@ -24,6 +24,7 @@ import org.ice4j.attribute.*;
 import org.ice4j.message.*;
 import org.ice4j.security.*;
 import org.ice4j.stack.*;
+import org.ice4j.util.Logger; // Disambiguation.
 
 /**
  * The class that would be handling and responding to incoming connectivity
@@ -39,9 +40,13 @@ class ConnectivityCheckServer
     /**
      * The <tt>Logger</tt> used by the <tt>ConnectivityCheckServer</tt>
      * class and its instances for logging output.
+     * Note that this shouldn't be used directly by instances of
+     * {@link ConnectivityCheckServer}, because it doesn't take into account
+     * the per-instance log level. Instances should use {@link #logger} instead.
      */
-    private static final Logger logger
-        = Logger.getLogger(ConnectivityCheckServer.class.getName());
+    private static final java.util.logging.Logger classLogger
+        = java.util.logging.Logger.getLogger(
+                ConnectivityCheckServer.class.getName());
 
     /**
      * Compares <tt>a</tt> and <tt>b</tt> as unsigned long values. Serves the
@@ -82,6 +87,11 @@ class ConnectivityCheckServer
     private boolean alive = false;
 
     /**
+     * The {@link Logger} used by {@link ConnectivityCheckServer} instances.
+     */
+    private Logger logger;
+
+    /**
      * Creates a new <tt>ConnectivityCheckServer</tt> setting
      * <tt>parentAgent</tt> as the agent that will be used for retrieving
      * information such as user fragments for example.
@@ -91,6 +101,7 @@ class ConnectivityCheckServer
     public ConnectivityCheckServer(Agent parentAgent)
     {
         this.parentAgent = parentAgent;
+        logger = new Logger(classLogger, parentAgent.getLogger());
 
         stunStack = this.parentAgent.getStunStack();
         stunStack.getCredentialsManager().registerAuthority(this);

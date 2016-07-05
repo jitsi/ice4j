@@ -19,7 +19,8 @@ package org.ice4j.ice;
 
 import java.beans.*;
 import java.util.*;
-import java.util.logging.*;
+
+import org.ice4j.util.*;
 
 /**
  * Implements ice4j internal nomination strategies.
@@ -30,10 +31,13 @@ public class DefaultNominator
     implements PropertyChangeListener
 {
     /**
-     * The logger.
+     * The class logger.
+     * Note that this shouldn't be used directly by instances of
+     * {@link DefaultNominator}, because it doesn't take into account the
+     * per-instance log level. Instances should use {@link #logger} instead.
      */
-    private static final Logger logger
-        = Logger.getLogger(DefaultNominator.class.getName());
+    private static final java.util.logging.Logger classLogger
+        = java.util.logging.Logger.getLogger(DefaultNominator.class.getName());
 
     /**
      * The Agent that created us.
@@ -53,6 +57,11 @@ public class DefaultNominator
     private final Map<String, TimerTask> validatedCandidates = new HashMap<>();
 
     /**
+     * The {@link Logger} used by {@link DefaultNominator} instances.
+     */
+    private Logger logger;
+
+    /**
      * Creates a new instance of this nominator using <tt>parentAgent</tt> as
      * a reference to the <tt>Agent</tt> instance that we should use to
      * nominate pairs.
@@ -62,6 +71,7 @@ public class DefaultNominator
     public DefaultNominator(Agent parentAgent)
     {
         this.parentAgent = parentAgent;
+        logger = new Logger(classLogger, parentAgent.getLogger());
         parentAgent.addStateChangeListener(this);
     }
 

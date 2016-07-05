@@ -19,7 +19,8 @@ package org.ice4j.ice;
 
 import java.beans.*;
 import java.util.*;
-import java.util.logging.*;
+
+import org.ice4j.util.Logger;
 
 /**
  * A check list is a list of <tt>CandidatePair</tt>s with a state (i.e. a
@@ -35,15 +36,30 @@ public class CheckList
     extends Vector<CandidatePair>
 {
     /**
-     * The logger.
+     * The class logger.
+     * Note that this shouldn't be used directly by instances of
+     * {@link CheckList}, because it doesn't take into account the per-instance
+     * log level. Instances should use {@link #logger} instead.
      */
-    private static final Logger logger =
-        Logger.getLogger(CheckList.class.getName());
+    private static final java.util.logging.Logger classLogger
+        = java.util.logging.Logger.getLogger(CheckList.class.getName());
 
     /**
      * A dummy serialization id.
      */
     private static final long serialVersionUID = 1L;
+
+    /**
+     * The name of the {@link PropertyChangeEvent} that we use to deliver
+     * changes on the state of this check list.
+     */
+    public static final String PROPERTY_CHECK_LIST_STATE = "CheckListState";
+
+    /**
+     * The name of the {@link PropertyChangeEvent} that we use to deliver
+     * changes on the end of checks of this check list.
+     */
+    public static final String PROPERTY_CHECK_LIST_CHECKS = "CheckListChecks";
 
     /**
      * The state of this check list.
@@ -78,16 +94,9 @@ public class CheckList
         = new LinkedList<>();
 
     /**
-     * The name of the {@link PropertyChangeEvent} that we use to deliver
-     * changes on the state of this check list.
+     * The {@link Logger} used by {@link CheckList} instances.
      */
-    public static final String PROPERTY_CHECK_LIST_STATE = "CheckListState";
-
-    /**
-     * The name of the {@link PropertyChangeEvent} that we use to deliver
-     * changes on the end of checks of this check list.
-     */
-    public static final String PROPERTY_CHECK_LIST_CHECKS = "CheckListChecks";
+    private Logger logger;
 
     /**
      * Creates a check list with the specified name.
@@ -98,6 +107,8 @@ public class CheckList
     protected CheckList(IceMediaStream parentStream)
     {
         this.parentStream = parentStream;
+        logger
+            = new Logger(classLogger, parentStream.getParentAgent().getLogger());
     }
 
     /**
