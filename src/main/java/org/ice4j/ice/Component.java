@@ -21,6 +21,7 @@ import java.util.*;
 import java.util.logging.*;
 
 import org.ice4j.*;
+import org.ice4j.util.Logger; //Disambiguation
 
 /**
  * A component is a piece of a media stream requiring a single transport
@@ -38,9 +39,12 @@ public class Component
 {
     /**
      * Our class logger.
+     * Note that this shouldn't be used directly by instances of
+     * {@link IceMediaStream}, because it doesn't take into account the
+     * per-instance log level.updateRemoteCandidates Instances should use {@link #logger} instead.
      */
-    private static final Logger logger
-        = Logger.getLogger(Component.class.getName());
+    private static final java.util.logging.Logger classLogger
+        = java.util.logging.Logger.getLogger(Component.class.getName());
 
     /**
      * The component ID to use with RTP streams.
@@ -113,6 +117,11 @@ public class Component
     private Candidate<?> defaultRemoteCandidate = null;
 
     /**
+     * The {@link Logger} used by {@link Component} instances.
+     */
+    private Logger logger;
+
+    /**
      * Creates a new <tt>Component</tt> with the specified <tt>componentID</tt>
      * as a child of the specified <tt>IceMediaStream</tt>.
      *
@@ -126,6 +135,9 @@ public class Component
         // the max value for componentID is 256
         this.componentID = componentID;
         this.parentStream = mediaStream;
+
+        logger
+            = new Logger(classLogger, mediaStream.getParentAgent().getLogger());
     }
 
     /**
@@ -345,7 +357,9 @@ public class Component
                             = getParentStream()
                                 .getParentAgent()
                                     .createCandidatePair(localCnd, remoteCnd);
-                        logger.info("new Pair added: " + pair.toShortString());
+                        logger.info("new Pair added: " + pair.toShortString()
+                            + ". Local ufrag "
+                            + parentStream.getParentAgent().getLocalUfrag());
                         checkList.add(pair);
                     }
                 }

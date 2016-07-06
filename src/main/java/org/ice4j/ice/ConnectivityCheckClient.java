@@ -26,6 +26,7 @@ import org.ice4j.attribute.*;
 import org.ice4j.message.*;
 import org.ice4j.socket.*;
 import org.ice4j.stack.*;
+import org.ice4j.util.Logger; //Disambiguation
 
 /**
  * The class that will be generating our outgoing connectivity checks and that
@@ -39,10 +40,14 @@ class ConnectivityCheckClient
 {
     /**
      * The <tt>Logger</tt> used by the <tt>ConnectivityCheckClient</tt>
-     * class and its instances for logging output.
+     * class for logging output.
+     * Note that this shouldn't be used directly by instances of
+     * {@link ConnectivityCheckClient}, because it doesn't take into account
+     * the per-instance log level. Instances should use {@link #logger} instead.
      */
-    private static final Logger logger
-        = Logger.getLogger(ConnectivityCheckClient.class.getName());
+    private static final java.util.logging.Logger classLogger
+        = java.util.logging.Logger.getLogger(
+                ConnectivityCheckClient.class.getName());
 
     /**
      * The agent that created us.
@@ -71,6 +76,11 @@ class ConnectivityCheckClient
     private boolean alive = false;
 
     /**
+     * The {@link Logger} used by {@link ConnectivityCheckClient} instances.
+     */
+    private Logger logger;
+
+    /**
      * Creates a new <tt>ConnectivityCheckClient</tt> setting
      * <tt>parentAgent</tt> as the agent that will be used for retrieving
      * information such as user fragments for example.
@@ -80,6 +90,7 @@ class ConnectivityCheckClient
     public ConnectivityCheckClient(Agent parentAgent)
     {
         this.parentAgent = parentAgent;
+        logger = new Logger(classLogger, parentAgent.getLogger());
 
         stunStack = this.parentAgent.getStunStack();
     }
@@ -115,7 +126,8 @@ class ConnectivityCheckClient
 
         if (streamsWithPendingConnectivityEstablishment.size() > 0)
         {
-            logger.info("Start connectivity checks!");
+            logger.info("Start connectivity checks. Local ufrag "
+                            + parentAgent.getLocalUfrag());
             startChecks(
                     streamsWithPendingConnectivityEstablishment
                         .get(0).getCheckList());
@@ -490,7 +502,8 @@ class ConnectivityCheckClient
             logger.fine("Received a success response with no "
                     + "XOR_MAPPED_ADDRESS attribute.");
             logger.info("Pair failed (no XOR-MAPPED-ADDRESS): "
-                    + checkedPair.toShortString());
+                    + checkedPair.toShortString() + ". Local ufrag"
+                    + parentAgent.getLocalUfrag());
             checkedPair.setStateFailed();
             return; //malformed error response
         }
@@ -558,9 +571,9 @@ class ConnectivityCheckClient
 
             if (checkedPair.getParentComponent().getSelectedPair() == null)
             {
-                logger.info(
-                        "Receive a peer-reflexive candidate: "
-                            + peerReflexiveCandidate.getTransportAddress());
+                logger.info("Receive a peer-reflexive candidate: "
+                    + peerReflexiveCandidate.getTransportAddress()
+                    + ". Local ufrag " + parentAgent.getLocalUfrag());
             }
         }
 
@@ -596,14 +609,16 @@ class ConnectivityCheckClient
             //Succeeded.  Note that, the pair which *generated* the check may be
             //different than the valid pair constructed above
             if (checkedPair.getParentComponent().getSelectedPair() == null)
-                logger.info("Pair succeeded: " + checkedPair.toShortString());
+                logger.info("Pair succeeded: " + checkedPair.toShortString()
+                    + ". Local ufrag " + parentAgent.getLocalUfrag());
             checkedPair.setStateSucceeded();
         }
 
         if (!validPair.isValid())
         {
             if (validPair.getParentComponent().getSelectedPair() == null)
-                logger.info("Pair validated: " + validPair.toShortString());
+                logger.info("Pair validated: " + validPair.toShortString()
+                    + ". Local ufrag " + parentAgent.getLocalUfrag());
             parentAgent.validatePair(validPair);
         }
 
@@ -674,7 +689,8 @@ class ConnectivityCheckClient
             logger.info("IsControlling: "  + parentAgent.isControlling() +
                 " USE-CANDIDATE:" +
                     (request.containsAttribute(Attribute.USE_CANDIDATE) ||
-                        checkedPair.useCandidateSent()));
+                        checkedPair.useCandidateSent())
+                + ". Local ufrag " + parentAgent.getLocalUfrag());
         }
 
         //If the agent was a controlling agent, and it had included a USE-
@@ -685,9 +701,9 @@ class ConnectivityCheckClient
         {
             if(validPair.getParentComponent().getSelectedPair() == null)
             {
-                logger.info(
-                        "Nomination confirmed for pair: "
-                            + validPair.toShortString());
+                logger.info("Nomination confirmed for pair: "
+                    + validPair.toShortString()
+                    + ". Loal ufrag " + parentAgent.getLocalUfrag());
                 parentAgent.nominationConfirmed( validPair );
             }
             else

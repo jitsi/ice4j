@@ -16,6 +16,7 @@
 package org.ice4j.util;
 
 import java.util.logging.*;
+import java.util.logging.Logger; // Disambiguation.
 
 public class QueueStatistics
 {

@@ -30,6 +30,7 @@ import java.net.*;
 import java.util.*;
 import java.util.concurrent.*;
 import java.util.logging.*;
+import java.util.logging.Logger; // Disambiguation
 
 /**
  * A harvester implementation which binds to a single <tt>DatagramSocket</tt>

@@ -24,6 +24,7 @@ import java.util.logging.*;
 import org.ice4j.*;
 import org.ice4j.socket.*;
 import org.ice4j.stack.*;
+import org.ice4j.util.Logger; // Disambiguation.
 
 /**
  * <tt>LocalCandidate</tt>s are obtained by an agent for every stream component
@@ -35,6 +36,16 @@ import org.ice4j.stack.*;
 public abstract class LocalCandidate
     extends Candidate<LocalCandidate>
 {
+    /**
+     * The <tt>Logger</tt> used by the <tt>LocalCandidate</tt> class for logging
+     * output.
+     * Note that this shouldn't be used directly by instances of
+     * {@link DefaultNominator}, because it doesn't take into account the
+     * per-instance log level. Instances should use {@link #logger} instead.
+     */
+    private static final java.util.logging.Logger classLogger
+        = java.util.logging.Logger.getLogger(HostCandidate.class.getName());
+
     /**
      * The type of method used to discover this candidate ("host", "upnp", "stun
      * peer reflexive", "stun server reflexive", "turn relayed", "google turn
@@ -53,11 +64,9 @@ public abstract class LocalCandidate
     private boolean isSSL = false;
 
     /**
-     * The <tt>Logger</tt> used by the <tt>LocalCandidate</tt> class and its
-     * instances for logging output.
+     * The {@link Logger} used by {@link LocalCandidate} instances.
      */
-    private static final Logger logger
-        = Logger.getLogger(HostCandidate.class.getName());
+    private Logger logger;
 
     /**
      * Creates a <tt>LocalCandidate</tt> instance for the specified transport
@@ -84,6 +93,10 @@ public abstract class LocalCandidate
                           LocalCandidate  relatedCandidate)
     {
         super(transportAddress, parentComponent, type, relatedCandidate);
+        logger
+            = new Logger(classLogger,
+                         parentComponent.
+                             getParentStream().getParentAgent().getLogger());
         this.extendedType = extendedType;
     }
 
