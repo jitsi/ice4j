@@ -143,7 +143,7 @@ class CandidateHarvesterSetElement
      */
     public void setEnabled(boolean enabled)
     {
-        logger.info((enabled ? "Enabling: " : "Disabling: ") + harvester);
+        logger.fine((enabled ? "Enabling: " : "Disabling: ") + harvester);
         this.enabled = enabled;
     }
 
