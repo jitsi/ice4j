@@ -193,7 +193,7 @@ public abstract class PacketQueue<T>
             handler = null;
         }
 
-        logger.info("Initialized a PacketQueue instance with ID " + id);
+        logger.fine("Initialized a PacketQueue instance with ID " + id);
     }
 
     /**
