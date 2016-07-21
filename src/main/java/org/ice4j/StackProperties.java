@@ -49,6 +49,43 @@ public class StackProperties
     public static final int BIND_RETRIES_DEFAULT_VALUE = 50;
 
     /**
+     * How often a STUN Binding request used for consent freshness check will be
+     * sent(value in milliseconds).
+     */
+    public static final String CONSENT_FRESHNESS_INTERVAL
+        = "org.ice4j.ice.CONSENT_FRESHNESS_INTERVAL";
+
+    /**
+     * The maximum number of retransmissions of a STUN Binding request without
+     * a valid STUN Binding response after which consent freshness is to be
+     * considered unconfirmed according to &quot;STUN Usage for Consent
+     * Freshness&quot;.
+     */
+    public static final String CONSENT_FRESHNESS_MAX_RETRANSMISSIONS
+        = "org.ice4j.ice.CONSENT_FRESHNESS_MAX_RETRANSMISSIONS";
+
+    /**
+     * The number of milliseconds without a valid STUN Binding response after
+     * which a STUN Binding request is to be retransmitted according to
+     * &quot;STUN Usage for Consent Freshness&quot;. This is the final value
+     * for the back-off strategy.
+     * {@link #CONSENT_FRESHNESS_ORIGINAL_WAIT_INTERVAL} defines the initial
+     * interval for the first request sent. Value in milliseconds.
+     */
+    public static final String CONSENT_FRESHNESS_MAX_WAIT_INTERVAL
+        = "org.ice4j.ice.CONSENT_FRESHNESS_MAX_WAIT_INTERVAL";
+
+    /**
+     * The number of milliseconds without a valid STUN Binding response after
+     * which a STUN Binding request is to be retransmitted according to
+     * &quot;STUN Usage for Consent Freshness&quot;. This is the original value
+     * for back-off strategy. {@link #CONSENT_FRESHNESS_MAX_WAIT_INTERVAL} sets
+     * the upper limit. Value in milliseconds.
+     */
+    public static final String CONSENT_FRESHNESS_ORIGINAL_WAIT_INTERVAL
+        = "org.ice4j.ice.CONSENT_FRESHNESS_WAIT_INTERVAL";
+
+    /**
      * The number of milliseconds a client transaction should wait before
      * retransmitting, after it has sent a request for the first time.
      */
