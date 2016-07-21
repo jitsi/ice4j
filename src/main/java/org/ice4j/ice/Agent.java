@@ -54,19 +54,28 @@ import org.ice4j.util.Logger; // Disambiguation.
 public class Agent
 {
     /**
-     * The maximum number of retransmissions of a STUN Binding request without
-     * a valid STUN Binding response after which consent freshness is to be
-     * considered unconfirmed according to &quot;STUN Usage for Consent
-     * Freshness&quot;. 
+     * Default value for {@link StackProperties#CONSENT_FRESHNESS_INTERVAL}.
      */
-    private static final int CONSENT_FRESHNESS_MAX_RETRANSMISSIONS = 30;
+    private static final int DEFAULT_CONSENT_FRESHNESS_INTERVAL = 15000;
 
     /**
-     * The number of milliseconds without a valid STUN Binding response after
-     * which a STUN Binding request is to be retransmitted according to
-     * &quot;STUN Usage for Consent Freshness&quot;.
+     * Default value for
+     * {@link StackProperties#CONSENT_FRESHNESS_MAX_RETRANSMISSIONS}.
      */
-    private static final int CONSENT_FRESHNESS_WAIT_INTERVAL = 500;
+    private static final int DEFAULT_CONSENT_FRESHNESS_MAX_RETRANSMISSIONS = 30;
+
+    /**
+     * Default value for
+     * {@link StackProperties#CONSENT_FRESHNESS_MAX_WAIT_INTERVAL}.
+     */
+    private static final int DEFAULT_CONSENT_FRESHNESS_MAX_WAIT_INTERVAL = 500;
+
+    /**
+     * Default value for
+     * {@link StackProperties#CONSENT_FRESHNESS_ORIGINAL_WAIT_INTERVAL}.
+     */
+    private static final int DEFAULT_CONSENT_FRESHNESS_ORIGINAL_WAIT_INTERVAL
+            = 500;
 
     /**
      * The default maximum size for check lists.
@@ -2216,6 +2225,22 @@ public class Agent
      */
     private void runInStunKeepAliveThread()
     {
+        long consentFreshnessInterval = Long.getLong(
+                StackProperties.CONSENT_FRESHNESS_INTERVAL,
+                DEFAULT_CONSENT_FRESHNESS_INTERVAL);
+
+        int originalConsentFreshnessWaitInterval = Integer.getInteger(
+                StackProperties.CONSENT_FRESHNESS_ORIGINAL_WAIT_INTERVAL,
+                DEFAULT_CONSENT_FRESHNESS_ORIGINAL_WAIT_INTERVAL);
+
+        int maxConsentFreshnessWaitInterval = Integer.getInteger(
+                StackProperties.CONSENT_FRESHNESS_MAX_WAIT_INTERVAL,
+                DEFAULT_CONSENT_FRESHNESS_MAX_WAIT_INTERVAL);
+
+        int consentFreshnessMaxRetransmissions = Integer.getInteger(
+                StackProperties.CONSENT_FRESHNESS_MAX_RETRANSMISSIONS,
+                DEFAULT_CONSENT_FRESHNESS_MAX_RETRANSMISSIONS);
+
         while (runInStunKeepAliveThreadCondition())
         {
             for(IceMediaStream stream : getStreams())
@@ -2230,9 +2255,9 @@ public class Agent
                         {
                             connCheckClient.startCheckForPair(
                                     pair,
-                                    CONSENT_FRESHNESS_WAIT_INTERVAL,
-                                    CONSENT_FRESHNESS_WAIT_INTERVAL,
-                                    CONSENT_FRESHNESS_MAX_RETRANSMISSIONS);
+                                    originalConsentFreshnessWaitInterval,
+                                    maxConsentFreshnessWaitInterval,
+                                    consentFreshnessMaxRetransmissions);
                         }
                         else
                         {
@@ -2247,7 +2272,7 @@ public class Agent
 
             try
             {
-                Thread.sleep(15000);
+                Thread.sleep(consentFreshnessInterval);
                 Thread.yield();
             }
             catch(InterruptedException e)
