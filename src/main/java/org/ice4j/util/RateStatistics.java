@@ -74,7 +74,7 @@ public class RateStatistics
         this.scale = scale / (buckets.length - 1);
     }
 
-    private void eraseOld(long nowMs)
+    private synchronized void eraseOld(long nowMs)
     {
         long newOldestTime = nowMs - buckets.length + 1;
 
@@ -102,25 +102,45 @@ public class RateStatistics
         oldestTime = newOldestTime;
     }
 
+    public long getRate()
+    {
+        return getRate(System.currentTimeMillis());
+    }
+
     public long getRate(long nowMs)
     {
         eraseOld(nowMs);
         return (long) (accumulatedCount * scale + 0.5F);
     }
 
+    public long getAccumulatedCount()
+    {
+        return getAccumulatedCount(System.currentTimeMillis());
+    }
+
+    public long getAccumulatedCount(long nowMs)
+    {
+        eraseOld(nowMs);
+        return accumulatedCount;
+    }
+
+
     public void update(int count, long nowMs)
     {
         if (nowMs < oldestTime) // Too old data is ignored.
             return;
 
-        eraseOld(nowMs);
+        synchronized (this)
+        {
+            eraseOld(nowMs);
 
-        int nowOffset = (int) (nowMs - oldestTime);
-        int index = oldestIndex + nowOffset;
+            int nowOffset = (int) (nowMs - oldestTime);
+            int index = oldestIndex + nowOffset;
 
-        if (index >= buckets.length)
-            index -= buckets.length;
-        buckets[index] += count;
-        accumulatedCount += count;
+            if (index >= buckets.length)
+                index -= buckets.length;
+            buckets[index] += count;
+            accumulatedCount += count;
+        }
     }
 }
