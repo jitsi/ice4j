@@ -88,7 +88,7 @@ public class Logger
 
     /**
      * Checks whether messages with a particular level should be logged
-     * according to the log level configured for this {@link Logger.}
+     * according to the log level configured for this {@link Logger}.
      * @param level the log level.
      */
     public boolean isLoggable(Level level)
@@ -131,7 +131,7 @@ public class Logger
     }
 
     /**
-     * Logs a message with level {@link Level.SEVERE}, if that level is
+     * Logs a message with level {@link Level#SEVERE}, if that level is
      * loggable according to the log level configured for this {@link Logger}.
      * @param msg the message to log.
      */
@@ -141,7 +141,7 @@ public class Logger
     }
 
     /**
-     * Logs a message with level {@link Level.WARNING}, if that level is
+     * Logs a message with level {@link Level#WARNING}, if that level is
      * loggable according to the log level configured for this {@link Logger}.
      * @param msg the message to log.
      */
@@ -151,7 +151,7 @@ public class Logger
     }
 
     /**
-     * Logs a message with level {@link Level.INFO}, if that level is
+     * Logs a message with level {@link Level#INFO}, if that level is
      * loggable according to the log level configured for this {@link Logger}.
      * @param msg the message to log.
      */
@@ -161,7 +161,7 @@ public class Logger
     }
 
     /**
-     * Logs a message with level {@link Level.CONFIG}, if that level is
+     * Logs a message with level {@link Level#CONFIG}, if that level is
      * loggable according to the log level configured for this {@link Logger}.
      * @param msg the message to log.
      */
@@ -171,7 +171,7 @@ public class Logger
     }
 
     /**
-     * Logs a message with level {@link Level.FINE}, if that level is
+     * Logs a message with level {@link Level#FINE}, if that level is
      * loggable according to the log level configured for this {@link Logger}.
      * @param msg the message to log.
      */
@@ -181,7 +181,7 @@ public class Logger
     }
 
     /**
-     * Logs a message with level {@link Level.FINER}, if that level is
+     * Logs a message with level {@link Level#FINER}, if that level is
      * loggable according to the log level configured for this {@link Logger}.
      * @param msg the message to log.
      */
@@ -191,7 +191,7 @@ public class Logger
     }
 
     /**
-     * Logs a message with level {@link Level.FINEST}, if that level is
+     * Logs a message with level {@link Level#FINEST}, if that level is
      * loggable according to the log level configured for this {@link Logger}.
      * @param msg the message to log.
      */

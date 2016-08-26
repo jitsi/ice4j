@@ -45,7 +45,7 @@ public class EventDispatcher
      * The <tt>Map</tt> of <tt>EventDispatcher</tt>s which keep the
      * registrations of STUN request and indication listeners registered for
      * STUN requests and indications from specific local
-     * <tt>TransportAddress<tt>es.
+     * <tt>TransportAddress</tt>es.
      */
     private final Map<TransportAddress, EventDispatcher> children
         = new Hashtable<>();

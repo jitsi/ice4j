@@ -111,8 +111,8 @@ public class CandidatePair
 
     /**
      * The {@link TransactionID} of the client transaction for a connectivity
-     * check over this pair in case it is in the {@link CandidatePairState#
-     * IN_PROGRESS} state.
+     * check over this pair in case it is in the
+     * {@link CandidatePairState#IN_PROGRESS} state.
      */
     private TransactionID connCheckTranID = null;
 

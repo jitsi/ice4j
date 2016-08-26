@@ -79,11 +79,12 @@ class CandidatePrioritizer
      * <code>comp1.equals(comp2)</code> implies that
      * <tt>sgn(comp1.compare(o1, o2))==sgn(comp2.compare(o1, o2))</tt> for
      * every object reference <tt>o1</tt> and <tt>o2</tt>.<p>
-     * <p/>
+     * <p>
      * Note that it is <i>always</i> safe <i>not</i> to override
      * <tt>Object.equals(Object)</tt>.  However, overriding this method may,
      * in some cases, improve performance by allowing programs to determine
      * that two distinct Comparators impose the same order.
+     * </p>
      *
      * @param obj the reference object with which to compare.
      *

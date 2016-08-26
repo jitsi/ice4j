@@ -1433,7 +1433,7 @@ public class StunCandidateHarvest
          * instance. The <tt>StunCandidateHarvest</tt> is referenced by a
          * <tt>WeakReference</tt> in an attempt to reduce the risk that the
          * <tt>Thread</tt> may live regardless of the fact that the specified
-         * <tt>StunCandidateHarvest<tt> may no longer be reachable.
+         * <tt>StunCandidateHarvest</tt> may no longer be reachable.
          */
         private final WeakReference<StunCandidateHarvest> harvest;
 

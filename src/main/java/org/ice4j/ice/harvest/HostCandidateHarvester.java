@@ -492,7 +492,7 @@ public class HostCandidateHarvester
      * @return the newly created <tt>DatagramSocket</tt>.
      *
      * @throws IllegalArgumentException if either <tt>minPort</tt> or
-     * <tt>maxPort</tt> is not a valid port number or if <tt>minPort >
+     * <tt>maxPort</tt> is not a valid port number or if <tt>minPort &gt;
      * maxPort</tt>.
      * @throws IOException if an error occurs while the underlying resolver lib
      * is using sockets.
@@ -577,7 +577,7 @@ public class HostCandidateHarvester
      * @return the newly created <tt>DatagramSocket</tt>.
      *
      * @throws IllegalArgumentException if either <tt>minPort</tt> or
-     * <tt>maxPort</tt> is not a valid port number or if <tt>minPort >
+     * <tt>maxPort</tt> is not a valid port number or if <tt>minPort &gt;
      * maxPort</tt>.
      * @throws IOException if an error occurs while the underlying resolver lib
      * is using sockets.
