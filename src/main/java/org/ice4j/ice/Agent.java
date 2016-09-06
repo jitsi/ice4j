@@ -309,7 +309,17 @@ public class Agent
      */
     public Agent()
     {
-        this(Level.INFO);
+        this(Level.INFO, null);
+    }
+
+    /**
+     * Creates an empty <tt>Agent</tt> with no streams, and no address.
+     * @param ufragPrefix an optional prefix to the generated local ICE username
+     * fragment.
+     */
+    public Agent(String ufragPrefix)
+    {
+        this(Level.INFO, ufragPrefix);
     }
 
     /**
@@ -318,6 +328,18 @@ public class Agent
      * its components.
      */
     public Agent(Level loggingLevel)
+    {
+        this(loggingLevel, null);
+    }
+
+    /**
+     * Creates an empty <tt>Agent</tt> with no streams, and no address.
+     * @param loggingLevel the logging level to be used by the agent and all of
+     * its components.
+     * @param ufragPrefix an optional prefix to the generated local ICE username
+     * fragment.
+     */
+    public Agent(Level loggingLevel, String ufragPrefix)
     {
         logger = new Logger(classLogger, loggingLevel);
         SecureRandom random = new SecureRandom();
@@ -332,12 +354,12 @@ public class Agent
         if (StackProperties.getString(StackProperties.SOFTWARE) == null)
             System.setProperty(StackProperties.SOFTWARE, "ice4j.org");
 
-        ufrag
-            = ensureIceAttributeLength(
-                    new BigInteger(24, random).toString(32)
-                        + BigInteger.valueOf(
-                            System.currentTimeMillis()).toString(32),
-                    /* min */ 4, /* max */ 256);
+        String ufrag = ufragPrefix == null ? "" : ufragPrefix;
+        ufrag += new BigInteger(24, random).toString(32);
+        ufrag += BigInteger.valueOf(System.currentTimeMillis()).toString(32);
+        ufrag = ensureIceAttributeLength(ufrag, /* min */ 4, /* max */ 256);
+        this.ufrag = ufrag;
+
         password
             = ensureIceAttributeLength(
                     new BigInteger(128, random).toString(32),
