@@ -46,7 +46,7 @@ import org.ice4j.socket.*;
  * @author Lyubomir Marinov
  */
 public class TcpHarvester
-    extends CandidateHarvester
+    extends AbstractCandidateHarvester
 {
     /**
      * Our class logger.

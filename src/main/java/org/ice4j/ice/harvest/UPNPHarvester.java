@@ -34,7 +34,7 @@ import org.bitlet.weupnp.*;
  * @author Sebastien Vincent
  */
 public class UPNPHarvester
-    extends CandidateHarvester
+    extends AbstractCandidateHarvester
 {
     /**
      * The logger.

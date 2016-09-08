@@ -28,14 +28,10 @@ import org.ice4j.ice.*;
  *
  * @author Emil Ivov
  * @author Lyubomir Marinov
+ * @author Boris Grozev
  */
-public abstract class CandidateHarvester
+public interface CandidateHarvester
 {
-    /**
-     * Manages statistics about harvesting time.
-     */
-    private HarvestStatistics harvestStatistics = new HarvestStatistics();
-
     /**
      * Gathers all candidate addresses of the type that this
      * <tt>CandidateHarvester</tt> supports. The gathered candidate addresses
@@ -52,7 +48,7 @@ public abstract class CandidateHarvester
      * as they are discovered, they should also be returned in order to make
      * sure that the gathering will be considered successful.
      */
-    public abstract Collection<LocalCandidate> harvest(Component component);
+    Collection<LocalCandidate> harvest(Component component);
 
     /**
      * Returns the statistics describing how well the various harvests of this
@@ -61,10 +57,7 @@ public abstract class CandidateHarvester
      * @return The {@link HarvestStatistics} describing this harvester's
      * harvests.
      */
-    public HarvestStatistics getHarvestStatistics()
-    {
-        return harvestStatistics;
-    }
+    HarvestStatistics getHarvestStatistics();
 
     /**
      * Returns <tt>true</tt> if this <tt>CandidateHarvester</tt> is to be
@@ -77,8 +70,5 @@ public abstract class CandidateHarvester
      * @return <tt>true</tt> if this <tt>CandidateHarvester</tt> is a harvester
      * for host candidates.
      */
-    public boolean isHostHarvester()
-    {
-        return false;
-    }
+    boolean isHostHarvester();
 }

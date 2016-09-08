@@ -53,7 +53,7 @@ import java.util.logging.Logger; // Disambiguation
  * @author Boris Grozev
  */
 public class SinglePortUdpHarvester
-        extends CandidateHarvester
+        extends AbstractCandidateHarvester
 {
     /**
      * Our class logger.
