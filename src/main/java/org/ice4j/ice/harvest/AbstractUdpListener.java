@@ -447,7 +447,7 @@ public abstract class AbstractUdpListener
          * Adds pkt to this socket. If the queue is full, drops a packet. Does
          * not block.
          */
-        protected void addBuffer(Buffer buf)
+        public void addBuffer(Buffer buf)
         {
             synchronized (queue)
             {
