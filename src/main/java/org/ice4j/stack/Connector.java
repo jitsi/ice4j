@@ -209,8 +209,10 @@ class Connector
                 if(!running)
                     return;
 
-                logger.finest(String.format("received datagram packet - addr: %s port: %d",
-                    packet.getAddress(), packet.getPort()));
+                if (logger.isLoggable(Level.FINEST)){
+                    logger.finest("received datagram packet - addr: "
+                            + packet.getAddress() + " port: " + packet.getPort());
+                }
                 if (packet.getPort() < 0)
                 {
                     logger.warning("Out of range packet port, resetting to 0");
