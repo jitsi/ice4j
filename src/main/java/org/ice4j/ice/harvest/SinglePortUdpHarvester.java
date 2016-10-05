@@ -77,6 +77,14 @@ public class SinglePortUdpHarvester
     private static final int POOL_SIZE = 256;
 
     /**
+     * The name of the property which controls the size of the receive buffer
+     * which {@link SinglePortUdpHarvester} will request for the sockets that
+     * it creates.
+     */
+    private static final String SO_RCVBUF_PNAME
+        = SinglePortUdpHarvester.class.getName() + ".SO_RCVBUF";
+
+    /**
      * Creates a new <tt>SinglePortUdpHarvester</tt> instance for each allowed
      * IP address found on each allowed network interface, with the given port.
      *
@@ -200,9 +208,23 @@ public class SinglePortUdpHarvester
         throws IOException
     {
         this.localAddress = localAddress;
-        this.socket = new DatagramSocket(localAddress);
-        logger.info("Initialized SinglePortUdpHarvester with address "
-                            + localAddress);
+        socket = new DatagramSocket(localAddress);
+
+
+        int receiveBufferSize = StackProperties.getInt(SO_RCVBUF_PNAME, -1);
+        if (receiveBufferSize > 0)
+        {
+            socket.setReceiveBufferSize(receiveBufferSize);
+        }
+
+        String logMessage
+            = "Initialized SinglePortUdpHarvester with address " + localAddress;
+        logMessage += ". Receive buffer size " + socket.getReceiveBufferSize();
+        if (receiveBufferSize > 0)
+        {
+            logMessage += " (asked for " + receiveBufferSize + ")";
+        }
+        logger.info(logMessage);
 
         thread = new Thread()
         {
