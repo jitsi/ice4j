@@ -36,7 +36,7 @@ import org.ice4j.stack.*;
  * @author Lyubomir Marinov
  */
 public class StunCandidateHarvester
-    extends CandidateHarvester
+    extends AbstractCandidateHarvester
 {
 
     /**

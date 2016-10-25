@@ -41,7 +41,7 @@ import java.util.*;
  * @author Emil Ivov
  */
 public class MappingCandidateHarvester
-    extends CandidateHarvester
+    extends AbstractCandidateHarvester
 {
     /**
      * The addresses that we will use as a mask
