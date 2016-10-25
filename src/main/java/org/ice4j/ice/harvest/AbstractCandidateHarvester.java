@@ -42,7 +42,6 @@ public abstract class AbstractCandidateHarvester
 
     /**
      * {@inheritDoc}
-     * @return
      */
     public boolean isHostHarvester()
     {
