@@ -662,6 +662,12 @@ public class DelegatingDatagramSocket
             // after the first packet is received, the length is set to the size
             // of the first packet and the second packet is truncated.
             // http://docs.oracle.com/javase/6/docs/api/java/net/DatagramSocket.html
+            //
+            // XXX(boris): I think the above is wrong. I don't interpret the
+            // API description this way, and testing on a couple of different
+            // environments shows that  DatagramSocket.receive() grows the
+            // packet's length to as much as much as the array (and offset)
+            // would allow. I am leaving the code because it seems harmless.
             byte[] data = p.getData();
 
             p.setLength((data == null) ? 0 : (data.length - p.getOffset()));
