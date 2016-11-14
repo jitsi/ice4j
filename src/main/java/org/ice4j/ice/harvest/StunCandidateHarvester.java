@@ -234,6 +234,7 @@ public class StunCandidateHarvester
      * @return  the <tt>LocalCandidate</tt>s gathered by this
      * <tt>CandidateHarvester</tt>
      */
+    @Override
     public Collection<LocalCandidate> harvest(Component component)
     {
         logger.fine("starting " + component.toShortString()

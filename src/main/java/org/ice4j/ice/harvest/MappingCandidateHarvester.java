@@ -83,6 +83,7 @@ public class MappingCandidateHarvester
      * @return  the <tt>LocalCandidate</tt>s gathered by this
      * <tt>CandidateHarvester</tt> or <tt>null</tt> if no mask is specified.
      */
+    @Override
     public Collection<LocalCandidate> harvest(Component component)
     {
         TransportAddress mask = getMask();
