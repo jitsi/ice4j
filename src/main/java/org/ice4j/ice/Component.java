@@ -119,7 +119,7 @@ public class Component
     /**
      * The {@link Logger} used by {@link Component} instances.
      */
-    private Logger logger;
+    private final Logger logger;
 
     /**
      * Creates a new <tt>Component</tt> with the specified <tt>componentID</tt>
