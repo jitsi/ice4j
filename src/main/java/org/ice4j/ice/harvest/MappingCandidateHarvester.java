@@ -21,6 +21,7 @@ import org.ice4j.*;
 import org.ice4j.ice.*;
 
 import java.util.*;
+import java.util.logging.*;
 
 /**
  * Uses a list of addresses as a predefined static mask in order to generate
@@ -43,6 +44,13 @@ import java.util.*;
 public class MappingCandidateHarvester
     extends AbstractCandidateHarvester
 {
+    /**
+     * The <tt>Logger</tt> used by the <tt>StunCandidateHarvester</tt> class and
+     * its instances for logging output.
+     */
+    private static final Logger logger
+        = Logger.getLogger(StunCandidateHarvester.class.getName());
+
     /**
      * The addresses that we will use as a mask
      */
@@ -77,8 +85,14 @@ public class MappingCandidateHarvester
      */
     public Collection<LocalCandidate> harvest(Component component)
     {
-        if (getMask() == null || getFace() == null)
+        TransportAddress mask = getMask();
+        TransportAddress face = getFace();
+        if (face == null || mask == null)
+        {
+            logger.warning("Harvester not configured: face=" + face
+                           + ", mask="+mask);
             return null;
+        }
 
         /*
          * Report the LocalCandidates gathered by this CandidateHarvester so
@@ -90,15 +104,15 @@ public class MappingCandidateHarvester
         {
             if (!(cand instanceof HostCandidate)
                 || !cand.getTransportAddress().getHostAddress()
-                            .equals(getFace().getHostAddress())
-                || cand.getTransport() != getFace().getTransport())
+                            .equals(face.getHostAddress())
+                || cand.getTransport() != face.getTransport())
             {
                 continue;
             }
 
             HostCandidate hostCandidate = (HostCandidate) cand;
             TransportAddress mappedAddress = new TransportAddress(
-                getMask().getHostAddress(),
+                mask.getHostAddress(),
                 hostCandidate.getHostAddress().getPort(),
                 hostCandidate.getHostAddress().getTransport());
 
@@ -129,7 +143,7 @@ public class MappingCandidateHarvester
      */
     public TransportAddress getMask()
     {
-        return this.mask;
+        return mask;
     }
 
     /**
@@ -138,6 +152,6 @@ public class MappingCandidateHarvester
      */
     public TransportAddress getFace()
     {
-        return this.face;
+        return face;
     }
 }
