@@ -100,14 +100,12 @@ public class MappingCandidateHarvester
         if (face == null || mask == null)
         {
             logger.warning("Harvester not configured: face=" + face
-                           + ", mask="+mask);
+                           + ", mask=" + mask);
             return null;
         }
 
-        /*
-         * Report the LocalCandidates gathered by this CandidateHarvester so
-         * that the harvest is sure to be considered successful.
-         */
+         // Report the LocalCandidates gathered by this CandidateHarvester so
+         // that the harvest is sure to be considered successful.
         Collection<LocalCandidate> candidates = new HashSet<>();
 
         for (Candidate<?> cand : component.getLocalCandidates())
@@ -163,5 +161,19 @@ public class MappingCandidateHarvester
     public TransportAddress getFace()
     {
         return face;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public String toString()
+    {
+        TransportAddress face = getFace();
+        TransportAddress mask = getMask();
+        return
+            this.getClass().getName()
+                    + ", face=" + (face == null ? "null" : face.getAddress())
+                    + ", mask=" + (mask == null ? "null" : mask.getAddress());
     }
 }
