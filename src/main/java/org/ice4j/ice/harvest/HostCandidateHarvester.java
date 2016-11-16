@@ -132,14 +132,11 @@ public class HostCandidateHarvester
      * Gets the list of explicitly allowed addresses.
      * @return the list of explicitly allowed addresses.
      */
-    public static List<InetAddress> getAllowedAddresses()
+    public static synchronized List<InetAddress> getAllowedAddresses()
     {
-        synchronized (HostCandidateHarvester.class)
+        if (!addressFiltersInitialized)
         {
-            if (!addressFiltersInitialized)
-            {
-                initializeAddressFilters();
-            }
+            initializeAddressFilters();
         }
 
         return allowedAddresses;
@@ -149,14 +146,11 @@ public class HostCandidateHarvester
      * Gets the list of blocked addresses.
      * @return the list of blocked addresses.
      */
-    public static List<InetAddress> getBlockedAddresses()
+    public static synchronized  List<InetAddress> getBlockedAddresses()
     {
-        synchronized (HostCandidateHarvester.class)
+        if (!addressFiltersInitialized)
         {
-            if (!addressFiltersInitialized)
-            {
-                initializeAddressFilters();
-            }
+            initializeAddressFilters();
         }
 
         return blockedAddresses;
@@ -166,67 +160,63 @@ public class HostCandidateHarvester
      * Initializes the lists of allowed and blocked addresses according to the
      * configuration properties.
      */
-    private static void initializeAddressFilters()
+    private static synchronized void initializeAddressFilters()
     {
-        synchronized (HostCandidateHarvester.class)
+        if (addressFiltersInitialized)
+            return;
+        addressFiltersInitialized = true;
+
+        String[] allowedAddressesStr
+            = StackProperties.getStringArray(
+                    StackProperties.ALLOWED_ADDRESSES, ";");
+
+        if (allowedAddressesStr != null)
         {
-            if (addressFiltersInitialized)
-                return;
-
-            String[] allowedAddressesStr
-                = StackProperties.getStringArray(
-                        StackProperties.ALLOWED_ADDRESSES, ";");
-
-            if (allowedAddressesStr != null)
+            for (String addressStr : allowedAddressesStr)
             {
-                for (String addressStr : allowedAddressesStr)
+                InetAddress address;
+                try
                 {
-                    InetAddress address;
-                    try
-                    {
-                        address = InetAddress.getByName(addressStr);
-                    }
-                    catch (Exception e)
-                    {
-                        logger.warning("Failed to add an allowed address: "
-                            + addressStr);
-                        continue;
-                    }
-
-                    if (allowedAddresses == null)
-                        allowedAddresses = new ArrayList<>();
-
-                    allowedAddresses.add(address);
+                    address = InetAddress.getByName(addressStr);
                 }
-            }
+                catch (Exception e)
+                {
+                    logger.warning("Failed to add an allowed address: "
+                        + addressStr);
+                    continue;
+                }
 
-            String[] blockedAddressesStr
-                    = StackProperties.getStringArray(
+                if (allowedAddresses == null)
+                    allowedAddresses = new ArrayList<>();
+
+                allowedAddresses.add(address);
+            }
+        }
+
+        String[] blockedAddressesStr
+            = StackProperties.getStringArray(
                     StackProperties.BLOCKED_ADDRESSES, ";");
-            if (blockedAddressesStr != null)
+        if (blockedAddressesStr != null)
+        {
+            for (String addressStr : blockedAddressesStr)
             {
-                for (String addressStr : blockedAddressesStr)
+                InetAddress address;
+                try
                 {
-                    InetAddress address;
-                    try
-                    {
-                        address = InetAddress.getByName(addressStr);
-                    }
-                    catch (Exception e)
-                    {
-                        logger.warning("Failed to add a blocked address: "
-                                               + addressStr);
-                        continue;
-                    }
-
-                    if (blockedAddresses == null)
-                        blockedAddresses = new ArrayList<>();
-
-                    blockedAddresses.add(address);
+                    address = InetAddress.getByName(addressStr);
                 }
-            }
+                catch (Exception e)
+                {
+                    logger.warning("Failed to add a blocked address: "
+                                           + addressStr);
+                    continue;
+                }
 
-            addressFiltersInitialized = true;
+                if (blockedAddresses == null)
+                    blockedAddresses = new ArrayList<>();
+
+                blockedAddresses.add(address);
+            }
         }
     }
 
