@@ -85,6 +85,21 @@ public abstract class AbstractUdpListener
     public static List<TransportAddress> getAllowedAddresses(int port)
     {
         List<TransportAddress> addresses = new LinkedList<>();
+        for (InetAddress address : getAllowedInetAddresses())
+        {
+            addresses.add(new TransportAddress(address, port, Transport.UDP));
+        }
+
+        return addresses;
+    }
+
+    /**
+     * @return the list of all local IP addresses from all allowed network
+     * interfaces, which are allowed addresses.
+     */
+    public static List<InetAddress> getAllowedInetAddresses()
+    {
+        List<InetAddress> addresses = new LinkedList<>();
         boolean isIPv6Disabled = StackProperties.getBoolean(
                 StackProperties.DISABLE_IPv6,
                 false);
@@ -120,8 +135,7 @@ public abstract class AbstractUdpListener
                             && address.isLinkLocalAddress())
                         continue;
 
-                    addresses.add(
-                        new TransportAddress(address, port, Transport.UDP));
+                    addresses.add(address);
                 }
             }
         }
