@@ -708,18 +708,12 @@ public class HostCandidateHarvester
      * @throws java.lang.IllegalStateException if there were errors during host
      * candidate interface filters initialization.
      */
-    public static void initializeInterfaceFilters()
+    public static synchronized void initializeInterfaceFilters()
     {
-        synchronized (HostCandidateHarvester.class)
-        {
-            // We want this method to run only once.
-            if (interfaceFiltersInitialized)
-                return;
-
-            interfaceFiltersInitialized = true;
-
-            // Should we hold this lock until we are done modifying the fields?
-        }
+        // We want this method to run only once.
+        if (interfaceFiltersInitialized)
+            return;
+        interfaceFiltersInitialized = true;
 
         // Initialize the allowed interfaces array.
         allowedInterfaces = StackProperties.getStringArray(
