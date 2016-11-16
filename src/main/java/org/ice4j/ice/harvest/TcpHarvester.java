@@ -107,6 +107,7 @@ public class TcpHarvester
     {
         super(port);
         this.ssltcp = false;
+        addMappedAddresses();
     }
 
     /**
@@ -125,6 +126,7 @@ public class TcpHarvester
     {
         super(port, Collections.list(NetworkInterface.getNetworkInterfaces()));
         this.ssltcp = ssltcp;
+        addMappedAddresses();
     }
 
     /**
@@ -147,6 +149,7 @@ public class TcpHarvester
     {
         super(port, interfaces);
         this.ssltcp = ssltcp;
+        addMappedAddresses();
     }
 
     /**
@@ -163,6 +166,7 @@ public class TcpHarvester
     {
         super(transportAddresses);
         this.ssltcp = false;
+        addMappedAddresses();
     }
 
     /**
@@ -182,6 +186,21 @@ public class TcpHarvester
     {
         super(transportAddresses);
         this.ssltcp = ssltcp;
+        addMappedAddresses();
+    }
+
+    /**
+     * Adds the mapped addresses known from {@link MappingCandidateHarvesters}.
+     */
+    private void addMappedAddresses()
+    {
+        for (MappingCandidateHarvester harvester
+                    : MappingCandidateHarvesters.getHarvesters())
+        {
+            addMappedAddress(
+                    harvester.getMask().getAddress(),
+                    harvester.getFace().getAddress());
+        }
     }
 
     /**
@@ -196,6 +215,11 @@ public class TcpHarvester
     public void addMappedAddress(InetAddress publicAddress,
                                  InetAddress localAddress)
     {
+        if (logger.isLoggable(Level.FINE))
+        {
+            logger.fine("Adding a mapped address: " + localAddress
+                            + " => " + publicAddress);
+        }
         mappedAddresses.put(publicAddress, localAddress);
     }
 
