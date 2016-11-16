@@ -129,7 +129,9 @@ public class HostCandidateHarvester
     }
 
     /**
-     * Gets the list of explicitly allowed addresses.
+     * Gets the list of addresses which have been explicitly allowed via
+     * configuration properties. To get the list of all allowed addresses,
+     * use {@link #getAllAllowedAddresses()}.
      * @return the list of explicitly allowed addresses.
      */
     public static synchronized List<InetAddress> getAllowedAddresses()
@@ -218,6 +220,60 @@ public class HostCandidateHarvester
                 blockedAddresses.add(address);
             }
         }
+    }
+
+    /**
+     * @return the list of all local IP addresses from all allowed network
+     * interfaces, which are allowed addresses.
+     */
+    public static List<InetAddress> getAllAllowedAddresses()
+    {
+        List<InetAddress> addresses = new LinkedList<>();
+        boolean isIPv6Disabled = StackProperties.getBoolean(
+                StackProperties.DISABLE_IPv6,
+                false);
+        boolean isIPv6LinkLocalDisabled = StackProperties.getBoolean(
+                StackProperties.DISABLE_LINK_LOCAL_ADDRESSES,
+                false);
+
+        try
+        {
+            for (NetworkInterface iface
+                    : Collections.list(NetworkInterface.getNetworkInterfaces()))
+            {
+                if (NetworkUtils.isInterfaceLoopback(iface)
+                        || !NetworkUtils.isInterfaceUp(iface)
+                        || !isInterfaceAllowed(iface))
+                {
+                    continue;
+                }
+
+                Enumeration<InetAddress> ifaceAddresses
+                        = iface.getInetAddresses();
+                while (ifaceAddresses.hasMoreElements())
+                {
+                    InetAddress address = ifaceAddresses.nextElement();
+
+                    if (!isAddressAllowed(address))
+                        continue;
+
+                    if (isIPv6Disabled && address instanceof Inet6Address)
+                        continue;
+                    if (isIPv6LinkLocalDisabled
+                            && address instanceof Inet6Address
+                            && address.isLinkLocalAddress())
+                        continue;
+
+                    addresses.add(address);
+                }
+            }
+        }
+        catch (SocketException se)
+        {
+            logger.info("Failed to get network interfaces: " + se);
+        }
+
+        return addresses;
     }
 
     /**

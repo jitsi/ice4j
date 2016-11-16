@@ -19,10 +19,7 @@ package org.ice4j.ice.harvest;
 
 import org.ice4j.*;
 import org.ice4j.attribute.*;
-import org.ice4j.ice.*;
 import org.ice4j.message.*;
-import org.ice4j.socket.*;
-import org.ice4j.stack.*;
 import org.ice4j.util.*;
 
 import java.io.*;
@@ -85,63 +82,10 @@ public abstract class AbstractUdpListener
     public static List<TransportAddress> getAllowedAddresses(int port)
     {
         List<TransportAddress> addresses = new LinkedList<>();
-        for (InetAddress address : getAllowedInetAddresses())
+        for (InetAddress address
+                : HostCandidateHarvester.getAllAllowedAddresses())
         {
             addresses.add(new TransportAddress(address, port, Transport.UDP));
-        }
-
-        return addresses;
-    }
-
-    /**
-     * @return the list of all local IP addresses from all allowed network
-     * interfaces, which are allowed addresses.
-     */
-    public static List<InetAddress> getAllowedInetAddresses()
-    {
-        List<InetAddress> addresses = new LinkedList<>();
-        boolean isIPv6Disabled = StackProperties.getBoolean(
-                StackProperties.DISABLE_IPv6,
-                false);
-        boolean isIPv6LinkLocalDisabled = StackProperties.getBoolean(
-                StackProperties.DISABLE_LINK_LOCAL_ADDRESSES,
-                false);
-
-        try
-        {
-            for (NetworkInterface iface
-                    : Collections.list(NetworkInterface.getNetworkInterfaces()))
-            {
-                if (NetworkUtils.isInterfaceLoopback(iface)
-                        || !NetworkUtils.isInterfaceUp(iface)
-                        || !HostCandidateHarvester.isInterfaceAllowed(iface))
-                {
-                    continue;
-                }
-
-                Enumeration<InetAddress> ifaceAddresses
-                        = iface.getInetAddresses();
-                while (ifaceAddresses.hasMoreElements())
-                {
-                    InetAddress address = ifaceAddresses.nextElement();
-
-                    if (!HostCandidateHarvester.isAddressAllowed(address))
-                        continue;
-
-                    if (isIPv6Disabled && address instanceof Inet6Address)
-                        continue;
-                    if (isIPv6LinkLocalDisabled
-                            && address instanceof Inet6Address
-                            && address.isLinkLocalAddress())
-                        continue;
-
-                    addresses.add(address);
-                }
-            }
-        }
-        catch (SocketException se)
-        {
-            logger.info("Failed to get network interfaces: " + se);
         }
 
         return addresses;
