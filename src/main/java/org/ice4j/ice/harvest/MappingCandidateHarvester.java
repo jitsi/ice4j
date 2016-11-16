@@ -70,8 +70,17 @@ public class MappingCandidateHarvester
     public MappingCandidateHarvester(TransportAddress mask,
                                      TransportAddress face)
     {
-        this.mask = mask;
-        this.face = face;
+        this.mask = Objects.requireNonNull(mask);
+        this.face = Objects.requireNonNull(face);
+    }
+
+    /**
+     * Initializes a {@link MappingCandidateHarvester} instance without
+     * specified addresses (only useful in subclasses which override
+     * {@link #getMask()} and {@link #getFace()}).
+     */
+    protected MappingCandidateHarvester()
+    {
     }
 
     /**

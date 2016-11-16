@@ -83,7 +83,7 @@ public class AwsCandidateHarvester
      */
     public AwsCandidateHarvester()
     {
-        super(null, null);
+        super();
     }
 
     /**
