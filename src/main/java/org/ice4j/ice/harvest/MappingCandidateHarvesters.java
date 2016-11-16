@@ -187,7 +187,8 @@ public class MappingCandidateHarvesters
             logger.info("Using " + harvester);
         }
         logger.info("Initialized mapping harvesters (delay="
-                        + (System.currentTimeMillis() - start) + "ms).");
+                        + (System.currentTimeMillis() - start) + "ms). "
+                        + " stunDiscoveryFailed=" + stunDiscoveryFailed);
     }
 
     /**
