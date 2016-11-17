@@ -17,10 +17,12 @@
  */
 package org.ice4j.ice;
 
+import java.net.*;
 import java.util.*;
 import java.util.logging.*;
 
 import org.ice4j.*;
+import org.ice4j.socket.*;
 import org.ice4j.util.Logger; //Disambiguation
 
 /**
@@ -122,6 +124,20 @@ public class Component
     private final Logger logger;
 
     /**
+     * The {@link MergingDatagramSocket} instance which, if the virtual socket
+     * layer is enabled (see
+     * {@link StackProperties#ENABLE_VIRTUAL_SOCKET_LAYER}), will serve as the
+     * single socket instance for this {@link Component}, merging received
+     * packets from all of its candidates.
+     */
+    private final MergingDatagramSocket mergingDatagramSocket;
+
+    /**
+     * A wrapper around {@link #mergingDatagramSocket}.
+     */
+    private final IceUdpSocketWrapper mergingDatagramSocketWrapper;
+
+    /**
      * Creates a new <tt>Component</tt> with the specified <tt>componentID</tt>
      * as a child of the specified <tt>IceMediaStream</tt>.
      *
@@ -135,6 +151,27 @@ public class Component
         // the max value for componentID is 256
         this.componentID = componentID;
         this.parentStream = mediaStream;
+
+        if (Agent.ENABLE_VIRTUAL_SOCKET_LAYER)
+        {
+            try
+            {
+                mergingDatagramSocket = new MergingDatagramSocket();
+                mergingDatagramSocketWrapper
+                    = new IceUdpSocketWrapper(
+                            new MultiplexingDatagramSocket(
+                                mergingDatagramSocket));
+            }
+            catch (SocketException se)
+            {
+                throw new RuntimeException(se);
+            }
+        }
+        else
+        {
+            mergingDatagramSocket = null;
+            mergingDatagramSocketWrapper = null;
+        }
 
         logger
             = new Logger(classLogger, mediaStream.getParentAgent().getLogger());
@@ -911,4 +948,29 @@ public class Component
         return new Component(componentID, mediaStream);
     }
 
+    /**
+     * @return the single socket for this {@link Component} which should be
+     * used for reading and writing data, if the virtual socket layer is enabled
+     * (see {@link StackProperties#ENABLE_VIRTUAL_SOCKET_LAYER}), and
+     * {@code null} if it is not enabled.
+     */
+    public MergingDatagramSocket getSocket()
+    {
+        return mergingDatagramSocket;
+    }
+
+    /**
+     * @return an {@link IceSocketWrapper} instance wrapping the socket for this
+     * candidate (see {@link #getSocket()}), if the virtual socket layer is
+     * enabled (see {@link StackProperties#ENABLE_VIRTUAL_SOCKET_LAYER}), or
+     * {@code null} if it is not enabled.
+     * @deprecated Use {@link #getSocket()} directly. This is only introduced
+     * to ease the transition of applications which are already written to use
+     * a {@link IceSocketWrapper} instance.
+     */
+    @Deprecated
+    public IceSocketWrapper getSocketWrapper()
+    {
+        return mergingDatagramSocketWrapper;
+    }
 }

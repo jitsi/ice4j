@@ -233,6 +233,19 @@ public class StackProperties
             = "org.ice4j.ice.harvest.USE_DYNAMIC_HOST_HARVESTER";
 
     /**
+     * The name of the property which specifies whether the virtual socket
+     * layer should be enabled.
+     * WARNING: enabling the virtual socket layer will break applications which
+     * use sockets from specific {@code CandidatePair}s in subtle and
+     * potentially hard to debug ways. This should only be used by applications
+     * that specifically want to use the virtual socket layer (i.e. use the
+     * socket instance provided by the {@code Component}, and not a specific
+     * {@code CandidatePair}).
+     */
+    public static final String ENABLE_VIRTUAL_SOCKET_LAYER
+        = "org.ice4j.ice.harvest.ENABLE_VIRTUAL_SOCKET_LAYER";
+
+    /**
      * Returns the String value of the specified property (minus all
      * encompassing whitespaces)and null in case no property value was mapped
      * against the specified propertyName, or in case the returned property
