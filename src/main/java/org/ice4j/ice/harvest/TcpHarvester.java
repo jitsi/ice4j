@@ -518,6 +518,13 @@ public class TcpHarvester
         component.getParentStream().getParentAgent().getStunStack()
                 .addSocket(stunSocket);
         candidate.addSocket(candidateSocket);
+
+        // TODO: Maybe move this code to the candidate.
+        MergingDatagramSocket componentSocket = component.getSocket();
+        if (componentSocket != null)
+        {
+            componentSocket.add(multiplexing);
+        }
         // the socket is not our responsibility anymore. It is up to
         // the candidate/component to close/free it.
     }
