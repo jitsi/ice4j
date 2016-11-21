@@ -234,10 +234,14 @@ public class StunCandidateHarvester
      * @return  the <tt>LocalCandidate</tt>s gathered by this
      * <tt>CandidateHarvester</tt>
      */
+    @Override
     public Collection<LocalCandidate> harvest(Component component)
     {
-        logger.fine("starting " + component.toShortString()
-            + " harvest for: " + toString() );
+        if (logger.isLoggable(Level.FINE))
+        {
+            logger.fine("starting " + component.toShortString()
+                            + " harvest for: " + toString());
+        }
         stunStack = component.getParentStream().getParentAgent().getStunStack();
 
         for (Candidate<?> cand : component.getLocalCandidates())

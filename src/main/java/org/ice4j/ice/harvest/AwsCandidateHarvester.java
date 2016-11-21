@@ -83,7 +83,7 @@ public class AwsCandidateHarvester
      */
     public AwsCandidateHarvester()
     {
-        super(null, null);
+        super();
     }
 
     /**
@@ -130,6 +130,7 @@ public class AwsCandidateHarvester
      * Returns the public (mask) address, or null.
      * @return the public (mask) address, or null.
      */
+    @Override
     public TransportAddress getMask()
     {
         if (smellsLikeAnEC2())
@@ -144,6 +145,7 @@ public class AwsCandidateHarvester
      * Returns the local (face) address, or null.
      * @return the local (face) address, or null.
      */
+    @Override
     public TransportAddress getFace()
     {
         if (smellsLikeAnEC2())

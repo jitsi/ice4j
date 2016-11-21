@@ -367,6 +367,12 @@ public class Agent
 
         tieBreaker = random.nextLong() & 0x7FFFFFFFFFFFFFFFL;
         nominator = new DefaultNominator(this);
+
+        for (MappingCandidateHarvester harvester
+                    : MappingCandidateHarvesters.getHarvesters())
+        {
+            addCandidateHarvester(harvester);
+        }
     }
 
     /**

@@ -35,6 +35,7 @@ public abstract class AbstractCandidateHarvester
     /**
      * {@inheritDoc}
      */
+    @Override
     public HarvestStatistics getHarvestStatistics()
     {
         return harvestStatistics;
@@ -43,6 +44,7 @@ public abstract class AbstractCandidateHarvester
     /**
      * {@inheritDoc}
      */
+    @Override
     public boolean isHostHarvester()
     {
         return false;

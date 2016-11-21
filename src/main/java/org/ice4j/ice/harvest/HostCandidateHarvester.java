@@ -129,17 +129,16 @@ public class HostCandidateHarvester
     }
 
     /**
-     * Gets the list of explicitly allowed addresses.
+     * Gets the list of addresses which have been explicitly allowed via
+     * configuration properties. To get the list of all allowed addresses,
+     * use {@link #getAllAllowedAddresses()}.
      * @return the list of explicitly allowed addresses.
      */
-    public static List<InetAddress> getAllowedAddresses()
+    public static synchronized List<InetAddress> getAllowedAddresses()
     {
-        synchronized (HostCandidateHarvester.class)
+        if (!addressFiltersInitialized)
         {
-            if (!addressFiltersInitialized)
-            {
-                initializeAddressFilters();
-            }
+            initializeAddressFilters();
         }
 
         return allowedAddresses;
@@ -149,14 +148,11 @@ public class HostCandidateHarvester
      * Gets the list of blocked addresses.
      * @return the list of blocked addresses.
      */
-    public static List<InetAddress> getBlockedAddresses()
+    public static synchronized  List<InetAddress> getBlockedAddresses()
     {
-        synchronized (HostCandidateHarvester.class)
+        if (!addressFiltersInitialized)
         {
-            if (!addressFiltersInitialized)
-            {
-                initializeAddressFilters();
-            }
+            initializeAddressFilters();
         }
 
         return blockedAddresses;
@@ -166,68 +162,118 @@ public class HostCandidateHarvester
      * Initializes the lists of allowed and blocked addresses according to the
      * configuration properties.
      */
-    private static void initializeAddressFilters()
+    private static synchronized void initializeAddressFilters()
     {
-        synchronized (HostCandidateHarvester.class)
+        if (addressFiltersInitialized)
+            return;
+        addressFiltersInitialized = true;
+
+        String[] allowedAddressesStr
+            = StackProperties.getStringArray(
+                    StackProperties.ALLOWED_ADDRESSES, ";");
+
+        if (allowedAddressesStr != null)
         {
-            if (addressFiltersInitialized)
-                return;
-
-            String[] allowedAddressesStr
-                = StackProperties.getStringArray(
-                        StackProperties.ALLOWED_ADDRESSES, ";");
-
-            if (allowedAddressesStr != null)
+            for (String addressStr : allowedAddressesStr)
             {
-                for (String addressStr : allowedAddressesStr)
+                InetAddress address;
+                try
                 {
-                    InetAddress address;
-                    try
-                    {
-                        address = InetAddress.getByName(addressStr);
-                    }
-                    catch (Exception e)
-                    {
-                        logger.warning("Failed to add an allowed address: "
-                            + addressStr);
-                        continue;
-                    }
-
-                    if (allowedAddresses == null)
-                        allowedAddresses = new ArrayList<>();
-
-                    allowedAddresses.add(address);
+                    address = InetAddress.getByName(addressStr);
                 }
-            }
-
-            String[] blockedAddressesStr
-                    = StackProperties.getStringArray(
-                    StackProperties.BLOCKED_ADDRESSES, ";");
-            if (blockedAddressesStr != null)
-            {
-                for (String addressStr : blockedAddressesStr)
+                catch (Exception e)
                 {
-                    InetAddress address;
-                    try
-                    {
-                        address = InetAddress.getByName(addressStr);
-                    }
-                    catch (Exception e)
-                    {
-                        logger.warning("Failed to add a blocked address: "
-                                               + addressStr);
-                        continue;
-                    }
-
-                    if (blockedAddresses == null)
-                        blockedAddresses = new ArrayList<>();
-
-                    blockedAddresses.add(address);
+                    logger.warning("Failed to add an allowed address: "
+                        + addressStr);
+                    continue;
                 }
-            }
 
-            addressFiltersInitialized = true;
+                if (allowedAddresses == null)
+                    allowedAddresses = new ArrayList<>();
+
+                allowedAddresses.add(address);
+            }
         }
+
+        String[] blockedAddressesStr
+            = StackProperties.getStringArray(
+                    StackProperties.BLOCKED_ADDRESSES, ";");
+        if (blockedAddressesStr != null)
+        {
+            for (String addressStr : blockedAddressesStr)
+            {
+                InetAddress address;
+                try
+                {
+                    address = InetAddress.getByName(addressStr);
+                }
+                catch (Exception e)
+                {
+                    logger.warning("Failed to add a blocked address: "
+                                           + addressStr);
+                    continue;
+                }
+
+                if (blockedAddresses == null)
+                    blockedAddresses = new ArrayList<>();
+
+                blockedAddresses.add(address);
+            }
+        }
+    }
+
+    /**
+     * @return the list of all local IP addresses from all allowed network
+     * interfaces, which are allowed addresses.
+     */
+    public static List<InetAddress> getAllAllowedAddresses()
+    {
+        List<InetAddress> addresses = new LinkedList<>();
+        boolean isIPv6Disabled = StackProperties.getBoolean(
+                StackProperties.DISABLE_IPv6,
+                false);
+        boolean isIPv6LinkLocalDisabled = StackProperties.getBoolean(
+                StackProperties.DISABLE_LINK_LOCAL_ADDRESSES,
+                false);
+
+        try
+        {
+            for (NetworkInterface iface
+                    : Collections.list(NetworkInterface.getNetworkInterfaces()))
+            {
+                if (NetworkUtils.isInterfaceLoopback(iface)
+                        || !NetworkUtils.isInterfaceUp(iface)
+                        || !isInterfaceAllowed(iface))
+                {
+                    continue;
+                }
+
+                Enumeration<InetAddress> ifaceAddresses
+                        = iface.getInetAddresses();
+                while (ifaceAddresses.hasMoreElements())
+                {
+                    InetAddress address = ifaceAddresses.nextElement();
+
+                    if (!isAddressAllowed(address))
+                        continue;
+
+                    if (isIPv6Disabled && address instanceof Inet6Address)
+                        continue;
+                    if (isIPv6LinkLocalDisabled
+                            && address instanceof Inet6Address
+                            && address.isLinkLocalAddress())
+                        continue;
+
+                    addresses.add(address);
+                }
+            }
+        }
+        catch (SocketException se)
+        {
+            logger.info("Failed to get network interfaces: " + se);
+        }
+
+        return addresses;
     }
 
     /**
@@ -718,18 +764,12 @@ public class HostCandidateHarvester
      * @throws java.lang.IllegalStateException if there were errors during host
      * candidate interface filters initialization.
      */
-    public static void initializeInterfaceFilters()
+    public static synchronized void initializeInterfaceFilters()
     {
-        synchronized (HostCandidateHarvester.class)
-        {
-            // We want this method to run only once.
-            if (interfaceFiltersInitialized)
-                return;
-
-            interfaceFiltersInitialized = true;
-
-            // Should we hold this lock until we are done modifying the fields?
-        }
+        // We want this method to run only once.
+        if (interfaceFiltersInitialized)
+            return;
+        interfaceFiltersInitialized = true;
 
         // Initialize the allowed interfaces array.
         allowedInterfaces = StackProperties.getStringArray(
