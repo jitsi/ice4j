@@ -115,6 +115,15 @@ public class Agent
                                             = "IceProcessingState";
 
     /**
+     * The flag which indicates whether the virtual socket layer should be
+     * enabled or not.
+     */
+    public static boolean ENABLE_VIRTUAL_SOCKET_LAYER
+        = StackProperties.getBoolean(
+                StackProperties.ENABLE_VIRTUAL_SOCKET_LAYER,
+                false);
+
+    /**
      * The LinkedHashMap used to store the media streams
      * This map preserves the insertion order of the media streams.
      */
@@ -367,6 +376,12 @@ public class Agent
 
         tieBreaker = random.nextLong() & 0x7FFFFFFFFFFFFFFFL;
         nominator = new DefaultNominator(this);
+
+        if (logger.isLoggable(Level.FINE))
+        {
+            logger.fine("Created a new Agent, ufrag=" + ufrag
+                        + ", VSL=" + ENABLE_VIRTUAL_SOCKET_LAYER);
+        }
     }
 
     /**
