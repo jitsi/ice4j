@@ -75,6 +75,12 @@ public class MergingDatagramSocket
     private int soTimeout = 0;
 
     /**
+     * The {@link SocketContainer} considered active, i.e. the one which should
+     * be used for sending.
+     */
+    private SocketContainer active = null;
+
+    /**
      * Initializes a new {@link MergingDatagramSocket} instance.
      * @throws SocketException
      */
@@ -113,15 +119,14 @@ public class MergingDatagramSocket
     public void send(DatagramPacket pkt)
         throws IOException
     {
-        SocketContainer[] socketContainers = this.socketContainers;
-        if (socketContainers != null && socketContainers.length > 0
-            && socketContainers[0] != null)
+        SocketContainer active = this.active;
+        if (active != null)
         {
-            socketContainers[0].send(pkt);
+            active.send(pkt);
         }
         else
         {
-            throw new IOException("No sockets.");
+            throw new IOException("No active socket.");
         }
 
     }
@@ -200,6 +205,9 @@ public class MergingDatagramSocket
             newSocketContainers[socketContainers.length] = socketContainer;
 
             socketContainers = newSocketContainers;
+
+            if (active == null)
+                active = socketContainer;
         }
     }
 
@@ -255,6 +263,13 @@ public class MergingDatagramSocket
                 }
 
                 socketContainers = newSockets;
+
+                // Until we receive data on one of the other sockets, use the
+                // first one as the active socket.
+                if (socketContainer == active)
+                {
+                    active = newSockets.length == 0 ? null : newSockets[0];
+                }
             }
             else
             {
@@ -634,6 +649,8 @@ public class MergingDatagramSocket
 
                     buffer.receivedTime = System.currentTimeMillis();
                     remoteAddress = buffer.pkt.getSocketAddress();
+
+                    maybeUpdateActive();
                     return true;
                 }
                 catch (SocketTimeoutException ste)
@@ -643,6 +660,31 @@ public class MergingDatagramSocket
             }
 
             return false;
+        }
+
+        /**
+         * Makes this {@link SocketContainer} the active socket container for
+         * this {@link MergingDatagramSocket}, if it isn't already the active
+         * socket.
+         */
+        private void maybeUpdateActive()
+        {
+            SocketContainer active = MergingDatagramSocket.this.active;
+            // Avoid obtaining the lock on every packet from the active socket.
+            // There is no harm if the value is overwritten before we obtain
+            // the lock.
+            if (active != this)
+            {
+                synchronized (socketContainersSyncRoot)
+                {
+                    MergingDatagramSocket.this.active = this;
+                    if (logger.isLoggable(Level.FINE))
+                    {
+                        logger.warning("Switching to new active socket: "
+                                           + this);
+                    }
+                }
+            }
         }
 
         /**
