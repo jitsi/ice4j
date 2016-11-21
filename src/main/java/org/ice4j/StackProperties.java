@@ -241,6 +241,7 @@ public class StackProperties
      * that specifically want to use the virtual socket layer (i.e. use the
      * socket instance provided by the {@code Component}, and not a specific
      * {@code CandidatePair}).
+     * This is currently EXPERIMENTAL.
      */
     public static final String ENABLE_VIRTUAL_SOCKET_LAYER
         = "org.ice4j.ice.harvest.ENABLE_VIRTUAL_SOCKET_LAYER";
