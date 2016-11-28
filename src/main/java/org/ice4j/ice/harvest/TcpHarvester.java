@@ -488,21 +488,11 @@ public class TcpHarvester
         IceProcessingState state
             = component.getParentStream().getParentAgent().getState();
 
-        if (!IceProcessingState.WAITING.equals(state)
+        if (logger.isLoggable(Level.FINE)
+            && !IceProcessingState.WAITING.equals(state)
             && !IceProcessingState.RUNNING.equals(state))
         {
-            // If we are using the VSL, we can still make use of the socket.
-            // Otherwise, we have no use for it, so we better close it (and
-            // log a warning) early.
-            if (!Agent.ENABLE_VIRTUAL_SOCKET_LAYER)
-            {
-                throw new IllegalStateException(
-                    "The associated Agent is in state " + state);
-            }
-            else if (logger.isLoggable(Level.FINE))
-            {
-                logger.fine("Adding a socket to an Agent in state " + state);
-            }
+            logger.fine("Adding a socket to an Agent in state " + state);
         }
 
         // Socket to add to the candidate
@@ -530,11 +520,8 @@ public class TcpHarvester
         candidate.addSocket(candidateSocket);
 
         // TODO: Maybe move this code to the candidate.
-        MergingDatagramSocket componentSocket = component.getSocket();
-        if (componentSocket != null)
-        {
-            componentSocket.add(multiplexing);
-        }
+        component.getSocket().add(multiplexing);
+
         // the socket is not our responsibility anymore. It is up to
         // the candidate/component to close/free it.
     }

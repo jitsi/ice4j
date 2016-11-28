@@ -124,9 +124,7 @@ public class Component
     private final Logger logger;
 
     /**
-     * The {@link MergingDatagramSocket} instance which, if the virtual socket
-     * layer is enabled (see
-     * {@link StackProperties#ENABLE_VIRTUAL_SOCKET_LAYER}), will serve as the
+     * The {@link MergingDatagramSocket} instance which will serve as the
      * single socket instance for this {@link Component}, merging received
      * packets from all of its candidates.
      */
@@ -152,25 +150,17 @@ public class Component
         this.componentID = componentID;
         this.parentStream = mediaStream;
 
-        if (Agent.ENABLE_VIRTUAL_SOCKET_LAYER)
+        try
         {
-            try
-            {
-                mergingDatagramSocket = new MergingDatagramSocket();
-                mergingDatagramSocketWrapper
-                    = new IceUdpSocketWrapper(
-                            new MultiplexingDatagramSocket(
-                                mergingDatagramSocket));
-            }
-            catch (SocketException se)
-            {
-                throw new RuntimeException(se);
-            }
+            mergingDatagramSocket = new MergingDatagramSocket();
+            mergingDatagramSocketWrapper
+                = new IceUdpSocketWrapper(
+                        new MultiplexingDatagramSocket(
+                            mergingDatagramSocket));
         }
-        else
+        catch (SocketException se)
         {
-            mergingDatagramSocket = null;
-            mergingDatagramSocketWrapper = null;
+            throw new RuntimeException(se);
         }
 
         logger
@@ -950,9 +940,7 @@ public class Component
 
     /**
      * @return the single socket for this {@link Component} which should be
-     * used for reading and writing data, if the virtual socket layer is enabled
-     * (see {@link StackProperties#ENABLE_VIRTUAL_SOCKET_LAYER}), and
-     * {@code null} if it is not enabled.
+     * used for reading and writing data.
      */
     public MergingDatagramSocket getSocket()
     {
@@ -961,12 +949,10 @@ public class Component
 
     /**
      * @return an {@link IceSocketWrapper} instance wrapping the socket for this
-     * candidate (see {@link #getSocket()}), if the virtual socket layer is
-     * enabled (see {@link StackProperties#ENABLE_VIRTUAL_SOCKET_LAYER}), or
-     * {@code null} if it is not enabled.
+     * candidate (see {@link #getSocket()}).
      * @deprecated Use {@link #getSocket()} directly. This is only introduced
      * to ease the transition of applications which are already written to use
-     * a {@link IceSocketWrapper} instance.
+     * an {@link IceSocketWrapper} instance.
      */
     @Deprecated
     public IceSocketWrapper getSocketWrapper()

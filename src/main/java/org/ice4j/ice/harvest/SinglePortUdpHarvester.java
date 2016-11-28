@@ -363,11 +363,7 @@ public class SinglePortUdpHarvester
                             new TransportAddress(remoteAddress, Transport.UDP));
 
             // TODO: maybe move this code to the candidates.
-            MergingDatagramSocket componentSocket = component.getSocket();
-            if (componentSocket != null)
-            {
-                componentSocket.add(multiplexing);
-            }
+            component.getSocket().add(multiplexing);
 
             // XXX is this necessary?
             synchronized (candidateSockets)
