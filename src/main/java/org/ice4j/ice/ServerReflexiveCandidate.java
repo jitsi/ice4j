@@ -104,16 +104,12 @@ public class ServerReflexiveCandidate
     }
 
     /**
-     * Gets the <tt>DatagramSocket</tt> associated with this <tt>Candidate</tt>.
-     *
-     * @return the <tt>DatagramSocket</tt> associated with this
-     * <tt>Candidate</tt>
-     * @see LocalCandidate#getIceSocketWrapper()
+     * {@inheritDoc}
      */
     @Override
-    public IceSocketWrapper getIceSocketWrapper()
+    public IceSocketWrapper getCandidateIceSocketWrapper()
     {
-        return getBase().getIceSocketWrapper();
+        return getBase().getCandidateIceSocketWrapper();
     }
 
     /**

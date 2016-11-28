@@ -722,7 +722,9 @@ public class CandidatePair
      * <tt>CandidatePair</tt>.
      * @return the UDP <tt>DatagramSocket</tt> (if any) for this
      * <tt>CandidatePair</tt>.
+     * @deprecated use {@link Component#getSocket()} instead.
      */
+    @Deprecated
     public DatagramSocket getDatagramSocket()
     {
         IceSocketWrapper wrapper = getIceSocketWrapper();
@@ -732,38 +734,22 @@ public class CandidatePair
     /**
      * Returns the TCP <tt>Socket</tt> (if any) for this <tt>CandidatePair</tt>.
      * @return the TCP <tt>Socket</tt> (if any) for this <tt>CandidatePair</tt>.
+     * @deprecated use {@link Component#getSocket()} instead.
      */
+    @Deprecated
     public Socket getSocket()
     {
-        IceSocketWrapper wrapper = getIceSocketWrapper();
-        return wrapper == null ? null : wrapper.getTCPSocket();
+        return null;
     }
 
     /**
      * Returns the <tt>IceSocketWrapper</tt> for this <tt>CandidatePair</tt>.
      * @return  the <tt>IceSocketWrapper</tt> for this <tt>CandidatePair</tt>.
+     * @deprecated use {@link Component#getSocket()} instead.
      */
+    @Deprecated
     public IceSocketWrapper getIceSocketWrapper()
     {
-        LocalCandidate localCandidate = getLocalCandidate();
-        if (localCandidate == null)
-        {
-            return null;
-        }
-
-        LocalCandidate base = localCandidate.getBase();
-        if (base != null)
-            localCandidate = base;
-
-        RemoteCandidate remoteCandidate = getRemoteCandidate();
-        if (remoteCandidate != null)
-        {
-            SocketAddress remoteAddress
-                    = remoteCandidate.getTransportAddress();
-            if (remoteAddress != null)
-                return localCandidate.getIceSocketWrapper(remoteAddress);
-        }
-
-        return localCandidate.getIceSocketWrapper();
+        return getParentComponent().getSocketWrapper();
     }
 }

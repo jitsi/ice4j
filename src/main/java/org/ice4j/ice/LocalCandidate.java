@@ -108,8 +108,7 @@ public abstract class LocalCandidate
      * <tt>Candidate</tt>
      *
      * @deprecated This should be used by the library only. Users of ice4j
-     * should use {@link org.ice4j.ice.CandidatePair#getDatagramSocket()}
-     * on the appropriate <tt>CandidatePair</tt> instead.
+     * should use {@link org.ice4j.ice.Component#getSocket()} instead.
      */
     @Deprecated
     public DatagramSocket getDatagramSocket()
@@ -126,38 +125,33 @@ public abstract class LocalCandidate
      * <tt>Candidate</tt>
      *
      * @deprecated This should be used by the library only. Users of ice4j
-     * should use {@link org.ice4j.ice.CandidatePair#getSocket()} on the
-     * appropriate <tt>CandidatePair</tt> instead.
+     * should use {@link org.ice4j.ice.Component#getSocket()} instead.
      */
     @Deprecated
     public Socket getSocket()
     {
-        IceSocketWrapper wrapper = getIceSocketWrapper();
-        return wrapper == null ? null : wrapper.getTCPSocket();
+        return null;
     }
 
     /**
-     * Gets the <tt>IceSocketWrapper</tt> associated with this
-     * <tt>Candidate</tt>.
-     *
-     * @return the <tt>IceSocketWrapper</tt> associated with this
-     * <tt>Candidate</tt>
+     * @return the {@link IceSocketWrapper} instance of the {@link Component}
+     * which owns this {@link LocalCandidate}. Note that this IS NOT an
+     * instance specific to this {@link LocalCandidate}. See
+     * {@link #getCandidateIceSocketWrapper()}.
      */
-    protected abstract IceSocketWrapper getIceSocketWrapper();
-
-    /**
-     * Gets the <tt>IceSocketWrapper</tt> associated with this
-     * <tt>Candidate</tt> which is to be used for a specific remote address.
-     * This default implementation ignores the remote address.
-     *
-     * @param remoteAddress the remote address for which to get a socket.
-     * @return the <tt>IceSocketWrapper</tt> associated with this
-     * <tt>Candidate</tt> which is to be used for a specific remote address.
-     */
-    protected IceSocketWrapper getIceSocketWrapper(SocketAddress remoteAddress)
+    protected IceSocketWrapper getIceSocketWrapper()
     {
-        return getIceSocketWrapper();
+        return getParentComponent().getSocketWrapper();
     }
+
+    /**
+     * @return the {@link IceSocketWrapper} instance, if any, associated with
+     * this candidate. Note that this IS NOT the instance which should be used
+     * for reading and writing by the application, and SHOULD NOT be used from
+     * outside ice4j (even if a subclass exposes it as public). Also see
+     * {@link #getIceSocketWrapper()}.
+     */
+    protected abstract IceSocketWrapper getCandidateIceSocketWrapper();
 
     /**
      * Creates if necessary and returns a <tt>DatagramSocket</tt> that would
@@ -174,7 +168,7 @@ public abstract class LocalCandidate
      */
     public IceSocketWrapper getStunSocket(TransportAddress serverAddress)
     {
-        IceSocketWrapper hostSocket = getIceSocketWrapper();
+        IceSocketWrapper hostSocket = getCandidateIceSocketWrapper();
 
         if (hostSocket != null
               && hostSocket.getTCPSocket() != null)
@@ -323,7 +317,7 @@ public abstract class LocalCandidate
     protected void free()
     {
         // Close the socket associated with this LocalCandidate.
-        IceSocketWrapper socket = getIceSocketWrapper();
+        IceSocketWrapper socket = getCandidateIceSocketWrapper();
 
         if (socket != null)
         {
@@ -331,7 +325,7 @@ public abstract class LocalCandidate
 
             if ((base == null)
                     || (base == this)
-                    || (base.getIceSocketWrapper() != socket))
+                    || (base.getCandidateIceSocketWrapper() != socket))
             {
                 //remove our socket from the stack.
                 getStunStack().removeSocket(getTransportAddress());

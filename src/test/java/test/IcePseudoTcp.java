@@ -386,7 +386,7 @@ public class IcePseudoTcp
 
     private static class LocalPseudoTcpJob extends Thread implements Runnable
     {
-    	private DatagramSocket dgramSocket;
+        private DatagramSocket dgramSocket;
 
         public LocalPseudoTcpJob(DatagramSocket socket)
             throws UnknownHostException

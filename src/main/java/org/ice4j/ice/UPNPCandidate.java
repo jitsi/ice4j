@@ -79,7 +79,7 @@ public class UPNPCandidate
         {
         }
 
-        IceSocketWrapper socket = getIceSocketWrapper();
+        IceSocketWrapper socket = getCandidateIceSocketWrapper();
         if(socket != null)
         {
             socket.close();
@@ -89,13 +89,19 @@ public class UPNPCandidate
     }
 
     /**
-     * Gets the <tt>DatagramSocket</tt> associated with this <tt>Candidate</tt>.
-     *
-     * @return the <tt>DatagramSocket</tt> associated with this
-     * <tt>Candidate</tt>
+     * {@inheritDoc}
      */
     @Override
-    public IceSocketWrapper getIceSocketWrapper()
+    protected IceSocketWrapper getCandidateIceSocketWrapper()
+    {
+        return getBase().getCandidateIceSocketWrapper();
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    protected IceSocketWrapper getIceSocketWrapper()
     {
         return getBase().getIceSocketWrapper();
     }

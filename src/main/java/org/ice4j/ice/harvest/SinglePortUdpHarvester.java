@@ -230,26 +230,27 @@ public class SinglePortUdpHarvester
          * The collection of <tt>IceSocketWrapper</tt>s that can potentially
          * be used by the ice4j user to read/write from/to this candidate.
          * The keys are the remote addresses for each socket.
-         *
+         * <p>
          * There are wrappers over <tt>MultiplexedDatagramSocket</tt>s over
          * a corresponding socket in {@link #sockets}.
          */
         private final Map<SocketAddress, IceSocketWrapper> candidateSockets
-                = new HashMap<>();
+            = new HashMap<>();
 
         /**
          * The collection of <tt>DatagramSocket</tt>s added to this candidate.
          * The keys are the remote addresses for each socket.
-         *
+         * <p>
          * These are the "raw" sockets, before any wrappers are added for
          * the STUN stack or the user of ice4j.
          */
         private final Map<SocketAddress, DatagramSocket> sockets
-                = new HashMap<>();
+            = new HashMap<>();
 
         /**
          * Initializes a new <tt>MyCandidate</tt> instance with the given
          * <tt>Component</tt> and the given local username fragment.
+         *
          * @param component the <tt>Component</tt> for which this candidate will
          * serve.
          * @param ufrag the local ICE username fragment for this candidate (and
@@ -263,7 +264,7 @@ public class SinglePortUdpHarvester
 
         /**
          * {@inheritDoc}
-         *
+         * <p>
          * Closes all sockets in use by this <tt>LocalCandidate</tt>.
          */
         @Override
@@ -283,20 +284,21 @@ public class SinglePortUdpHarvester
                 StunStack stunStack = getStunStack();
 
                 for (Map.Entry<SocketAddress, DatagramSocket> e
-                        : sockets.entrySet())
+                    : sockets.entrySet())
                 {
                     DatagramSocket socket = e.getValue();
 
                     if (stunStack != null)
                     {
                         TransportAddress localAddress
-                                = new TransportAddress(socket.getLocalAddress(),
-                                                       socket.getLocalPort(),
-                                                       Transport.UDP);
+                            = new TransportAddress(socket.getLocalAddress(),
+                                                   socket.getLocalPort(),
+                                                   Transport.UDP);
                         TransportAddress remoteAddress
-                                = new TransportAddress((InetSocketAddress) e.getKey(),
+                            = new TransportAddress(
+                            (InetSocketAddress) e.getKey(),
 
-                                                       Transport.UDP);
+                            Transport.UDP);
 
                         stunStack.removeSocket(localAddress, remoteAddress);
                     }
@@ -318,11 +320,12 @@ public class SinglePortUdpHarvester
         /**
          * Adds a new <tt>Socket</tt> to this candidate, which is associated
          * with a particular remote address.
+         *
          * @param socket the socket to add.
          * @param remoteAddress the remote address for the socket.
          */
         private synchronized void addSocket(DatagramSocket socket,
-                               InetSocketAddress remoteAddress)
+                                            InetSocketAddress remoteAddress)
             throws IOException
         {
             if (freed)
@@ -337,16 +340,16 @@ public class SinglePortUdpHarvester
             }
 
             IceProcessingState state
-                    = component.getParentStream().getParentAgent().getState();
+                = component.getParentStream().getParentAgent().getState();
             if (!IceProcessingState.WAITING.equals(state)
-                    && !IceProcessingState.RUNNING.equals(state))
+                && !IceProcessingState.RUNNING.equals(state))
             {
                 throw new IOException(
-                        "Agent state is " + state + ". Cannot add socket.");
+                    "Agent state is " + state + ". Cannot add socket.");
             }
 
             MultiplexingDatagramSocket multiplexing
-                    = new MultiplexingDatagramSocket(socket);
+                = new MultiplexingDatagramSocket(socket);
 
             // Socket to add to the candidate
             IceSocketWrapper candidateSocket
@@ -355,12 +358,12 @@ public class SinglePortUdpHarvester
             // STUN-only filtered socket to add to the StunStack
             IceSocketWrapper stunSocket
                 = new IceUdpSocketWrapper(
-                    multiplexing.getSocket(new StunDatagramPacketFilter()));
+                multiplexing.getSocket(new StunDatagramPacketFilter()));
 
             component.getParentStream().getParentAgent().getStunStack()
-                    .addSocket(
-                            stunSocket,
-                            new TransportAddress(remoteAddress, Transport.UDP));
+                .addSocket(
+                    stunSocket,
+                    new TransportAddress(remoteAddress, Transport.UDP));
 
             // TODO: maybe move this code to the candidates.
             component.getSocket().add(multiplexing);
@@ -376,15 +379,6 @@ public class SinglePortUdpHarvester
             {
                 sockets.put(remoteAddress, socket);
             }
-        }
-
-        /**
-         * {@inheritDoc}
-         */
-        @Override
-        public IceSocketWrapper getIceSocketWrapper(SocketAddress remoteAddress)
-        {
-            return candidateSockets.get(remoteAddress);
         }
     }
 }

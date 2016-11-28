@@ -101,7 +101,7 @@ public class RelayedCandidate
      * @return the <tt>RelayedCandidateDatagramSocket</tt> of this
      * <tt>RelayedCandidate</tt>
      */
-    public synchronized RelayedCandidateDatagramSocket
+    private synchronized RelayedCandidateDatagramSocket
         getRelayedCandidateDatagramSocket()
     {
         if (relayedCandidateDatagramSocket == null)
@@ -127,9 +127,9 @@ public class RelayedCandidate
      *
      * @return the <tt>DatagramSocket</tt> associated with this
      * <tt>Candidate</tt>
-     * @see LocalCandidate#getIceSocketWrapper()
      */
-    public synchronized IceSocketWrapper getIceSocketWrapper()
+    @Override
+    protected synchronized IceSocketWrapper getCandidateIceSocketWrapper()
     {
         if (socket == null)
         {
