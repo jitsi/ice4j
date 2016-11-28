@@ -119,7 +119,7 @@ public class MergingDatagramSocket
     public void send(DatagramPacket pkt)
         throws IOException
     {
-        SocketContainer active = this.active;
+        SocketContainer active = getActiveSocket();
         if (active != null)
         {
             active.send(pkt);
@@ -318,13 +318,7 @@ public class MergingDatagramSocket
      */
     private SocketContainer getActiveSocket()
     {
-        //TODO switch dynamically.
-        SocketContainer[] socketContainers = this.socketContainers;
-        if (socketContainers != null && socketContainers.length > 0)
-        {
-            return socketContainers[0];
-        }
-        return null;
+        return this.active;
     }
 
     /**
