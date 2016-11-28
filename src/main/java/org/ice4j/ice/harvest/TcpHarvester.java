@@ -491,8 +491,18 @@ public class TcpHarvester
         if (!IceProcessingState.WAITING.equals(state)
             && !IceProcessingState.RUNNING.equals(state))
         {
-            throw new IllegalStateException(
-                "The associated Agent is in state " + state);
+            // If we are using the VSL, we can still make use of the socket.
+            // Otherwise, we have no use for it, so we better close it (and
+            // log a warning) early.
+            if (!Agent.ENABLE_VIRTUAL_SOCKET_LAYER)
+            {
+                throw new IllegalStateException(
+                    "The associated Agent is in state " + state);
+            }
+            else if (logger.isLoggable(Level.FINE))
+            {
+                logger.fine("Adding a socket to an Agent in state " + state);
+            }
         }
 
         // Socket to add to the candidate
