@@ -148,6 +148,21 @@ public class MergingDatagramSocket
     }
 
     /**
+     * Adds the socket instance wrapped by {@code wrapper} to this merging
+     * socket. Note that this will start a thread reading from the added socket.
+     * @param wrapper the wrapper of the socket to add.
+     */
+    public void add(IceSocketWrapper wrapper)
+    {
+        Object socket = wrapper.getUDPSocket();
+        if (socket == null)
+        {
+            socket = wrapper.getTCPSocket();
+        }
+        doAdd(socket);
+    }
+
+    /**
      * Adds a {@link DatagramSocket} instance to this merging socket. Note
      * that this will start a thread reading from the added socket.
      * @param socket the socket to add.
@@ -171,12 +186,13 @@ public class MergingDatagramSocket
      */
     private void doAdd(Object socket)
     {
+        Objects.requireNonNull(socket, "socket");
+
         if (!(socket instanceof DelegatingSocket) &&
             !(socket instanceof DatagramSocket))
         {
-            logger.severe("Unsupported class: "
-                              + (socket == null ? "null" : socket.getClass()));
-            return;
+            throw new IllegalStateException("Socket type not supported: "
+                    + socket.getClass().getName());
         }
 
         synchronized (socketContainersSyncRoot)

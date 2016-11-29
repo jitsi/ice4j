@@ -194,7 +194,7 @@ public class GoogleRelayedCandidate
      * @see LocalCandidate#getCandidateIceSocketWrapper()
      */
     @Override
-    protected synchronized IceSocketWrapper getCandidateIceSocketWrapper()
+    public synchronized IceSocketWrapper getCandidateIceSocketWrapper()
     {
         if (socket == null)
         {

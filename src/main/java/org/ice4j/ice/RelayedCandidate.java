@@ -129,7 +129,7 @@ public class RelayedCandidate
      * <tt>Candidate</tt>
      */
     @Override
-    protected synchronized IceSocketWrapper getCandidateIceSocketWrapper()
+    public synchronized IceSocketWrapper getCandidateIceSocketWrapper()
     {
         if (socket == null)
         {

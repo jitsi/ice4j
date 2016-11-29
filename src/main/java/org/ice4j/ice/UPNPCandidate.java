@@ -92,7 +92,7 @@ public class UPNPCandidate
      * {@inheritDoc}
      */
     @Override
-    protected IceSocketWrapper getCandidateIceSocketWrapper()
+    public IceSocketWrapper getCandidateIceSocketWrapper()
     {
         return getBase().getCandidateIceSocketWrapper();
     }

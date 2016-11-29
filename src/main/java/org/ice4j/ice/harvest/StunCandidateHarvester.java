@@ -441,7 +441,7 @@ public class StunCandidateHarvester
      */
     protected HostCandidate getHostCandidate(HostCandidate hostCand)
     {
-        HostCandidate cand = null;
+        HostCandidate cand;
 
         // create a new TCP HostCandidate
         if(hostCand.getTransport() == Transport.TCP)
@@ -450,12 +450,15 @@ public class StunCandidateHarvester
             {
                 Socket sock = new Socket(stunServer.getAddress(),
                     stunServer.getPort());
-                cand = new HostCandidate(new IceTcpSocketWrapper(
-                    new MultiplexingSocket(sock)),
-                    hostCand.getParentComponent(), Transport.TCP);
+                MultiplexingSocket multiplexing = new MultiplexingSocket(sock);
+                cand
+                    = new HostCandidate(
+                            new IceTcpSocketWrapper(multiplexing),
+                            hostCand.getParentComponent(), Transport.TCP);
                 hostCand.getParentComponent().getParentStream().
                     getParentAgent().getStunStack().addSocket(
                         cand.getStunSocket(null));
+                hostCand.getParentComponent().getSocket().add(multiplexing);
             }
             catch(Exception io)
             {

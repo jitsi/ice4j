@@ -203,25 +203,27 @@ public class UPNPHarvester
      * @param socket local socket
      * @param externalIP external IP address
      * @param port local port
-     * @param cmp parent component
+     * @param component parent component
      * @param device the UPnP gateway device
      * @return a new <tt>UPNPCandidate</tt> instance which
      * represents the specified <tt>TransportAddress</tt>
      * @throws Exception if something goes wrong during candidate creation
      */
-    public List<LocalCandidate> createUPNPCandidate(IceSocketWrapper socket,
-            String externalIP, int port, Component cmp, GatewayDevice device)
+    private List<LocalCandidate> createUPNPCandidate(IceSocketWrapper socket,
+            String externalIP, int port, Component component, GatewayDevice device)
         throws Exception
     {
         List<LocalCandidate> ret = new ArrayList<>();
         TransportAddress addr
             = new TransportAddress(externalIP, port, Transport.UDP);
 
-        HostCandidate base = new HostCandidate(socket, cmp);
+        HostCandidate base = new HostCandidate(socket, component);
 
-        UPNPCandidate candidate = new UPNPCandidate(addr, base, cmp, device);
+        UPNPCandidate candidate
+            = new UPNPCandidate(addr, base, component, device);
         IceSocketWrapper stunSocket = candidate.getStunSocket(null);
         candidate.getStunStack().addSocket(stunSocket);
+        component.getSocket().add(candidate.getCandidateIceSocketWrapper());
 
         ret.add(candidate);
         ret.add(base);

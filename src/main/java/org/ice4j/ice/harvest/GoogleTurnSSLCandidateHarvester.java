@@ -121,7 +121,7 @@ public class GoogleTurnSSLCandidateHarvester
 
     /**
      * Returns the host candidate.
-     * For UDP it simply returns the candidate passed as paramter
+     * For UDP it simply returns the candidate passed as parameter
      *
      * However for TCP, we cannot return the same hostCandidate because in Java
      * a  "server" socket cannot connect to a destination with the same local
@@ -146,11 +146,11 @@ public class GoogleTurnSSLCandidateHarvester
             if(sslHandshake(inputStream, outputStream))
             {
                 Component parentComponent = hostCand.getParentComponent();
+                MultiplexingSocket multiplexing = new MultiplexingSocket(sock);
 
                 cand
                     = new HostCandidate(
-                            new IceTcpSocketWrapper(
-                                    new MultiplexingSocket(sock)),
+                            new IceTcpSocketWrapper(multiplexing),
                             parentComponent,
                             Transport.TCP);
                 parentComponent
@@ -158,6 +158,7 @@ public class GoogleTurnSSLCandidateHarvester
                         .getParentAgent()
                             .getStunStack()
                                 .addSocket(cand.getStunSocket(null));
+                parentComponent.getSocket().add(multiplexing);
             }
         }
         catch (Exception e)
@@ -187,12 +188,12 @@ public class GoogleTurnSSLCandidateHarvester
 
     /**
      * Do the SSL handshake (send client certificate and wait for receive server
-     * certificate). We explicitely need <tt>InputStream</tt> and
+     * certificate). We explicitly need <tt>InputStream</tt> and
      * <tt>OutputStream</tt> because some <tt>Socket</tt> may redefine
      * getInputStream()/getOutputStream() and we need the original stream.
      *
      * @param inputStream <tt>InputStream</tt> of the socket
-     * @param outputStream <tt>OuputStream</tt> of the socket
+     * @param outputStream <tt>OutputStream</tt> of the socket
      * @return true if the SSL handshake is done
      * @throws IOException if something goes wrong
      */

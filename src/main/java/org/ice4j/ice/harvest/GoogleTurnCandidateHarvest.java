@@ -133,6 +133,14 @@ public class GoogleTurnCandidateHarvest
                 harvester.getStunStack().addSocket(
                         relayedCandidate.getStunSocket(null));
 
+                // Make the relayed candidate's socket available for reading
+                // by the component.
+                IceSocketWrapper candidateSocket
+                    = relayedCandidate.getCandidateIceSocketWrapper();
+
+                Component component = relayedCandidate.getParentComponent();
+                component.getSocket().add(candidateSocket);
+
                 addCandidate(relayedCandidate);
             }
         }
