@@ -112,15 +112,21 @@ public class MergingDatagramSocket
         {
             return;
         }
-
-        // TODO: close all containers
-
         closed = true;
+
         // XXX do we want to risk obtaining the lock here, or should we just
         // let any thread in find out about the close after it's next timeout?
         synchronized (receiveLock)
         {
             receiveLock.notifyAll();
+        }
+
+        synchronized (socketContainersSyncRoot)
+        {
+            for (SocketContainer container : socketContainers)
+            {
+                doRemove(container.getSocket());
+            }
         }
     }
 
@@ -334,10 +340,8 @@ public class MergingDatagramSocket
         }
         if (socketContainer != null)
         {
-            // Stop the reading thread.
-            // TODO: do we want to interrupt the thread here? This will not
-            // help unless we set a soTimeout > 0
-            socketContainer.closed = true;
+            // We just removed it from the merging socket, so use remove=false
+            socketContainer.close(false);
         }
     }
 
@@ -665,6 +669,10 @@ public class MergingDatagramSocket
                 }
             }
 
+            // The receive thread is terminating, no reason to keep this
+            // container anymore.
+            close(true);
+
             if (logger.isLoggable(Level.FINE))
             {
                 logger.fine("Finished: " + toString());
@@ -857,6 +865,35 @@ public class MergingDatagramSocket
             else
             {
                 delegatingSocket.send(pkt);
+            }
+        }
+
+        /**
+         * @return the underlying socket of this {@link SocketContainer}.
+         */
+        private Object getSocket()
+        {
+            return datagramSocket != null ? datagramSocket : delegatingSocket;
+        }
+
+        /**
+         * Closes this {@link SocketContainer}, stopping it's reading thread,
+         * and, if necessary removing it from the merging socket.
+         * @param remove whether to remove this container from the merging
+         * socket.
+         */
+        private void close(boolean remove)
+        {
+            if (closed && !remove)
+            {
+                return;
+            }
+            closed = true;
+
+            thread.interrupt();
+            if (remove)
+            {
+                MergingDatagramSocket.this.doRemove(getSocket());
             }
         }
 
