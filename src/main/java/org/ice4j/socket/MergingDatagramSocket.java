@@ -81,12 +81,48 @@ public class MergingDatagramSocket
     private SocketContainer active = null;
 
     /**
+     * The flag which indicates whether this socket is closed.
+     */
+    private boolean closed = false;
+
+    /**
      * Initializes a new {@link MergingDatagramSocket} instance.
      * @throws SocketException
      */
     public MergingDatagramSocket()
             throws SocketException
     {}
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public boolean isClosed()
+    {
+        return closed;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public void close()
+    {
+        if (isClosed())
+        {
+            return;
+        }
+
+        // TODO: close all containers
+
+        closed = true;
+        // XXX do we want to risk obtaining the lock here, or should we just
+        // let any thread in find out about the close after it's next timeout?
+        synchronized (receiveLock)
+        {
+            receiveLock.notifyAll();
+        }
+    }
 
     /**
      * {@inheritDoc}
@@ -128,7 +164,6 @@ public class MergingDatagramSocket
         {
             throw new IOException("No active socket.");
         }
-
     }
 
     /**
@@ -386,10 +421,14 @@ public class MergingDatagramSocket
      * underlying sockets. The socket is chosen on the base of the timestamp
      * of the reception of the first packet in its queue (so that earlier
      * packets are received first).
+     * @throws SocketTimeoutException if a socket timeout is set, and the
+     * call fails to receive a packet within the timeout.
+     * @throws SocketClosedException if the socket is closed while
      */
     @Override
     public void receive(DatagramPacket p)
-            throws SocketTimeoutException
+            throws SocketTimeoutException,
+                   SocketClosedException
     {
         long start = System.currentTimeMillis();
         int soTimeout = this.soTimeout;
@@ -405,6 +444,11 @@ public class MergingDatagramSocket
         {
             do
             {
+                if (isClosed())
+                {
+                    throw new SocketClosedException();
+                }
+
                 // Find the input socket with the oldest packet
                 SocketContainer[] socketContainers = this.socketContainers;
                 SocketContainer socketToReceiveFrom = null;
@@ -431,22 +475,20 @@ public class MergingDatagramSocket
                 // Otherwise wait on receiveLock.
                 else
                 {
+                    long waitTimeout = 500;
+                    if (soTimeout > 0)
+                    {
+                        long remaining
+                            = start + soTimeout
+                                    - System.currentTimeMillis();
+                        if (remaining <= 0)
+                            throw new SocketTimeoutException();
+
+                        waitTimeout = Math.min(waitTimeout, remaining);
+                    }
                     try
                     {
-                        if (soTimeout > 0)
-                        {
-                            long remaining
-                                = start + soTimeout
-                                        - System.currentTimeMillis();
-                            if (remaining <= 0)
-                                throw new SocketTimeoutException();
-
-                            receiveLock.wait(remaining);
-                        }
-                        else
-                        {
-                            receiveLock.wait();
-                        }
+                        receiveLock.wait(waitTimeout);
                     }
                     catch (InterruptedException ie)
                     {

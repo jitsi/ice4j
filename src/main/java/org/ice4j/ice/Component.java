@@ -806,6 +806,8 @@ public class Component
                 localCandidateIter.remove();
             }
         }
+
+        getSocket().close();
     }
 
     /**
