@@ -391,7 +391,7 @@ public abstract class AbstractUdpListener
         /**
          * The remote address that is associated with this socket.
          */
-        private SocketAddress remoteAddress;
+        private InetSocketAddress remoteAddress;
 
         /**
          * The flag which indicates that this <tt>DatagramSocket</tt> has been
@@ -406,7 +406,7 @@ public abstract class AbstractUdpListener
          * new instance.
          * @throws SocketException
          */
-        public MySocket(SocketAddress remoteAddress)
+        MySocket(InetSocketAddress remoteAddress)
             throws SocketException
         {
             // unbound
@@ -485,6 +485,45 @@ public abstract class AbstractUdpListener
         public SocketAddress getLocalSocketAddress()
         {
             return localAddress;
+        }
+
+        /**
+         * {@inheritDoc}
+         * </p>
+         * This {@link DatagramSocket} will only allow packets from the
+         * remote address that it has, so we consider it connected to this
+         * address.
+         */
+        @Override
+        public SocketAddress getRemoteSocketAddress()
+        {
+            return remoteAddress;
+        }
+
+        /**
+         * {@inheritDoc}
+         * </p>
+         * This {@link DatagramSocket} will only allow packets from the
+         * remote address that it has, so we consider it connected to this
+         * address.
+         */
+        @Override
+        public InetAddress getInetAddress()
+        {
+            return remoteAddress.getAddress();
+        }
+
+        /**
+         * {@inheritDoc}
+         * </p>
+         * This {@link DatagramSocket} will only allow packets from the
+         * remote address that it has, so we consider it connected to this
+         * address.
+         */
+        @Override
+        public int getPort()
+        {
+            return remoteAddress.getPort();
         }
 
         /**
