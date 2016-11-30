@@ -273,18 +273,6 @@ public class IceMediaStream
     }
 
     /**
-     * Returns the number of <tt>Component</tt>s currently registered with this
-     * stream.
-     *
-     * @return the number of <tt>Component</tt>s currently registered with this
-     * stream.
-     */
-    public int getStreamCount()
-    {
-        return getComponentCount();
-    }
-
-    /**
      * Returns a reference to the <tt>Agent</tt> that this stream belongs to.
      *
      * @return a reference to the <tt>Agent</tt> that this stream belongs to.
