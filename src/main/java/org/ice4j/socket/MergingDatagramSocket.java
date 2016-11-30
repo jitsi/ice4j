@@ -117,15 +117,16 @@ public class MergingDatagramSocket
     @Override
     public void close()
     {
-        logger.info("Closing.");
         if (isClosed())
         {
             return;
         }
         closed = true;
+        logger.info("Closing.");
 
         // XXX do we want to risk obtaining the lock here, or should we just
-        // let any thread in find out about the close after it's next timeout?
+        // let any thread in receive() find out about the close after it's next
+        // timeout?
         synchronized (receiveLock)
         {
             receiveLock.notifyAll();
@@ -135,8 +136,9 @@ public class MergingDatagramSocket
         {
             for (SocketContainer container : socketContainers)
             {
-                doRemove(container.getSocket());
+                container.close(false);
             }
+            socketContainers = new SocketContainer[0];
         }
     }
 
