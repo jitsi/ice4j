@@ -78,12 +78,21 @@ public class MergingDatagramSocket
      * The {@link SocketContainer} considered active, i.e. the one which should
      * be used for sending.
      */
-    private SocketContainer active = null;
+    protected SocketContainer active = null;
 
     /**
      * The flag which indicates whether this socket is closed.
      */
     private boolean closed = false;
+
+    /**
+     * The number of packets which were read from an underlying socket, but were
+     * discarded because they were not accepted by
+     * {@link #accept(DatagramPacket)}.
+     * Access to this field should be protected by {@link #receiveLock}.
+     */
+    private int numDiscardedPackets = 0;
+
 
     /**
      * Initializes a new {@link MergingDatagramSocket} instance.
@@ -108,6 +117,7 @@ public class MergingDatagramSocket
     @Override
     public void close()
     {
+        logger.info("Closing.");
         if (isClosed())
         {
             return;
@@ -371,7 +381,7 @@ public class MergingDatagramSocket
     /**
      * TODO
      */
-    private SocketContainer getActiveSocket()
+    protected SocketContainer getActiveSocket()
     {
         return this.active;
     }
@@ -416,6 +426,20 @@ public class MergingDatagramSocket
         SocketContainer activeSocket = getActiveSocket();
         return
             activeSocket == null ? null : activeSocket.getLocalSocketAddress();
+    }
+
+    /**
+     * Checks whether a particular {@link DatagramPacket}, received from one of
+     * the underlying sockets of thins merging socket, should be accepted and
+     * provided for reception from this {@link MergingDatagramSocket}.
+     * @param p the packet for which to decide whether to accept it or not.
+     * @return {@code true} iff {@code p} should be accepted.
+     */
+    protected boolean accept(DatagramPacket p)
+    {
+        // By default we accept all packets, and allow extending classes to
+        // override
+        return true;
     }
 
     /**
@@ -470,11 +494,28 @@ public class MergingDatagramSocket
                     }
                 }
 
-                // If a packet is available read it
+                // If a packet is available, receive it
                 if (socketToReceiveFrom != null)
                 {
                     socketToReceiveFrom.receive(p);
-                    return;
+
+                    if (accept(p))
+                    {
+                        return;
+                    }
+                    else
+                    {
+                        numDiscardedPackets++;
+                        if (numDiscardedPackets % 100 == 1)
+                        {
+                            logger.info("Discarded " + numDiscardedPackets
+                                    + " packets. Last remote address:"
+                                    + p.getSocketAddress());
+                        }
+
+                        // Go on and receive the next packet in p.
+                        continue;
+                    }
                 }
                 // Otherwise wait on receiveLock.
                 else

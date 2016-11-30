@@ -152,7 +152,7 @@ public class Component
 
         try
         {
-            mergingDatagramSocket = new MergingDatagramSocket();
+            mergingDatagramSocket = new ComponentSocket(this);
             mergingDatagramSocketWrapper
                 = new IceUdpSocketWrapper(
                         new MultiplexingDatagramSocket(
