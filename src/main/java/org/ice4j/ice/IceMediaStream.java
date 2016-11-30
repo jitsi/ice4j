@@ -69,6 +69,19 @@ public class IceMediaStream
     public static final String PROPERTY_PAIR_VALIDATED = "PairValidated";
 
     /**
+     * Use builder pattern to provide an immutable IceMediaStream instance.
+     *
+     * @param name the name of the media stream
+     * @param parentAgent the agent that is handling the session that this
+     * media stream is a part of
+     * @return IceMediaStream
+     */
+    public static IceMediaStream build(Agent parentAgent, String name)
+    {
+        return new IceMediaStream(parentAgent, name);
+    }
+
+    /**
      * The name of this media stream. The name is equal to the value specified
      * in the SDP description.
      */
@@ -557,12 +570,12 @@ public class IceMediaStream
     {
         synchronized(checkList)
         {
-            for( CandidatePair pair : checkList)
+            for (CandidatePair pair : checkList)
             {
-                if( pair.getLocalCandidate().getTransportAddress()
+                if (pair.getLocalCandidate().getTransportAddress()
                             .equals(localAddress)
                         && pair.getRemoteCandidate().getTransportAddress()
-                                .equals(remoteAddress) )
+                                .equals(remoteAddress))
                 {
                     return pair;
                 }
@@ -587,12 +600,12 @@ public class IceMediaStream
     {
         synchronized(checkList)
         {
-            for( CandidatePair pair : checkList)
+            for (CandidatePair pair : checkList)
             {
                 LocalCandidate local = pair.getLocalCandidate();
                 RemoteCandidate remote = pair.getRemoteCandidate();
 
-                if(local.getUfrag().equals(remoteUFrag)
+                if (local.getUfrag().equals(remoteUFrag)
                         && remote.getUfrag().equals(localUFrag))
                 {
                     return pair;
@@ -613,7 +626,7 @@ public class IceMediaStream
 
         synchronized (components)
         {
-            for(Component cmp : components.values())
+            for (Component cmp : components.values())
                 num += cmp.countLocalHostCandidates();
         }
 
@@ -645,7 +658,7 @@ public class IceMediaStream
     {
         synchronized (validList)
         {
-            if(!validList.contains(pair))
+            if (!validList.contains(pair))
                 validList.add(pair);
         }
 
@@ -666,7 +679,7 @@ public class IceMediaStream
     {
         synchronized(validList)
         {
-            for(CandidatePair pair : validList)
+            for (CandidatePair pair : validList)
             {
                 if (pair.getFoundation().equals(foundation))
                     return true;
@@ -714,7 +727,7 @@ public class IceMediaStream
      */
     protected boolean validListContainsAllComponents()
     {
-        for(Component cmp : getComponents())
+        for (Component cmp : getComponents())
         {
             if (getValidPair(cmp) == null)
             {
@@ -762,9 +775,9 @@ public class IceMediaStream
      */
     protected boolean allComponentsHaveSelected()
     {
-        for(Component component : getComponents())
+        for (Component component : getComponents())
         {
-            if(component.getSelectedPair() == null)
+            if (component.getSelectedPair() == null)
                 return false;
         }
         return true;
@@ -782,11 +795,11 @@ public class IceMediaStream
      */
     protected CandidatePair getValidPair(Component component)
     {
-        synchronized(validList)
+        synchronized (validList)
         {
-            for(CandidatePair pair : validList)
+            for (CandidatePair pair : validList)
             {
-                if(pair.getParentComponent() == component)
+                if (pair.getParentComponent() == component)
                     return pair;
             }
         }
@@ -803,9 +816,9 @@ public class IceMediaStream
      */
     public void addPairChangeListener(PropertyChangeListener l)
     {
-        synchronized(streamListeners)
+        synchronized (streamListeners)
         {
-            if(!streamListeners.contains(l))
+            if (!streamListeners.contains(l))
                 streamListeners.add(l);
         }
     }
@@ -818,7 +831,7 @@ public class IceMediaStream
      */
     public void removePairStateChangeListener(PropertyChangeListener l)
     {
-        synchronized(streamListeners)
+        synchronized (streamListeners)
         {
             streamListeners.remove(l);
         }
@@ -840,7 +853,7 @@ public class IceMediaStream
     {
         PropertyChangeListener[] ls;
 
-        synchronized(streamListeners)
+        synchronized (streamListeners)
         {
             ls
                 = streamListeners.toArray(
@@ -850,7 +863,7 @@ public class IceMediaStream
         PropertyChangeEvent ev
             = new PropertyChangeEvent(source, propertyName, oldValue, newValue);
 
-        for(PropertyChangeListener l : ls)
+        for (PropertyChangeListener l : ls)
             l.propertyChange(ev);
     }
 
@@ -898,18 +911,4 @@ public class IceMediaStream
     {
         return remotePassword;
     }
-    
-    /**
-     * Use builder pattern to provide an immutable IceMediaStream instance.
-     *
-     * @param name the name of the media stream
-     * @param parentAgent the agent that is handling the session that this
-     * media stream is a part of
-     * @return IceMediaStream
-     */
-    public static IceMediaStream build(Agent parentAgent, String name)
-    {
-        return new IceMediaStream(parentAgent, name);
-    }
-
 }

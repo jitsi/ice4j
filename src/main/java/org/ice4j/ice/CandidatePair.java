@@ -290,13 +290,13 @@ public class CandidatePair
 
         this.state = newState;
 
-        if(newState == CandidatePairState.IN_PROGRESS)
+        if (newState == CandidatePairState.IN_PROGRESS)
         {
             if (tranID == null)
             {
                 throw new IllegalArgumentException(
                         "Putting a pair into the In-Progress state MUST be"
-                            + " accomapnied with the TransactionID of the"
+                            + " accompanied with the TransactionID of the"
                             + " connectivity check.");
             }
         }

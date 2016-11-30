@@ -175,7 +175,7 @@ class ConnectivityCheckClient
                     indication,
                     candidatePair.getRemoteCandidate().getTransportAddress(),
                     localCandidate.getBase().getTransportAddress());
-            if(logger.isLoggable(Level.FINEST))
+            if (logger.isLoggable(Level.FINEST))
             {
                 logger.finest(
                         "sending binding indication to pair " + candidatePair);
@@ -185,7 +185,7 @@ class ConnectivityCheckClient
         {
             IceSocketWrapper stunSocket = localCandidate.getStunSocket(null);
 
-            if(stunSocket != null)
+            if (stunSocket != null)
             {
                 logger.log(
                         Level.INFO,
@@ -282,7 +282,7 @@ class ConnectivityCheckClient
                 .getParentComponent().getParentStream().getName();
         String localUserName = parentAgent.generateLocalUserName(media);
 
-        if(localUserName == null)
+        if (localUserName == null)
             return null;
 
         UsernameAttribute unameAttr
@@ -322,7 +322,7 @@ class ConnectivityCheckClient
                         originalWaitInterval,
                         maxWaitInterval,
                         maxRetransmissions);
-            if(logger.isLoggable(Level.FINEST))
+            if (logger.isLoggable(Level.FINEST))
             {
                 logger.finest(
                         "checking pair " + candidatePair + " tid " + tran);
@@ -334,13 +334,13 @@ class ConnectivityCheckClient
 
             IceSocketWrapper stunSocket = localCandidate.getStunSocket(null);
 
-            if(stunSocket != null)
+            if (stunSocket != null)
             {
                 String msg
                     = "Failed to send " + request + " through "
                         + stunSocket.getLocalSocketAddress() + ".";
 
-                if((ex instanceof NoRouteToHostException)
+                if ((ex instanceof NoRouteToHostException)
                         || (ex.getMessage() != null
                                 && ex.getMessage().equals("No route to host")))
                 {
@@ -383,9 +383,9 @@ class ConnectivityCheckClient
             char messageType = response.getMessageType();
 
             //handle error responses.
-            if(messageType == Response.BINDING_ERROR_RESPONSE)
+            if (messageType == Response.BINDING_ERROR_RESPONSE)
             {
-                if(!response.containsAttribute(Attribute.ERROR_CODE))
+                if (!response.containsAttribute(Attribute.ERROR_CODE))
                 {
                     logger.fine("Received a malformed error response.");
                     return; //malformed error response
@@ -394,7 +394,7 @@ class ConnectivityCheckClient
                 processErrorResponse(ev);
             }
             //handle success responses.
-            else if(messageType == Response.BINDING_SUCCESS_RESPONSE)
+            else if (messageType == Response.BINDING_SUCCESS_RESPONSE)
             {
                 processSuccessResponse(ev);
             }
@@ -419,12 +419,12 @@ class ConnectivityCheckClient
             = checkedPair.getParentComponent().getParentStream();
         final CheckList checkList = stream.getCheckList();
 
-        if(stream.getParentAgent().getState().isEstablished())
+        if (stream.getParentAgent().getState().isEstablished())
             return;
 
         //If all of the pairs in the check list are now either in the Failed or
         //Succeeded state:
-        if(checkList.allChecksCompleted())
+        if (checkList.allChecksCompleted())
         {
             //If there is not a pair in the valid list for each component of the
             //media stream, the state of the check list is set to Failed.
@@ -433,7 +433,7 @@ class ConnectivityCheckClient
                 final String streamName = stream.getName();
                 Timer timer = timers.get(streamName);
 
-                if(timer == null)
+                if (timer == null)
                 {
                     logger.info("CheckList will failed in a few seconds if no" +
                             "succeeded checks come");
@@ -443,7 +443,7 @@ class ConnectivityCheckClient
                         @Override
                         public void run()
                         {
-                            if(checkList.getState() != CheckListState.COMPLETED)
+                            if (checkList.getState() != CheckListState.COMPLETED)
                             {
                                 logger.info("CheckList for stream " +
                                     streamName + " FAILED");
@@ -471,7 +471,7 @@ class ConnectivityCheckClient
             {
                 CheckList anotherCheckList = anotherStream.getCheckList();
 
-                if(anotherCheckList.isFrozen())
+                if (anotherCheckList.isFrozen())
                 {
                     anotherCheckList.computeInitialCheckListPairStates();
                     startChecks(anotherCheckList);
@@ -609,8 +609,11 @@ class ConnectivityCheckClient
             //Succeeded.  Note that, the pair which *generated* the check may be
             //different than the valid pair constructed above
             if (checkedPair.getParentComponent().getSelectedPair() == null)
+            {
                 logger.info("Pair succeeded: " + checkedPair.toShortString()
-                    + ". Local ufrag " + parentAgent.getLocalUfrag());
+                                + ". Local ufrag "
+                                + parentAgent.getLocalUfrag());
+            }
             checkedPair.setStateSucceeded();
         }
 
@@ -627,12 +630,12 @@ class ConnectivityCheckClient
         IceMediaStream parentStream
             = checkedPair.getParentComponent().getParentStream();
 
-        synchronized(this)
+        synchronized (this)
         {
             Vector<CandidatePair> parentCheckList
                 = new Vector<>(parentStream.getCheckList());
 
-            for(CandidatePair pair : parentCheckList)
+            for (CandidatePair pair : parentCheckList)
             {
                 if (pair.getState() == CandidatePairState.FROZEN
                         && checkedPair.getFoundation().equals(
@@ -699,7 +702,7 @@ class ConnectivityCheckClient
         if (parentAgent.isControlling()
                 && request.containsAttribute(Attribute.USE_CANDIDATE))
         {
-            if(validPair.getParentComponent().getSelectedPair() == null)
+            if (validPair.getParentComponent().getSelectedPair() == null)
             {
                 logger.info("Nomination confirmed for pair: "
                     + validPair.toShortString()
@@ -721,7 +724,7 @@ class ConnectivityCheckClient
                 && checkedPair.useCandidateReceived()
                 && !checkedPair.isNominated())
         {
-            if(checkedPair.getParentComponent().getSelectedPair() == null)
+            if (checkedPair.getParentComponent().getSelectedPair() == null)
             {
                 logger.info(
                         "Nomination confirmed for pair: "
@@ -800,12 +803,12 @@ class ConnectivityCheckClient
         logger.finer("Received error code " + ((int) errorCode));
 
         //RESOLVE ROLE_CONFLICTS
-        if(errorCode == ErrorCodeAttribute.ROLE_CONFLICT)
+        if (errorCode == ErrorCodeAttribute.ROLE_CONFLICT)
         {
             boolean wasControlling
                 = originalRequest.containsAttribute(Attribute.ICE_CONTROLLING);
 
-            logger.finer("Swithing to isControlling=" + !wasControlling);
+            logger.finer("Switching to isControlling=" + !wasControlling);
             parentAgent.setControlling(!wasControlling);
 
             pair.getParentComponent().getParentStream().getCheckList()
@@ -916,7 +919,7 @@ class ConnectivityCheckClient
                 {
                     long waitFor = getNextWaitInterval();
 
-                    if(waitFor > 0)
+                    if (waitFor > 0)
                     {
                         /*
                          * waitFor will be 0 for the first check since we won't
@@ -939,10 +942,10 @@ class ConnectivityCheckClient
                     CandidatePair pairToCheck = checkList.popTriggeredCheck();
 
                     //if there are no triggered checks, go for an ordinary one.
-                    if(pairToCheck == null)
+                    if (pairToCheck == null)
                         pairToCheck = checkList.getNextOrdinaryPairToCheck();
 
-                    if(pairToCheck != null)
+                    if (pairToCheck != null)
                     {
                         /*
                          * Since we suspect that it is possible to
@@ -956,7 +959,7 @@ class ConnectivityCheckClient
                             TransactionID transactionID
                                 = startCheckForPair(pairToCheck);
 
-                            if(transactionID == null)
+                            if (transactionID == null)
                             {
                                 logger.info(
                                         "Pair failed: "
@@ -983,7 +986,7 @@ class ConnectivityCheckClient
             {
                 synchronized (paceMakers)
                 {
-                    synchronized(this)
+                    synchronized (this)
                     {
                         paceMakers.remove(this);
                     }
@@ -1005,7 +1008,7 @@ class ConnectivityCheckClient
             {
                 PaceMaker paceMaker = paceMakersIter.next();
 
-                synchronized(paceMaker)
+                synchronized (paceMaker)
                 {
                     paceMaker.running = false;
                     paceMaker.notify();

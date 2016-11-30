@@ -52,7 +52,7 @@ public class DefaultNominator
 
     /**
      * Map that will remember association between validated relayed candidate
-     * and a timer. It is use with the NOMINATE_FIRST_HIGHEST_VALID strategy.
+     * and a timer. It is used with the NOMINATE_FIRST_HIGHEST_VALID strategy.
      */
     private final Map<String, TimerTask> validatedCandidates = new HashMap<>();
 
@@ -86,12 +86,12 @@ public class DefaultNominator
     {
         String propertyName = ev.getPropertyName();
 
-        if(Agent.PROPERTY_ICE_PROCESSING_STATE.equals(propertyName))
+        if (Agent.PROPERTY_ICE_PROCESSING_STATE.equals(propertyName))
         {
-            if(ev.getNewValue() != IceProcessingState.RUNNING)
+            if (ev.getNewValue() != IceProcessingState.RUNNING)
                 return;
 
-            for(IceMediaStream stream : parentAgent.getStreams())
+            for (IceMediaStream stream : parentAgent.getStreams())
             {
                 stream.addPairChangeListener(this);
                 stream.getCheckList().addStateChangeListener(this);
@@ -104,7 +104,7 @@ public class DefaultNominator
             return;
         }
 
-        if(ev.getSource() instanceof CandidatePair)
+        if (ev.getSource() instanceof CandidatePair)
         {
             // STUN Usage for Consent Freshness is of no concern here.
             if (IceMediaStream.PROPERTY_PAIR_CONSENT_FRESHNESS_CHANGED.equals(
@@ -115,7 +115,7 @@ public class DefaultNominator
 
             // do not nominate pair if there is currently a selected pair for
             // the component
-            if(validPair.getParentComponent().getSelectedPair() != null)
+            if (validPair.getParentComponent().getSelectedPair() != null)
             {
                 logger.fine(
                         "Keep-alive for pair: " + validPair.toShortString());
@@ -141,7 +141,8 @@ public class DefaultNominator
      */
     private void strategyNominateFirstValid(PropertyChangeEvent evt)
     {
-        if(IceMediaStream.PROPERTY_PAIR_VALIDATED.equals(evt.getPropertyName()))
+        if (IceMediaStream.PROPERTY_PAIR_VALIDATED
+                    .equals(evt.getPropertyName()))
         {
             CandidatePair validPair = (CandidatePair)evt.getSource();
 
@@ -163,7 +164,7 @@ public class DefaultNominator
     {
         String pname = ev.getPropertyName();
 
-        if(IceMediaStream.PROPERTY_PAIR_VALIDATED.equals(pname)
+        if (IceMediaStream.PROPERTY_PAIR_VALIDATED.equals(pname)
                 || (IceMediaStream.PROPERTY_PAIR_STATE_CHANGED.equals(pname)
                         && (ev.getNewValue() == CandidatePairState.FAILED)))
         {
@@ -172,14 +173,14 @@ public class DefaultNominator
             IceMediaStream parentStream = parentComponent.getParentStream();
             CheckList parentCheckList = parentStream.getCheckList();
 
-            if(!parentCheckList.allChecksCompleted())
+            if (!parentCheckList.allChecksCompleted())
                 return;
 
-            for(Component component : parentStream.getComponents())
+            for (Component component : parentStream.getComponents())
             {
                 CandidatePair pair = parentStream.getValidPair(component);
 
-                if(pair != null)
+                if (pair != null)
                 {
                     logger.info(
                             "Nominate (highest priority): "
@@ -215,7 +216,7 @@ public class DefaultNominator
     private void strategyNominateFirstHostOrReflexiveValid(
             PropertyChangeEvent evt)
     {
-        if(IceMediaStream.PROPERTY_PAIR_VALIDATED.equals(evt.getPropertyName()))
+        if (IceMediaStream.PROPERTY_PAIR_VALIDATED.equals(evt.getPropertyName()))
         {
             CandidatePair validPair = (CandidatePair) evt.getSource();
 
@@ -229,12 +230,12 @@ public class DefaultNominator
                             CandidateType.RELAYED_CANDIDATE);
             boolean nominate = false;
 
-            synchronized(validatedCandidates)
+            synchronized (validatedCandidates)
             {
                 TimerTask task
                     = validatedCandidates.get(component.toShortString());
 
-                if(isRelayed && task == null)
+                if (isRelayed && task == null)
                 {
                     /* armed a timer and see if a host or server reflexive pair
                      * gets nominated. Otherwise nominate the relayed candidate
@@ -247,10 +248,10 @@ public class DefaultNominator
                     timer.schedule(task, 0);
                     validatedCandidates.put(component.toShortString(), task);
                 }
-                else if(!isRelayed)
+                else if (!isRelayed)
                 {
                     // host or server reflexive candidate pair
-                    if(task != null)
+                    if (task != null)
                     {
                         task.cancel();
                         logger.info(
@@ -265,7 +266,7 @@ public class DefaultNominator
                 }
             }
 
-            if(nominate)
+            if (nominate)
                 parentAgent.nominate(validPair);
         }
     }
@@ -314,18 +315,17 @@ public class DefaultNominator
          */
         public void propertyChange(PropertyChangeEvent evt)
         {
-            /* check list has running out of ordinary checks, see if all other
-             * candidates are FAILED, in which case we nominate immediately
-             * the relayed candidate
-             */
+            // check list has running out of ordinary checks, see if all other
+            // candidates are FAILED, in which case we nominate immediately
+            // the relayed candidate
             CheckList checkList = (CheckList)evt.getSource();
             boolean allFailed = true;
 
-            synchronized(checkList)
+            synchronized (checkList)
             {
-                for(CandidatePair c : checkList)
+                for (CandidatePair c : checkList)
                 {
-                    if(c != pair && c.getState() != CandidatePairState.FAILED)
+                    if (c != pair && c.getState() != CandidatePairState.FAILED)
                     {
                         allFailed = false;
                         break;
@@ -365,7 +365,7 @@ public class DefaultNominator
             {
                 Thread.sleep(WAIT_TIME);
             }
-            catch(InterruptedException e)
+            catch (InterruptedException e)
             {
                 cancelled = true;
             }
@@ -376,7 +376,7 @@ public class DefaultNominator
                     this);
             validatedCandidates.remove(component.toShortString());
 
-            if(cancelled)
+            if (cancelled)
                 return;
 
             logger.info(

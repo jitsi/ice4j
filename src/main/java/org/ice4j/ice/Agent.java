@@ -761,9 +761,9 @@ public class Agent
      */
     public void addStateChangeListener(PropertyChangeListener l)
     {
-        synchronized(stateListeners)
+        synchronized (stateListeners)
         {
-            if(!stateListeners.contains(l))
+            if (!stateListeners.contains(l))
                 stateListeners.add(l);
         }
     }
@@ -776,7 +776,7 @@ public class Agent
      */
     public void removeStateChangeListener(PropertyChangeListener l)
     {
-        synchronized(stateListeners)
+        synchronized (stateListeners)
         {
             stateListeners.remove(l);
         }
@@ -794,7 +794,7 @@ public class Agent
     {
         PropertyChangeListener[] stateListenersCopy;
 
-        synchronized(stateListeners)
+        synchronized (stateListeners)
         {
             stateListenersCopy
                 = stateListeners.toArray(NO_STATE_CHANGE_LISTENERS);
@@ -808,7 +808,7 @@ public class Agent
                         PROPERTY_ICE_PROCESSING_STATE,
                         oldState, newState);
 
-            for(PropertyChangeListener l : stateListenersCopy)
+            for (PropertyChangeListener l : stateListenersCopy)
                 l.propertyChange(evt);
         }
     }
