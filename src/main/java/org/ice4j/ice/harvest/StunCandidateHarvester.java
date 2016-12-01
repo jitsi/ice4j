@@ -458,7 +458,7 @@ public class StunCandidateHarvester
                 hostCand.getParentComponent().getParentStream().
                     getParentAgent().getStunStack().addSocket(
                         cand.getStunSocket(null));
-                hostCand.getParentComponent().getSocket().add(multiplexing);
+                hostCand.getParentComponent().getComponentSocket().add(multiplexing);
             }
             catch(Exception io)
             {

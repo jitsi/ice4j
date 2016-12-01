@@ -124,16 +124,27 @@ public class Component
     private final Logger logger;
 
     /**
-     * The {@link MergingDatagramSocket} instance which will serve as the
-     * single socket instance for this {@link Component}, merging received
-     * packets from all of its candidates.
+     * The single {@link ComponentSocket} instance for this {@link Component},
+     * which will merge the multiple sockets from the candidate/pairs.
      */
-    private final MergingDatagramSocket mergingDatagramSocket;
+    private final ComponentSocket componentSocket;
 
     /**
-     * A wrapper around {@link #mergingDatagramSocket}.
+     * The public view of {@link #componentSocket}, wrapped in a
+     * {@link MultiplexingDatagramSocket} for the convenience of users of the
+     * library.
+     * This is the instance which should be used by applications for
+     * reading/writing application data.
      */
-    private final IceUdpSocketWrapper mergingDatagramSocketWrapper;
+    private final MultiplexingDatagramSocket socket;
+
+    /**
+     * A wrapper around {@link #socket}, kept only to help preserve the old
+     * API (see {@link LocalCandidate#getIceSocketWrapper()} and
+     * {@link CandidatePair#getIceSocketWrapper()})
+     */
+    @Deprecated
+    private final IceSocketWrapper socketWrapper;
 
     /**
      * Creates a new <tt>Component</tt> with the specified <tt>componentID</tt>
@@ -152,11 +163,9 @@ public class Component
 
         try
         {
-            mergingDatagramSocket = new ComponentSocket(this);
-            mergingDatagramSocketWrapper
-                = new IceUdpSocketWrapper(
-                        new MultiplexingDatagramSocket(
-                            mergingDatagramSocket));
+            componentSocket = new ComponentSocket(this);
+            socket = new MultiplexingDatagramSocket(componentSocket);
+            socketWrapper = new IceUdpSocketWrapper(socket);
         }
         catch (SocketException se)
         {
@@ -807,7 +816,7 @@ public class Component
             }
         }
 
-        getSocket().close();
+        getComponentSocket().close();
     }
 
     /**
@@ -941,24 +950,30 @@ public class Component
     }
 
     /**
-     * @return the single socket for this {@link Component} which should be
-     * used for reading and writing data.
+     * @return the internal merging socket for this component. This is for
+     * ice4j use only.
+     * For reading/writing application data, use {@link #getSocket()}.
      */
-    public MergingDatagramSocket getSocket()
+    public ComponentSocket getComponentSocket()
     {
-        return mergingDatagramSocket;
+        return componentSocket;
+    }
+
+    /**
+     * @return the socket for this {@link Component}, which should be used for
+     * reading/writing application data.
+     */
+    public MultiplexingDatagramSocket getSocket()
+    {
+        return socket;
     }
 
     /**
      * @return an {@link IceSocketWrapper} instance wrapping the socket for this
-     * candidate (see {@link #getSocket()}).
-     * @deprecated Use {@link #getSocket()} directly. This is only introduced
-     * to ease the transition of applications which are already written to use
-     * an {@link IceSocketWrapper} instance.
+     * candidate (see {@link #getComponentSocket()}).
      */
-    @Deprecated
     public IceSocketWrapper getSocketWrapper()
     {
-        return mergingDatagramSocketWrapper;
+        return socketWrapper;
     }
 }

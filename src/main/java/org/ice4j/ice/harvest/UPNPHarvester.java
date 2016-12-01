@@ -223,7 +223,7 @@ public class UPNPHarvester
             = new UPNPCandidate(addr, base, component, device);
         IceSocketWrapper stunSocket = candidate.getStunSocket(null);
         candidate.getStunStack().addSocket(stunSocket);
-        component.getSocket().add(candidate.getCandidateIceSocketWrapper());
+        component.getComponentSocket().add(candidate.getCandidateIceSocketWrapper());
 
         ret.add(candidate);
         ret.add(base);

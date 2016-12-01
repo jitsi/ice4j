@@ -139,7 +139,7 @@ public class GoogleTurnCandidateHarvest
                     = relayedCandidate.getCandidateIceSocketWrapper();
 
                 Component component = relayedCandidate.getParentComponent();
-                component.getSocket().add(candidateSocket);
+                component.getComponentSocket().add(candidateSocket);
 
                 addCandidate(relayedCandidate);
             }

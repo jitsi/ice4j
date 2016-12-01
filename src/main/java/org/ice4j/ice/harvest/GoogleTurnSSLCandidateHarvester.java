@@ -158,7 +158,7 @@ public class GoogleTurnSSLCandidateHarvester
                         .getParentAgent()
                             .getStunStack()
                                 .addSocket(cand.getStunSocket(null));
-                parentComponent.getSocket().add(multiplexing);
+                parentComponent.getComponentSocket().add(multiplexing);
             }
         }
         catch (Exception e)

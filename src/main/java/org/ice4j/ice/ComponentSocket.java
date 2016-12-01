@@ -29,7 +29,7 @@ import java.util.logging.*;
  * Extends {@link MergingDatagramSocket} with functionality specific to
  * an ICE {@link Component}.
  */
-class ComponentSocket
+public class ComponentSocket
     extends MergingDatagramSocket
     implements PropertyChangeListener
 {
@@ -155,6 +155,7 @@ class ComponentSocket
         }
         finally
         {
+            component.getParentStream().removePairStateChangeListener(this);
             component = null;
         }
     }

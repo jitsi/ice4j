@@ -258,7 +258,7 @@ public class TurnCandidateHarvest
                 harvester.getStunStack().addSocket(
                         relayedCandidate.getStunSocket(null));
 
-                relayedCandidate.getParentComponent().getSocket().add(
+                relayedCandidate.getParentComponent().getComponentSocket().add(
                     relayedCandidate.getCandidateIceSocketWrapper());
                 addCandidate(relayedCandidate);
             }

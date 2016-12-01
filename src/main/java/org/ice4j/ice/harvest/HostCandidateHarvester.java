@@ -418,7 +418,7 @@ public class HostCandidateHarvester
                     // checks. In case we have enabled STUN, we are going to use
                     // them as well while harvesting reflexive candidates.
                     createAndRegisterStunSocket(candidate);
-                    component.getSocket().add(sock);
+                    component.getComponentSocket().add(sock);
                 }
             }
         }

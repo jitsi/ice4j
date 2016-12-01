@@ -520,7 +520,7 @@ public class TcpHarvester
         candidate.addSocket(candidateSocket);
 
         // TODO: Maybe move this code to the candidate.
-        component.getSocket().add(multiplexing);
+        component.getComponentSocket().add(multiplexing);
 
         // the socket is not our responsibility anymore. It is up to
         // the candidate/component to close/free it.

@@ -18,18 +18,14 @@
 package org.ice4j.ice.harvest;
 
 import org.ice4j.*;
-import org.ice4j.attribute.*;
 import org.ice4j.ice.*;
-import org.ice4j.message.*;
 import org.ice4j.socket.*;
 import org.ice4j.stack.*;
-import org.ice4j.util.*;
 
 import java.io.*;
 import java.net.*;
 import java.util.*;
 import java.util.concurrent.*;
-import java.util.logging.*;
 import java.util.logging.Logger; // Disambiguation
 
 /**
@@ -366,7 +362,7 @@ public class SinglePortUdpHarvester
                     new TransportAddress(remoteAddress, Transport.UDP));
 
             // TODO: maybe move this code to the candidates.
-            component.getSocket().add(multiplexing);
+            component.getComponentSocket().add(multiplexing);
 
             // XXX is this necessary?
             synchronized (candidateSockets)
