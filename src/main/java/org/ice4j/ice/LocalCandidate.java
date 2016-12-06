@@ -154,6 +154,21 @@ public abstract class LocalCandidate
     protected abstract IceSocketWrapper getCandidateIceSocketWrapper();
 
     /**
+     * @return the {@link IceSocketWrapper} instance for this candidate,
+     * associated with a particular remote address.
+     * @param remoteAddress the remote address for which to return an
+     * associated socket.
+     */
+    protected IceSocketWrapper getCandidateIceSocketWrapper(
+        SocketAddress remoteAddress)
+    {
+        // The default implementation just refers to the method which doesn't
+        // involve a remove address. Extenders which support multiple instances
+        // mapped by remote address should override.
+        return getCandidateIceSocketWrapper();
+    }
+
+    /**
      * Creates if necessary and returns a <tt>DatagramSocket</tt> that would
      * capture all STUN packets arriving on this candidate's socket. If the
      * <tt>serverAddress</tt> parameter is not <tt>null</tt> this socket would

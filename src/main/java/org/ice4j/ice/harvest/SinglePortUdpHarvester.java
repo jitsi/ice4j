@@ -376,5 +376,15 @@ public class SinglePortUdpHarvester
                 sockets.put(remoteAddress, socket);
             }
         }
+        /**
+         * {@inheritDoc}
+         */
+        @Override
+        protected IceSocketWrapper getCandidateIceSocketWrapper(
+            SocketAddress remoteAddress)
+        {
+            return candidateSockets.get(remoteAddress);
+        }
+
     }
 }

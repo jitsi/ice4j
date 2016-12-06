@@ -54,6 +54,23 @@ public class TcpHostCandidate
         super(transportAddress, parentComponent);
     }
 
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    protected IceSocketWrapper getCandidateIceSocketWrapper(
+            SocketAddress remoteAddress)
+    {
+        for (IceSocketWrapper socket : sockets)
+        {
+            if (socket.getTCPSocket().getRemoteSocketAddress()
+                .equals(remoteAddress))
+                return socket;
+        }
+
+        return null;
+    }
+
     public void addSocket(IceSocketWrapper socket)
     {
         sockets.add(socket);
