@@ -17,6 +17,7 @@
  */
 package org.ice4j.ice;
 
+import org.ice4j.*;
 import org.ice4j.socket.*;
 
 import java.beans.*;
@@ -58,6 +59,12 @@ public class ComponentSocket
      * The owning {@link Component}.
      */
     private Component component;
+
+    /**
+     * Whether we have invoked {@link #initializeActive}.
+     */
+    private boolean initializedActive = false;
+
 
     /**
      * Initializes a new {@link MergingDatagramSocket} instance.
@@ -129,8 +136,7 @@ public class ComponentSocket
             return;
         }
 
-        if (IceMediaStream.PROPERTY_PAIR_STATE_CHANGED.equals(
-            propertyName))
+        if (IceMediaStream.PROPERTY_PAIR_STATE_CHANGED.equals(propertyName))
         {
             CandidatePairState newState
                 = (CandidatePairState) event.getNewValue();
@@ -140,6 +146,36 @@ public class ComponentSocket
                 addAuthorizedAddress(
                         pair.getRemoteCandidate().getTransportAddress());
             }
+        }
+        else if (IceMediaStream.PROPERTY_PAIR_NOMINATED.equals(propertyName))
+        {
+            if (initializedActive)
+            {
+                return;
+            }
+            initializedActive = true;
+
+            // Find the remote address and the correct socket to be used by
+            // the pair.
+            LocalCandidate localCandidate = pair.getLocalCandidate();
+            LocalCandidate base = localCandidate.getBase();
+            if (base != null)
+                localCandidate = base;
+
+            TransportAddress remoteAddress = null;
+            RemoteCandidate remoteCandidate = pair.getRemoteCandidate();
+            if (remoteCandidate != null)
+            {
+                remoteAddress = remoteCandidate.getTransportAddress();
+            }
+
+            // The local candidate may have more than one associated socket.
+            // Make sure we get the one for the remote address that we are
+            // going to use.
+            IceSocketWrapper socketWrapper
+                = localCandidate.getCandidateIceSocketWrapper(remoteAddress);
+
+            initializeActive(socketWrapper, remoteAddress);
         }
     }
 

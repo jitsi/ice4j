@@ -17,6 +17,8 @@
  */
 package org.ice4j.socket;
 
+import org.ice4j.*;
+
 import java.io.*;
 import java.net.*;
 import java.util.*;
@@ -35,9 +37,6 @@ import java.util.logging.*;
  * via {@link #send(DatagramPacket)} and calls to
  * {@link #getLocalPort()}, {@link #getLocalAddress()} and
  * {@link #getLocalSocketAddress()}.
- *
- * Currently the delegate is just the first socket, but the intention is to
- * allow it to change dynamically.
  *
  * @author Boris Grozev
  */
@@ -134,6 +133,7 @@ public class MergingDatagramSocket
 
         synchronized (socketContainersSyncRoot)
         {
+            active = null;
             for (SocketContainer container : socketContainers)
             {
                 container.close(false);
@@ -274,9 +274,6 @@ public class MergingDatagramSocket
             newSocketContainers[socketContainers.length] = socketContainer;
 
             socketContainers = newSocketContainers;
-
-            if (active == null)
-                active = socketContainer;
         }
     }
 
@@ -333,11 +330,13 @@ public class MergingDatagramSocket
 
                 socketContainers = newSockets;
 
-                // Until we receive data on one of the other sockets, use the
-                // first one as the active socket.
                 if (socketContainer == active)
                 {
-                    active = newSockets.length == 0 ? null : newSockets[0];
+                    // TODO: proper selection of a new active socket
+                    logger.warning(
+                        "Removing the active socket. Won't be able to send "
+                        + "until a new one is elected.");
+                    active = null;
                 }
             }
             else
@@ -503,6 +502,7 @@ public class MergingDatagramSocket
 
                     if (accept(p))
                     {
+                        socketToReceiveFrom.accepted(p);
                         return;
                     }
                     else
@@ -551,6 +551,65 @@ public class MergingDatagramSocket
     }
 
     /**
+     * Initializes the active socket of this {@link MergingDatagramSocket}.
+     * @param socketWrapper the {@link IceSocketWrapper} instance wrapping the
+     * actual socket that should be used. Used to find the correct
+     * {@link SocketContainer}
+     * @param remoteAddress the remote address which was selected by ICE and
+     * and which should be used as the target.
+     */
+    protected void initializeActive(IceSocketWrapper socketWrapper,
+                                    TransportAddress remoteAddress)
+    {
+        Object socket = socketWrapper.getTCPSocket();
+        if (socket == null)
+        {
+            socket = socketWrapper.getUDPSocket();
+        }
+
+        if (logger.isLoggable(Level.FINE))
+        {
+            logger.fine("Initializing the active container, socket=" + socket
+                        + "; remote address=" + remoteAddress);
+        }
+
+        synchronized (socketContainersSyncRoot)
+        {
+            if (active != null)
+            {
+                // This means that we've received data before ICE completed.
+                // That is, the remote side sent application data, and our
+                // application invoked receive(). Though maybe unusual, this
+                // is not necessarily incorrect.
+                // Still, go on and replace the active socket with whatever
+                // ICE selected.
+                logger.warning("Active socket already initialized.");
+            }
+
+            SocketContainer newActive = null;
+            for (SocketContainer container : socketContainers)
+            {
+                if (socket == container.datagramSocket
+                    || socket == container.delegatingSocket)
+                {
+                    newActive = container;
+                    break;
+                }
+            }
+
+            if (newActive == null)
+            {
+                logger.severe("No SocketContainer found!");
+                return;
+            }
+
+            newActive.remoteAddress = remoteAddress;
+            active = newActive;
+
+        }
+    }
+
+    /**
      * Contains one of the sockets which this {@link MergingDatagramSocket}
      * merges, and objects associated with the socket, including a thread
      * which loops reading from it.
@@ -594,6 +653,13 @@ public class MergingDatagramSocket
 
         /**
          * The remote address of the last received packet.
+         * Note that this is updated only when a packet is received from this
+         * {@link SocketContainer} via {@link #receive(DatagramPacket)}, and
+         * not when a packet is received from the underlying socket by its
+         * read thread. This is in order to prevent poisoning of the remote
+         * address, since the verification of the address is performed by
+         * the {@link MergingDatagramSocket} after it invokes
+         * {@link #receive(DatagramPacket)}.
          */
         private SocketAddress remoteAddress = null;
 
@@ -751,7 +817,6 @@ public class MergingDatagramSocket
                     }
 
                     buffer.receivedTime = System.currentTimeMillis();
-                    remoteAddress = buffer.pkt.getSocketAddress();
 
                     maybeUpdateActive();
                     return true;
@@ -783,7 +848,7 @@ public class MergingDatagramSocket
                     MergingDatagramSocket.this.active = this;
                     if (logger.isLoggable(Level.FINE))
                     {
-                        logger.warning("Switching to new active socket: "
+                        logger.fine("Switching to new active socket: "
                                            + this);
                     }
                 }
@@ -871,7 +936,6 @@ public class MergingDatagramSocket
             return datagramSocket != null
                 ? datagramSocket.getLocalSocketAddress()
                 : delegatingSocket.getLocalSocketAddress();
-
         }
 
         /**
@@ -901,6 +965,11 @@ public class MergingDatagramSocket
         private void send(DatagramPacket pkt)
             throws IOException
         {
+            // The application writing data doesn't necessarily know what
+            // remote address to use. Since this SocketContainer was selected
+            // to send the packet through, set the target accordingly.
+            setTarget(pkt);
+
             if (datagramSocket != null)
             {
                 datagramSocket.send(pkt);
@@ -909,6 +978,52 @@ public class MergingDatagramSocket
             {
                 delegatingSocket.send(pkt);
             }
+        }
+
+        /**
+         * Sets the {@link SocketAddress} of {@code pkt} to the remote address
+         * that this {@link SocketContainer} should send packets to.
+         * @param pkt the packet for which to set the socket address.
+         */
+        private void setTarget(DatagramPacket pkt)
+        {
+            SocketAddress target;
+            // If the socket already has a remote address, use it. If this is
+            // the case, the DatagramPacket instance's remote address is likely
+            // to be ignored, anyway.
+            if (datagramSocket != null)
+            {
+                target = datagramSocket.getRemoteSocketAddress();
+            }
+            else
+            {
+                target = delegatingSocket.getRemoteSocketAddress();
+            }
+
+            // The socket doesn't always have a remote address (e.g. if it is
+            // an unconnected UDP socket from HostCandidateHarvester).
+            // In this case, we send to the source address of the last packet
+            // which was received and accepted, or to the address that was
+            // initialized via initializeActive (i.e. the address initially
+            // selected by ICE).
+            if (target == null)
+            {
+                target = this.remoteAddress;
+            }
+
+            pkt.setSocketAddress(target);
+        }
+
+        /**
+         * Notifies this {@link SocketContainer} that a particular
+         * {@link DatagramPacket} was received from it, and was accepted (as
+         * opposed to e.g. having been discarded due to its remote address not
+         * being authorized).
+         * @param pkt the accepted packet.
+         */
+        private void accepted(DatagramPacket pkt)
+        {
+            this.remoteAddress = pkt.getSocketAddress();
         }
 
         /**
