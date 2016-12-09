@@ -777,7 +777,7 @@ public class MergingDatagramSocket
                 }
                 catch (IOException ioe)
                 {
-                    logger.severe("Failed to receive: " + ioe);
+                    logger.info("Failed to receive: " + ioe);
                     break;
                 }
 
@@ -1062,7 +1062,7 @@ public class MergingDatagramSocket
          */
         private void close(boolean remove)
         {
-            if (closed && !remove)
+            if (closed)
             {
                 return;
             }
