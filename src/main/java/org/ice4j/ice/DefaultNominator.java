@@ -315,6 +315,13 @@ public class DefaultNominator
          */
         public void propertyChange(PropertyChangeEvent evt)
         {
+            // Make it clear that PROPERTY_CHECK_LIST_CHECKS is in use here.
+            if (!CheckList.PROPERTY_CHECK_LIST_CHECKS.equals(
+                        evt.getPropertyName()))
+            {
+                return;
+            }
+
             // check list has running out of ordinary checks, see if all other
             // candidates are FAILED, in which case we nominate immediately
             // the relayed candidate
