@@ -161,9 +161,11 @@ public class Component
         this.componentID = componentID;
         this.parentStream = mediaStream;
 
+        Logger agentLogger = mediaStream.getParentAgent().getLogger();
+
         try
         {
-            componentSocket = new ComponentSocket(this);
+            componentSocket = new ComponentSocket(this, agentLogger);
             socket = new MultiplexingDatagramSocket(componentSocket);
             socketWrapper = new IceUdpSocketWrapper(socket);
         }
@@ -172,8 +174,7 @@ public class Component
             throw new RuntimeException(se);
         }
 
-        logger
-            = new Logger(classLogger, mediaStream.getParentAgent().getLogger());
+        logger = new Logger(classLogger, agentLogger);
     }
 
     /**

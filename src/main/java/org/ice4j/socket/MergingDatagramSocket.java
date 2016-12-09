@@ -24,6 +24,7 @@ import java.net.*;
 import java.util.*;
 import java.util.concurrent.*;
 import java.util.logging.*;
+import org.ice4j.util.Logger; //Disambiguation
 
 /**
  * A {@link DatagramSocket} implementation which merges a set of sockets.
@@ -47,8 +48,9 @@ public class MergingDatagramSocket
      * The {@link Logger} used by the {@link MergingDatagramSocket} class and
      * its instances for logging output.
      */
-    private static final Logger logger
-        = Logger.getLogger(MergingDatagramSocket.class.getName());
+    private static final java.util.logging.Logger classLogger
+        = java.util.logging.Logger.getLogger(
+                MergingDatagramSocket.class.getName());
 
     /**
      * Used to control access to {@link #socketContainers}.
@@ -92,6 +94,10 @@ public class MergingDatagramSocket
      */
     private int numDiscardedPackets = 0;
 
+    /**
+     * The {@link Logger} used by {@link MergingDatagramSocket} instances.
+     */
+    private final Logger logger;
 
     /**
      * Initializes a new {@link MergingDatagramSocket} instance.
@@ -99,7 +105,21 @@ public class MergingDatagramSocket
      */
     public MergingDatagramSocket()
             throws SocketException
-    {}
+    {
+        this(null);
+    }
+
+    /**
+     * Initializes a new {@link MergingDatagramSocket} instance.
+     * @param levelDelegate the {@link Logger} instance which dictates the
+     * logging level for the new {@link MergingDatagramSocket} instance.
+     * @throws SocketException
+     */
+    public MergingDatagramSocket(Logger levelDelegate)
+            throws SocketException
+    {
+        logger = new Logger(classLogger, levelDelegate);
+    }
 
     /**
      * {@inheritDoc}

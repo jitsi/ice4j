@@ -24,7 +24,7 @@ import java.beans.*;
 import java.net.*;
 import java.util.*;
 import java.util.concurrent.*;
-import java.util.logging.*;
+import org.ice4j.util.*; //Disambiguation
 
 /**
  * Extends {@link MergingDatagramSocket} with functionality specific to
@@ -38,8 +38,9 @@ public class ComponentSocket
      * The {@link Logger} used by the {@link MergingDatagramSocket} class and
      * its instances for logging output.
      */
-    private static final Logger logger
-        = Logger.getLogger(MergingDatagramSocket.class.getName());
+    private static final java.util.logging.Logger classLogger
+        = java.util.logging.Logger.getLogger
+                (MergingDatagramSocket.class.getName());
 
     /**
      * Controls access to {@link #authorizedAddresses}.
@@ -65,15 +66,22 @@ public class ComponentSocket
      */
     private boolean initializedActive = false;
 
+    /**
+     * The {@link Logger} used by {@link MergingDatagramSocket} instances.
+     */
+    private final Logger logger;
 
     /**
      * Initializes a new {@link MergingDatagramSocket} instance.
      * @throws SocketException
      */
-    ComponentSocket(Component component)
+    ComponentSocket(Component component, Logger levelDelegate)
         throws SocketException
     {
+        super(levelDelegate);
+
         this.component = component;
+        this.logger = new Logger(classLogger, levelDelegate);
         component.getParentStream().addPairChangeListener(this);
     }
 
