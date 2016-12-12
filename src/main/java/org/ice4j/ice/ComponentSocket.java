@@ -52,9 +52,7 @@ public class ComponentSocket
      * from. These should be the addresses which we have confirmed (e.g. by
      * having received a STUN message with correct authentication fields).
      */
-    private Set<SocketAddress> authorizedAddresses
-        = Collections.newSetFromMap(
-                new ConcurrentHashMap<SocketAddress, Boolean>());
+    private Set<SocketAddress> authorizedAddresses = new HashSet<>();
 
     /**
      * The owning {@link Component}.
@@ -110,9 +108,7 @@ public class ComponentSocket
 
             logger.info("Adding allowed address: " + address);
 
-            Set<SocketAddress> newSet
-                = Collections.newSetFromMap(
-                        new ConcurrentHashMap<SocketAddress, Boolean>());
+            Set<SocketAddress> newSet = new HashSet<>();
             newSet.addAll(authorizedAddresses);
             newSet.add(address);
 
