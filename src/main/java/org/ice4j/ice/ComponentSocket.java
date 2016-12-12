@@ -23,7 +23,6 @@ import org.ice4j.socket.*;
 import java.beans.*;
 import java.net.*;
 import java.util.*;
-import java.util.concurrent.*;
 import org.ice4j.util.*; //Disambiguation
 
 /**
@@ -63,6 +62,11 @@ public class ComponentSocket
      * Whether we have invoked {@link #initializeActive}.
      */
     private boolean initializedActive = false;
+
+    /**
+     * Used to synchronize access to {@link #initializedActive}.
+     */
+    private final Object initializedActiveSyncRoot = new Object();
 
     /**
      * The {@link Logger} used by {@link MergingDatagramSocket} instances.
@@ -153,33 +157,37 @@ public class ComponentSocket
         }
         else if (IceMediaStream.PROPERTY_PAIR_NOMINATED.equals(propertyName))
         {
-            if (initializedActive)
+            synchronized (initializedActiveSyncRoot)
             {
-                return;
+                if (initializedActive)
+                {
+                    return;
+                }
+
+                // Find the remote address and the correct socket to be used by
+                // the pair.
+                LocalCandidate localCandidate = pair.getLocalCandidate();
+                LocalCandidate base = localCandidate.getBase();
+                if (base != null)
+                    localCandidate = base;
+
+                TransportAddress remoteAddress = null;
+                RemoteCandidate remoteCandidate = pair.getRemoteCandidate();
+                if (remoteCandidate != null)
+                {
+                    remoteAddress = remoteCandidate.getTransportAddress();
+                }
+
+                // The local candidate may have more than one associated socket.
+                // Make sure we get the one for the remote address that we are
+                // going to use.
+                IceSocketWrapper socketWrapper
+                    = localCandidate
+                    .getCandidateIceSocketWrapper(remoteAddress);
+
+                initializeActive(socketWrapper, remoteAddress);
+                initializedActive = true;
             }
-            initializedActive = true;
-
-            // Find the remote address and the correct socket to be used by
-            // the pair.
-            LocalCandidate localCandidate = pair.getLocalCandidate();
-            LocalCandidate base = localCandidate.getBase();
-            if (base != null)
-                localCandidate = base;
-
-            TransportAddress remoteAddress = null;
-            RemoteCandidate remoteCandidate = pair.getRemoteCandidate();
-            if (remoteCandidate != null)
-            {
-                remoteAddress = remoteCandidate.getTransportAddress();
-            }
-
-            // The local candidate may have more than one associated socket.
-            // Make sure we get the one for the remote address that we are
-            // going to use.
-            IceSocketWrapper socketWrapper
-                = localCandidate.getCandidateIceSocketWrapper(remoteAddress);
-
-            initializeActive(socketWrapper, remoteAddress);
         }
     }
 
