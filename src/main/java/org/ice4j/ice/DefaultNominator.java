@@ -322,7 +322,7 @@ public class DefaultNominator
                 return;
             }
 
-            // check list has running out of ordinary checks, see if all other
+            // check list has run out of ordinary checks, see if all other
             // candidates are FAILED, in which case we nominate immediately
             // the relayed candidate
             CheckList checkList = (CheckList)evt.getSource();
