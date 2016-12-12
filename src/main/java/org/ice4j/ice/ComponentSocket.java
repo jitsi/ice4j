@@ -125,7 +125,6 @@ public class ComponentSocket
     @Override
     public void propertyChange(PropertyChangeEvent event)
     {
-        String propertyName = event.getPropertyName();
         if (!(event.getSource() instanceof CandidatePair))
         {
             return;
@@ -140,6 +139,7 @@ public class ComponentSocket
             return;
         }
 
+        String propertyName = event.getPropertyName();
         if (IceMediaStream.PROPERTY_PAIR_STATE_CHANGED.equals(propertyName))
         {
             CandidatePairState newState
