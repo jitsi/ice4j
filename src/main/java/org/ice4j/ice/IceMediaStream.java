@@ -19,11 +19,9 @@ package org.ice4j.ice;
 
 import java.beans.*;
 import java.util.*;
-import java.util.logging.*;
 import java.util.logging.Logger;
 
 import org.ice4j.*;
-import org.ice4j.util.*;
 
 /**
  * The class represents a media stream from the ICE perspective, i.e. a
