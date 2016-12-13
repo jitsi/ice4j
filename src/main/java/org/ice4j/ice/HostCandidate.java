@@ -131,13 +131,12 @@ public class HostCandidate extends LocalCandidate
     }
 
     /**
-     * Gets the <tt>DatagramSocket</tt> associated with this <tt>Candidate</tt>.
-     *
-     * @return the <tt>DatagramSocket</tt> associated with this
-     * <tt>Candidate</tt>
-     * @see LocalCandidate#getIceSocketWrapper()
+     * {@inheritDoc}
+     * SHOULD NOT be used outside ice4j. Only exposed for use in the
+     * org.ice4j.socket package.
      */
-    public IceSocketWrapper getIceSocketWrapper()
+    @Override
+    public IceSocketWrapper getCandidateIceSocketWrapper()
     {
         return socket;
     }

@@ -191,9 +191,10 @@ public class GoogleRelayedCandidate
      *
      * @return the <tt>DatagramSocket</tt> associated with this
      * <tt>Candidate</tt>
-     * @see LocalCandidate#getIceSocketWrapper()
+     * @see LocalCandidate#getCandidateIceSocketWrapper()
      */
-    public synchronized IceSocketWrapper getIceSocketWrapper()
+    @Override
+    public synchronized IceSocketWrapper getCandidateIceSocketWrapper()
     {
         if (socket == null)
         {

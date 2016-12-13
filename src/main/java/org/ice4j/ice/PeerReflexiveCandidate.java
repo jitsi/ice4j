@@ -64,15 +64,11 @@ public class PeerReflexiveCandidate
     }
 
     /**
-     * Returns the <tt>DatagramSocket</tt> associated with this
-     * <tt>Candidate</tt>.
-     *
-     * @return the <tt>DatagramSocket</tt> associated with this
-     * <tt>Candidate</tt>
-     * @see LocalCandidate#getIceSocketWrapper()
+     * {@inheritDoc}
      */
-    public IceSocketWrapper getIceSocketWrapper()
+    @Override
+    public IceSocketWrapper getCandidateIceSocketWrapper()
     {
-        return getBase().getIceSocketWrapper();
+        return getBase().getCandidateIceSocketWrapper();
     }
 }

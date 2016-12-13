@@ -17,10 +17,12 @@
  */
 package org.ice4j.ice;
 
+import java.net.*;
 import java.util.*;
 import java.util.logging.*;
 
 import org.ice4j.*;
+import org.ice4j.socket.*;
 import org.ice4j.util.Logger; //Disambiguation
 
 /**
@@ -119,7 +121,30 @@ public class Component
     /**
      * The {@link Logger} used by {@link Component} instances.
      */
-    private Logger logger;
+    private final Logger logger;
+
+    /**
+     * The single {@link ComponentSocket} instance for this {@link Component},
+     * which will merge the multiple sockets from the candidate/pairs.
+     */
+    private final ComponentSocket componentSocket;
+
+    /**
+     * The public view of {@link #componentSocket}, wrapped in a
+     * {@link MultiplexingDatagramSocket} for the convenience of users of the
+     * library.
+     * This is the instance which should be used by applications for
+     * reading/writing application data.
+     */
+    private final MultiplexingDatagramSocket socket;
+
+    /**
+     * A wrapper around {@link #socket}, kept only to help preserve the old
+     * API (see {@link LocalCandidate#getIceSocketWrapper()} and
+     * {@link CandidatePair#getIceSocketWrapper()})
+     */
+    @Deprecated
+    private final IceSocketWrapper socketWrapper;
 
     /**
      * Creates a new <tt>Component</tt> with the specified <tt>componentID</tt>
@@ -136,8 +161,20 @@ public class Component
         this.componentID = componentID;
         this.parentStream = mediaStream;
 
-        logger
-            = new Logger(classLogger, mediaStream.getParentAgent().getLogger());
+        Logger agentLogger = mediaStream.getParentAgent().getLogger();
+
+        try
+        {
+            componentSocket = new ComponentSocket(this, agentLogger);
+            socket = new MultiplexingDatagramSocket(componentSocket);
+            socketWrapper = new IceUdpSocketWrapper(socket);
+        }
+        catch (SocketException se)
+        {
+            throw new RuntimeException(se);
+        }
+
+        logger = new Logger(classLogger, agentLogger);
     }
 
     /**
@@ -779,6 +816,8 @@ public class Component
                 localCandidateIter.remove();
             }
         }
+
+        getComponentSocket().close();
     }
 
     /**
@@ -911,4 +950,31 @@ public class Component
         return new Component(componentID, mediaStream);
     }
 
+    /**
+     * @return the internal merging socket for this component. This is for
+     * ice4j use only.
+     * For reading/writing application data, use {@link #getSocket()}.
+     */
+    public ComponentSocket getComponentSocket()
+    {
+        return componentSocket;
+    }
+
+    /**
+     * @return the socket for this {@link Component}, which should be used for
+     * reading/writing application data.
+     */
+    public MultiplexingDatagramSocket getSocket()
+    {
+        return socket;
+    }
+
+    /**
+     * @return an {@link IceSocketWrapper} instance wrapping the socket for this
+     * candidate (see {@link #getComponentSocket()}).
+     */
+    public IceSocketWrapper getSocketWrapper()
+    {
+        return socketWrapper;
+    }
 }

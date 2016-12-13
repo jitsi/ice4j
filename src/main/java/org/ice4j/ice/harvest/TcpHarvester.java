@@ -488,11 +488,11 @@ public class TcpHarvester
         IceProcessingState state
             = component.getParentStream().getParentAgent().getState();
 
-        if (!IceProcessingState.WAITING.equals(state)
+        if (logger.isLoggable(Level.FINE)
+            && !IceProcessingState.WAITING.equals(state)
             && !IceProcessingState.RUNNING.equals(state))
         {
-            throw new IllegalStateException(
-                "The associated Agent is in state " + state);
+            logger.fine("Adding a socket to an Agent in state " + state);
         }
 
         // Socket to add to the candidate
@@ -518,6 +518,10 @@ public class TcpHarvester
         component.getParentStream().getParentAgent().getStunStack()
                 .addSocket(stunSocket);
         candidate.addSocket(candidateSocket);
+
+        // TODO: Maybe move this code to the candidate.
+        component.getComponentSocket().add(multiplexing);
+
         // the socket is not our responsibility anymore. It is up to
         // the candidate/component to close/free it.
     }

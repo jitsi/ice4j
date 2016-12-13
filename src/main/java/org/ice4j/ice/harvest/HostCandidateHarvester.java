@@ -418,6 +418,7 @@ public class HostCandidateHarvester
                     // checks. In case we have enabled STUN, we are going to use
                     // them as well while harvesting reflexive candidates.
                     createAndRegisterStunSocket(candidate);
+                    component.getComponentSocket().add(sock);
                 }
             }
         }
@@ -569,8 +570,9 @@ public class HostCandidateHarvester
                 sock.setReuseAddress(true);
                 sock.bind(new InetSocketAddress(laddr, port));
                 IceSocketWrapper socket
-                                = new IceTcpServerSocketWrapper(sock,
-                                    component);
+                    = new IceTcpServerSocketWrapper(
+                            new DelegatingServerSocket(sock),
+                            component);
 
                 if(logger.isLoggable(Level.FINEST))
                 {
