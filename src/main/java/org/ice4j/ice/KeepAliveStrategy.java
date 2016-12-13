@@ -17,8 +17,6 @@
  */
 package org.ice4j.ice;
 
-import java.util.*;
-
 /**
  * An enumeration of strategies for selecting which candidate pairs to
  * keep alive.
