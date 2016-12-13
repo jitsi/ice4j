@@ -256,7 +256,14 @@ class NetAccessManager
             //make sure nothing's left and notify user
             removeSocket(connector.getListenAddress(),
                          connector.getRemoteAddress());
-            logger.log(Level.WARNING, "Removing connector:" + connector, error);
+            if (error != null)
+            {
+                logger.log(Level.WARNING, "Removing connector:" + connector,
+                           error);
+            } else if (logger.isLoggable(Level.FINE))
+            {
+                logger.fine("Removing connector " + connector);
+            }
         }
         else if( callingThread instanceof MessageProcessor )
         {
