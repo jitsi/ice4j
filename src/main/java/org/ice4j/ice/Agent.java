@@ -2280,21 +2280,24 @@ public class Agent
             {
                 for(Component component : stream.getComponents())
                 {
-                    CandidatePair pair = component.getSelectedPair();
-
-                    if(pair != null)
+                    for (CandidatePair pair : component.getKeepAlivePairs())
                     {
-                        if(performConsentFreshness)
+
+                        if (pair != null)
                         {
-                            connCheckClient.startCheckForPair(
+                            if (performConsentFreshness)
+                            {
+                                connCheckClient.startCheckForPair(
                                     pair,
                                     originalConsentFreshnessWaitInterval,
                                     maxConsentFreshnessWaitInterval,
                                     consentFreshnessMaxRetransmissions);
-                        }
-                        else
-                        {
-                            connCheckClient.sendBindingIndicationForPair(pair);
+                            }
+                            else
+                            {
+                                connCheckClient
+                                    .sendBindingIndicationForPair(pair);
+                            }
                         }
                     }
                 }

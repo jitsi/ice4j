@@ -17,8 +17,10 @@
  */
 package org.ice4j.ice;
 
+import java.beans.*;
 import java.net.*;
 import java.util.*;
+import java.util.concurrent.*;
 import java.util.logging.*;
 
 import org.ice4j.*;
@@ -38,6 +40,7 @@ import org.ice4j.util.Logger; //Disambiguation
  * @author Boris Grozev
  */
 public class Component
+    implements PropertyChangeListener
 {
     /**
      * Our class logger.
@@ -147,6 +150,20 @@ public class Component
     private final IceSocketWrapper socketWrapper;
 
     /**
+     * The {@link KeepAliveStrategy} used by this component to select which
+     * pairs are to be kept alive.
+     */
+    private KeepAliveStrategy keepAliveStrategy
+        = KeepAliveStrategy.SELECTED_ONLY;
+
+    /**
+     * The set of pairs which this component wants to keep alive.
+     */
+    private final Set<CandidatePair> keepAlivePairs
+        = Collections.newSetFromMap(
+                new ConcurrentHashMap<CandidatePair, Boolean>());
+
+    /**
      * Creates a new <tt>Component</tt> with the specified <tt>componentID</tt>
      * as a child of the specified <tt>IceMediaStream</tt>.
      *
@@ -174,6 +191,7 @@ public class Component
             throw new RuntimeException(se);
         }
 
+        mediaStream.addPairChangeListener(this);
         logger = new Logger(classLogger, agentLogger);
     }
 
@@ -817,6 +835,8 @@ public class Component
             }
         }
 
+        getParentStream().removePairStateChangeListener(this);
+        keepAlivePairs.clear();
         getComponentSocket().close();
     }
 
@@ -902,6 +922,12 @@ public class Component
      */
     protected void setSelectedPair(CandidatePair pair)
     {
+        if (keepAliveStrategy == KeepAliveStrategy.SELECTED_ONLY)
+        {
+            keepAlivePairs.clear();
+        }
+        keepAlivePairs.add(pair);
+
         this.selectedPair = pair;
     }
 
@@ -977,4 +1003,87 @@ public class Component
     {
         return socketWrapper;
     }
+
+    /**
+     * @return the set of candidate pairs which are to be kept alive.
+     */
+    Set<CandidatePair> getKeepAlivePairs()
+    {
+        return keepAlivePairs;
+    }
+
+    /**
+     * {@inheritDoc}
+     * </p>
+     * Handles events coming from candidate pairs.
+     */
+    @Override
+    public void propertyChange(PropertyChangeEvent event)
+    {
+        String propertyName = event.getPropertyName();
+        if (!(event.getSource() instanceof CandidatePair))
+        {
+            return;
+        }
+
+        CandidatePair pair = (CandidatePair) event.getSource();
+        if (!equals(pair.getParentComponent()))
+        {
+            // Events are fired by the IceMediaStream, which might have
+            // multiple components. Make sure that we only handle events for
+            // this component.
+            return;
+        }
+
+        boolean addToKeepAlive = false;
+
+        // We handle this case in setSelectedPair
+        if (keepAliveStrategy == KeepAliveStrategy.SELECTED_ONLY)
+            return;
+
+        if (IceMediaStream.PROPERTY_PAIR_STATE_CHANGED.equals(propertyName))
+        {
+            CandidatePairState newState
+                = (CandidatePairState) event.getNewValue();
+
+            if (CandidatePairState.SUCCEEDED.equals(newState))
+            {
+                if (keepAliveStrategy == KeepAliveStrategy.ALL_SUCCEEDED)
+                {
+                    addToKeepAlive = true;
+                }
+                else if (keepAliveStrategy == KeepAliveStrategy.SELECTED_AND_TCP)
+                {
+                    Transport transport
+                        = pair.getLocalCandidate().getTransport();
+                    addToKeepAlive = transport == Transport.TCP
+                        || transport == Transport.SSLTCP;
+
+                    // Pairs with a remote TCP port 9 cannot be checked.
+                    // Instead, the corresponding pair with the peer reflexive
+                    // candidate needs to be checked. However, we observe
+                    // such pairs transitioning into the SUCCEEDED state.
+                    // Ignore them.
+                    addToKeepAlive
+                        &= pair.getRemoteCandidate()
+                                .getTransportAddress().getPort() != 9;
+                }
+            }
+        }
+
+        if (addToKeepAlive && !keepAlivePairs.contains(pair))
+        {
+            keepAlivePairs.add(pair);
+        }
+    }
+
+    /**
+     * Sets the {@link KeepAliveStrategy} for this {@link Component}.
+     * @param strategy the strategy to set.
+     */
+    public void setKeepAliveStrategy(KeepAliveStrategy strategy)
+    {
+        keepAliveStrategy = Objects.requireNonNull(strategy, "strategy");
+    }
+
 }
