@@ -266,7 +266,7 @@ public class Component
         synchronized(localCandidates)
         {
             int count = 0;
-            for(Candidate<?> cand : localCandidates)
+            for (Candidate<?> cand : localCandidates)
             {
                 if ((cand.getType() == CandidateType.HOST_CANDIDATE)
                         && !cand.isVirtual())
@@ -361,7 +361,7 @@ public class Component
 
         synchronized(remoteUpdateCandidates)
         {
-            if(remoteUpdateCandidates.size() == 0)
+            if (remoteUpdateCandidates.size() == 0)
                 return;
 
             newRemoteCandidates = new LinkedList<>(remoteUpdateCandidates);
@@ -370,9 +370,9 @@ public class Component
 
             // remove UPnP base from local candidate
             LocalCandidate upnpBase = null;
-            for(LocalCandidate lc : localCnds)
+            for (LocalCandidate lc : localCnds)
             {
-                if(lc instanceof UPNPCandidate)
+                if (lc instanceof UPNPCandidate)
                 {
                     upnpBase = lc.getBase();
                 }
@@ -380,26 +380,26 @@ public class Component
 
             checkList = new Vector<>();
 
-            for(LocalCandidate localCnd : localCnds)
+            for (LocalCandidate localCnd : localCnds)
             {
-                if(localCnd == upnpBase)
+                if (localCnd == upnpBase)
                     continue;
 
                 //pair each of the new remote candidates with each of our locals
-                for(RemoteCandidate remoteCnd : remoteUpdateCandidates)
+                for (RemoteCandidate remoteCnd : remoteUpdateCandidates)
                 {
-                    if(localCnd.canReach(remoteCnd)
+                    if (localCnd.canReach(remoteCnd)
                             && remoteCnd.getTransportAddress().getPort() != 0)
                     {
                         // A single LocalCandidate might be/become connected
                         // to more more than one remote address, and that's ok
                         // (that is, we need to form pairs with them all).
                         /*
-                        if(localCnd.getTransport() == Transport.TCP &&
+                        if (localCnd.getTransport() == Transport.TCP &&
                             localCnd.getIceSocketWrapper().getTCPSocket().
                                 isConnected())
                         {
-                            if(!localCnd.getIceSocketWrapper().getTCPSocket().
+                            if (!localCnd.getIceSocketWrapper().getTCPSocket().
                                 getRemoteSocketAddress().equals(
                                     remoteCnd.getTransportAddress()))
                             {
@@ -431,7 +431,7 @@ public class Component
         Collections.sort(checkList, CandidatePair.comparator);
         parentStream.pruneCheckList(checkList);
 
-        if(parentStream.getCheckList().getState().equals(
+        if (parentStream.getCheckList().getState().equals(
                 CheckListState.RUNNING))
         {
             //add the updated CandidatePair list to the currently running
@@ -439,7 +439,7 @@ public class Component
             CheckList streamCheckList = parentStream.getCheckList();
             synchronized(streamCheckList)
             {
-                for(CandidatePair pair : checkList)
+                for (CandidatePair pair : checkList)
                 {
                     streamCheckList.add(pair);
                 }
@@ -531,7 +531,7 @@ public class Component
         //local candidates
         int localCandidatesCount = getLocalCandidateCount();
 
-        if(localCandidatesCount > 0)
+        if (localCandidatesCount > 0)
         {
             buff.append("\n")
                 .append(localCandidatesCount)
@@ -554,7 +554,7 @@ public class Component
         //remote candidates
         int remoteCandidatesCount = getRemoteCandidateCount();
 
-        if(remoteCandidatesCount > 0)
+        if (remoteCandidatesCount > 0)
         {
             buff.append("\n")
                 .append(remoteCandidatesCount)
@@ -663,7 +663,7 @@ public class Component
                             && (cand.getPriority() >= cand2.getPriority()))
                     {
                         localCandidates.remove(j);
-                        if(logger.isLoggable(Level.FINEST))
+                        if (logger.isLoggable(Level.FINEST))
                         {
                             logger.finest(
                                     "eliminating redundant cand: "+ cand2);
@@ -905,10 +905,12 @@ public class Component
      */
     public RemoteCandidate findRemoteCandidate(TransportAddress remoteAddress)
     {
-        for(RemoteCandidate remoteCnd : remoteCandidates)
+        for (RemoteCandidate remoteCnd : remoteCandidates)
         {
-            if(remoteCnd.getTransportAddress().equals(remoteAddress))
+            if (remoteCnd.getTransportAddress().equals(remoteAddress))
+            {
                 return remoteCnd;
+            }
         }
 
         return null;
@@ -955,11 +957,17 @@ public class Component
     public String getName()
     {
         if (componentID == RTP)
+        {
             return "RTP";
-        else if(componentID == RTCP)
+        }
+        else if (componentID == RTCP)
+        {
             return "RTCP";
+        }
         else
+        {
             return Integer.toString(componentID);
+        }
     }
 
     /**
