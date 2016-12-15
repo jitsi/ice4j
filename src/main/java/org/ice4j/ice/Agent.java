@@ -450,16 +450,60 @@ public class Agent
                                        int            maxPort)
         throws IllegalArgumentException,
                IOException,
+                BindException
+    {
+        return createComponent(
+                stream, transport,
+                preferredPort, minPort, maxPort,
+                KeepAliveStrategy.SELECTED_ONLY);
+    }
+
+    /**
+     * Creates a new {@link Component} for the specified <tt>stream</tt> and
+     * allocates potentially all local candidates that should belong to it.
+     *
+     * @param stream the {@link IceMediaStream} that the new {@link Component}
+     * should belong to.
+     * @param transport the transport protocol used by the component
+     * @param preferredPort the port number that should be tried first when
+     * binding local <tt>Candidate</tt> sockets for this <tt>Component</tt>.
+     * @param minPort the port number where we should first try to bind before
+     * moving to the next one (i.e. <tt>minPort + 1</tt>)
+     * @param maxPort the maximum port number where we should try binding
+     * before giving up and throwing an exception.
+     * @param keepAliveStrategy the keep-alive strategy, which dictates which
+     * candidates pairs are going to be kept alive.
+     *
+     * @return the newly created {@link Component} and with a list containing
+     * all and only local candidates.
+     *
+     * @throws IllegalArgumentException if either <tt>minPort</tt> or
+     * <tt>maxPort</tt> is not a valid port number or if <tt>minPort &gt;
+     * maxPort</tt>, or if <tt>transport</tt> is not currently supported.
+     * @throws IOException if an error occurs while the underlying resolver lib
+     * is using sockets.
+     * @throws BindException if we couldn't find a free port between
+     * <tt>minPort</tt> and <tt>maxPort</tt> before reaching the maximum allowed
+     * number of retries.
+     */
+    public Component createComponent(  IceMediaStream stream,
+                                       Transport      transport,
+                                       int            preferredPort,
+                                       int            minPort,
+                                       int            maxPort,
+                                       KeepAliveStrategy keepAliveStrategy)
+        throws IllegalArgumentException,
+               IOException,
                BindException
     {
-        if(transport != Transport.UDP)
+        if (transport != Transport.UDP)
         {
             throw new IllegalArgumentException(
                     "This implementation does not currently support transport: "
                         + transport);
         }
 
-        Component component = stream.createComponent();
+        Component component = stream.createComponent(keepAliveStrategy);
 
         gatherCandidates(component, preferredPort, minPort, maxPort);
 

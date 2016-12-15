@@ -153,8 +153,7 @@ public class Component
      * The {@link KeepAliveStrategy} used by this component to select which
      * pairs are to be kept alive.
      */
-    private KeepAliveStrategy keepAliveStrategy
-        = KeepAliveStrategy.SELECTED_ONLY;
+    private final KeepAliveStrategy keepAliveStrategy;
 
     /**
      * The set of pairs which this component wants to keep alive.
@@ -172,11 +171,14 @@ public class Component
      * parent of this component.
      */
     protected Component(int            componentID,
-                        IceMediaStream mediaStream)
+                        IceMediaStream mediaStream,
+                        KeepAliveStrategy keepAliveStrategy)
     {
         // the max value for componentID is 256
         this.componentID = componentID;
         this.parentStream = mediaStream;
+        this.keepAliveStrategy
+            = Objects.requireNonNull(keepAliveStrategy, "keepAliveStrategy");
 
         Logger agentLogger = mediaStream.getParentAgent().getLogger();
 
@@ -981,7 +983,9 @@ public class Component
      */
     public static Component build(int componentID, IceMediaStream mediaStream)
     {
-        return new Component(componentID, mediaStream);
+        return
+            new Component(
+                    componentID, mediaStream, KeepAliveStrategy.SELECTED_ONLY);
     }
 
     /**
@@ -1084,14 +1088,4 @@ public class Component
             keepAlivePairs.add(pair);
         }
     }
-
-    /**
-     * Sets the {@link KeepAliveStrategy} for this {@link Component}.
-     * @param strategy the strategy to set.
-     */
-    public void setKeepAliveStrategy(KeepAliveStrategy strategy)
-    {
-        keepAliveStrategy = Objects.requireNonNull(strategy, "strategy");
-    }
-
 }
