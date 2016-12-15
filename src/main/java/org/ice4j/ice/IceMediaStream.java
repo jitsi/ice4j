@@ -19,11 +19,9 @@ package org.ice4j.ice;
 
 import java.beans.*;
 import java.util.*;
-import java.util.logging.*;
 import java.util.logging.Logger;
 
 import org.ice4j.*;
-import org.ice4j.util.*;
 
 /**
  * The class represents a media stream from the ICE perspective, i.e. a
@@ -175,16 +173,20 @@ public class IceMediaStream
      * when creating the component so make sure you keep that in mind in case
      * assigning a specific component ID is important to you.
      *
+     * @param keepAliveStrategy the keep-alive strategy, which dictates which
+     * candidates pairs are going to be kept alive.
+     *
      * @return the newly created stream <tt>Component</tt> after adding it to
      * the stream first.
      */
-    protected Component createComponent()
+    protected Component createComponent(KeepAliveStrategy keepAliveStrategy)
     {
         Component component;
 
         synchronized (components)
         {
-            component = new Component(++lastComponentID, this);
+            component
+                = new Component(++lastComponentID, this, keepAliveStrategy);
             components.put(component.getComponentID(), component);
         }
 

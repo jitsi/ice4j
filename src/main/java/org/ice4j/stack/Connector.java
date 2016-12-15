@@ -206,7 +206,7 @@ class Connector
                 localSock.receive(packet);
 
                 //get lost if we are no longer running.
-                if(!running)
+                if (!running)
                     return;
 
                 if (logger.isLoggable(Level.FINEST)){
@@ -258,15 +258,19 @@ class Connector
             }
             catch (ClosedChannelException cce)
             {
-                logger.log(Level.WARNING,
-                           "A net access point has gone useless:", cce);
-
-                stop();
-                errorHandler.handleFatalError(
+                // The socket was closed, possibly by the remote peer.
+                // If we were already stopped, just ignore it.
+                if (running)
+                {
+                    // We could be the first thread to realize that the socket
+                    // was closed. But that's normal operation, so don't
+                    // complain too much.
+                    stop();
+                    errorHandler.handleFatalError(
                         this,
-                        "ClosedChannelException occurred while listening"
-                            + " for messages!",
-                        cce);
+                        "The socket was closed:",
+                        null);
+                }
             }
             catch (IOException ex)
             {

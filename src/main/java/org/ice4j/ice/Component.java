@@ -17,8 +17,10 @@
  */
 package org.ice4j.ice;
 
+import java.beans.*;
 import java.net.*;
 import java.util.*;
+import java.util.concurrent.*;
 import java.util.logging.*;
 
 import org.ice4j.*;
@@ -38,6 +40,7 @@ import org.ice4j.util.Logger; //Disambiguation
  * @author Boris Grozev
  */
 public class Component
+    implements PropertyChangeListener
 {
     /**
      * Our class logger.
@@ -147,6 +150,19 @@ public class Component
     private final IceSocketWrapper socketWrapper;
 
     /**
+     * The {@link KeepAliveStrategy} used by this component to select which
+     * pairs are to be kept alive.
+     */
+    private final KeepAliveStrategy keepAliveStrategy;
+
+    /**
+     * The set of pairs which this component wants to keep alive.
+     */
+    private final Set<CandidatePair> keepAlivePairs
+        = Collections.newSetFromMap(
+                new ConcurrentHashMap<CandidatePair, Boolean>());
+
+    /**
      * Creates a new <tt>Component</tt> with the specified <tt>componentID</tt>
      * as a child of the specified <tt>IceMediaStream</tt>.
      *
@@ -155,11 +171,14 @@ public class Component
      * parent of this component.
      */
     protected Component(int            componentID,
-                        IceMediaStream mediaStream)
+                        IceMediaStream mediaStream,
+                        KeepAliveStrategy keepAliveStrategy)
     {
         // the max value for componentID is 256
         this.componentID = componentID;
         this.parentStream = mediaStream;
+        this.keepAliveStrategy
+            = Objects.requireNonNull(keepAliveStrategy, "keepAliveStrategy");
 
         Logger agentLogger = mediaStream.getParentAgent().getLogger();
 
@@ -174,6 +193,7 @@ public class Component
             throw new RuntimeException(se);
         }
 
+        mediaStream.addPairChangeListener(this);
         logger = new Logger(classLogger, agentLogger);
     }
 
@@ -248,7 +268,7 @@ public class Component
         synchronized(localCandidates)
         {
             int count = 0;
-            for(Candidate<?> cand : localCandidates)
+            for (Candidate<?> cand : localCandidates)
             {
                 if ((cand.getType() == CandidateType.HOST_CANDIDATE)
                         && !cand.isVirtual())
@@ -343,7 +363,7 @@ public class Component
 
         synchronized(remoteUpdateCandidates)
         {
-            if(remoteUpdateCandidates.size() == 0)
+            if (remoteUpdateCandidates.size() == 0)
                 return;
 
             newRemoteCandidates = new LinkedList<>(remoteUpdateCandidates);
@@ -352,9 +372,9 @@ public class Component
 
             // remove UPnP base from local candidate
             LocalCandidate upnpBase = null;
-            for(LocalCandidate lc : localCnds)
+            for (LocalCandidate lc : localCnds)
             {
-                if(lc instanceof UPNPCandidate)
+                if (lc instanceof UPNPCandidate)
                 {
                     upnpBase = lc.getBase();
                 }
@@ -362,26 +382,26 @@ public class Component
 
             checkList = new Vector<>();
 
-            for(LocalCandidate localCnd : localCnds)
+            for (LocalCandidate localCnd : localCnds)
             {
-                if(localCnd == upnpBase)
+                if (localCnd == upnpBase)
                     continue;
 
                 //pair each of the new remote candidates with each of our locals
-                for(RemoteCandidate remoteCnd : remoteUpdateCandidates)
+                for (RemoteCandidate remoteCnd : remoteUpdateCandidates)
                 {
-                    if(localCnd.canReach(remoteCnd)
+                    if (localCnd.canReach(remoteCnd)
                             && remoteCnd.getTransportAddress().getPort() != 0)
                     {
                         // A single LocalCandidate might be/become connected
                         // to more more than one remote address, and that's ok
                         // (that is, we need to form pairs with them all).
                         /*
-                        if(localCnd.getTransport() == Transport.TCP &&
+                        if (localCnd.getTransport() == Transport.TCP &&
                             localCnd.getIceSocketWrapper().getTCPSocket().
                                 isConnected())
                         {
-                            if(!localCnd.getIceSocketWrapper().getTCPSocket().
+                            if (!localCnd.getIceSocketWrapper().getTCPSocket().
                                 getRemoteSocketAddress().equals(
                                     remoteCnd.getTransportAddress()))
                             {
@@ -413,7 +433,7 @@ public class Component
         Collections.sort(checkList, CandidatePair.comparator);
         parentStream.pruneCheckList(checkList);
 
-        if(parentStream.getCheckList().getState().equals(
+        if (parentStream.getCheckList().getState().equals(
                 CheckListState.RUNNING))
         {
             //add the updated CandidatePair list to the currently running
@@ -421,7 +441,7 @@ public class Component
             CheckList streamCheckList = parentStream.getCheckList();
             synchronized(streamCheckList)
             {
-                for(CandidatePair pair : checkList)
+                for (CandidatePair pair : checkList)
                 {
                     streamCheckList.add(pair);
                 }
@@ -513,7 +533,7 @@ public class Component
         //local candidates
         int localCandidatesCount = getLocalCandidateCount();
 
-        if(localCandidatesCount > 0)
+        if (localCandidatesCount > 0)
         {
             buff.append("\n")
                 .append(localCandidatesCount)
@@ -536,7 +556,7 @@ public class Component
         //remote candidates
         int remoteCandidatesCount = getRemoteCandidateCount();
 
-        if(remoteCandidatesCount > 0)
+        if (remoteCandidatesCount > 0)
         {
             buff.append("\n")
                 .append(remoteCandidatesCount)
@@ -645,7 +665,7 @@ public class Component
                             && (cand.getPriority() >= cand2.getPriority()))
                     {
                         localCandidates.remove(j);
-                        if(logger.isLoggable(Level.FINEST))
+                        if (logger.isLoggable(Level.FINEST))
                         {
                             logger.finest(
                                     "eliminating redundant cand: "+ cand2);
@@ -817,6 +837,8 @@ public class Component
             }
         }
 
+        getParentStream().removePairStateChangeListener(this);
+        keepAlivePairs.clear();
         getComponentSocket().close();
     }
 
@@ -885,10 +907,12 @@ public class Component
      */
     public RemoteCandidate findRemoteCandidate(TransportAddress remoteAddress)
     {
-        for(RemoteCandidate remoteCnd : remoteCandidates)
+        for (RemoteCandidate remoteCnd : remoteCandidates)
         {
-            if(remoteCnd.getTransportAddress().equals(remoteAddress))
+            if (remoteCnd.getTransportAddress().equals(remoteAddress))
+            {
                 return remoteCnd;
+            }
         }
 
         return null;
@@ -902,6 +926,12 @@ public class Component
      */
     protected void setSelectedPair(CandidatePair pair)
     {
+        if (keepAliveStrategy == KeepAliveStrategy.SELECTED_ONLY)
+        {
+            keepAlivePairs.clear();
+        }
+        keepAlivePairs.add(pair);
+
         this.selectedPair = pair;
     }
 
@@ -929,11 +959,17 @@ public class Component
     public String getName()
     {
         if (componentID == RTP)
+        {
             return "RTP";
-        else if(componentID == RTCP)
+        }
+        else if (componentID == RTCP)
+        {
             return "RTCP";
+        }
         else
+        {
             return Integer.toString(componentID);
+        }
     }
 
     /**
@@ -947,7 +983,9 @@ public class Component
      */
     public static Component build(int componentID, IceMediaStream mediaStream)
     {
-        return new Component(componentID, mediaStream);
+        return
+            new Component(
+                    componentID, mediaStream, KeepAliveStrategy.SELECTED_ONLY);
     }
 
     /**
@@ -976,5 +1014,78 @@ public class Component
     public IceSocketWrapper getSocketWrapper()
     {
         return socketWrapper;
+    }
+
+    /**
+     * @return the set of candidate pairs which are to be kept alive.
+     */
+    Set<CandidatePair> getKeepAlivePairs()
+    {
+        return keepAlivePairs;
+    }
+
+    /**
+     * {@inheritDoc}
+     * </p>
+     * Handles events coming from candidate pairs.
+     */
+    @Override
+    public void propertyChange(PropertyChangeEvent event)
+    {
+        String propertyName = event.getPropertyName();
+        if (!(event.getSource() instanceof CandidatePair))
+        {
+            return;
+        }
+
+        CandidatePair pair = (CandidatePair) event.getSource();
+        if (!equals(pair.getParentComponent()))
+        {
+            // Events are fired by the IceMediaStream, which might have
+            // multiple components. Make sure that we only handle events for
+            // this component.
+            return;
+        }
+
+        boolean addToKeepAlive = false;
+
+        // We handle this case in setSelectedPair
+        if (keepAliveStrategy == KeepAliveStrategy.SELECTED_ONLY)
+            return;
+
+        if (IceMediaStream.PROPERTY_PAIR_STATE_CHANGED.equals(propertyName))
+        {
+            CandidatePairState newState
+                = (CandidatePairState) event.getNewValue();
+
+            if (CandidatePairState.SUCCEEDED.equals(newState))
+            {
+                if (keepAliveStrategy == KeepAliveStrategy.ALL_SUCCEEDED)
+                {
+                    addToKeepAlive = true;
+                }
+                else if (keepAliveStrategy == KeepAliveStrategy.SELECTED_AND_TCP)
+                {
+                    Transport transport
+                        = pair.getLocalCandidate().getTransport();
+                    addToKeepAlive = transport == Transport.TCP
+                        || transport == Transport.SSLTCP;
+
+                    // Pairs with a remote TCP port 9 cannot be checked.
+                    // Instead, the corresponding pair with the peer reflexive
+                    // candidate needs to be checked. However, we observe
+                    // such pairs transitioning into the SUCCEEDED state.
+                    // Ignore them.
+                    addToKeepAlive
+                        &= pair.getRemoteCandidate()
+                                .getTransportAddress().getPort() != 9;
+                }
+            }
+        }
+
+        if (addToKeepAlive && !keepAlivePairs.contains(pair))
+        {
+            keepAlivePairs.add(pair);
+        }
     }
 }

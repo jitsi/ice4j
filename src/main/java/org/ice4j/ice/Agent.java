@@ -450,16 +450,60 @@ public class Agent
                                        int            maxPort)
         throws IllegalArgumentException,
                IOException,
+                BindException
+    {
+        return createComponent(
+                stream, transport,
+                preferredPort, minPort, maxPort,
+                KeepAliveStrategy.SELECTED_ONLY);
+    }
+
+    /**
+     * Creates a new {@link Component} for the specified <tt>stream</tt> and
+     * allocates potentially all local candidates that should belong to it.
+     *
+     * @param stream the {@link IceMediaStream} that the new {@link Component}
+     * should belong to.
+     * @param transport the transport protocol used by the component
+     * @param preferredPort the port number that should be tried first when
+     * binding local <tt>Candidate</tt> sockets for this <tt>Component</tt>.
+     * @param minPort the port number where we should first try to bind before
+     * moving to the next one (i.e. <tt>minPort + 1</tt>)
+     * @param maxPort the maximum port number where we should try binding
+     * before giving up and throwing an exception.
+     * @param keepAliveStrategy the keep-alive strategy, which dictates which
+     * candidates pairs are going to be kept alive.
+     *
+     * @return the newly created {@link Component} and with a list containing
+     * all and only local candidates.
+     *
+     * @throws IllegalArgumentException if either <tt>minPort</tt> or
+     * <tt>maxPort</tt> is not a valid port number or if <tt>minPort &gt;
+     * maxPort</tt>, or if <tt>transport</tt> is not currently supported.
+     * @throws IOException if an error occurs while the underlying resolver lib
+     * is using sockets.
+     * @throws BindException if we couldn't find a free port between
+     * <tt>minPort</tt> and <tt>maxPort</tt> before reaching the maximum allowed
+     * number of retries.
+     */
+    public Component createComponent(  IceMediaStream stream,
+                                       Transport      transport,
+                                       int            preferredPort,
+                                       int            minPort,
+                                       int            maxPort,
+                                       KeepAliveStrategy keepAliveStrategy)
+        throws IllegalArgumentException,
+               IOException,
                BindException
     {
-        if(transport != Transport.UDP)
+        if (transport != Transport.UDP)
         {
             throw new IllegalArgumentException(
                     "This implementation does not currently support transport: "
                         + transport);
         }
 
-        Component component = stream.createComponent();
+        Component component = stream.createComponent(keepAliveStrategy);
 
         gatherCandidates(component, preferredPort, minPort, maxPort);
 
@@ -554,7 +598,7 @@ public class Agent
             logger.warning("Failed to gather any host candidates!");
 
         //in case we are not trickling, apply other harvesters here
-        if(!isTrickling())
+        if (!isTrickling())
         {
             harvestingStarted = true; //raise a flag to warn on a second call.
             harvesters.harvest(component);
@@ -588,13 +632,13 @@ public class Agent
     public void startCandidateTrickle(TrickleCallback trickleCallback)
         throws IllegalStateException
     {
-        if(!isTrickling())
+        if (!isTrickling())
         {
             throw new IllegalStateException(
                 "Trying to start trickling without enabling it on the agent!");
         }
 
-        if(harvestingStarted)
+        if (harvestingStarted)
         {
             logger.warning(
                 "Hmmm ... why are you harvesting twice? You shouldn't be!");
@@ -642,7 +686,7 @@ public class Agent
 
             //if we have received connectivity checks before RUNNING state,
             //trigger a check for those candidate pairs.
-            if(this.preDiscoveredPairsQueue.size() > 0)
+            if (this.preDiscoveredPairsQueue.size() > 0)
             {
                 logger.info(
                         "Trigger checks for pairs that were received before "
@@ -863,7 +907,7 @@ public class Agent
                 ? 0
                 : maxCheckListSize / streamCount;
 
-        for(IceMediaStream stream : streams)
+        for (IceMediaStream stream : streams)
         {
             logger.info("Init checklist for stream " + stream.getName());
             stream.setMaxCheckListSize(maxPerStreamSize);
@@ -1252,8 +1296,10 @@ public class Agent
         buff.append(" tie-breaker:").append(getTieBreaker());
         buff.append("):\n");
 
-        for(IceMediaStream stream : getStreams())
+        for (IceMediaStream stream : getStreams())
+        {
             buff.append(stream).append("\n");
+        }
 
         return buff.toString();
     }
@@ -1282,12 +1328,14 @@ public class Agent
 
         //in case we have already initialized our check lists we'd need to
         //recompute pair priorities.
-        for(IceMediaStream stream : getStreams())
+        for (IceMediaStream stream : getStreams())
         {
             CheckList list = stream.getCheckList();
 
             if (list != null)
+            {
                 list.recomputePairPriorities();
+            }
         }
     }
 
@@ -1338,12 +1386,14 @@ public class Agent
      */
     public LocalCandidate findLocalCandidate(TransportAddress localAddress)
     {
-        for(IceMediaStream stream : mediaStreams.values())
+        for (IceMediaStream stream : mediaStreams.values())
         {
             LocalCandidate cnd = stream.findLocalCandidate(localAddress);
 
-            if(cnd != null)
+            if (cnd != null)
+            {
                 return cnd;
+            }
         }
         return null;
     }
@@ -1363,13 +1413,13 @@ public class Agent
             TransportAddress localAddress,
             String ufrag)
     {
-        for(IceMediaStream stream : mediaStreams.values())
+        for (IceMediaStream stream : mediaStreams.values())
         {
-            for(Component c : stream.getComponents())
+            for (Component c : stream.getComponents())
             {
-                for(LocalCandidate cnd : c.getLocalCandidates())
+                for (LocalCandidate cnd : c.getLocalCandidates())
                 {
-                    if(cnd != null
+                    if (cnd != null
                             && cnd.getUfrag() != null
                             && cnd.getUfrag().equals(ufrag))
                     {
@@ -1394,12 +1444,14 @@ public class Agent
      */
     public RemoteCandidate findRemoteCandidate(TransportAddress remoteAddress)
     {
-        for(IceMediaStream stream : mediaStreams.values())
+        for (IceMediaStream stream : mediaStreams.values())
         {
             RemoteCandidate cnd = stream.findRemoteCandidate(remoteAddress);
 
-            if(cnd != null)
+            if (cnd != null)
+            {
                 return cnd;
+            }
         }
         return null;
     }
@@ -1503,7 +1555,7 @@ public class Agent
 
         localCandidate = findLocalCandidate(localAddress);
 
-        if(localCandidate == null)
+        if (localCandidate == null)
         {
             logger.info("No localAddress for this incoming checks: " +
                     localAddress);
@@ -1529,18 +1581,18 @@ public class Agent
 
         logger.fine("set use-candidate " + useCandidate + " for pair " +
             triggeredPair.toShortString());
-        if(useCandidate)
+        if (useCandidate)
         {
             triggeredPair.setUseCandidateReceived();
         }
 
         synchronized(startLock)
         {
-            if(isStarted())
+            if (isStarted())
             {
                 //we are started, which means we have the remote candidates
                 //so it's now safe to go and see whether this is a new PR cand.
-                if(triggeredPair.getParentComponent().getSelectedPair() == null)
+                if (triggeredPair.getParentComponent().getSelectedPair() == null)
                 {
                     logger.info("Received check from "
                         + triggeredPair.toShortString() + " triggered a check. "
@@ -1637,7 +1689,7 @@ public class Agent
             // Its state is set to Waiting [and it] is enqueued into the
             // triggered check queue.
             //
-            if(triggerPair.getParentComponent().getSelectedPair() == null)
+            if (triggerPair.getParentComponent().getSelectedPair() == null)
                 logger.info("Add peer CandidatePair with new reflexive " +
                         "address to checkList: " + triggerPair);
             parentStream.addToCheckList(triggerPair);
@@ -1696,7 +1748,7 @@ public class Agent
     public synchronized void nominate(CandidatePair pair)
         throws IllegalStateException
     {
-        if(!isControlling())
+        if (!isControlling())
         {
             throw new IllegalStateException(
                     "Only controlling agents can nominate pairs");
@@ -1745,13 +1797,15 @@ public class Agent
         IceMediaStream parentStream = parentComponent.getParentStream();
         CheckList checkList = parentStream.getCheckList();
 
-        if( checkList.getState() == CheckListState.RUNNING )
+        if ( checkList.getState() == CheckListState.RUNNING )
+        {
             checkList.handleNominationConfirmed(nominatedPair);
+        }
 
         //Once there is at least one nominated pair in the valid list for
         //every component of the media stream and the state of the
         //check list is Running
-        if(parentStream.allComponentsHaveSelected()
+        if (parentStream.allComponentsHaveSelected()
            && checkList.getState() == CheckListState.RUNNING)
         {
             //The agent MUST change the state of processing for its check
@@ -1770,21 +1824,23 @@ public class Agent
         boolean allListsEnded = true;
         boolean atLeastOneListSucceeded = false;
 
-        if(getState().isEstablished())
+        if (getState().isEstablished())
+        {
             return;
+        }
 
         List<IceMediaStream> streams = getStreams();
 
-        for(IceMediaStream stream : streams)
+        for (IceMediaStream stream : streams)
         {
             CheckListState checkListState = stream.getCheckList().getState();
 
-            if(checkListState == CheckListState.RUNNING)
+            if (checkListState == CheckListState.RUNNING)
             {
                 allListsEnded = false;
                 break;
             }
-            else if(checkListState == CheckListState.COMPLETED)
+            else if (checkListState == CheckListState.COMPLETED)
             {
                 logger.info("CheckList of stream " + stream.getName() +
                         " is COMPLETED");
@@ -1793,10 +1849,12 @@ public class Agent
         }
 
 
-        if(!allListsEnded)
+        if (!allListsEnded)
+        {
             return;
+        }
 
-        if(!atLeastOneListSucceeded)
+        if (!atLeastOneListSucceeded)
         {
             //all lists ended but none succeeded. No love today ;(
             if (logger.isLoggable(Level.INFO))
@@ -1817,7 +1875,7 @@ public class Agent
 
         //Once the state of each check list is Completed:
         //The agent sets the state of ICE processing overall to Completed.
-        if(getState() != IceProcessingState.RUNNING)
+        if (getState() != IceProcessingState.RUNNING)
         {
             //Oh, seems like we already did this.
             return;
@@ -1827,7 +1885,9 @@ public class Agent
         // under our nose here has been observed (and not in a single instance)
         // So check that we did indeed just trigger the change.
         if (!setState(IceProcessingState.COMPLETED))
+        {
             return;
+        }
 
         // keep ICE running (answer STUN Binding requests, send STUN Binding
         // indications or requests)
@@ -1855,9 +1915,9 @@ public class Agent
     {
         List<IceMediaStream> strms = getStreams();
 
-        for(IceMediaStream stream : strms)
+        for (IceMediaStream stream : strms)
         {
-            for(Component component : stream.getComponents())
+            for (Component component : stream.getComponents())
             {
                 CandidatePair selectedPair = component.getSelectedPair();
 
@@ -1867,7 +1927,7 @@ public class Agent
                 buf.append(" (local ufrag ").append(getLocalUfrag());
                 buf.append("): ");
 
-                if(selectedPair == null)
+                if (selectedPair == null)
                 {
                     buf.append("none (conn checks failed)");
                     logger.info(buf.toString());
@@ -1880,7 +1940,7 @@ public class Agent
 
                 buf.append(localCnd.getType());
 
-                if(serverAddr != null)
+                if (serverAddr != null)
                 {
                     buf.append(" (STUN server = ");
                     buf.append(serverAddr);
@@ -1891,7 +1951,7 @@ public class Agent
                     TransportAddress relayAddr
                         = localCnd.getRelayServerAddress();
 
-                    if(relayAddr != null)
+                    if (relayAddr != null)
                     {
                         buf.append(" (relay = ");
                         buf.append(relayAddr);
@@ -1916,8 +1976,10 @@ public class Agent
         {
             Collection<IceMediaStream> streamsCol = mediaStreams.values();
 
-            for( IceMediaStream stream : streamsCol)
+            for (IceMediaStream stream : streamsCol)
+            {
                 num += stream.countHostCandidates();
+            }
         }
 
         return num;
@@ -2276,32 +2338,37 @@ public class Agent
 
         while (runInStunKeepAliveThreadCondition())
         {
-            for(IceMediaStream stream : getStreams())
+            for (IceMediaStream stream : getStreams())
             {
-                for(Component component : stream.getComponents())
+                for (Component component : stream.getComponents())
                 {
-                    CandidatePair pair = component.getSelectedPair();
-
-                    if(pair != null)
+                    for (CandidatePair pair : component.getKeepAlivePairs())
                     {
-                        if(performConsentFreshness)
+
+                        if (pair != null)
                         {
-                            connCheckClient.startCheckForPair(
+                            if (performConsentFreshness)
+                            {
+                                connCheckClient.startCheckForPair(
                                     pair,
                                     originalConsentFreshnessWaitInterval,
                                     maxConsentFreshnessWaitInterval,
                                     consentFreshnessMaxRetransmissions);
-                        }
-                        else
-                        {
-                            connCheckClient.sendBindingIndicationForPair(pair);
+                            }
+                            else
+                            {
+                                connCheckClient
+                                    .sendBindingIndicationForPair(pair);
+                            }
                         }
                     }
                 }
             }
 
             if (!runInStunKeepAliveThreadCondition())
+            {
                 break;
+            }
 
             try
             {
@@ -2427,15 +2494,15 @@ public class Agent
     {
         long harvestingTime = 0;
 
-        for(CandidateHarvester harvester : harvesters)
+        for (CandidateHarvester harvester : harvesters)
         {
-            if(harvester.getClass().getName().endsWith(harvesterName))
+            if (harvester.getClass().getName().endsWith(harvesterName))
             {
                 harvestingTime
                     = harvester.getHarvestStatistics().getHarvestDuration();
                 // There may be several harvester with the same class name.
                 // Thus, returns only an active one (if any).
-                if(harvestingTime != 0)
+                if (harvestingTime != 0)
                 {
                     return harvestingTime;
                 }
@@ -2459,15 +2526,15 @@ public class Agent
     {
         int harvestCount;
 
-        for(CandidateHarvester harvester : harvesters)
+        for (CandidateHarvester harvester : harvesters)
         {
-            if(harvester.getClass().getName().endsWith(harvesterName))
+            if (harvester.getClass().getName().endsWith(harvesterName))
             {
                 harvestCount
                     = harvester.getHarvestStatistics().getHarvestCount();
                 // There may be several harvester with the same class name.
                 // Thus, returns only an active one (if any).
-                if(harvestCount != 0)
+                if (harvestCount != 0)
                 {
                     return harvestCount;
                 }
@@ -2486,7 +2553,7 @@ public class Agent
     {
         long harvestDuration = 0;
 
-        for(CandidateHarvester harvester : harvesters)
+        for (CandidateHarvester harvester : harvesters)
         {
             harvestDuration
                 += harvester.getHarvestStatistics().getHarvestDuration();
@@ -2507,7 +2574,7 @@ public class Agent
     {
         int harvestCount = 0;
 
-        for(CandidateHarvester harvester : harvesters)
+        for (CandidateHarvester harvester : harvesters)
         {
             harvestCount += harvester.getHarvestStatistics().getHarvestCount();
         }
