@@ -452,7 +452,7 @@ public class Agent
                IOException,
                BindException
     {
-        if(transport != Transport.UDP)
+        if (transport != Transport.UDP)
         {
             throw new IllegalArgumentException(
                     "This implementation does not currently support transport: "

@@ -1079,11 +1079,20 @@ public class Component
 
     /**
      * Sets the {@link KeepAliveStrategy} for this {@link Component}.
-     * @param strategy the strategy to set.
+     * @param strategy the strategy to set. The keep-alive strategy can only
+     * be modified before the parent {@link Agent} is started.
+     * @throws IllegalStateException if the agent has been started.
      */
     public void setKeepAliveStrategy(KeepAliveStrategy strategy)
     {
+        IceProcessingState agentState
+            = getParentStream().getParentAgent().getState();
+        if (!IceProcessingState.WAITING.equals(agentState))
+        {
+            throw new IllegalStateException(
+                "Not changing the keep-alive strategy, the agent is is state "
+                    + agentState);
+        }
         keepAliveStrategy = Objects.requireNonNull(strategy, "strategy");
     }
-
 }
