@@ -739,8 +739,11 @@ class ConnectivityCheckClient
         }
 
         // Selected pairs get their consent freshness confirmed.
-        if (checkedPair == checkedPair.getParentComponent().getSelectedPair())
+        // XXX Should we also confirm consent freshness for non-selected pairs?
+        if (checkedPair.equals(checkedPair.getParentComponent().getSelectedPair()))
+        {
             checkedPair.setConsentFreshness();
+        }
     }
 
     /**
