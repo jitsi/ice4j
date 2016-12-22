@@ -276,6 +276,7 @@ class NetAccessManager
             messageProcessors.remove(mp);
 
             mp = new MessageProcessor(this);
+            messageProcessors.add(mp);
             mp.start();
             logger.fine("A message processor has been relaunched because "
                         + "of an error.");
