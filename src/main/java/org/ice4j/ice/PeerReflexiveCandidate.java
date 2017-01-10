@@ -61,6 +61,7 @@ public class PeerReflexiveCandidate
                 base);
         super.setBase(base);
         super.priority = priority;
+        super.setTcpType(base.getTcpType());
     }
 
     /**
