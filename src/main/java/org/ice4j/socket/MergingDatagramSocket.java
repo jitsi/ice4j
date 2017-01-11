@@ -136,29 +136,37 @@ public class MergingDatagramSocket
     @Override
     public void close()
     {
-        if (isClosed())
+        try
         {
-            return;
+            super.close();
         }
-        closed = true;
-        logger.info("Closing.");
-
-        // XXX do we want to risk obtaining the lock here, or should we just
-        // let any thread in receive() find out about the close after it's next
-        // timeout?
-        synchronized (receiveLock)
+        finally
         {
-            receiveLock.notifyAll();
-        }
 
-        synchronized (socketContainersSyncRoot)
-        {
-            active = null;
-            for (SocketContainer container : socketContainers)
+            if (isClosed())
             {
-                container.close(false);
+                return;
             }
-            socketContainers = new SocketContainer[0];
+            closed = true;
+            logger.info("Closing.");
+
+            // XXX do we want to risk obtaining the lock here, or should we just
+            // let any thread in receive() find out about the close after it's
+            // next timeout?
+            synchronized (receiveLock)
+            {
+                receiveLock.notifyAll();
+            }
+
+            synchronized (socketContainersSyncRoot)
+            {
+                active = null;
+                for (SocketContainer container : socketContainers)
+                {
+                    container.close(false);
+                }
+                socketContainers = new SocketContainer[0];
+            }
         }
     }
 
