@@ -203,8 +203,12 @@ public class ComponentSocket
         }
         finally
         {
-            component.getParentStream().removePairStateChangeListener(this);
-            component = null;
+            Component component = this.component;
+            if (component != null)
+            {
+                component.getParentStream().removePairStateChangeListener(this);
+                this.component = null;
+            }
         }
     }
 }
