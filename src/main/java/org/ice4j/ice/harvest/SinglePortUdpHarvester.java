@@ -26,7 +26,7 @@ import java.io.*;
 import java.net.*;
 import java.util.*;
 import java.util.concurrent.*;
-import java.util.logging.Logger; // Disambiguation
+import java.util.logging.*;
 
 /**
  * A harvester implementation which binds to a single <tt>DatagramSocket</tt>
@@ -337,11 +337,16 @@ public class SinglePortUdpHarvester
 
             IceProcessingState state
                 = component.getParentStream().getParentAgent().getState();
-            if (!IceProcessingState.WAITING.equals(state)
-                && !IceProcessingState.RUNNING.equals(state))
+            if (state == IceProcessingState.FAILED)
             {
                 throw new IOException(
-                    "Agent state is " + state + ". Cannot add socket.");
+                    "Cannot add socket to an Agent in state FAILED.");
+            }
+            else if (state != null && state.isOver()
+                && logger.isLoggable(Level.FINE))
+            {
+                logger.fine(
+                    "Adding a socket to a completed Agent, state=" + state);
             }
 
             MultiplexingDatagramSocket multiplexing
