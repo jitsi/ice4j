@@ -1541,19 +1541,8 @@ public class Agent
                                          String           localUFrag,
                                          boolean          useCandidate)
     {
-        if (isOver())
-        {
-            //means we already completed ICE and are happily running media
-            //the only reason we are called is most probably because the remote
-            //party is still sending Binding Requests our way and making sure we
-            //are still alive.
-            return;
-        }
-
         String ufrag = null;
-        LocalCandidate localCandidate = null;
-
-        localCandidate = findLocalCandidate(localAddress);
+        LocalCandidate localCandidate = findLocalCandidate(localAddress);
 
         if (localCandidate == null)
         {
@@ -1563,9 +1552,8 @@ public class Agent
         }
 
         Component parentComponent = localCandidate.getParentComponent();
-        RemoteCandidate remoteCandidate = null;
-
-        remoteCandidate = new RemoteCandidate(
+        RemoteCandidate remoteCandidate
+            = new RemoteCandidate(
                 remoteAddress,
                 parentComponent,
                 CandidateType.PEER_REFLEXIVE_CANDIDATE,
@@ -1588,24 +1576,29 @@ public class Agent
 
         synchronized(startLock)
         {
-            if (isStarted())
-            {
-                //we are started, which means we have the remote candidates
-                //so it's now safe to go and see whether this is a new PR cand.
-                if (triggeredPair.getParentComponent().getSelectedPair() == null)
-                {
-                    logger.info("Received check from "
-                        + triggeredPair.toShortString() + " triggered a check. "
-                        + "Local ufrag " + getLocalUfrag());
-                }
-                triggerCheck(triggeredPair);
-            }
-            else
+            if (state == IceProcessingState.WAITING)
             {
                 logger.fine("Receive STUN checks before our ICE has started");
                 //we are not started yet so we'd better wait until we get the
                 //remote candidates in case we are holding to a new PR one.
                 this.preDiscoveredPairsQueue.add(triggeredPair);
+            }
+            else if (state == IceProcessingState.FAILED)
+            {
+                // Failure is permanent, currently.
+            }
+            else //Running, Connected or Terminated.
+            {
+                if (logger.isLoggable(Level.FINE))
+                {
+                    logger.debug("Received check from "
+                        + triggeredPair.toShortString() + " triggered a check. "
+                        + "Local ufrag " + getLocalUfrag());
+                }
+
+                // We have been started, and have not failed (yet). If this is
+                // a new pair, handle it (even if we have already completed).
+                triggerCheck(triggeredPair);
             }
         }
     }
