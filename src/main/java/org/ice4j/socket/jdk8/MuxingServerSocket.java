@@ -19,6 +19,8 @@ package org.ice4j.socket.jdk8;
 
 import java.io.*;
 import java.net.*;
+import java.util.*;
+
 import org.ice4j.socket.*;
 
 /**
@@ -48,7 +50,7 @@ class MuxingServerSocket
         throws IOException
     {
         super(
-                MuxServerSocketChannel.assertIsNotNull(delegate, "delegate"),
-                MuxServerSocketChannel.assertIsNotNull(channel, "channel"));
+                Objects.requireNonNull(delegate, "delegate"),
+                Objects.requireNonNull(channel, "channel"));
     }
 }
