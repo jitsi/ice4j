@@ -133,6 +133,19 @@ abstract class MultiplexingXXXSocketSupport
     }
 
     /**
+     * 'Steals' the values and buffers from src and puts them into dest.
+     * Resets src back to an uninitialized state.
+     * @param src
+     * @param dest
+     */
+    public static void move(DatagramPacket src, DatagramPacket dest)
+    {
+        dest.setAddress(src.getAddress());
+        dest.setPort(src.getPort());
+        dest.setData(src.getData());
+    }
+
+    /**
      * Copies the properties of a specific <tt>DatagramPacket</tt> to another
      * <tt>DatagramPacket</tt>. The property values are not cloned.
      *
@@ -620,7 +633,11 @@ abstract class MultiplexingXXXSocketSupport
                 }
 
                 // The caller will receive from the network.
-                DatagramPacket c = clone(p, /* arraycopy */ false);
+                // Note(brian): since the packet passed in already has a valid buffer,
+                //  we'll use that to do the actual receive.  When we loop back around again
+                //  to actually get a packet to return, we'll 'steal' the info and data from
+                //  the packet object we remove, and put that into the passed packet 'p'
+                //DatagramPacket c = clone(p, /* arraycopy */ false);
 
                 synchronized (receiveSyncRoot)
                 {
@@ -638,11 +655,11 @@ abstract class MultiplexingXXXSocketSupport
                         }
                     }
                 }
-                doReceive(c);
+                doReceive(p);
 
                 // The caller received from the network. Copy/add the packet to
                 // the receive list of the sockets which accept it.
-                acceptBySocketsOrThis(c);
+                acceptBySocketsOrThis(p);
             }
             finally
             {
@@ -655,7 +672,8 @@ abstract class MultiplexingXXXSocketSupport
         }
         while (true);
 
-        copy(r, p);
+        //copy(r, p);
+        move(r, p);
     }
 
     /**
