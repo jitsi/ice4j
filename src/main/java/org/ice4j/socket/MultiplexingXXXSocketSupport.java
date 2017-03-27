@@ -632,13 +632,8 @@ abstract class MultiplexingXXXSocketSupport
                     continue;
                 }
 
-                // The caller will receive from the network.
-                // Note(brian): since the packet passed in already has a valid buffer,
-                //  we'll use that to do the actual receive.  When we loop back around again
-                //  to actually get a packet to return, we'll 'steal' the info and data from
-                //  the packet object we remove, and put that into the passed packet 'p'
-                //DatagramPacket c = clone(p, /* arraycopy */ false);
-
+                // We'll use the passed-in packet to do the receive and then put that 
+                // packet on the back of the queue.
                 synchronized (receiveSyncRoot)
                 {
                     if (setReceiveBufferSize)
@@ -672,7 +667,9 @@ abstract class MultiplexingXXXSocketSupport
         }
         while (true);
 
-        //copy(r, p);
+        // The packet that was passed in is now in use at the end of the queue,
+        // so we'll 'steal' the buffers/information from the packet we just read
+        // off of the front of the queue and give it to the passed-in packet
         move(r, p);
     }
 
