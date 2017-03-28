@@ -140,9 +140,12 @@ abstract class MultiplexingXXXSocketSupport
      */
     public static void move(DatagramPacket src, DatagramPacket dest)
     {
-        dest.setAddress(src.getAddress());
-        dest.setPort(src.getPort());
-        dest.setData(src.getData());
+        synchronized (dest)
+        {
+            dest.setAddress(src.getAddress());
+            dest.setPort(src.getPort());
+            dest.setData(src.getData(), src.getOffset(), src.getLength());
+        }
     }
 
     /**
@@ -652,9 +655,13 @@ abstract class MultiplexingXXXSocketSupport
                 }
                 doReceive(p);
 
-                // The caller received from the network. Copy/add the packet to
-                // the receive list of the sockets which accept it.
-                acceptBySocketsOrThis(p);
+                // We'll be re-assigning the values of 'p' so that it will contain the packet
+                // at the beginning of the queue, so we'll need to create a new instance of
+                // a packet to pass to the queues (but it can keep p's buffer)
+                DatagramPacket c = new DatagramPacket(p.getData(), p.getOffset(), p.getLength());
+                c.setAddress(p.getAddress());
+                c.setPort(p.getPort());
+                acceptBySocketsOrThis(c);
             }
             finally
             {
