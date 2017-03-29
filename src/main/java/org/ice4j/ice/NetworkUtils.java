@@ -99,35 +99,6 @@ public class NetworkUtils
     }
 
     /**
-     * Determines whether the address is an IPv4 link local address. IPv4 link
-     * local addresses are those in the following networks:
-     *
-     * 10.0.0.0    to 10.255.255.255
-     * 172.16.0.0  to 172.31.255.255
-     * 192.168.0.0 to 192.168.255.255
-     *
-     * @param add the address to inspect
-     * @return true if add is a link local ipv4 address and false if not.
-     */
-    public static boolean isLinkLocalIPv4Address(InetAddress add)
-    {
-        if (add instanceof Inet4Address)
-        {
-            byte address[] = add.getAddress();
-            if ( (address[0] & 0xFF) == 10)
-                return true;
-            if ( (address[0] & 0xFF) == 172
-                && (address[1] & 0xFF) >= 16 && address[1] <= 31)
-                return true;
-            if ( (address[0] & 0xFF) == 192
-                && (address[1] & 0xFF) == 168)
-                return true;
-            return false;
-        }
-        return false;
-    }
-
-    /**
      * Returns a random local port number that user applications could bind to.
      * (i.e. above 1024).
      * @return a random int located between 1024 and 65 535.
