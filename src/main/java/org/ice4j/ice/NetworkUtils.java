@@ -138,16 +138,16 @@ public class NetworkUtils
     }
 
     /**
-     * Returns a random local port number, greater than min and lower than max.
+     * Returns a random local port number in the interval [min, max].
      *
      * @param min the minimum allowed value for the returned port number.
      * @param max the maximum allowed value for the returned port number.
      *
-     * @return a random int located between greater than min and lower than max.
+     * @return a random int in the interval [min, max].
      */
     public static int getRandomPortNumber(int min, int max)
     {
-        return portNumberGenerator.nextInt(max - min) + min;
+        return portNumberGenerator.nextInt(max - min + 1) + min;
     }
 
     /**
