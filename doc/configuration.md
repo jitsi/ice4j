@@ -77,3 +77,11 @@ Default: none
 A comma-separated list of STUN server addresses to use for mapping harvesters.
 Each STUN server address is an ip_address:port pair.
 Example: ```stun1.example.com:12345,stun2.example.com:23456```
+
+## Single port UDP harvester
+### ```org.ice4j.ice.harvest.AbstractUdpHarvester.SO_RCVBUF```
+Configures the receive buffer size for the single port UDP harvester
+(or other AbstractUdpListener implementations). If this is not set
+the system default value will be used (the ```net.core.rmem_default```
+sysctl parameter on linux). Note that the system maximum value may need to
+be increased (```net.core.rmem_max``` on linux).
