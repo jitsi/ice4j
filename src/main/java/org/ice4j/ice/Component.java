@@ -840,6 +840,7 @@ public class Component
         getParentStream().removePairStateChangeListener(this);
         keepAlivePairs.clear();
         getComponentSocket().close();
+        socket.close();
     }
 
     /**
