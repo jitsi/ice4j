@@ -307,6 +307,11 @@ public class SinglePortUdpHarvester
 
             synchronized (candidateSockets)
             {
+                for (IceSocketWrapper wrapper : candidateSockets.values())
+                {
+                    wrapper.close();
+                }
+
                 candidateSockets.clear();
             }
 
@@ -372,7 +377,14 @@ public class SinglePortUdpHarvester
             // XXX is this necessary?
             synchronized (candidateSockets)
             {
-                candidateSockets.put(remoteAddress, candidateSocket);
+                IceSocketWrapper oldSocket
+                    = candidateSockets.put(remoteAddress, candidateSocket);
+                if (oldSocket != null)
+                {
+                    logger.warning("Replacing the socket for remote address "
+                                       + remoteAddress);
+                    oldSocket.close();
+                }
             }
 
             // XXX is this necessary?
