@@ -281,7 +281,7 @@ class MuxingServerSocketChannel
         // as possible though because it does not make sense to bind a
         // ServerSocketChannel and initialize a new MuxingServerSocketChannel
         // instance otherwise.
-        MuxServerSocketChannel.assertIsNotNull(filter, "filter");
+        Objects.requireNonNull(filter, "filter");
 
         MuxingServerSocketChannel muxingChannel;
 
@@ -641,7 +641,7 @@ class MuxingServerSocketChannel
     public MuxingServerSocketChannel(ServerSocketChannel delegate)
         throws IOException
     {
-        super(MuxServerSocketChannel.assertIsNotNull(delegate, "delegate"));
+        super(Objects.requireNonNull(delegate, "delegate"));
 
         // If at least one MuxServerSocketChannel is configured as non-blocking,
         // then MuxingServerSocketChannel (i.e. delegate) has to be configured
@@ -732,7 +732,7 @@ class MuxingServerSocketChannel
         // MuxServerSocketChannels) have no priorities. It cannot be a catch all
         // because a SocketChannel (i.e. Socket) may be accepted by a single
         // MuxServerSocketChannel only.
-        MuxServerSocketChannel.assertIsNotNull(filter, "filter");
+        Objects.requireNonNull(filter, "filter");
 
         MuxServerSocketChannel channel;
 

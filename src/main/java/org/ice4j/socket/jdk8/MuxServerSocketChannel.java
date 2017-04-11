@@ -33,27 +33,6 @@ public class MuxServerSocketChannel
     extends DelegatingServerSocketChannel<MuxingServerSocketChannel>
 {
     /**
-     * Asserts that <tt>t</tt> is not <tt>null</tt> by throwing a
-     * <tt>NullPointerException</tt> if it is.
-     *
-     * @param t the <tt>Object</tt> to assert that it is not <tt>null</tt>
-     * @param message the (detail) message of the <tt>NullPointerException</tt>
-     * to be thrown if <tt>t</tt> is <tt>null</tt>
-     * @param <T> the type of <tt>t</tt>
-     * @return <tt>t</tt>
-     * @throws NullPointerException if <tt>t</tt> is <tt>null</tt>. The (detail)
-     * message of the <tt>NullPointerException</tt> is <tt>message</tt>
-     */
-    public static <T> T assertIsNotNull(T t, String message)
-        throws NullPointerException
-    {
-        if (t == null)
-            throw new NullPointerException(message);
-        else
-            return t;
-    }
-
-    /**
      * Opens and binds a new {@code MuxServerSocketChannel} instance. If there
      * are other (existing) {@code MuxServerSocketChannel} open and bound on the
      * specified listening {@code endpoint}, the new instance will share it with
@@ -128,9 +107,9 @@ public class MuxServerSocketChannel
             MuxingServerSocketChannel delegate,
             DatagramPacketFilter filter)
     {
-        super(assertIsNotNull(delegate, "delegate"));
+        super(Objects.requireNonNull(delegate, "delegate"));
 
-        this.filter = assertIsNotNull(filter, "filter");
+        this.filter = Objects.requireNonNull(filter, "filter");
     }
 
     /**

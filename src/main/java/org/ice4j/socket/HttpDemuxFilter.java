@@ -140,7 +140,7 @@ public class HttpDemuxFilter
         {
             byte[] buf = p.getData();
             int off = p.getOffset();
-            // The first bytes of HTTP, SSL v2, and TCP are different so quickly
+            // The first bytes of HTTP, SSL v2, and TLS are different so quickly
             // determine which one of the three is possible and, respectively,
             // which two of the three are impossible.
             int b0 = 0xFF & buf[off];
@@ -199,7 +199,7 @@ public class HttpDemuxFilter
                         }
                     }
                 }
-                // Only one of HTTP, SSL v2, and TCP was deemed possible by
+                // Only one of HTTP, SSL v2, and TLS was deemed possible by
                 // looking at the first byte. If p didn't look like HTTP here,
                 // then it will not look like SSL v2 or TLS.
                 return accept;
@@ -230,7 +230,7 @@ public class HttpDemuxFilter
                             accept = true;
                     }
                 }
-                // Only one of HTTP, SSL v2, and TCP was deemed possible by
+                // Only one of HTTP, SSL v2, and TLS was deemed possible by
                 // looking at the first byte. If p didn't look like TLS here,
                 // then it will not look like HTTP or SSL v2.
                 return accept;
@@ -268,7 +268,7 @@ public class HttpDemuxFilter
                         accept = !equals;
                     }
                 }
-                // Only one of HTTP, SSL v2, and TCP was deemed possible by
+                // Only one of HTTP, SSL v2, and TLS was deemed possible by
                 // looking at the first byte. If p didn't look like SSL v2 here,
                 // then it will not look like HTTP or TLS.
                 return accept;
