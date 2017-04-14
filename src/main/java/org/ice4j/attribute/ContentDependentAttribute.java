@@ -17,8 +17,6 @@
  */
 package org.ice4j.attribute;
 
-import org.ice4j.stack.*;
-
 /**
  * <tt>ContentDependentAttribute</tt>s have a value that depend on the content
  * of the message. The {@link MessageIntegrityAttribute} and {@link
@@ -35,7 +33,7 @@ public interface ContentDependentAttribute
     /**
      * Returns a binary representation of this attribute.
      *
-     * @param stunStack the <tt>StunStack</tt> in the context of which the
+     * @param context the context of which the
      * request to encode this <tt>ContentDependentAttribute</tt> is being made
      * @param content the content of the message that this attribute will be
      * transported in
@@ -47,6 +45,6 @@ public interface ContentDependentAttribute
      * with the specified <tt>content</tt>.
      */
     public byte[] encode(
-            StunStack stunStack,
+            KeysDependentAttributeContext context,
             byte[] content, int offset, int length);
 }

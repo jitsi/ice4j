@@ -889,17 +889,34 @@ public abstract class Message
         return true;
     }
 
+    @Deprecated
+    public byte[] encode(final StunStack stunStack)
+            throws IllegalStateException
+    {
+        return encode(new KeysDependentAttributeContext() {
+            @Override
+            public byte[] getRemoteKey(String username, String media) {
+                return stunStack.getCredentialsManager().getRemoteKey(username, media);
+            }
+
+            @Override
+            public byte[] getLocalKey(String username) {
+                return stunStack.getCredentialsManager().getLocalKey(username);
+            }
+        });
+    }
+
     /**
      * Returns a binary representation of this message.
      *
-     * @param stunStack the <tt>StunStack</tt> in the context of which the
+     * @param keysContext the context of which the
      * request to encode this <tt>Message</tt> is being made
      * @return a binary representation of this message.
      *
      * @throws IllegalStateException if the message does not have all
      * required attributes.
      */
-    public byte[] encode(StunStack stunStack)
+    public byte[] encode(KeysDependentAttributeContext keysContext)
         throws IllegalStateException
     {
         prepareForEncoding();
@@ -977,7 +994,7 @@ public abstract class Message
                     = (byte)(dataLengthForContentDependentAttribute & 0xFF);
                 binAtt
                     = ((ContentDependentAttribute)attribute)
-                            .encode(stunStack, binMsg, 0, offset);
+                            .encode(keysContext, binMsg, 0, offset);
             }
             else
             {

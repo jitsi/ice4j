@@ -23,7 +23,6 @@ import javax.crypto.*;
 import javax.crypto.spec.*;
 
 import org.ice4j.message.*;
-import org.ice4j.stack.*;
 
 /**
  * The MESSAGE-INTEGRITY attribute contains an HMAC-SHA1 [RFC2104] of
@@ -253,7 +252,7 @@ public class MessageIntegrityAttribute
     /**
      * Returns a binary representation of this attribute.
      *
-     * @param stunStack the <tt>StunStack</tt> in the context of which the
+     * @param context the context of which the
      * request to encode this <tt>ContentDependentAttribute</tt> is being made
      * @param content the content of the message that this attribute will be
      * transported in
@@ -265,7 +264,7 @@ public class MessageIntegrityAttribute
      * with the specified <tt>content</tt>.
      */
     public byte[] encode(
-            StunStack stunStack,
+            KeysDependentAttributeContext context,
             byte[] content, int offset, int length)
     {
         char type = getAttributeType();
@@ -286,14 +285,14 @@ public class MessageIntegrityAttribute
         if(Message.isRequestType(msgType))
         {
             /* attribute part of a request, use the remote key */
-            key = stunStack.getCredentialsManager().getRemoteKey(username,
+            key = context.getRemoteKey(username,
                     media);
         }
         else if(Message.isSuccessResponseType(msgType) ||
                 Message.isErrorResponseType(msgType))
         {
             /* attribute part of a response, use the local key */
-            key = stunStack.getCredentialsManager().getLocalKey(username);
+            key = context.getLocalKey(username);
         }
 
         //now calculate the HMAC-SHA1
