@@ -1363,7 +1363,7 @@ public class StunStack
      */
     private static String toHexString(byte[] bytes)
     {
-        return new HexBinaryAdapter().marshal(bytes).toUpperCase();
+        return new HexBinaryAdapter().marshal(bytes);
     }
 
     /**
