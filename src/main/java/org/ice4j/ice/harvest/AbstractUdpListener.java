@@ -44,6 +44,14 @@ import java.util.logging.Logger;
 public abstract class AbstractUdpListener
 {
     /**
+     * The name of the property which controls the size of the receive buffer
+     * which {@link SinglePortUdpHarvester} will request for the sockets that
+     * it creates.
+     */
+    public static final String SO_RCVBUF_PNAME
+        = AbstractUdpListener.class.getName() + ".SO_RCVBUF";
+
+    /**
      * Our class logger.
      */
     private static final Logger logger
@@ -63,14 +71,6 @@ public abstract class AbstractUdpListener
      * The number of <tt>Buffer</tt> instances to keep in {@link #pool}.
      */
     private static final int POOL_SIZE = 256;
-
-    /**
-     * The name of the property which controls the size of the receive buffer
-     * which {@link SinglePortUdpHarvester} will request for the sockets that
-     * it creates.
-     */
-    private static final String SO_RCVBUF_PNAME
-        = AbstractUdpListener.class.getName() + ".SO_RCVBUF";
 
     /**
      * Returns the list of {@link TransportAddress}es, one for each allowed IP
