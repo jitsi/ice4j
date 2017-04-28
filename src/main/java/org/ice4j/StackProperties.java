@@ -233,6 +233,12 @@ public class StackProperties
             = "org.ice4j.ice.harvest.USE_DYNAMIC_HOST_HARVESTER";
 
     /**
+     * Timeout, in seconds, of how long to wait for an individual harvest before timing out
+     */
+    public static final String HARVESTING_TIMEOUT
+            = "org.ice4j.ice.harvest.HARVESTING_TIMEOUT";
+
+    /**
      * Returns the String value of the specified property (minus all
      * encompassing whitespaces)and null in case no property value was mapped
      * against the specified propertyName, or in case the returned property

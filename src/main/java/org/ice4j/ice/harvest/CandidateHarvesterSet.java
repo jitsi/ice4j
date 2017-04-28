@@ -21,6 +21,7 @@ import java.util.*;
 import java.util.concurrent.*;
 import java.util.logging.*;
 
+import org.ice4j.*;
 import org.ice4j.ice.*;
 
 /**
@@ -197,7 +198,17 @@ public class CandidateHarvesterSet
             {
                 try
                 {
-                    future.get();
+                    future.get(StackProperties.getInt(StackProperties.HARVESTING_TIMEOUT, 15), TimeUnit.SECONDS);
+                    break;
+                }
+                catch (TimeoutException te)
+                {
+                    CandidateHarvesterSetElement harvester = task.getKey().getHarvester();
+                    if (harvester != null)
+                    {
+                        harvester.setEnabled(false);
+                    }
+                    logger.warning("timed out while harvesting from " + harvester);
                     break;
                 }
                 catch (CancellationException ce)
