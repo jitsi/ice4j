@@ -282,10 +282,10 @@ public class DelegatingDatagramSocket
     @Override
     public void close()
     {
-        if (delegate == null)
-            super.close();
-        else
+        if (delegate != null)
             delegate.close();
+
+        super.close();
     }
 
     /**
