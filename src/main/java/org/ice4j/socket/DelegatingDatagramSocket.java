@@ -116,6 +116,11 @@ public class DelegatingDatagramSocket
     private long nbSentPackets = 0;
 
     /**
+     * Whether this socket has been closed.
+     */
+    private boolean closed = false;
+
+    /**
      * Initializes a new <tt>DelegatingDatagramSocket</tt> instance and binds it
      * to any available port on the local host machine.  The socket will be
      * bound to the wildcard address, an IP address chosen by the kernel.
@@ -282,10 +287,14 @@ public class DelegatingDatagramSocket
     @Override
     public void close()
     {
+        // We want both #delegate and super to actually get closed (and release
+        // the FDs which they hold). But super will not close unless isClosed()
+        // returns false. So we update the #closed flag last.
         if (delegate != null)
             delegate.close();
 
         super.close();
+        closed = true;
     }
 
     /**
@@ -610,7 +619,7 @@ public class DelegatingDatagramSocket
     @Override
     public boolean isClosed()
     {
-        return (delegate == null) ? super.isClosed() : delegate.isClosed();
+        return closed;
     }
 
     /**
