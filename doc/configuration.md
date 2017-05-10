@@ -1,6 +1,7 @@
 # General
-This file describes some of the java properties which ```ice4j``` uses
-to configure itself.
+This file describes some of the java properties which ```ice4j``` uses to configure
+itself in /etc/jitsi/videobridge/sip-communicator.properties if installed from package,
+or in $HOME/.sip-communicator/sip-communicator.properties if running from source.
 
 ## Interfaces and IP addresses
 
