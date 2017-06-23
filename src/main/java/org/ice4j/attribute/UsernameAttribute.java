@@ -62,7 +62,7 @@ public class UsernameAttribute extends Attribute
         // This works around the following bug in Edge, which effectively adds
         // additional "0" bytes to the end of the USERNAME attribute:
         // https://developer.microsoft.com/en-us/microsoft-edge/platform/issues/12332457/
-        while (length >= offset && attributeValue[length] == 0)
+        while (length > 0 && attributeValue[length] == 0)
         {
             length--;
         }
