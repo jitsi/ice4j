@@ -56,8 +56,17 @@ public class UsernameAttribute extends Attribute
      *   offset is equal to the index of the first byte after length)
      * @param length the length of the binary array.
      */
+    @Override
     void decodeAttributeBody(byte[] attributeValue, char offset, char length)
     {
+        // This works around the following bug in Edge, which effectively adds
+        // additional "0" bytes to the end of the USERNAME attribute:
+        // https://developer.microsoft.com/en-us/microsoft-edge/platform/issues/12332457/
+        while (length >= offset && attributeValue[length] == 0)
+        {
+            length--;
+        }
+
         username = new byte[length];
         System.arraycopy(attributeValue, offset, username, 0, length);
     }
