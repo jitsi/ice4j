@@ -81,7 +81,7 @@ public class UsernameAttribute extends Attribute
     {
         if (stripTrailingZeroes)
         {
-            while (length > 0 && attributeValue[offset + length] == 0)
+            while (length > 0 && attributeValue[offset + length - 1] == 0)
             {
                 length--;
             }
