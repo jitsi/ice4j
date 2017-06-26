@@ -133,6 +133,22 @@ abstract class MultiplexingXXXSocketSupport
     }
 
     /**
+     * 'Steals' the values and buffers from src and puts them into dest.
+     * Resets src back to an uninitialized state.
+     * @param src
+     * @param dest
+     */
+    public static void move(DatagramPacket src, DatagramPacket dest)
+    {
+        synchronized (dest)
+        {
+            dest.setAddress(src.getAddress());
+            dest.setPort(src.getPort());
+            dest.setData(src.getData(), src.getOffset(), src.getLength());
+        }
+    }
+
+    /**
      * Copies the properties of a specific <tt>DatagramPacket</tt> to another
      * <tt>DatagramPacket</tt>. The property values are not cloned.
      *
@@ -619,9 +635,8 @@ abstract class MultiplexingXXXSocketSupport
                     continue;
                 }
 
-                // The caller will receive from the network.
-                DatagramPacket c = clone(p, /* arraycopy */ false);
-
+                // We'll use the passed-in packet to do the receive and then put that 
+                // packet on the back of the queue.
                 synchronized (receiveSyncRoot)
                 {
                     if (setReceiveBufferSize)
@@ -638,10 +653,14 @@ abstract class MultiplexingXXXSocketSupport
                         }
                     }
                 }
-                doReceive(c);
+                doReceive(p);
 
-                // The caller received from the network. Copy/add the packet to
-                // the receive list of the sockets which accept it.
+                // We'll be re-assigning the values of 'p' so that it will contain the packet
+                // at the beginning of the queue, so we'll need to create a new instance of
+                // a packet to pass to the queues (but it can keep p's buffer)
+                DatagramPacket c = new DatagramPacket(p.getData(), p.getOffset(), p.getLength());
+                c.setAddress(p.getAddress());
+                c.setPort(p.getPort());
                 acceptBySocketsOrThis(c);
             }
             finally
@@ -655,7 +674,10 @@ abstract class MultiplexingXXXSocketSupport
         }
         while (true);
 
-        copy(r, p);
+        // The packet that was passed in is now in use at the end of the queue,
+        // so we'll 'steal' the buffers/information from the packet we just read
+        // off of the front of the queue and give it to the passed-in packet
+        move(r, p);
     }
 
     /**
