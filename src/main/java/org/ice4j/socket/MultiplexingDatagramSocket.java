@@ -274,6 +274,26 @@ public class MultiplexingDatagramSocket
     }
 
     /**
+     * Adds a specific {@link MultiplexedDatagramSocket} to this instance. The
+     * given socket must be already associated with this instance.
+     * @param multiplexed the socket to add.
+     * @throws IllegalArgumentException if the given socket is not associated
+     * with this instance, or its filter is already used for another multiplexed
+     * socket.
+     */
+    public void addSocket(MultiplexedDatagramSocket multiplexed)
+        throws IllegalArgumentException
+    {
+        if (!equals(multiplexed.getMultiplexingSocket()))
+        {
+            throw new IllegalArgumentException(
+                "The multiplexed socket is not associated with this socket.");
+        }
+
+        multiplexingXXXSocketSupport.addSocket(multiplexed);
+    }
+
+    /**
      * {@inheritDoc}
      */
     @Override

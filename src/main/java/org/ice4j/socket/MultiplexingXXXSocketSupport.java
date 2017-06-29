@@ -388,6 +388,38 @@ abstract class MultiplexingXXXSocketSupport
     }
 
     /**
+     * Adds a specific {@link MultiplexedXXXSocketT} instance to the list of
+     * filtered sockets of this instance. The filter which is to determine
+     * which packets are accepted by the socket is the socket's existing
+     * filter obtained via {@link MultiplexedXXXSocketT#getFilter()}.
+     * @param multiplexed the socket instance to add.
+     * @throws IllegalArgumentException if there already exists a socket
+     * with the specified socket's filter.
+     */
+    void addSocket(MultiplexedXXXSocketT multiplexed)
+        throws IllegalArgumentException
+    {
+        Objects.requireNonNull(multiplexed, "multiplexed");
+
+        DatagramPacketFilter filter
+            = Objects.requireNonNull(multiplexed.getFilter(), "filter");
+
+        synchronized (sockets)
+        {
+            for (MultiplexedXXXSocketT socket : sockets)
+            {
+                if (filter.equals(getFilter(socket)))
+                {
+                    throw new IllegalArgumentException(
+                            "A socket with the given filter already exists.");
+                }
+            }
+
+            doAddSocket(multiplexed);
+        }
+    }
+
+    /**
      * Gets a <tt>MultiplexedDatagramSocket</tt> which filters
      * <tt>DatagramPacket</tt>s away from this <tt>DatagramSocket</tt> using a
      * specific <tt>DatagramPacketFilter</tt>. If <tt>create</tt> is true and
@@ -433,24 +465,36 @@ abstract class MultiplexingXXXSocketSupport
             // Remember the new socket.
             if (socket != null)
             {
-                sockets.add(socket);
-
-                // A multiplexed socket may be created after packets matching
-                // its filter have been received. Pull them out of the
-                // multiplexing socket and into the newly-created multiplexed
-                // socket.
-
-                // XXX The fields received of both the multiplexed and the
-                // multiplexing sockets are used as synchronization roots (e.g.
-                // the method acceptBySocketsOrThis). In order to preserve the
-                // order of acquiring synchronization roots, perform the
-                // following procedure under the protection of the field
-                // socketsSyncRoot even though the field sockets will not be
-                // accessed.
-                moveReceivedFromThisToSocket(socket);
+                doAddSocket(socket);
             }
 
             return socket;
+        }
+    }
+
+    /**
+     * Adds a specific socket to {@link #sockets}.
+     * @param socket the socket to add.
+     */
+    private void doAddSocket(MultiplexedXXXSocketT socket)
+    {
+        synchronized (sockets)
+        {
+            sockets.add(socket);
+
+            // A multiplexed socket may be created after packets matching
+            // its filter have been received. Pull them out of the
+            // multiplexing socket and into the newly-created multiplexed
+            // socket.
+
+            // XXX The fields received of both the multiplexed and the
+            // multiplexing sockets are used as synchronization roots (e.g.
+            // the method acceptBySocketsOrThis). In order to preserve the
+            // order of acquiring synchronization roots, perform the
+            // following procedure under the protection of the field
+            // socketsSyncRoot even though the field sockets will not be
+            // accessed.
+            moveReceivedFromThisToSocket(socket);
         }
     }
 

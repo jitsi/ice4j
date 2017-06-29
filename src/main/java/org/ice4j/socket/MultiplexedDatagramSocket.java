@@ -84,7 +84,7 @@ public class MultiplexedDatagramSocket
      * <tt>multiplexing</tt> are to be received through the new instance
      * @throws SocketException if the socket could not be opened
      */
-    MultiplexedDatagramSocket(
+    public MultiplexedDatagramSocket(
             MultiplexingDatagramSocket multiplexing,
             DatagramPacketFilter filter)
         throws SocketException
@@ -158,4 +158,14 @@ public class MultiplexedDatagramSocket
     {
         multiplexing.receive(this, p);
     }
+
+    /**
+     * @return the {@link MultiplexingDatagramSocket} which owns this
+     * {@link MultiplexedDatagramSocket}.
+     */
+    MultiplexingDatagramSocket getMultiplexingSocket()
+    {
+        return multiplexing;
+    }
+
 }
