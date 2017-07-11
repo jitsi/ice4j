@@ -279,12 +279,15 @@ abstract class MultiplexingXXXSocketSupport
      * <tt>DatagramPacket</tt>s away from this <tt>DatagramSocket</tt>.
      *
      * @param multiplexed the <tt>MultiplexedDatagramSocket</tt> to close
+     * @return {@code true} if there are remaining filtered sockets.
      */
-    void close(MultiplexedXXXSocketT multiplexed)
+    boolean close(MultiplexedXXXSocketT multiplexed)
     {
         synchronized (sockets)
         {
             sockets.remove(multiplexed);
+
+            return !sockets.isEmpty();
         }
     }
 
