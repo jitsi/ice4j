@@ -8,7 +8,7 @@
   </parent>
 
   <artifactId>ice4j</artifactId>
-  <version>1.0</version>
+  <version>1.0.0</version>
   <packaging>bundle</packaging>
 
   <name>ice4j</name>
@@ -17,7 +17,7 @@
     <url>https://github.com/jitsi/ice4j</url>
     <connection>scm:git:https://github.com/jitsi/ice4j.git</connection>
     <developerConnection>scm:git:https://github.com/jitsi/ice4j.git</developerConnection>
-    <tag>ice4j-1.0</tag>
+    <tag>ice4j-1.0.0</tag>
   </scm>
 
   <dependencies>
