@@ -95,6 +95,7 @@
 
   <profiles>
     <profile>
+      <id>skip-pre-jdk8</id>
       <activation>
         <jdk>(,1.8)</jdk>
       </activation>
