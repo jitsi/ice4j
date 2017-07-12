@@ -65,6 +65,38 @@
           </includes>
         </configuration>
       </plugin>
+      <plugin>
+        <groupId>com.github.siom79.japicmp</groupId>
+        <artifactId>japicmp-maven-plugin</artifactId>
+        <version>0.10.0</version>
+        <configuration>
+          <newVersion>
+            <file>
+              <path>${project.build.directory}/${project.build.finalName}.jar</path>
+            </file>
+          </newVersion>
+          <oldVersion>
+            <dependency>
+              <groupId>${project.groupId}</groupId>
+              <artifactId>${project.artifactId}</artifactId>
+              <version>1.0.0</version>
+            </dependency>
+          </oldVersion>
+          <parameter>
+            <onlyModified>true</onlyModified>
+            <breakBuildBasedOnSemanticVersioning>true</breakBuildBasedOnSemanticVersioning>
+            <reportOnlyFilename>true</reportOnlyFilename>
+          </parameter>
+        </configuration>
+        <executions>
+          <execution>
+            <phase>verify</phase>
+            <goals>
+              <goal>cmp</goal>
+            </goals>
+          </execution>
+        </executions>
+      </plugin>
     </plugins>
 
     <pluginManagement>
