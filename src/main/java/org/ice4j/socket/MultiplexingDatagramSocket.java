@@ -99,8 +99,9 @@ public class MultiplexingDatagramSocket
 
     /**
      * The list of <tt>DatagramPacket</tt>s to be received through this
-     * <tt>DatagramSocket</tt> i.e. not accepted by the <tt>DatagramFilter</tt>s
-     * of {@link #sockets} at the time of the reading from the network.
+     * <tt>DatagramSocket</tt> i.e. not accepted by the list of
+     * {@link MultiplexedDatagramSocket} of this instance at the time of the
+     * reading from the network.
      */
     private final List<DatagramPacket> received
         = new SocketReceiveBuffer()
@@ -126,6 +127,15 @@ public class MultiplexingDatagramSocket
     private int soTimeout = 0;
 
     /**
+     * Whether this socket should be kept open even when all of its
+     * {@link MultiplexedDatagramSocket} are closed (if the value is
+     * {@code true}), or it should be closed when the last of its
+     * {@link MultiplexedDatagramSocket} is closed (if the value is
+     * {@code false}).
+     */
+    private final boolean persistent;
+
+    /**
      * Initializes a new <tt>MultiplexingDatagramSocket</tt> instance which is
      * to enable <tt>DatagramPacket</tt> filtering and binds it to any available
      * port on the local host machine. The socket will be bound to the wildcard
@@ -138,6 +148,25 @@ public class MultiplexingDatagramSocket
     public MultiplexingDatagramSocket()
         throws SocketException
     {
+        this(false);
+    }
+
+    /**
+     * Initializes a new <tt>MultiplexingDatagramSocket</tt> instance which is
+     * to enable <tt>DatagramPacket</tt> filtering and binds it to any available
+     * port on the local host machine. The socket will be bound to the wildcard
+     * address, an IP address chosen by the kernel.
+     *
+     * @throws SocketException if the socket could not be opened, or the socket
+     * could not bind to the specified local port
+     * @param persistent whether this socket should be kept open after all of
+     * its {@link MultiplexedDatagramSocket}s are closed.
+     * @see DatagramSocket#DatagramSocket()
+     */
+    public MultiplexingDatagramSocket(boolean persistent)
+        throws SocketException
+    {
+        this.persistent = persistent;
     }
 
     /**
@@ -153,7 +182,29 @@ public class MultiplexingDatagramSocket
     public MultiplexingDatagramSocket(DatagramSocket delegate)
         throws SocketException
     {
+        this(delegate, false);
+    }
+
+    /**
+     * Initializes a new <tt>MultiplexingDatagramSocket</tt> instance which is
+     * to enable <tt>DatagramPacket</tt> filtering on a specific
+     * <tt>DatagramSocket</tt>.
+     *
+     * @param delegate the <tt>DatagramSocket</tt> on which
+     * <tt>DatagramPacket</tt> filtering is to be enabled by the new instance
+     * @param persistent whether this socket should be kept open after all of
+     * its {@link MultiplexedDatagramSocket}s are closed.
+     * @throws SocketException if anything goes wrong while initializing the new
+     * instance
+     */
+    public MultiplexingDatagramSocket(
+            DatagramSocket delegate,
+            boolean persistent)
+        throws SocketException
+    {
         super(delegate);
+
+        this.persistent = persistent;
     }
 
     /**
@@ -170,7 +221,28 @@ public class MultiplexingDatagramSocket
     public MultiplexingDatagramSocket(int port)
         throws SocketException
     {
+        this(port, false);
+    }
+
+    /**
+     * Initializes a new <tt>MultiplexingDatagramSocket</tt> instance which is
+     * to enable <tt>DatagramPacket</tt> filtering and binds it to the specified
+     * port on the local host machine. The socket will be bound to the wildcard
+     * address, an IP address chosen by the kernel.
+     *
+     * @param port the port to bind the new socket to
+     * @param persistent whether this socket should be kept open after all of
+     * its {@link MultiplexedDatagramSocket}s are closed.
+     * @throws SocketException if the socket could not be opened, or the socket
+     * could not bind to the specified local port
+     * @see DatagramSocket#DatagramSocket(int)
+     */
+    public MultiplexingDatagramSocket(int port, boolean persistent)
+        throws SocketException
+    {
         super(port);
+
+        this.persistent = persistent;
     }
 
     /**
@@ -189,7 +261,33 @@ public class MultiplexingDatagramSocket
     public MultiplexingDatagramSocket(int port, InetAddress laddr)
         throws SocketException
     {
+        this(port, laddr, false);
+    }
+
+    /**
+     * Initializes a new <tt>MultiplexingDatagramSocket</tt> instance which is
+     * to enable <tt>DatagramPacket</tt> filtering, bound to the specified local
+     * address. The local port must be between 0 and 65535 inclusive. If the IP
+     * address is 0.0.0.0, the socket will be bound to the wildcard address, an
+     * IP address chosen by the kernel.
+     *
+     * @param port the local port to bind the new socket to
+     * @param laddr the local address to bind the new socket to
+     * @param persistent whether this socket should be kept open after all of
+     * its {@link MultiplexedDatagramSocket}s are closed.
+     * @throws SocketException if the socket could not be opened, or the socket
+     * could not bind to the specified local port
+     * @see DatagramSocket#DatagramSocket(int, InetAddress)
+     */
+    public MultiplexingDatagramSocket(
+            int port,
+            InetAddress laddr,
+            boolean persistent)
+        throws SocketException
+    {
         super(port, laddr);
+
+        this.persistent = persistent;
     }
 
     /**
@@ -210,7 +308,34 @@ public class MultiplexingDatagramSocket
     public MultiplexingDatagramSocket(SocketAddress bindaddr)
         throws SocketException
     {
+        this(bindaddr, false);
+    }
+
+    /**
+     * Initializes a new <tt>MultiplexingDatagramSocket</tt> instance which is
+     * to enable <tt>DatagramPacket</tt> filtering, bound to the specified local
+     * socket address.
+     * <p>
+     * If the specified local socket address is <tt>null</tt>, creates an
+     * unbound socket.
+     * </p>
+     *
+     * @param bindaddr local socket address to bind, or <tt>null</tt> for an
+     * unbound socket
+     * @param persistent whether this socket should be kept open after all of
+     * its {@link MultiplexedDatagramSocket}s are closed.
+     * @throws SocketException if the socket could not be opened, or the socket
+     * could not bind to the specified local port
+     * @see DatagramSocket#DatagramSocket(SocketAddress)
+     */
+    public MultiplexingDatagramSocket(
+                SocketAddress bindaddr,
+                boolean persistent)
+        throws SocketException
+    {
         super(bindaddr);
+
+        this.persistent = persistent;
     }
 
     /**
@@ -221,7 +346,11 @@ public class MultiplexingDatagramSocket
      */
     void close(MultiplexedDatagramSocket multiplexed)
     {
-        multiplexingXXXSocketSupport.close(multiplexed);
+        if (!multiplexingXXXSocketSupport.close(multiplexed)
+            && !persistent)
+        {
+            close();
+        }
     }
 
     /**

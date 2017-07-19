@@ -36,12 +36,23 @@ public class DTLSDatagramFilter
      */
     public static boolean isDTLS(DatagramPacket p)
     {
-        int len = p.getLength();
+        return p != null && isDTLS(p.getData(), p.getOffset(), p.getLength());
+    }
 
+    /**
+     * Determines whether the buffer represented by {@code data}, {@code off}
+     * and {@code len} looks like a DTLS packet.
+     *
+     * @param data the array that contains the data.
+     * @param off the offset.
+     * @param len the length.
+     * @return {@code true} if the buffer looks like a DTLS packet; otherwise,
+     * {@code false}.
+     */
+    public static boolean isDTLS(byte[] data, int off, int len)
+    {
         if (len > 0)
         {
-            byte[] data = p.getData();
-            int off = p.getOffset();
             int fb = data[off] & 0xff;
 
             return 19 < fb && fb < 64;

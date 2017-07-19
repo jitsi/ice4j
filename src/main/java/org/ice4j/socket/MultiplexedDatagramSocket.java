@@ -119,7 +119,10 @@ public class MultiplexedDatagramSocket
     {
         multiplexing.close(this);
 
-        super.close();
+        // We intentionally do not call super.close(), because it eventually
+        // delegates to #multiplexing. We don't want to close #multiplexing
+        // just yet, because it may have other filtered sockets attached to it
+        // (or it needs to be kept open for other reasons)
     }
 
     /**
