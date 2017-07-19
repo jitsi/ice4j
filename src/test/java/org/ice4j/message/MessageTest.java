@@ -23,7 +23,11 @@ import junit.framework.*;
 
 import org.ice4j.*;
 import org.ice4j.attribute.*;
+import org.ice4j.security.LongTermCredential;
+import org.ice4j.security.LongTermCredentialSession;
 import org.ice4j.stack.*;
+
+import javax.xml.bind.annotation.adapters.HexBinaryAdapter;
 
 public class MessageTest extends TestCase
 {
@@ -280,5 +284,46 @@ public class MessageTest extends TestCase
         assertEquals(
             "Attribute count did not change after removing an attribute",
             expectedReturn, actualReturn);
+    }
+
+    private static byte[] unmarshal(String hex) {
+        return new HexBinaryAdapter().unmarshal(hex);
+    }
+
+    private static String marshal(byte[] bytes) {
+        return new HexBinaryAdapter().marshal(bytes);
+    }
+
+
+    public void testEncodeWithKeys() throws StunException {
+        Request request = MessageFactory.createAllocateRequest();
+        request.setTransactionID(unmarshal("7766497a70656b5a357a4530"));
+        request.putAttribute(AttributeFactory.createRequestedTransportAttribute((byte)0x11));
+        String username = "mamiusername";
+        String password = "mamipassword";
+        byte[] realm = unmarshal("6c69766562616e6b2e6c6f63616c");
+        request.putAttribute(AttributeFactory.createUsernameAttribute(username));
+        request.putAttribute(AttributeFactory.createRealmAttribute(realm));
+        request.putAttribute(AttributeFactory.createNonceAttribute(unmarshal("3239336133663862346462643461626662643037313766393934303035396363")));
+        request.putAttribute(AttributeFactory.createMessageIntegrityAttribute(username));
+
+        final LongTermCredentialSession longTerm = new LongTermCredentialSession(new LongTermCredential(username, password), realm);
+
+        byte[] requestHex = request.encode(new KeysDependentAttributeContext() {
+
+            @Override
+            public byte[] getRemoteKey(String username, String media) {
+                return longTerm.getRemoteKey(username, media);
+            }
+
+            @Override
+            public byte[] getLocalKey(String username) {
+                return longTerm.getLocalKey(username);
+            }
+        });
+        String resultHex = marshal(requestHex);
+        String expectedHex ="000300682112A4427766497A70656B5A357A453000190004110000000006000C6D616D69757365726E616D650014000E6C69766562616E6B2E6C6F63616C00000015002032393361336638623464626434616266626430373137663939343030353963630008001433E767B5433E897A4A9EF38807153D81AF47D262";
+        assertEquals(expectedHex, resultHex);
+        //System.out.println("requestHexString: "+requestHexString);
     }
 }

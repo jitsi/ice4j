@@ -24,6 +24,7 @@ import java.util.*;
 import java.util.logging.*;
 
 import javax.crypto.*;
+import javax.xml.bind.annotation.adapters.HexBinaryAdapter;
 
 import org.ice4j.*;
 import org.ice4j.attribute.*;
@@ -1362,28 +1363,7 @@ public class StunStack
      */
     private static String toHexString(byte[] bytes)
     {
-        if (bytes == null)
-            return null;
-        else
-        {
-            StringBuilder hexStringBuilder
-                = new StringBuilder(2 * bytes.length);
-            char[] hexes
-                = new char[]
-                            {
-                                '0', '1', '2', '3', '4', '5', '6', '7', '8',
-                                '9', 'A', 'B', 'C', 'D', 'E', 'F'
-                            };
-
-            for (int i = 0; i < bytes.length; i++)
-            {
-                byte b = bytes[i];
-
-                hexStringBuilder.append(hexes[(b & 0xF0) >> 4]);
-                hexStringBuilder.append(hexes[b & 0x0F]);
-            }
-            return hexStringBuilder.toString();
-        }
+        return new HexBinaryAdapter().marshal(bytes);
     }
 
     /**
