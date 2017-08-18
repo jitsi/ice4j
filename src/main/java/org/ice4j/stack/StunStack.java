@@ -978,7 +978,8 @@ public class StunStack
             catch(Exception exc)
             {
                 //validation failed. log get lost.
-                logger.log(Level.FINE, "Failed to validate msg: " + ev, exc);
+                logger.log(Level.FINE, "Failed to validate msg, removing transaction: " + ev, exc);
+                removeServerTransaction(sTran);
                 return;
             }
 
