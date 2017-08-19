@@ -17,8 +17,6 @@
  */
 package org.ice4j.attribute;
 
-import org.ice4j.*;
-
 import java.util.*;
 
 /**
@@ -34,24 +32,6 @@ public class UsernameAttribute extends Attribute
      * Attribute name.
      */
     public static final String NAME = "USERNAME";
-
-    /**
-     * The name of the property which controls whether trailing zeroes should
-     * be stripped when decoding USERNAME attributes.
-     */
-    public static final String STRIP_TRAILING_ZEROES_PNAME
-        = "org.ice4j.attribute.UsernameAttribute.STRIP_TRAILING_ZEROES";
-
-    /**
-     * Whether trailing zeroes should be stripped when decoding USERNAME
-     * attributes. This is necessary to work around a bug in Edge described
-     * here:
-     * https://developer.microsoft.com/en-us/microsoft-edge/platform/issues/12332457/
-     * and here:
-     * https://github.com/jitsi/lib-jitsi-meet/issues/498
-     */
-    private boolean stripTrailingZeroes
-        = StackProperties.getBoolean(STRIP_TRAILING_ZEROES_PNAME, false);
 
     /**
      * Username value.
@@ -79,14 +59,6 @@ public class UsernameAttribute extends Attribute
     @Override
     void decodeAttributeBody(byte[] attributeValue, char offset, char length)
     {
-        if (stripTrailingZeroes)
-        {
-            while (length > 0 && attributeValue[offset + length - 1] == 0)
-            {
-                length--;
-            }
-        }
-
         username = new byte[length];
         System.arraycopy(attributeValue, offset, username, 0, length);
     }
