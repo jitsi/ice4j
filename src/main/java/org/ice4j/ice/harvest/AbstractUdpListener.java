@@ -535,10 +535,10 @@ public abstract class AbstractUdpListener
         @Override
         public void close()
         {
-            closed = true;
-
             synchronized (queue)
             {
+                closed = true;
+
                 // Wake up any threads still in receive()
                 queue.notifyAll();
             }
@@ -546,7 +546,9 @@ public abstract class AbstractUdpListener
             // We could be called by the super-class constructor, in which
             // case this.removeAddress is not initialized yet.
             if (remoteAddress != null)
+            {
                 AbstractUdpListener.this.sockets.remove(remoteAddress);
+            }
 
             super.close();
         }
@@ -565,11 +567,13 @@ public abstract class AbstractUdpListener
 
             while (buf == null)
             {
-                if (closed)
-                    throw new SocketException("Socket closed");
-
                 synchronized (queue)
                 {
+                    if (closed)
+                    {
+                        throw new SocketException("Socket closed");
+                    }
+
                     if (queue.isEmpty())
                     {
                         try
@@ -592,7 +596,9 @@ public abstract class AbstractUdpListener
 
             // XXX Should we use p.setData() here with a buffer of our own?
             if (pData == null || pData.length < buf.len)
+            {
                 throw new IOException("packet buffer not available");
+            }
 
             System.arraycopy(buf.buffer, 0, pData, 0, buf.len);
             p.setLength(buf.len);
