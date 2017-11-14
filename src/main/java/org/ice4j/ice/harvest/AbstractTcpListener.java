@@ -406,15 +406,44 @@ public abstract class AbstractTcpListener
     protected void init()
         throws IOException
     {
+        boolean bindWildcard = !StackProperties.getBoolean(
+                StackProperties.BIND_WILDCARD,
+                false);
+
+        // Use a set to filter out any duplicates.
+        Set<InetSocketAddress> addressesToBind = new HashSet<>();
+
         for (TransportAddress transportAddress : localAddresses)
         {
-            ServerSocketChannel channel
-                = MuxServerSocketChannelFactory
-                    .openAndBindMuxServerSocketChannel(
+            addressesToBind.add( new InetSocketAddress(
+                bindWildcard ? null : transportAddress.getAddress(),
+                transportAddress.getPort()
+            ) );
+        }
+
+        for (InetSocketAddress addressToBind : addressesToBind )
+        {
+            addSocketChannel( addressToBind );
+        }
+
+        acceptThread = new AcceptThread();
+        acceptThread.start();
+
+        readThread = new ReadThread();
+        readThread.start();
+    }
+
+    /**
+     * Initializes one of the channels in {@link #serverSocketChannels},
+     * @throws IOException if an I/O error occurs
+     */
+    private void addSocketChannel(InetSocketAddress address)
+        throws IOException
+    {
+        ServerSocketChannel channel = MuxServerSocketChannelFactory
+            .openAndBindMuxServerSocketChannel(
                             /* properties */ null,
-                            new InetSocketAddress(
-                                    transportAddress.getAddress(),
-                                    transportAddress.getPort()),
+                            address,
                             /* backlog */ 0,
                             new DatagramPacketFilter()
                             {
@@ -428,14 +457,7 @@ public abstract class AbstractTcpListener
                                 }
                             });
 
-            serverSocketChannels.add(channel);
-        }
-
-        acceptThread = new AcceptThread();
-        acceptThread.start();
-
-        readThread = new ReadThread();
-        readThread.start();
+        serverSocketChannels.add(channel);
     }
 
     /**
