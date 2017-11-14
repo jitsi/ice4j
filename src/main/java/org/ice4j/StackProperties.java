@@ -49,6 +49,15 @@ public class StackProperties
     public static final int BIND_RETRIES_DEFAULT_VALUE = 50;
 
     /**
+     * The name of the property that tells if we should bind to the
+     * wildcard address instead of the (usually more specific) harvest candidate
+     * addresses.
+     *
+     * The wildcard is a special local IP address. It usually means "any".
+     */
+    public static final String BIND_WILDCARD = "org.ice4j.BIND_WILDCARD";
+
+    /**
      * How often a STUN Binding request used for consent freshness check will be
      * sent(value in milliseconds).
      */
