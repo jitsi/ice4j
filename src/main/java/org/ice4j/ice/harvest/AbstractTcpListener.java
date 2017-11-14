@@ -406,7 +406,7 @@ public abstract class AbstractTcpListener
     protected void init()
         throws IOException
     {
-        boolean bindWildcard = !StackProperties.getBoolean(
+        boolean bindWildcard = StackProperties.getBoolean(
                 StackProperties.BIND_WILDCARD,
                 false);
 
