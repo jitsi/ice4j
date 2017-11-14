@@ -205,7 +205,7 @@ public abstract class AbstractUdpListener
     protected AbstractUdpListener(TransportAddress localAddress)
         throws IOException
     {
-        boolean bindWildcard = !StackProperties.getBoolean(
+        boolean bindWildcard = StackProperties.getBoolean(
                 StackProperties.BIND_WILDCARD,
                 false);
 
