@@ -535,10 +535,10 @@ public abstract class AbstractUdpListener
         @Override
         public void close()
         {
-            closed = true;
-
             synchronized (queue)
             {
+                closed = true;
+
                 // Wake up any threads still in receive()
                 queue.notifyAll();
             }
@@ -565,11 +565,13 @@ public abstract class AbstractUdpListener
 
             while (buf == null)
             {
-                if (closed)
-                    throw new SocketException("Socket closed");
-
                 synchronized (queue)
                 {
+                    if (closed)
+                    {
+                        throw new SocketException("Socket closed");
+                    }
+
                     if (queue.isEmpty())
                     {
                         try
