@@ -222,7 +222,7 @@ public abstract class AbstractUdpListener
             this.localAddress = localAddress;
         }
 
-        socket = new DatagramSocket( localAddress );
+        socket = new DatagramSocket( this.localAddress );
 
         int receiveBufferSize = StackProperties.getInt(SO_RCVBUF_PNAME, -1);
         if (receiveBufferSize > 0)
@@ -231,7 +231,7 @@ public abstract class AbstractUdpListener
         }
 
         String logMessage
-            = "Initialized AbstractUdpListener with address " + localAddress;
+            = "Initialized AbstractUdpListener with address " + this.localAddress;
         logMessage += ". Receive buffer size " + socket.getReceiveBufferSize();
         if (receiveBufferSize > 0)
         {
@@ -249,7 +249,7 @@ public abstract class AbstractUdpListener
         };
 
         thread.setName(AbstractUdpListener.class.getName() + " thread for "
-            + localAddress);
+            + this.localAddress);
         thread.setDaemon(true);
         thread.start();
     }
