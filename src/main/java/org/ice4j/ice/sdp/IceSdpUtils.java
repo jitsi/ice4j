@@ -177,7 +177,7 @@ public class IceSdpUtils
                                 : Connection.IP4;
 
             mediaDescription.setConnection(sdpFactory.createConnection(
-                "IN", defaultAddress.getHostAddress(), addressFamily));
+                "IN", addressFamily, defaultAddress.getHostAddress()));
 
             //now check if the RTCP port for the default candidate is different
             //than RTP.port +1, in which case we need to mention it.
