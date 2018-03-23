@@ -327,6 +327,8 @@ public class HostCandidateHarvester
         }
 
         boolean boundAtLeastOneSocket = false;
+        boolean foundAtLeastOneUsableInterface = false;
+        boolean foundAtLeastOneUsableAddress = false;
         while (interfaces.hasMoreElements())
         {
             NetworkInterface iface = interfaces.nextElement();
@@ -338,6 +340,7 @@ public class HostCandidateHarvester
                 //this one is obviously not going to do
                 continue;
             }
+            foundAtLeastOneUsableInterface = true;
 
             Enumeration<InetAddress> addresses = iface.getInetAddresses();
 
@@ -356,6 +359,7 @@ public class HostCandidateHarvester
                 {
                     continue;
                 }
+                foundAtLeastOneUsableAddress = true;
 
                 if((addr instanceof Inet4Address) || !isIPv6Disabled)
                 {
@@ -423,14 +427,18 @@ public class HostCandidateHarvester
             }
         }
 
-        if(!boundAtLeastOneSocket)
+        if (!boundAtLeastOneSocket)
         {
             throw new IOException(
                 "Failed to bind even a single host candidate for component:"
                             + component
                             + " preferredPort=" + preferredPort
                             + " minPort=" + minPort
-                            + " maxPort=" + maxPort);
+                            + " maxPort=" + maxPort
+                            + " foundAtLeastOneUsableInterface="
+                            + foundAtLeastOneUsableInterface
+                            + " foundAtLeastOneUsableAddress="
+                            + foundAtLeastOneUsableAddress);
         }
 
         this.harvestStatistics
