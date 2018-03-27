@@ -45,7 +45,12 @@ public abstract class Message
     private static final Logger logger
         = Logger.getLogger(Message.class.getName());
 
-    /* general declaration */
+    /**
+     * The mask of the two bits from the message type structure, which indicate
+     * the message class.
+     */
+    private static final char MESSAGE_CLASS_MASK = 0x0110;
+
     /**
      * STUN request code.
      */
@@ -1260,7 +1265,7 @@ public abstract class Message
      */
     public static boolean isErrorResponseType(char type)
     {
-      return ((type & 0x0110) == STUN_ERROR_RESP);
+      return ((type & MESSAGE_CLASS_MASK) == STUN_ERROR_RESP);
     }
 
     /**
@@ -1270,7 +1275,7 @@ public abstract class Message
      */
     public static boolean isSuccessResponseType(char type)
     {
-      return ((type & 0x0110) == STUN_SUCCESS_RESP);
+      return ((type & MESSAGE_CLASS_MASK) == STUN_SUCCESS_RESP);
     }
 
     /**
@@ -1292,7 +1297,7 @@ public abstract class Message
      */
     public static boolean isIndicationType(char type)
     {
-      return ((type & 0x0110) == STUN_INDICATION);
+      return ((type & MESSAGE_CLASS_MASK) == STUN_INDICATION);
     }
 
     /**
@@ -1304,7 +1309,7 @@ public abstract class Message
     public static boolean isRequestType(char type)
     {
       /* return !isResponseType(type); */
-      return ((type & 0x0110) == STUN_REQUEST);
+      return ((type & MESSAGE_CLASS_MASK) == STUN_REQUEST);
     }
 
     /**
