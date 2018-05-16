@@ -336,8 +336,8 @@ public abstract class AbstractUdpListener
         }
         while (true);
 
-        //now clean up and exit
-        for (MySocket candidateSocket : sockets.values())
+        // now clean up and exit
+        for (MySocket candidateSocket : new ArrayList<>(sockets.values()))
         {
             candidateSocket.close();
         }
