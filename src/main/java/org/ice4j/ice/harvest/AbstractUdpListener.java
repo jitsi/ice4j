@@ -197,6 +197,11 @@ public abstract class AbstractUdpListener
     private final Thread thread;
 
     /**
+     * Triggers the termination of the threads of this instance.
+     */
+    private boolean close = false;
+
+    /**
      * Initializes a new <tt>SinglePortUdpHarvester</tt> instance which is to
      * bind on the specified local address.
      * @param localAddress the address to bind to.
@@ -255,6 +260,15 @@ public abstract class AbstractUdpListener
     }
 
     /**
+     * Triggers the termination of the threads of this instance.
+     */
+    public void close()
+    {
+        close = true;
+        socket.close(); // causes socket#receive to stop blocking.
+    }
+
+    /**
      * Perpetually reads datagrams from {@link #socket} and handles them
      * accordingly.
      *
@@ -271,7 +285,10 @@ public abstract class AbstractUdpListener
 
         do
         {
-            // TODO: implement stopping the thread with a switch?
+            if (close)
+            {
+                break;
+            }
 
             buf = getFreeBuffer();
 
@@ -286,7 +303,10 @@ public abstract class AbstractUdpListener
             }
             catch (IOException ioe)
             {
-                logger.severe("Failed to receive from socket: " + ioe);
+                if (!close)
+                {
+                    logger.severe("Failed to receive from socket: " + ioe);
+                }
                 break;
             }
             buf.len = pkt.getLength();
@@ -316,7 +336,12 @@ public abstract class AbstractUdpListener
         }
         while (true);
 
-        // TODO we are all done, clean up.
+        // now clean up and exit
+        for (MySocket candidateSocket : new ArrayList<>(sockets.values()))
+        {
+            candidateSocket.close();
+        }
+        socket.close();
     }
 
     /**
