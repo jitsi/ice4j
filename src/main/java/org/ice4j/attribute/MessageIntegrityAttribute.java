@@ -18,6 +18,7 @@
 package org.ice4j.attribute;
 
 import java.util.*;
+import java.util.logging.*;
 
 import javax.crypto.*;
 import javax.crypto.spec.*;
@@ -86,6 +87,13 @@ public class MessageIntegrityAttribute
     extends Attribute
     implements ContentDependentAttribute
 {
+    /**
+     * The <tt>Logger</tt> used by the <tt>Message</tt> class and its instances
+     * for logging output.
+     */
+    private static final Logger logger
+        = Logger.getLogger(MessageIntegrityAttribute.class.getName());
+
     /**
      * Attribute name.
      */
@@ -283,19 +291,24 @@ public class MessageIntegrityAttribute
         char msgType =
             (char) (((content[0] & 0xFF) << 8) | (content[1] & 0xFF));
 
-        if(Message.isRequestType(msgType))
+        if (Message.isRequestType(msgType))
         {
             /* attribute part of a request, use the remote key */
-            key = stunStack.getCredentialsManager().getRemoteKey(username,
-                    media);
+            key
+                = stunStack.getCredentialsManager()
+                    .getRemoteKey(username, media);
         }
-        else if(Message.isSuccessResponseType(msgType) ||
-                Message.isErrorResponseType(msgType))
+        else if (Message.isResponseType(msgType))
         {
             /* attribute part of a response, use the local key */
             key = stunStack.getCredentialsManager().getLocalKey(username);
         }
+        else // msgType is Indication
+        {
+            logger.warning("Can not encode a message of type Indication.");
+        }
 
+        Objects.requireNonNull(key, "key=null; msgType=" + msgType);
         //now calculate the HMAC-SHA1
         this.hmacSha1Content = calculateHmacSha1(content, offset, length, key);
 

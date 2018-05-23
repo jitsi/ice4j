@@ -45,26 +45,31 @@ public abstract class Message
     private static final Logger logger
         = Logger.getLogger(Message.class.getName());
 
-    /* general declaration */
+    /**
+     * The mask of the two bits from the message type structure, which indicate
+     * the message class.
+     */
+    private static final char MESSAGE_CLASS_MASK = 0x0110;
+
     /**
      * STUN request code.
      */
-    public static final char STUN_REQUEST         = 0x0000;
+    public static final char STUN_REQUEST = 0x0000;
 
     /**
      * STUN indication code.
      */
-    public static final char STUN_INDICATION      = 0x0010;
+    public static final char STUN_INDICATION = 0x0010;
 
     /**
      * STUN success response code.
      */
-    public static final char STUN_SUCCESS_RESP    = 0x0100;
+    public static final char STUN_SUCCESS_RESP = 0x0100;
 
     /**
      * STUN error response code.
      */
-    public static final char STUN_ERROR_RESP      = 0x0110;
+    public static final char STUN_ERROR_RESP = 0x0110;
 
     /* STUN methods */
     /**
@@ -75,62 +80,62 @@ public abstract class Message
     /**
      * STUN binding request code.
      */
-    public static final char BINDING_REQUEST               =
-        (STUN_METHOD_BINDING | STUN_REQUEST);
+    public static final char BINDING_REQUEST
+        = (STUN_METHOD_BINDING | STUN_REQUEST);
 
     /**
      * STUN binding success response code.
      */
-    public static final char BINDING_SUCCESS_RESPONSE      =
-        (STUN_METHOD_BINDING | STUN_SUCCESS_RESP);
+    public static final char BINDING_SUCCESS_RESPONSE
+        = (STUN_METHOD_BINDING | STUN_SUCCESS_RESP);
 
     /**
      * STUN binding error response code.
      */
-    public static final char BINDING_ERROR_RESPONSE        =
-        (STUN_METHOD_BINDING | STUN_ERROR_RESP);
+    public static final char BINDING_ERROR_RESPONSE
+        = (STUN_METHOD_BINDING | STUN_ERROR_RESP);
 
     /**
      * STUN binding request code.
      */
-    public static final char BINDING_INDICATION            =
-        (STUN_METHOD_BINDING | STUN_INDICATION);
+    public static final char BINDING_INDICATION
+        = (STUN_METHOD_BINDING | STUN_INDICATION);
 
     /**
      * STUN shared secret request.
      */
-    public static final char SHARED_SECRET_REQUEST         = 0x0002;
+    public static final char SHARED_SECRET_REQUEST = 0x0002;
 
     /**
      * STUN shared secret response.
      */
-    public static final char SHARED_SECRET_RESPONSE        = 0x0102;
+    public static final char SHARED_SECRET_RESPONSE = 0x0102;
 
     /**
      * STUN shared secret error response.
      */
-    public static final char SHARED_SECRET_ERROR_RESPONSE  = 0x0112;
+    public static final char SHARED_SECRET_ERROR_RESPONSE = 0x0112;
 
     /* TURN methods */
     /**
      * TURN allocate method code.
      */
-    public static final char TURN_METHOD_ALLOCATE  = 0x0003;
+    public static final char TURN_METHOD_ALLOCATE = 0x0003;
 
     /**
      * TURN refresh method code.
      */
-    public static final char TURN_METHOD_REFRESH  = 0x0004;
+    public static final char TURN_METHOD_REFRESH = 0x0004;
 
     /**
      * TURN send method code.
      */
-    public static final char TURN_METHOD_SEND  = 0x0006;
+    public static final char TURN_METHOD_SEND = 0x0006;
 
     /**
      * TURN data method code.
      */
-    public static final char TURN_METHOD_DATA  = 0x0007;
+    public static final char TURN_METHOD_DATA = 0x0007;
 
     /**
      * TURN CreatePermission method code.
@@ -140,7 +145,7 @@ public abstract class Message
     /**
      * TURN ChannelBind method code.
      */
-    public static final char TURN_METHOD_CHANNELBIND  = 0x0009;
+    public static final char TURN_METHOD_CHANNELBIND = 0x0009;
     
     /**
      * TURN Connect method code.
@@ -160,134 +165,134 @@ public abstract class Message
     /**
      * TURN allocate request code.
      */
-    public static final char ALLOCATE_REQUEST =
-        (TURN_METHOD_ALLOCATE | STUN_REQUEST);
+    public static final char ALLOCATE_REQUEST
+        = (TURN_METHOD_ALLOCATE | STUN_REQUEST);
 
     /**
      * TURN allocate response code.
      */
-    public static final char ALLOCATE_RESPONSE =
-        (TURN_METHOD_ALLOCATE | STUN_SUCCESS_RESP);
+    public static final char ALLOCATE_RESPONSE
+        = (TURN_METHOD_ALLOCATE | STUN_SUCCESS_RESP);
 
     /**
      * TURN allocate error response code.
      */
-    public static final char ALLOCATE_ERROR_RESPONSE =
-        (TURN_METHOD_ALLOCATE | STUN_ERROR_RESP);
+    public static final char ALLOCATE_ERROR_RESPONSE
+        = (TURN_METHOD_ALLOCATE | STUN_ERROR_RESP);
 
     /**
      * TURN refresh request code.
      */
-    public static final char REFRESH_REQUEST =
-        (TURN_METHOD_REFRESH | STUN_REQUEST);
+    public static final char REFRESH_REQUEST
+        = (TURN_METHOD_REFRESH | STUN_REQUEST);
     
     /**
      * TURN allocate refresh request code.
      */
-    public static final char ALLOCATE_REFRESH_REQUEST = 
-        (TURN_METHOD_ALLOCATE | REFRESH_REQUEST);
+    public static final char ALLOCATE_REFRESH_REQUEST
+        = (TURN_METHOD_ALLOCATE | REFRESH_REQUEST);
     
     /**
      * TURN refresh response code.
      */
-    public static final char REFRESH_RESPONSE =
-        (TURN_METHOD_REFRESH | STUN_SUCCESS_RESP);
+    public static final char REFRESH_RESPONSE
+        = (TURN_METHOD_REFRESH | STUN_SUCCESS_RESP);
 
     /**
      * TURN refresh error response code.
      */
-    public static final char REFRESH_ERROR_RESPONSE =
-        (TURN_METHOD_REFRESH | STUN_ERROR_RESP);
+    public static final char REFRESH_ERROR_RESPONSE
+        = (TURN_METHOD_REFRESH | STUN_ERROR_RESP);
 
     /**
      * TURN ChannelBind request code.
      */
-    public static final char CHANNELBIND_REQUEST =
-        (TURN_METHOD_CHANNELBIND | STUN_REQUEST);
+    public static final char CHANNELBIND_REQUEST
+        = (TURN_METHOD_CHANNELBIND | STUN_REQUEST);
 
     /**
      * TURN ChannelBind response code.
      */
-    public static final char CHANNELBIND_RESPONSE =
-        (TURN_METHOD_CHANNELBIND | STUN_SUCCESS_RESP);
+    public static final char CHANNELBIND_RESPONSE
+        = (TURN_METHOD_CHANNELBIND | STUN_SUCCESS_RESP);
 
     /**
      * TURN ChannelBind error response code.
      */
-    public static final char CHANNELBIND_ERROR_RESPONSE =
-        (TURN_METHOD_CHANNELBIND | STUN_ERROR_RESP);
+    public static final char CHANNELBIND_ERROR_RESPONSE
+        = (TURN_METHOD_CHANNELBIND | STUN_ERROR_RESP);
 
     /**
      * TURN CreatePermission request code.
      */
-    public static final char CREATEPERMISSION_REQUEST =
-        (TURN_METHOD_CREATEPERMISSION | STUN_REQUEST);
+    public static final char CREATEPERMISSION_REQUEST
+        = (TURN_METHOD_CREATEPERMISSION | STUN_REQUEST);
 
     /**
      * TURN CreatePermission response code.
      */
-    public static final char CREATEPERMISSION_RESPONSE =
-        (TURN_METHOD_CREATEPERMISSION | STUN_SUCCESS_RESP);
+    public static final char CREATEPERMISSION_RESPONSE
+        = (TURN_METHOD_CREATEPERMISSION | STUN_SUCCESS_RESP);
 
     /**
      * TURN CreatePermission error response code.
      */
-    public static final char CREATEPERMISSION_ERROR_RESPONSE =
-        (TURN_METHOD_CREATEPERMISSION | STUN_ERROR_RESP);
+    public static final char CREATEPERMISSION_ERROR_RESPONSE
+        = (TURN_METHOD_CREATEPERMISSION | STUN_ERROR_RESP);
 
     /**
      * TURN send indication code.
      */
-    public static final char SEND_INDICATION =
-        (TURN_METHOD_SEND | STUN_INDICATION);
+    public static final char SEND_INDICATION
+        = (TURN_METHOD_SEND | STUN_INDICATION);
 
     /**
      * TURN data indication code.
      */
-    public static final char DATA_INDICATION =
-        (TURN_METHOD_DATA | STUN_INDICATION);
+    public static final char DATA_INDICATION
+        = (TURN_METHOD_DATA | STUN_INDICATION);
 
     /**
      * TURN Connect Request code.
      */
-    public static final char CONNECT_REQUEST = 
-        (TURN_METHOD_CONNECT | STUN_REQUEST);
+    public static final char CONNECT_REQUEST
+        = (TURN_METHOD_CONNECT | STUN_REQUEST);
 
     /**
      * TURN Connect Success Response code.
      */
-    public static final char CONNECT_RESPONSE = 
-        (TURN_METHOD_CONNECT | STUN_SUCCESS_RESP);
+    public static final char CONNECT_RESPONSE
+        = (TURN_METHOD_CONNECT | STUN_SUCCESS_RESP);
 
     /**
      * TURN Connect Error Response code.
      */
-    public static final char CONNECT_ERROR_RESPONSE = 
-        (TURN_METHOD_CONNECT | STUN_ERROR_RESP);
+    public static final char CONNECT_ERROR_RESPONSE
+        = (TURN_METHOD_CONNECT | STUN_ERROR_RESP);
 
     /**
      * TURN Connection Bind Request code.
      */
-    public static final char CONNECTION_BIND_REQUEST = 
-        (TURN_METHOD_CONNECTION_BIND | STUN_REQUEST);
+    public static final char CONNECTION_BIND_REQUEST
+        = (TURN_METHOD_CONNECTION_BIND | STUN_REQUEST);
 
     /**
      * TURN Connection Bind Success Response code.
      */
-    public static final char CONNECTION_BIND_SUCCESS_RESPONSE = 
-        (TURN_METHOD_CONNECTION_BIND | STUN_SUCCESS_RESP);
+    public static final char CONNECTION_BIND_SUCCESS_RESPONSE
+        = (TURN_METHOD_CONNECTION_BIND | STUN_SUCCESS_RESP);
 
     /**
      * TURN Connection Bind error code. 
      */
-    public static final char CONNECTION_BIND_ERROR_RESPONSE = 
-        (TURN_METHOD_CONNECTION_BIND | STUN_ERROR_RESP);
+    public static final char CONNECTION_BIND_ERROR_RESPONSE
+        = (TURN_METHOD_CONNECTION_BIND | STUN_ERROR_RESP);
 
     /**
      * TURN Connection Attempt Indication code.
      */
-    public static final char CONNECTION_ATTEMPT_INDICATION = 
-        (TURN_METHOD_CONNECTION_ATTEMPT | STUN_INDICATION);
+    public static final char CONNECTION_ATTEMPT_INDICATION
+        = (TURN_METHOD_CONNECTION_ATTEMPT | STUN_INDICATION);
 
     /* Old TURN method */
     /**
@@ -341,7 +346,7 @@ public abstract class Message
      * so we'll be using a <tt>LinkedHashMap</tt>
      */
     //not sure this is the best solution but I'm trying to keep entry order
-    protected LinkedHashMap<Character, Attribute> attributes
+    protected final LinkedHashMap<Character, Attribute> attributes
         = new LinkedHashMap<>();
 
     /**
@@ -383,19 +388,19 @@ public abstract class Message
      *   SOFTWARE            N/A      O        O        N/A     O       O     
      * </pre>
      */
-    public static final byte N_A = 0;
+    private static final byte N_A = 0;
 
     /**
      * C means it's conditional based on some other aspect of the message.
      */
-    public static final byte C   = 1;
+    private static final byte C = 1;
 
     /**
      * O means the parameter is optional.
      *
      * @see Message#N_A
      */
-    public static final byte O   = 2;
+    public static final byte O = 2;
 
     /**
      * M indicates that inclusion of the attribute in the message is
@@ -403,7 +408,7 @@ public abstract class Message
      *
      * @see Message#N_A
      */
-    public static final byte M   = 3;
+    public static final byte M = 3;
 
     //Message indices
     protected static final byte BINDING_REQUEST_PRESENTITY_INDEX           = 0;
@@ -1058,7 +1063,7 @@ public abstract class Message
         int originalOffset = offset;
         arrayLen = (char)Math.min(binMessage.length, arrayLen);
 
-        if(binMessage == null || arrayLen - offset < Message.HEADER_LENGTH)
+        if(arrayLen - offset < Message.HEADER_LENGTH)
         {
             throw new StunException( StunException.ILLEGAL_ARGUMENT,
                          "The given binary array is not a valid StunMessage");
@@ -1260,7 +1265,7 @@ public abstract class Message
      */
     public static boolean isErrorResponseType(char type)
     {
-      return ((type & 0x0110) == STUN_ERROR_RESP);
+      return ((type & MESSAGE_CLASS_MASK) == STUN_ERROR_RESP);
     }
 
     /**
@@ -1270,7 +1275,7 @@ public abstract class Message
      */
     public static boolean isSuccessResponseType(char type)
     {
-      return ((type & 0x0110) == STUN_SUCCESS_RESP);
+      return ((type & MESSAGE_CLASS_MASK) == STUN_SUCCESS_RESP);
     }
 
     /**
@@ -1288,11 +1293,11 @@ public abstract class Message
     /**
      * Determines if the message type is Indication.
      * @param type type to test
-     * @return true if the type is Indictation, false otherwise
+     * @return true if the type is Indication, false otherwise
      */
     public static boolean isIndicationType(char type)
     {
-      return ((type & 0x0110) == STUN_INDICATION);
+      return ((type & MESSAGE_CLASS_MASK) == STUN_INDICATION);
     }
 
     /**
@@ -1304,7 +1309,7 @@ public abstract class Message
     public static boolean isRequestType(char type)
     {
       /* return !isResponseType(type); */
-      return ((type & 0x0110) == STUN_REQUEST);
+      return ((type & MESSAGE_CLASS_MASK) == STUN_REQUEST);
     }
 
     /**
