@@ -1027,8 +1027,13 @@ public abstract class AbstractTcpListener
                     }
                 }
             }
-            catch (IOException | IllegalStateException e)
+            catch (Exception e)
             {
+                // The ReadThread should continue running no matter what
+                // exceptions occur in the code above (we've observed exceptions
+                // due to failures to allocate resources) because otherwise
+                // the #newChannels list is never pruned leading to a leak of
+                // sockets.
                 logger.info(
                         "Failed to handle TCP socket "
                             + channel.channel.socket() + ": " + e.getMessage());
