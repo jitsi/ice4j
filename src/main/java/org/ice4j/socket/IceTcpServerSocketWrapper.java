@@ -195,7 +195,12 @@ public class IceTcpServerSocketWrapper
                         component.getParentStream().getParentAgent().
                             getStunStack().addSocket(
                                 new IceTcpSocketWrapper(multiplexingSocket));
-                        component.getComponentSocket().add(multiplexingSocket);
+                        ComponentSocket componentSocket
+                            = component.getComponentSocket();
+                        if (componentSocket != null)
+                        {
+                            componentSocket.add(multiplexingSocket);
+                        }
 
                         sockets.add(multiplexingSocket);
                     }

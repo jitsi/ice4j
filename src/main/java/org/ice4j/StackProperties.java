@@ -17,6 +17,8 @@
  */
 package org.ice4j;
 
+import org.ice4j.ice.*;
+
 import java.util.*;
 import java.util.logging.*;
 
@@ -246,6 +248,18 @@ public class StackProperties
      */
     public static final String HARVESTING_TIMEOUT
             = "org.ice4j.ice.harvest.HARVESTING_TIMEOUT";
+
+    /**
+     * The name of the property which specifies whether the per-component
+     * merging socket should be enabled by default (the default value can be
+     * overridden with {@link Agent#createComponent(IceMediaStream, Transport,
+     * int, int, int, KeepAliveStrategy, boolean)}.
+     * If enabled, the user of the library must use the socket instance provided
+     * by {@link Component#getSocket()}. Otherwise, the socket instance from the
+     * desired {@link CandidatePair} must be used.
+     */
+    public static final String USE_COMPONENT_SOCKET
+        = "org.ice4j.ice.USE_COMPONENT_SOCKET";
 
     /**
      * Returns the String value of the specified property (minus all

@@ -455,7 +455,9 @@ public class Agent
         return createComponent(
                 stream, transport,
                 preferredPort, minPort, maxPort,
-                KeepAliveStrategy.SELECTED_ONLY);
+                KeepAliveStrategy.SELECTED_ONLY,
+                StackProperties.getBoolean(
+                    StackProperties.USE_COMPONENT_SOCKET, true));
     }
 
     /**
@@ -486,12 +488,14 @@ public class Agent
      * <tt>minPort</tt> and <tt>maxPort</tt> before reaching the maximum allowed
      * number of retries.
      */
-    public Component createComponent(  IceMediaStream stream,
-                                       Transport      transport,
-                                       int            preferredPort,
-                                       int            minPort,
-                                       int            maxPort,
-                                       KeepAliveStrategy keepAliveStrategy)
+    public Component createComponent(
+        IceMediaStream stream,
+        Transport transport,
+        int preferredPort,
+        int minPort,
+        int maxPort,
+        KeepAliveStrategy keepAliveStrategy,
+        boolean useComponentSocket)
         throws IllegalArgumentException,
                IOException,
                BindException
@@ -503,7 +507,8 @@ public class Agent
                         + transport);
         }
 
-        Component component = stream.createComponent(keepAliveStrategy);
+        Component component
+            = stream.createComponent(keepAliveStrategy, useComponentSocket);
 
         gatherCandidates(component, preferredPort, minPort, maxPort);
 

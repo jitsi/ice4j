@@ -410,7 +410,7 @@ public class HostCandidateHarvester
                             NetworkUtils.isInterfaceVirtual(iface));
                     component.addLocalCandidate(candidate);
 
-                    if(transport == Transport.TCP)
+                    if (transport == Transport.TCP)
                     {
                         // have to wait a client connection to add a STUN socket
                         // to the StunStack
@@ -422,7 +422,13 @@ public class HostCandidateHarvester
                     // checks. In case we have enabled STUN, we are going to use
                     // them as well while harvesting reflexive candidates.
                     createAndRegisterStunSocket(candidate);
-                    component.getComponentSocket().add(sock);
+
+                    ComponentSocket componentSocket
+                        = component.getComponentSocket();
+                    if (componentSocket != null)
+                    {
+                        componentSocket.add(sock);
+                    }
                 }
             }
         }

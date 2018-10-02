@@ -371,8 +371,12 @@ public class SinglePortUdpHarvester
                     stunSocket,
                     new TransportAddress(remoteAddress, Transport.UDP));
 
-            // TODO: maybe move this code to the candidates.
-            component.getComponentSocket().add(multiplexing);
+            MergingDatagramSocket componentSocket
+                = component.getComponentSocket();
+            if (componentSocket != null)
+            {
+                componentSocket.add(multiplexing);
+            }
 
             // XXX is this necessary?
             synchronized (candidateSockets)

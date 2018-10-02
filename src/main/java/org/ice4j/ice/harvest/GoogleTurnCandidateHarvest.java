@@ -138,8 +138,12 @@ public class GoogleTurnCandidateHarvest
                 IceSocketWrapper candidateSocket
                     = relayedCandidate.getCandidateIceSocketWrapper();
 
-                Component component = relayedCandidate.getParentComponent();
-                component.getComponentSocket().add(candidateSocket);
+                ComponentSocket componentSocket
+                    = relayedCandidate.getParentComponent().getComponentSocket();
+                if (componentSocket != null)
+                {
+                    componentSocket.add(candidateSocket);
+                }
 
                 addCandidate(relayedCandidate);
             }
