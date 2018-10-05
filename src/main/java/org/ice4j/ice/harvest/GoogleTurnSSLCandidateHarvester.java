@@ -209,7 +209,7 @@ public class GoogleTurnSSLCandidateHarvester
             OutputStream outputStream = sock.getOutputStream();
             InputStream inputStream = sock.getInputStream();
 
-            if(sslHandshake(inputStream, outputStream))
+            if (sslHandshake(inputStream, outputStream))
             {
                 Component parentComponent = hostCand.getParentComponent();
                 MultiplexingSocket multiplexing = new MultiplexingSocket(sock);
@@ -224,7 +224,12 @@ public class GoogleTurnSSLCandidateHarvester
                         .getParentAgent()
                             .getStunStack()
                                 .addSocket(cand.getStunSocket(null));
-                parentComponent.getComponentSocket().add(multiplexing);
+                ComponentSocket componentSocket
+                    = parentComponent.getComponentSocket();
+                if (componentSocket != null)
+                {
+                    componentSocket.add(multiplexing);
+                }
             }
         }
         catch (Exception e)

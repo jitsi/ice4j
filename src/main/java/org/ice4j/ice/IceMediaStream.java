@@ -175,18 +175,26 @@ public class IceMediaStream
      *
      * @param keepAliveStrategy the keep-alive strategy, which dictates which
      * candidates pairs are going to be kept alive.
+     * @param useComponentSocket whether the "component socket" should be used
+     * or not. See {@link StackProperties#USE_COMPONENT_SOCKET}.
      *
      * @return the newly created stream <tt>Component</tt> after adding it to
      * the stream first.
      */
-    protected Component createComponent(KeepAliveStrategy keepAliveStrategy)
+    protected Component createComponent(
+        KeepAliveStrategy keepAliveStrategy,
+        boolean useComponentSocket)
     {
         Component component;
 
         synchronized (components)
         {
             component
-                = new Component(++lastComponentID, this, keepAliveStrategy);
+                = new Component(
+                    ++lastComponentID,
+                    this,
+                    keepAliveStrategy,
+                    useComponentSocket);
             components.put(component.getComponentID(), component);
         }
 

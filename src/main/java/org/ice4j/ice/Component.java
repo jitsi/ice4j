@@ -18,6 +18,7 @@
 package org.ice4j.ice;
 
 import java.beans.*;
+import java.io.*;
 import java.net.*;
 import java.util.*;
 import java.util.concurrent.*;
@@ -127,8 +128,9 @@ public class Component
     private final Logger logger;
 
     /**
-     * The single {@link ComponentSocket} instance for this {@link Component},
-     * which will merge the multiple sockets from the candidate/pairs.
+     * The {@link ComponentSocket} instance which, if enabled, will serve as the
+     * single socket instance for this {@link Component}, merging received
+     * packets from all of its candidates.
      */
     private final ComponentSocket componentSocket;
 
@@ -169,10 +171,28 @@ public class Component
      * @param componentID the id of this component.
      * @param mediaStream the {@link IceMediaStream} instance that would be the
      * parent of this component.
+     * @deprecated
      */
-    protected Component(int            componentID,
+    protected Component(int componentID,
                         IceMediaStream mediaStream,
                         KeepAliveStrategy keepAliveStrategy)
+    {
+        this(componentID, mediaStream, keepAliveStrategy, true);
+    }
+
+    /**
+     * Creates a new <tt>Component</tt> with the specified <tt>componentID</tt>
+     * as a child of the specified <tt>IceMediaStream</tt>.
+     *
+     * @param componentID the id of this component.
+     * @param mediaStream the {@link IceMediaStream} instance that would be the
+     * parent of this component.
+     * @param useComponentSocket whether the component socket should be used.
+     */
+    protected Component(int componentID,
+                        IceMediaStream mediaStream,
+                        KeepAliveStrategy keepAliveStrategy,
+                        boolean useComponentSocket)
     {
         // the max value for componentID is 256
         this.componentID = componentID;
@@ -182,15 +202,24 @@ public class Component
 
         Logger agentLogger = mediaStream.getParentAgent().getLogger();
 
-        try
+        if (useComponentSocket)
         {
-            componentSocket = new ComponentSocket(this, agentLogger);
-            socket = new MultiplexingDatagramSocket(componentSocket);
-            socketWrapper = new IceUdpSocketWrapper(socket);
+            try
+            {
+                componentSocket = new ComponentSocket(this, agentLogger);
+                socket = new MultiplexingDatagramSocket(componentSocket);
+                socketWrapper = new IceUdpSocketWrapper(socket);
+            }
+            catch (SocketException se)
+            {
+                throw new RuntimeException(se);
+            }
         }
-        catch (SocketException se)
+        else
         {
-            throw new RuntimeException(se);
+            componentSocket = null;
+            socket = null;
+            socketWrapper = null;
         }
 
         mediaStream.addPairChangeListener(this);
@@ -839,8 +868,14 @@ public class Component
 
         getParentStream().removePairStateChangeListener(this);
         keepAlivePairs.clear();
-        getComponentSocket().close();
-        socket.close();
+        if (componentSocket != null)
+        {
+            componentSocket.close();
+        }
+        if (socket != null)
+        {
+            socket.close();
+        }
     }
 
     /**
@@ -986,13 +1021,20 @@ public class Component
     {
         return
             new Component(
-                    componentID, mediaStream, KeepAliveStrategy.SELECTED_ONLY);
+                    componentID,
+                    mediaStream,
+                    KeepAliveStrategy.SELECTED_ONLY,
+                    StackProperties.getBoolean(
+                        StackProperties.USE_COMPONENT_SOCKET, true));
     }
 
     /**
-     * @return the internal merging socket for this component. This is for
-     * ice4j use only.
-     * For reading/writing application data, use {@link #getSocket()}.
+     * @return the single socket for this {@link Component} which should be
+     * used for reading and writing data, if the component socket is enabled
+     * and {@code null} if it is not enabled.
+     * </p>
+     * This is for ice4j internal use only! For reading/writing application
+     * data, use {@link #getSocket()}.
      */
     public ComponentSocket getComponentSocket()
     {
@@ -1001,7 +1043,9 @@ public class Component
 
     /**
      * @return the socket for this {@link Component}, which should be used for
-     * reading/writing application data.
+     * reading/writing application data. If the component socket is not enabled,
+     * this returns {@code null} and users of the library should use the socket
+     * instance from the desired candidate pair instead.
      */
     public MultiplexingDatagramSocket getSocket()
     {
@@ -1010,7 +1054,10 @@ public class Component
 
     /**
      * @return an {@link IceSocketWrapper} instance wrapping the socket for this
-     * candidate (see {@link #getComponentSocket()}).
+     * candidate (see {@link #getSocket()}).
+     * @deprecated Use {@link #getSocket()} directly. This is only introduced
+     * to ease the transition of applications which are already written to use
+     * a {@link IceSocketWrapper} instance.
      */
     public IceSocketWrapper getSocketWrapper()
     {

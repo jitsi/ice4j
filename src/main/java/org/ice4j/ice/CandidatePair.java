@@ -722,7 +722,6 @@ public class CandidatePair
      * <tt>CandidatePair</tt>.
      * @return the UDP <tt>DatagramSocket</tt> (if any) for this
      * <tt>CandidatePair</tt>.
-     * @deprecated use {@link Component#getSocket()} instead.
      */
     @Deprecated
     public DatagramSocket getDatagramSocket()
@@ -734,7 +733,6 @@ public class CandidatePair
     /**
      * Returns the TCP <tt>Socket</tt> (if any) for this <tt>CandidatePair</tt>.
      * @return the TCP <tt>Socket</tt> (if any) for this <tt>CandidatePair</tt>.
-     * @deprecated use {@link Component#getSocket()} instead.
      */
     @Deprecated
     public Socket getSocket()
@@ -745,11 +743,42 @@ public class CandidatePair
     /**
      * Returns the <tt>IceSocketWrapper</tt> for this <tt>CandidatePair</tt>.
      * @return  the <tt>IceSocketWrapper</tt> for this <tt>CandidatePair</tt>.
-     * @deprecated use {@link Component#getSocket()} instead.
      */
     @Deprecated
     public IceSocketWrapper getIceSocketWrapper()
     {
-        return getParentComponent().getSocketWrapper();
+        IceSocketWrapper componentSocket
+            = getParentComponent().getSocketWrapper();
+        // If the merging socket is used, all candidate pairs just refer to the
+        // component.
+        if (componentSocket != null)
+        {
+            return getParentComponent().getSocketWrapper();
+        }
+
+        LocalCandidate localCandidate = getLocalCandidate();
+        if (localCandidate == null)
+        {
+            return null;
+        }
+
+        LocalCandidate base = localCandidate.getBase();
+        if (base != null)
+        {
+            localCandidate = base;
+        }
+
+        RemoteCandidate remoteCandidate = getRemoteCandidate();
+        if (remoteCandidate != null)
+        {
+            SocketAddress remoteAddress
+                = remoteCandidate.getTransportAddress();
+            if (remoteAddress != null)
+            {
+                return localCandidate.getCandidateIceSocketWrapper(remoteAddress);
+            }
+        }
+
+        return localCandidate.getCandidateIceSocketWrapper();
     }
 }

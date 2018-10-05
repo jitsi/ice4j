@@ -444,21 +444,29 @@ public class StunCandidateHarvester
         HostCandidate cand;
 
         // create a new TCP HostCandidate
-        if(hostCand.getTransport() == Transport.TCP)
+        if (hostCand.getTransport() == Transport.TCP)
         {
             try
             {
                 Socket sock = new Socket(stunServer.getAddress(),
                     stunServer.getPort());
                 MultiplexingSocket multiplexing = new MultiplexingSocket(sock);
+                Component component = hostCand.getParentComponent();
                 cand
                     = new HostCandidate(
                             new IceTcpSocketWrapper(multiplexing),
-                            hostCand.getParentComponent(), Transport.TCP);
-                hostCand.getParentComponent().getParentStream().
+                            component,
+                            Transport.TCP);
+                component.getParentStream().
                     getParentAgent().getStunStack().addSocket(
                         cand.getStunSocket(null));
-                hostCand.getParentComponent().getComponentSocket().add(multiplexing);
+
+                ComponentSocket componentSocket
+                    = component.getComponentSocket();
+                if (componentSocket != null)
+                {
+                    componentSocket.add(multiplexing);
+                }
             }
             catch(Exception io)
             {
