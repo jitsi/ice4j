@@ -494,6 +494,59 @@ public class Agent
         int preferredPort,
         int minPort,
         int maxPort,
+        KeepAliveStrategy keepAliveStrategy)
+        throws IllegalArgumentException,
+               IOException,
+               BindException
+    {
+        return createComponent(
+            stream,
+            transport,
+            preferredPort,
+            minPort,
+            maxPort,
+            keepAliveStrategy,
+            true);
+    }
+
+    /**
+     * Creates a new {@link Component} for the specified <tt>stream</tt> and
+     * allocates potentially all local candidates that should belong to it.
+     *
+     * @param stream the {@link IceMediaStream} that the new {@link Component}
+     * should belong to.
+     * @param transport the transport protocol used by the component
+     * @param preferredPort the port number that should be tried first when
+     * binding local <tt>Candidate</tt> sockets for this <tt>Component</tt>.
+     * @param minPort the port number where we should first try to bind before
+     * moving to the next one (i.e. <tt>minPort + 1</tt>)
+     * @param maxPort the maximum port number where we should try binding
+     * before giving up and throwing an exception.
+     * @param keepAliveStrategy the keep-alive strategy, which dictates which
+     * candidates pairs are going to be kept alive.
+     * @param useComponentSocket whether to use the component socket mode (in
+     * which case the socket is available through the {@link Component} directly),
+     * or not (in which case the socket is available through the selected
+     * {@link CandidatePair}).
+     *
+     * @return the newly created {@link Component} and with a list containing
+     * all and only local candidates.
+     *
+     * @throws IllegalArgumentException if either <tt>minPort</tt> or
+     * <tt>maxPort</tt> is not a valid port number or if <tt>minPort &gt;
+     * maxPort</tt>, or if <tt>transport</tt> is not currently supported.
+     * @throws IOException if an error occurs while the underlying resolver lib
+     * is using sockets.
+     * @throws BindException if we couldn't find a free port between
+     * <tt>minPort</tt> and <tt>maxPort</tt> before reaching the maximum allowed
+     * number of retries.
+     */
+    public Component createComponent(
+        IceMediaStream stream,
+        Transport transport,
+        int preferredPort,
+        int minPort,
+        int maxPort,
         KeepAliveStrategy keepAliveStrategy,
         boolean useComponentSocket)
         throws IllegalArgumentException,

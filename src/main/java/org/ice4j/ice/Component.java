@@ -171,6 +171,22 @@ public class Component
      * @param componentID the id of this component.
      * @param mediaStream the {@link IceMediaStream} instance that would be the
      * parent of this component.
+     * @deprecated
+     */
+    protected Component(int componentID,
+                        IceMediaStream mediaStream,
+                        KeepAliveStrategy keepAliveStrategy)
+    {
+        this(componentID, mediaStream, keepAliveStrategy, true);
+    }
+
+    /**
+     * Creates a new <tt>Component</tt> with the specified <tt>componentID</tt>
+     * as a child of the specified <tt>IceMediaStream</tt>.
+     *
+     * @param componentID the id of this component.
+     * @param mediaStream the {@link IceMediaStream} instance that would be the
+     * parent of this component.
      * @param useComponentSocket whether the component socket should be used.
      */
     protected Component(int componentID,
