@@ -2298,6 +2298,17 @@ public class Agent
         if (stunKeepAliveThread != null)
             stunKeepAliveThread.interrupt();
 
+        // cancel termination timer in case agent is freed
+        // before termination timer is triggered
+        synchronized (terminationThreadSyncRoot)
+        {
+            if (terminationThread != null)
+            {
+                terminationThread.interrupt();
+                terminationThread = null;
+            }
+        }
+
         //stop responding to STUN Binding Requests.
         connCheckServer.stop();
 
