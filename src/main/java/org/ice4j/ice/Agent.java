@@ -23,6 +23,7 @@ import java.math.*;
 import java.net.*;
 import java.security.*;
 import java.util.*;
+import java.util.concurrent.*;
 import java.util.logging.*;
 
 import org.ice4j.*;
@@ -113,6 +114,38 @@ public class Agent
      */
     public static final String PROPERTY_ICE_PROCESSING_STATE
                                             = "IceProcessingState";
+
+    /**
+     *  The ScheduledExecutorService to execute planned agent termination
+     */
+    private static final ScheduledExecutorService agentTerminationScheduler;
+
+    static
+    {
+        final ScheduledThreadPoolExecutor terminationExecutor
+            = new ScheduledThreadPoolExecutor(0);
+        terminationExecutor.setKeepAliveTime(10, TimeUnit.SECONDS);
+        terminationExecutor.setRemoveOnCancelPolicy(true);
+        agentTerminationScheduler
+            = Executors.unconfigurableScheduledExecutorService(
+                terminationExecutor);
+    }
+
+    /**
+     * Termination task which will be scheduled with timeout
+     */
+    private final Runnable terminationRunnable = new Runnable()
+    {
+        @Override
+        public void run()
+        {
+            terminate(IceProcessingState.TERMINATED);
+            synchronized (terminationFutureSyncRoot)
+            {
+                terminationFuture = null;
+            }
+        }
+    };
 
     /**
      * The LinkedHashMap used to store the media streams
@@ -246,14 +279,14 @@ public class Agent
     private StunStack stunStack;
 
     /**
-     * The thread that we use for moving from COMPLETED into a TERMINATED state.
+     * The scheduled task to terminate this <tt>Agent</tt>
      */
-    private TerminationThread terminationThread;
+    private ScheduledFuture<?> terminationFuture;
 
     /**
-     * The object used to synchronize access to {@link #terminationThread}.
+     * The object used to synchronize access to {@link #terminationFuture}.
      */
-    private final Object terminationThreadSyncRoot = new Object();
+    private final Object terminationFutureSyncRoot = new Object();
 
     /**
      * The thread that we use for STUN keep-alive.
@@ -2150,17 +2183,48 @@ public class Agent
     }
 
     /**
-     * Initializes and starts the {@link TerminationThread}
+     * Initializes and starts the {@link #terminationFuture}
      */
     private void scheduleTermination()
     {
-        synchronized (terminationThreadSyncRoot)
+        /*
+         * RFC 5245 says: Once ICE processing has reached the Completed state for
+         * all peers for media streams using those candidates, the agent SHOULD
+         * wait an additional three seconds, and then it MAY cease responding to
+         * checks or generating triggered checks on that candidate.  It MAY free
+         * the candidate at that time.
+         * <p>
+         * This method is scheduling such a termination.
+         */
+        boolean runTerminationImmediately = false;
+
+        synchronized (terminationFutureSyncRoot)
         {
-            if (terminationThread == null)
+            if (terminationFuture == null)
             {
-                terminationThread = new TerminationThread();
-                terminationThread.start();
+                long terminationDelay
+                    = Integer.getInteger(
+                        StackProperties.TERMINATION_DELAY,
+                        DEFAULT_TERMINATION_DELAY);
+
+                if (terminationDelay > 0)
+                {
+                    terminationFuture
+                        = agentTerminationScheduler.schedule(
+                            terminationRunnable,
+                            terminationDelay,
+                            TimeUnit.MILLISECONDS);
+                }
+                else
+                {
+                    runTerminationImmediately = true;
+                }
             }
+        }
+
+        if (runTerminationImmediately)
+        {
+            terminationRunnable.run();
         }
     }
 
@@ -2297,6 +2361,17 @@ public class Agent
         //stop sending keep alives (STUN Binding Indications).
         if (stunKeepAliveThread != null)
             stunKeepAliveThread.interrupt();
+
+        // cancel termination timer in case agent is freed
+        // before termination timer is triggered
+        synchronized (terminationFutureSyncRoot)
+        {
+            if (terminationFuture != null)
+            {
+                terminationFuture.cancel(true);
+                terminationFuture = null;
+            }
+        }
 
         //stop responding to STUN Binding Requests.
         connCheckServer.stop();
@@ -2708,63 +2783,5 @@ public class Agent
     protected Logger getLogger()
     {
         return logger;
-    }
-
-    /**
-     * RFC 5245 says: Once ICE processing has reached the Completed state for
-     * all peers for media streams using those candidates, the agent SHOULD
-     * wait an additional three seconds, and then it MAY cease responding to
-     * checks or generating triggered checks on that candidate.  It MAY free
-     * the candidate at that time.
-     * <p>
-     * This <tt>TerminationThread</tt> is scheduling such a termination and
-     * garbage collection in three seconds.
-     */
-    private class TerminationThread
-        extends Thread
-    {
-
-        /**
-         * Creates a new termination timer.
-         */
-        private TerminationThread()
-        {
-            super("TerminationThread");
-        }
-
-        /**
-         * Waits for a period of three seconds (or whatever termination
-         * interval the user has specified) and then moves this <tt>Agent</tt>
-         * into the terminated state and frees all non-nominated candidates.
-         */
-        @Override
-        public synchronized void run()
-        {
-            long terminationDelay
-                = Integer.getInteger(
-                StackProperties.TERMINATION_DELAY,
-                DEFAULT_TERMINATION_DELAY);
-
-            if (terminationDelay >= 0)
-            {
-                try
-                {
-                    wait(terminationDelay);
-                }
-                catch (InterruptedException ie)
-                {
-                    logger.log(Level.FINEST, "Interrupted while waiting. Will "
-                                   + "speed up termination",
-                               ie);
-                }
-            }
-
-            terminate(IceProcessingState.TERMINATED);
-
-            synchronized (terminationThreadSyncRoot)
-            {
-                terminationThread = null;
-            }
-        }
     }
 }
