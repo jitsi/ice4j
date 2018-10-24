@@ -120,13 +120,14 @@ public class Agent
      */
     private static final ScheduledExecutorService agentTerminationScheduler;
 
-    static {
-        final ScheduledThreadPoolExecutor terminationExecutor =
-            new ScheduledThreadPoolExecutor(0);
+    static
+    {
+        final ScheduledThreadPoolExecutor terminationExecutor
+            = new ScheduledThreadPoolExecutor(0);
         terminationExecutor.setKeepAliveTime(10, TimeUnit.SECONDS);
         terminationExecutor.setRemoveOnCancelPolicy(true);
-        agentTerminationScheduler =
-            Executors.unconfigurableScheduledExecutorService(
+        agentTerminationScheduler
+            = Executors.unconfigurableScheduledExecutorService(
                 terminationExecutor);
     }
 
@@ -139,7 +140,8 @@ public class Agent
         public void run()
         {
             terminate(IceProcessingState.TERMINATED);
-            synchronized (terminationFutureSyncRoot) {
+            synchronized (terminationFutureSyncRoot)
+            {
                 terminationFuture = null;
             }
         }
@@ -2194,7 +2196,6 @@ public class Agent
          * <p>
          * This method is scheduling such a termination.
          */
-
         boolean runTerminationImmediately = false;
 
         synchronized (terminationFutureSyncRoot)
@@ -2221,7 +2222,8 @@ public class Agent
             }
         }
 
-        if (runTerminationImmediately) {
+        if (runTerminationImmediately)
+        {
             terminationRunnable.run();
         }
     }
