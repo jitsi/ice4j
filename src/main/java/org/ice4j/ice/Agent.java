@@ -132,6 +132,10 @@ public class Agent
             {
                 Thread thread = defaultThreadFactory.newThread(r);
                 thread.setName("ice4j.Agent-" + thread.getName());
+                if (!thread.isDaemon())
+                {
+                    thread.setDaemon(true);
+                }
                 return thread;
             }
         };
