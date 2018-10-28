@@ -116,17 +116,31 @@ public class Agent
                                             = "IceProcessingState";
 
     /**
-     *  The ScheduledExecutorService to execute planned agent termination
+     *  The ScheduledExecutorService to execute Agent's scheduled tasks
      */
-    private static final ScheduledExecutorService agentTerminationScheduler;
+    private static final ScheduledExecutorService agentTasksScheduler;
 
     static
     {
+        final ThreadFactory agentThreadFactory = new ThreadFactory()
+        {
+            private final ThreadFactory defaultThreadFactory
+                = Executors.defaultThreadFactory();
+
+            @Override
+            public Thread newThread(Runnable r)
+            {
+                Thread thread = defaultThreadFactory.newThread(r);
+                thread.setName("ice4j.Agent-" + thread.getName());
+                return thread;
+            }
+        };
+
         final ScheduledThreadPoolExecutor terminationExecutor
-            = new ScheduledThreadPoolExecutor(0);
+            = new ScheduledThreadPoolExecutor(0, agentThreadFactory);
         terminationExecutor.setKeepAliveTime(10, TimeUnit.SECONDS);
         terminationExecutor.setRemoveOnCancelPolicy(true);
-        agentTerminationScheduler
+        agentTasksScheduler
             = Executors.unconfigurableScheduledExecutorService(
                 terminationExecutor);
     }
@@ -143,6 +157,72 @@ public class Agent
             synchronized (terminationFutureSyncRoot)
             {
                 terminationFuture = null;
+            }
+        }
+    };
+
+    /**
+     * Schedule STUN checks for selected pair.
+     */
+    private final Runnable stunKeepAliveRunnable = new Runnable()
+    {
+        @Override
+        public void run()
+        {
+            int originalConsentFreshnessWaitInterval = Integer.getInteger(
+                StackProperties.CONSENT_FRESHNESS_ORIGINAL_WAIT_INTERVAL,
+                DEFAULT_CONSENT_FRESHNESS_ORIGINAL_WAIT_INTERVAL);
+
+            int maxConsentFreshnessWaitInterval = Integer.getInteger(
+                StackProperties.CONSENT_FRESHNESS_MAX_WAIT_INTERVAL,
+                DEFAULT_CONSENT_FRESHNESS_MAX_WAIT_INTERVAL);
+
+            int consentFreshnessMaxRetransmissions = Integer.getInteger(
+                StackProperties.CONSENT_FRESHNESS_MAX_RETRANSMISSIONS,
+                DEFAULT_CONSENT_FRESHNESS_MAX_RETRANSMISSIONS);
+
+            for (IceMediaStream stream : getStreams())
+            {
+                for (Component component : stream.getComponents())
+                {
+                    for (CandidatePair pair : component.getKeepAlivePairs())
+                    {
+
+                        if (pair != null)
+                        {
+                            if (performConsentFreshness)
+                            {
+                                connCheckClient.startCheckForPair(
+                                    pair,
+                                    originalConsentFreshnessWaitInterval,
+                                    maxConsentFreshnessWaitInterval,
+                                    consentFreshnessMaxRetransmissions);
+                            }
+                            else
+                            {
+                                connCheckClient
+                                    .sendBindingIndicationForPair(pair);
+                            }
+                        }
+                    }
+                }
+            }
+
+            if (!runInStunKeepAliveThreadCondition())
+            {
+                synchronized (stunKeepAliveFutureSyncRoot)
+                {
+                    if (!runInStunKeepAliveThreadCondition())
+                    {
+                        if (stunKeepAliveFuture != null)
+                        {
+                            stunKeepAliveFuture.cancel(
+                                false);
+                            stunKeepAliveFuture = null;
+                            logger.info("Stop periodic Stun Keep Alive.");
+                        }
+                    }
+                }
             }
         }
     };
@@ -289,9 +369,15 @@ public class Agent
     private final Object terminationFutureSyncRoot = new Object();
 
     /**
+     * The object used to synchronize access to {@link #stunKeepAliveFuture}.
+     */
+    private final Object stunKeepAliveFutureSyncRoot = new Object();
+
+
+    /**
      * The thread that we use for STUN keep-alive.
      */
-    private Thread stunKeepAliveThread;
+    private ScheduledFuture<?> stunKeepAliveFuture;
 
     /**
      * Some protocols, such as XMPP, need to be able to distinguish the separate
@@ -1973,16 +2059,7 @@ public class Agent
             return;
         }
 
-        // keep ICE running (answer STUN Binding requests, send STUN Binding
-        // indications or requests)
-        if (stunKeepAliveThread == null
-                && !StackProperties.getBoolean(
-                        StackProperties.NO_KEEP_ALIVES,
-                        false))
-        {
-            // schedule STUN checks for selected candidates
-            scheduleStunKeepAlive();
-        }
+        scheduleStunKeepAlive();
 
         scheduleTermination();
 
@@ -2210,7 +2287,7 @@ public class Agent
                 if (terminationDelay > 0)
                 {
                     terminationFuture
-                        = agentTerminationScheduler.schedule(
+                        = agentTasksScheduler.schedule(
                             terminationRunnable,
                             terminationDelay,
                             TimeUnit.MILLISECONDS);
@@ -2234,20 +2311,32 @@ public class Agent
      */
     private void scheduleStunKeepAlive()
     {
-        if (stunKeepAliveThread == null)
+        boolean noKeepAlives
+            = StackProperties.getBoolean(
+                StackProperties.NO_KEEP_ALIVES,
+                false);
+        if (noKeepAlives) {
+            return;
+        }
+
+        if (stunKeepAliveFuture == null)
         {
-            stunKeepAliveThread
-                = new Thread()
-                        {
-                            @Override
-                            public void run()
-                            {
-                                runInStunKeepAliveThread();
-                            }
-                        };
-            stunKeepAliveThread.setDaemon(true);
-            stunKeepAliveThread.setName("StunKeepAliveThread");
-            stunKeepAliveThread.start();
+            synchronized (stunKeepAliveFutureSyncRoot)
+            {
+                if (stunKeepAliveFuture == null)
+                {
+                    long consentFreshnessInterval = Long.getLong(
+                        StackProperties.CONSENT_FRESHNESS_INTERVAL,
+                        DEFAULT_CONSENT_FRESHNESS_INTERVAL);
+
+                    stunKeepAliveFuture
+                        = agentTasksScheduler.scheduleWithFixedDelay(
+                            stunKeepAliveRunnable,
+                            0,
+                            consentFreshnessInterval,
+                            TimeUnit.MILLISECONDS);
+                }
+            }
         }
     }
 
@@ -2359,8 +2448,14 @@ public class Agent
         shutdown = true;
 
         //stop sending keep alives (STUN Binding Indications).
-        if (stunKeepAliveThread != null)
-            stunKeepAliveThread.interrupt();
+        synchronized (stunKeepAliveFutureSyncRoot)
+        {
+            if (stunKeepAliveFuture != null)
+            {
+                stunKeepAliveFuture.cancel(true);
+                stunKeepAliveFuture = null;
+            }
+        }
 
         // cancel termination timer in case agent is freed
         // before termination timer is triggered
@@ -2441,77 +2536,11 @@ public class Agent
         this.generation = generation;
     }
 
-    /**
-     * Schedule STUN checks for selected pair.
-     */
-    private void runInStunKeepAliveThread()
-    {
-        long consentFreshnessInterval = Long.getLong(
-                StackProperties.CONSENT_FRESHNESS_INTERVAL,
-                DEFAULT_CONSENT_FRESHNESS_INTERVAL);
-
-        int originalConsentFreshnessWaitInterval = Integer.getInteger(
-                StackProperties.CONSENT_FRESHNESS_ORIGINAL_WAIT_INTERVAL,
-                DEFAULT_CONSENT_FRESHNESS_ORIGINAL_WAIT_INTERVAL);
-
-        int maxConsentFreshnessWaitInterval = Integer.getInteger(
-                StackProperties.CONSENT_FRESHNESS_MAX_WAIT_INTERVAL,
-                DEFAULT_CONSENT_FRESHNESS_MAX_WAIT_INTERVAL);
-
-        int consentFreshnessMaxRetransmissions = Integer.getInteger(
-                StackProperties.CONSENT_FRESHNESS_MAX_RETRANSMISSIONS,
-                DEFAULT_CONSENT_FRESHNESS_MAX_RETRANSMISSIONS);
-
-        while (runInStunKeepAliveThreadCondition())
-        {
-            for (IceMediaStream stream : getStreams())
-            {
-                for (Component component : stream.getComponents())
-                {
-                    for (CandidatePair pair : component.getKeepAlivePairs())
-                    {
-
-                        if (pair != null)
-                        {
-                            if (performConsentFreshness)
-                            {
-                                connCheckClient.startCheckForPair(
-                                    pair,
-                                    originalConsentFreshnessWaitInterval,
-                                    maxConsentFreshnessWaitInterval,
-                                    consentFreshnessMaxRetransmissions);
-                            }
-                            else
-                            {
-                                connCheckClient
-                                    .sendBindingIndicationForPair(pair);
-                            }
-                        }
-                    }
-                }
-            }
-
-            if (!runInStunKeepAliveThreadCondition())
-            {
-                break;
-            }
-
-            try
-            {
-                Thread.sleep(consentFreshnessInterval);
-                Thread.yield();
-            }
-            catch(InterruptedException e)
-            {
-            }
-        }
-        logger.info(Thread.currentThread().getName() + " ends.");
-    }
 
     /**
-     * Determines whether {@link #runInStunKeepAliveThread()} is to run.
+     * Determines whether {@link #stunKeepAliveRunnable} is to run.
      *
-     * @return <tt>true</tt> if <tt>runInStunKeepAliveThread()</tt> is to run;
+     * @return <tt>true</tt> if <tt>{@link #stunKeepAliveRunnable}</tt> is to run;
      * otherwise, <tt>false</tt>
      */
     private boolean runInStunKeepAliveThreadCondition()
