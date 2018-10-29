@@ -20,6 +20,10 @@ package org.ice4j.util;
 
 import java.util.concurrent.*;
 
+/**
+ * A thread factory which supports customizing name prefix of created threads
+ * and if produced threads are daemons or not.
+ */
 public final class CustomizableThreadFactory implements ThreadFactory
 {
     private final ThreadFactory defaultThreadFactory
