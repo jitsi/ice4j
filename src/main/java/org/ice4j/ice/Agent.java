@@ -216,11 +216,11 @@ public class Agent
 
         private void maybeCancelFurtherKeepAlives()
         {
-            if (!runStunKeepAliveCondition())
+            if (!shouldRunStunKeepAlive())
             {
                 synchronized (stunKeepAliveFutureSyncRoot)
                 {
-                    if (!runStunKeepAliveCondition())
+                    if (!shouldRunStunKeepAlive())
                     {
                         if (stunKeepAliveFuture != null)
                         {
@@ -2323,7 +2323,7 @@ public class Agent
             = StackProperties.getBoolean(
                 StackProperties.NO_KEEP_ALIVES,
                 false);
-        if (noKeepAlives || !runStunKeepAliveCondition())
+        if (noKeepAlives || !shouldRunStunKeepAlive())
         {
             return;
         }
@@ -2549,12 +2549,12 @@ public class Agent
 
 
     /**
-     * Determines whether {@link #stunKeepAliveRunnable} is to run.
+     * Determines whether {@link #stunKeepAliveRunnable} should run.
      *
-     * @return <tt>true</tt> if <tt>{@link #stunKeepAliveRunnable}</tt> is to run;
-     * otherwise, <tt>false</tt>
+     * @return <tt>true</tt> if <tt>{@link #stunKeepAliveRunnable}</tt> should
+     * run otherwise, <tt>false</tt>
      */
-    private boolean runStunKeepAliveCondition()
+    private boolean shouldRunStunKeepAlive()
     {
         IceProcessingState state = this.state;
 
