@@ -25,9 +25,9 @@ public final class CustomizableThreadFactory implements ThreadFactory
     private final ThreadFactory defaultThreadFactory
         = Executors.defaultThreadFactory();
 
-    private String threadNamePrefix;
+    private final String threadNamePrefix;
 
-    private boolean isDaemon;
+    private final boolean isDaemon;
 
     public CustomizableThreadFactory(String threadNamePrefix, boolean isDaemon)
     {
