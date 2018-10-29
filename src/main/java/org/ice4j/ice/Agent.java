@@ -29,6 +29,7 @@ import java.util.logging.*;
 import org.ice4j.*;
 import org.ice4j.ice.harvest.*;
 import org.ice4j.stack.*;
+import org.ice4j.util.*;
 import org.ice4j.util.Logger; // Disambiguation.
 
 /**
@@ -116,17 +117,20 @@ public class Agent
                                             = "IceProcessingState";
 
     /**
-     *  The ScheduledExecutorService to execute planned agent termination
+     *  The ScheduledExecutorService to execute Agent's scheduled tasks
      */
-    private static final ScheduledExecutorService agentTerminationScheduler;
+    private static final ScheduledExecutorService agentTasksScheduler;
 
     static
     {
+        CustomizableThreadFactory threadFactory
+            = new CustomizableThreadFactory("ice4j.Agent-", true);
+
         final ScheduledThreadPoolExecutor terminationExecutor
-            = new ScheduledThreadPoolExecutor(0);
+            = new ScheduledThreadPoolExecutor(0, threadFactory);
         terminationExecutor.setKeepAliveTime(10, TimeUnit.SECONDS);
         terminationExecutor.setRemoveOnCancelPolicy(true);
-        agentTerminationScheduler
+        agentTasksScheduler
             = Executors.unconfigurableScheduledExecutorService(
                 terminationExecutor);
     }
@@ -146,6 +150,12 @@ public class Agent
             }
         }
     };
+
+    /**
+     * An instance to schedule STUN checks for selected pair.
+     */
+    private final StunKeepAliveRunner stunKeepAliveRunner
+        = new StunKeepAliveRunner();
 
     /**
      * The LinkedHashMap used to store the media streams
@@ -287,11 +297,6 @@ public class Agent
      * The object used to synchronize access to {@link #terminationFuture}.
      */
     private final Object terminationFutureSyncRoot = new Object();
-
-    /**
-     * The thread that we use for STUN keep-alive.
-     */
-    private Thread stunKeepAliveThread;
 
     /**
      * Some protocols, such as XMPP, need to be able to distinguish the separate
@@ -1975,14 +1980,7 @@ public class Agent
 
         // keep ICE running (answer STUN Binding requests, send STUN Binding
         // indications or requests)
-        if (stunKeepAliveThread == null
-                && !StackProperties.getBoolean(
-                        StackProperties.NO_KEEP_ALIVES,
-                        false))
-        {
-            // schedule STUN checks for selected candidates
-            scheduleStunKeepAlive();
-        }
+        scheduleStunKeepAlive();
 
         scheduleTermination();
 
@@ -2210,7 +2208,7 @@ public class Agent
                 if (terminationDelay > 0)
                 {
                     terminationFuture
-                        = agentTerminationScheduler.schedule(
+                        = agentTasksScheduler.schedule(
                             terminationRunnable,
                             terminationDelay,
                             TimeUnit.MILLISECONDS);
@@ -2229,26 +2227,21 @@ public class Agent
     }
 
     /**
-     * Initializes and starts the background <tt>Thread</tt> which is to send
-     * STUN keep-alives once this <tt>Agent</tt> is <tt>COMPLETED</tt>.
+     * Schedules repeated background task which sends STUN keep-alives
+     * once this <tt>Agent</tt> is <tt>COMPLETED</tt>.
      */
     private void scheduleStunKeepAlive()
     {
-        if (stunKeepAliveThread == null)
+        boolean noKeepAlives
+            = StackProperties.getBoolean(
+                StackProperties.NO_KEEP_ALIVES,
+                false);
+        if (noKeepAlives || !stunKeepAliveRunner.shouldRunStunKeepAlive())
         {
-            stunKeepAliveThread
-                = new Thread()
-                        {
-                            @Override
-                            public void run()
-                            {
-                                runInStunKeepAliveThread();
-                            }
-                        };
-            stunKeepAliveThread.setDaemon(true);
-            stunKeepAliveThread.setName("StunKeepAliveThread");
-            stunKeepAliveThread.start();
+            return;
         }
+
+        stunKeepAliveRunner.schedule();
     }
 
 
@@ -2359,8 +2352,7 @@ public class Agent
         shutdown = true;
 
         //stop sending keep alives (STUN Binding Indications).
-        if (stunKeepAliveThread != null)
-            stunKeepAliveThread.interrupt();
+        stunKeepAliveRunner.cancel();
 
         // cancel termination timer in case agent is freed
         // before termination timer is triggered
@@ -2439,89 +2431,6 @@ public class Agent
     public void setGeneration(int generation)
     {
         this.generation = generation;
-    }
-
-    /**
-     * Schedule STUN checks for selected pair.
-     */
-    private void runInStunKeepAliveThread()
-    {
-        long consentFreshnessInterval = Long.getLong(
-                StackProperties.CONSENT_FRESHNESS_INTERVAL,
-                DEFAULT_CONSENT_FRESHNESS_INTERVAL);
-
-        int originalConsentFreshnessWaitInterval = Integer.getInteger(
-                StackProperties.CONSENT_FRESHNESS_ORIGINAL_WAIT_INTERVAL,
-                DEFAULT_CONSENT_FRESHNESS_ORIGINAL_WAIT_INTERVAL);
-
-        int maxConsentFreshnessWaitInterval = Integer.getInteger(
-                StackProperties.CONSENT_FRESHNESS_MAX_WAIT_INTERVAL,
-                DEFAULT_CONSENT_FRESHNESS_MAX_WAIT_INTERVAL);
-
-        int consentFreshnessMaxRetransmissions = Integer.getInteger(
-                StackProperties.CONSENT_FRESHNESS_MAX_RETRANSMISSIONS,
-                DEFAULT_CONSENT_FRESHNESS_MAX_RETRANSMISSIONS);
-
-        while (runInStunKeepAliveThreadCondition())
-        {
-            for (IceMediaStream stream : getStreams())
-            {
-                for (Component component : stream.getComponents())
-                {
-                    for (CandidatePair pair : component.getKeepAlivePairs())
-                    {
-
-                        if (pair != null)
-                        {
-                            if (performConsentFreshness)
-                            {
-                                connCheckClient.startCheckForPair(
-                                    pair,
-                                    originalConsentFreshnessWaitInterval,
-                                    maxConsentFreshnessWaitInterval,
-                                    consentFreshnessMaxRetransmissions);
-                            }
-                            else
-                            {
-                                connCheckClient
-                                    .sendBindingIndicationForPair(pair);
-                            }
-                        }
-                    }
-                }
-            }
-
-            if (!runInStunKeepAliveThreadCondition())
-            {
-                break;
-            }
-
-            try
-            {
-                Thread.sleep(consentFreshnessInterval);
-                Thread.yield();
-            }
-            catch(InterruptedException e)
-            {
-            }
-        }
-        logger.info(Thread.currentThread().getName() + " ends.");
-    }
-
-    /**
-     * Determines whether {@link #runInStunKeepAliveThread()} is to run.
-     *
-     * @return <tt>true</tt> if <tt>runInStunKeepAliveThread()</tt> is to run;
-     * otherwise, <tt>false</tt>
-     */
-    private boolean runInStunKeepAliveThreadCondition()
-    {
-        IceProcessingState state = this.state;
-
-        return
-            (IceProcessingState.COMPLETED.equals(state)
-                    || IceProcessingState.TERMINATED.equals(state))
-                && !shutdown;
     }
 
     /**
@@ -2783,5 +2692,139 @@ public class Agent
     protected Logger getLogger()
     {
         return logger;
+    }
+
+    /**
+     * A class to schedule and perform Stun keep-alive checks
+     */
+    private final class StunKeepAliveRunner
+    {
+        private final long consentFreshnessInterval = Long.getLong(
+            StackProperties.CONSENT_FRESHNESS_INTERVAL,
+            DEFAULT_CONSENT_FRESHNESS_INTERVAL);
+
+        private final int originalConsentFreshnessWaitInterval = Integer.getInteger(
+            StackProperties.CONSENT_FRESHNESS_ORIGINAL_WAIT_INTERVAL,
+            DEFAULT_CONSENT_FRESHNESS_ORIGINAL_WAIT_INTERVAL);
+
+        private final int maxConsentFreshnessWaitInterval = Integer.getInteger(
+            StackProperties.CONSENT_FRESHNESS_MAX_WAIT_INTERVAL,
+            DEFAULT_CONSENT_FRESHNESS_MAX_WAIT_INTERVAL);
+
+        private final int consentFreshnessMaxRetransmissions = Integer.getInteger(
+            StackProperties.CONSENT_FRESHNESS_MAX_RETRANSMISSIONS,
+            DEFAULT_CONSENT_FRESHNESS_MAX_RETRANSMISSIONS);
+
+        /**
+         * The scheduled task which sends periodic STUN keep-alive checks.
+         */
+        private ScheduledFuture<?> stunKeepAliveFuture;
+
+        /**
+         * The object used to synchronize access to {@link #stunKeepAliveFuture}.
+         */
+        private final Object stunKeepAliveFutureSyncRoot = new Object();
+
+        /**
+         * Execute STUN keep-alive checks
+         */
+        private final Runnable runnableCheck = new Runnable()
+        {
+            @Override
+            public void run()
+            {
+                for (IceMediaStream stream : getStreams())
+                {
+                    for (Component component : stream.getComponents())
+                    {
+                        for (CandidatePair pair : component.getKeepAlivePairs())
+                        {
+                            if (pair != null)
+                            {
+                                if (performConsentFreshness)
+                                {
+                                    connCheckClient.startCheckForPair(
+                                        pair,
+                                        originalConsentFreshnessWaitInterval,
+                                        maxConsentFreshnessWaitInterval,
+                                        consentFreshnessMaxRetransmissions);
+                                }
+                                else
+                                {
+                                    connCheckClient
+                                        .sendBindingIndicationForPair(pair);
+                                }
+                            }
+                        }
+                    }
+                }
+
+                if (!shouldRunStunKeepAlive())
+                {
+                    cancel();
+                }
+            }
+        };
+
+        /**
+         * Schedules execution of periodic task which performs
+         * STUN keep-alive checks
+         */
+        void schedule()
+        {
+            if (stunKeepAliveFuture == null)
+            {
+                synchronized (stunKeepAliveFutureSyncRoot)
+                {
+                    if (stunKeepAliveFuture == null)
+                    {
+                        logger.info("Starting periodic Stun Keep Alive.");
+
+                        stunKeepAliveFuture
+                            = agentTasksScheduler.scheduleWithFixedDelay(
+                            runnableCheck,
+                            0,
+                            consentFreshnessInterval,
+                            TimeUnit.MILLISECONDS);
+                    }
+                }
+            }
+        }
+
+        /**
+         * Cancel scheduled periodic task which performs
+         * STUN keep-alive checks
+         */
+        void cancel()
+        {
+            if (stunKeepAliveFuture != null)
+            {
+                synchronized (stunKeepAliveFutureSyncRoot)
+                {
+                    if (stunKeepAliveFuture != null)
+                    {
+                        stunKeepAliveFuture.cancel(false);
+                        stunKeepAliveFuture = null;
+                        logger.info("Stop periodic Stun Keep Alive.");
+                    }
+                }
+            }
+        }
+
+        /**
+         * Determines whether {@link #stunKeepAliveRunner} should run.
+         *
+         * @return <tt>true</tt> if <tt>{@link #stunKeepAliveRunner}</tt>
+         * should run otherwise, <tt>false</tt>
+         */
+        boolean shouldRunStunKeepAlive()
+        {
+            IceProcessingState state = Agent.this.state;
+
+            return
+                (IceProcessingState.COMPLETED.equals(state)
+                    || IceProcessingState.TERMINATED.equals(state))
+                    && !shutdown;
+        }
     }
 }
