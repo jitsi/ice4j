@@ -24,6 +24,7 @@ import java.net.*;
 import java.security.*;
 import java.util.*;
 import java.util.concurrent.*;
+import java.util.concurrent.atomic.*;
 import java.util.logging.*;
 
 import org.ice4j.*;
@@ -154,71 +155,8 @@ public class Agent
     /**
      * Schedule STUN checks for selected pair.
      */
-    private final Runnable stunKeepAliveRunnable = new Runnable()
-    {
-        private int originalConsentFreshnessWaitInterval = Integer.getInteger(
-            StackProperties.CONSENT_FRESHNESS_ORIGINAL_WAIT_INTERVAL,
-            DEFAULT_CONSENT_FRESHNESS_ORIGINAL_WAIT_INTERVAL);
-
-        private int maxConsentFreshnessWaitInterval = Integer.getInteger(
-            StackProperties.CONSENT_FRESHNESS_MAX_WAIT_INTERVAL,
-            DEFAULT_CONSENT_FRESHNESS_MAX_WAIT_INTERVAL);
-
-        private int consentFreshnessMaxRetransmissions = Integer.getInteger(
-            StackProperties.CONSENT_FRESHNESS_MAX_RETRANSMISSIONS,
-            DEFAULT_CONSENT_FRESHNESS_MAX_RETRANSMISSIONS);
-
-        @Override
-        public void run()
-        {
-            for (IceMediaStream stream : getStreams())
-            {
-                for (Component component : stream.getComponents())
-                {
-                    for (CandidatePair pair : component.getKeepAlivePairs())
-                    {
-                        if (pair != null)
-                        {
-                            if (performConsentFreshness)
-                            {
-                                connCheckClient.startCheckForPair(
-                                    pair,
-                                    originalConsentFreshnessWaitInterval,
-                                    maxConsentFreshnessWaitInterval,
-                                    consentFreshnessMaxRetransmissions);
-                            }
-                            else
-                            {
-                                connCheckClient
-                                    .sendBindingIndicationForPair(pair);
-                            }
-                        }
-                    }
-                }
-            }
-
-            maybeCancelFurtherKeepAlives();
-        }
-
-        private void maybeCancelFurtherKeepAlives()
-        {
-            if (!shouldRunStunKeepAlive())
-            {
-                synchronized (stunKeepAliveFutureSyncRoot)
-                {
-                    if (!shouldRunStunKeepAlive())
-                    {
-                        if (stunKeepAliveFuture != null)
-                        {
-                            stunKeepAliveFuture.cancel(false);
-                            stunKeepAliveFuture = null;
-                            logger.info("Stop periodic Stun Keep Alive.");
-                        }
-                    }
-                }
-            }
-        }
-    };
+    private final StunKeepAliveRunnable
+        stunKeepAliveRunnable = new StunKeepAliveRunnable();
 
     /**
      * The LinkedHashMap used to store the media streams
@@ -360,16 +298,6 @@ public class Agent
      * The object used to synchronize access to {@link #terminationFuture}.
      */
     private final Object terminationFutureSyncRoot = new Object();
-
-    /**
-     * The scheduled task which sends periodic STUN keep-alive.
-     */
-    private ScheduledFuture<?> stunKeepAliveFuture;
-
-    /**
-     * The object used to synchronize access to {@link #stunKeepAliveFuture}.
-     */
-    private final Object stunKeepAliveFutureSyncRoot = new Object();
 
     /**
      * Some protocols, such as XMPP, need to be able to distinguish the separate
@@ -2309,32 +2237,12 @@ public class Agent
             = StackProperties.getBoolean(
                 StackProperties.NO_KEEP_ALIVES,
                 false);
-        if (noKeepAlives || !shouldRunStunKeepAlive())
+        if (noKeepAlives || !stunKeepAliveRunnable.shouldRunStunKeepAlive())
         {
             return;
         }
 
-        if (stunKeepAliveFuture == null)
-        {
-            synchronized (stunKeepAliveFutureSyncRoot)
-            {
-                if (stunKeepAliveFuture == null)
-                {
-                    logger.info("Starting periodic Stun Keep Alive.");
-
-                    long consentFreshnessInterval = Long.getLong(
-                        StackProperties.CONSENT_FRESHNESS_INTERVAL,
-                        DEFAULT_CONSENT_FRESHNESS_INTERVAL);
-
-                    stunKeepAliveFuture
-                        = agentTasksScheduler.scheduleWithFixedDelay(
-                            stunKeepAliveRunnable,
-                            0,
-                            consentFreshnessInterval,
-                            TimeUnit.MILLISECONDS);
-                }
-            }
-        }
+        stunKeepAliveRunnable.schedule();
     }
 
 
@@ -2445,14 +2353,7 @@ public class Agent
         shutdown = true;
 
         //stop sending keep alives (STUN Binding Indications).
-        synchronized (stunKeepAliveFutureSyncRoot)
-        {
-            if (stunKeepAliveFuture != null)
-            {
-                stunKeepAliveFuture.cancel(true);
-                stunKeepAliveFuture = null;
-            }
-        }
+        stunKeepAliveRunnable.cancel();
 
         // cancel termination timer in case agent is freed
         // before termination timer is triggered
@@ -2531,23 +2432,6 @@ public class Agent
     public void setGeneration(int generation)
     {
         this.generation = generation;
-    }
-
-
-    /**
-     * Determines whether {@link #stunKeepAliveRunnable} should run.
-     *
-     * @return <tt>true</tt> if <tt>{@link #stunKeepAliveRunnable}</tt> should
-     * run otherwise, <tt>false</tt>
-     */
-    private boolean shouldRunStunKeepAlive()
-    {
-        IceProcessingState state = this.state;
-
-        return
-            (IceProcessingState.COMPLETED.equals(state)
-                    || IceProcessingState.TERMINATED.equals(state))
-                && !shutdown;
     }
 
     /**
@@ -2809,5 +2693,136 @@ public class Agent
     protected Logger getLogger()
     {
         return logger;
+    }
+
+    /**
+     * Schedulable task to perform Stun Keep Alive
+     */
+    private final class StunKeepAliveRunnable implements Runnable
+    {
+        private final long consentFreshnessInterval = Long.getLong(
+            StackProperties.CONSENT_FRESHNESS_INTERVAL,
+            DEFAULT_CONSENT_FRESHNESS_INTERVAL);
+
+        private final int originalConsentFreshnessWaitInterval = Integer.getInteger(
+            StackProperties.CONSENT_FRESHNESS_ORIGINAL_WAIT_INTERVAL,
+            DEFAULT_CONSENT_FRESHNESS_ORIGINAL_WAIT_INTERVAL);
+
+        private final int maxConsentFreshnessWaitInterval = Integer.getInteger(
+            StackProperties.CONSENT_FRESHNESS_MAX_WAIT_INTERVAL,
+            DEFAULT_CONSENT_FRESHNESS_MAX_WAIT_INTERVAL);
+
+        private final int consentFreshnessMaxRetransmissions = Integer.getInteger(
+            StackProperties.CONSENT_FRESHNESS_MAX_RETRANSMISSIONS,
+            DEFAULT_CONSENT_FRESHNESS_MAX_RETRANSMISSIONS);
+
+        /**
+         * The scheduled task which sends periodic STUN keep-alive checks.
+         */
+        private ScheduledFuture<?> stunKeepAliveFuture;
+
+        /**
+         * The object used to synchronize access to {@link #stunKeepAliveFuture}.
+         */
+        private final Object stunKeepAliveFutureSyncRoot = new Object();
+
+        /**
+         * Execute STUN keep-alive checks
+         */
+        @Override
+        public void run()
+        {
+            for (IceMediaStream stream : getStreams())
+            {
+                for (Component component : stream.getComponents())
+                {
+                    for (CandidatePair pair : component.getKeepAlivePairs())
+                    {
+                        if (pair != null)
+                        {
+                            if (performConsentFreshness)
+                            {
+                                connCheckClient.startCheckForPair(
+                                    pair,
+                                    originalConsentFreshnessWaitInterval,
+                                    maxConsentFreshnessWaitInterval,
+                                    consentFreshnessMaxRetransmissions);
+                            }
+                            else
+                            {
+                                connCheckClient
+                                    .sendBindingIndicationForPair(pair);
+                            }
+                        }
+                    }
+                }
+            }
+
+            if (!shouldRunStunKeepAlive())
+            {
+                cancel();
+            }
+        }
+
+        /**
+         * Schedules execution of periodic task which performs
+         * STUN keep-alive checks
+         */
+        void schedule()
+        {
+            if (stunKeepAliveFuture == null)
+            {
+                synchronized (stunKeepAliveFutureSyncRoot)
+                {
+                    if (stunKeepAliveFuture == null)
+                    {
+                        logger.info("Starting periodic Stun Keep Alive.");
+
+                        stunKeepAliveFuture
+                            = agentTasksScheduler.scheduleWithFixedDelay(
+                            this,
+                            0,
+                            consentFreshnessInterval,
+                            TimeUnit.MILLISECONDS);
+                    }
+                }
+            }
+        }
+
+        /**
+         * Cancel scheduled periodic task which performs
+         * STUN keep-alive checks
+         */
+        void cancel()
+        {
+            if (stunKeepAliveFuture != null)
+            {
+                synchronized (stunKeepAliveFutureSyncRoot)
+                {
+                    if (stunKeepAliveFuture != null)
+                    {
+                        stunKeepAliveFuture.cancel(false);
+                        stunKeepAliveFuture = null;
+                        logger.info("Stop periodic Stun Keep Alive.");
+                    }
+                }
+            }
+        }
+
+        /**
+         * Determines whether {@link #stunKeepAliveRunnable} should run.
+         *
+         * @return <tt>true</tt> if <tt>{@link #stunKeepAliveRunnable}</tt>
+         * should run otherwise, <tt>false</tt>
+         */
+        boolean shouldRunStunKeepAlive()
+        {
+            IceProcessingState state = Agent.this.state;
+
+            return
+                (IceProcessingState.COMPLETED.equals(state)
+                    || IceProcessingState.TERMINATED.equals(state))
+                    && !shutdown;
+        }
     }
 }
