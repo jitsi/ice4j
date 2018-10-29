@@ -29,6 +29,7 @@ import java.util.logging.*;
 import org.ice4j.*;
 import org.ice4j.ice.harvest.*;
 import org.ice4j.stack.*;
+import org.ice4j.util.*;
 import org.ice4j.util.Logger; // Disambiguation.
 
 /**
@@ -122,26 +123,11 @@ public class Agent
 
     static
     {
-        final ThreadFactory agentThreadFactory = new ThreadFactory()
-        {
-            private final ThreadFactory defaultThreadFactory
-                = Executors.defaultThreadFactory();
-
-            @Override
-            public Thread newThread(Runnable r)
-            {
-                Thread thread = defaultThreadFactory.newThread(r);
-                thread.setName("ice4j.Agent-" + thread.getName());
-                if (!thread.isDaemon())
-                {
-                    thread.setDaemon(true);
-                }
-                return thread;
-            }
-        };
+        CustomizableThreadFactory threadFactory
+            = new CustomizableThreadFactory("ice4j.Agent-", true);
 
         final ScheduledThreadPoolExecutor terminationExecutor
-            = new ScheduledThreadPoolExecutor(0, agentThreadFactory);
+            = new ScheduledThreadPoolExecutor(0, threadFactory);
         terminationExecutor.setKeepAliveTime(10, TimeUnit.SECONDS);
         terminationExecutor.setRemoveOnCancelPolicy(true);
         agentTasksScheduler
