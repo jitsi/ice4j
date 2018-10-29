@@ -153,7 +153,7 @@ public class Agent
     };
 
     /**
-     * Schedule STUN checks for selected pair.
+     * A runnable instance to schedule STUN checks for selected pair.
      */
     private final StunKeepAliveRunnable
         stunKeepAliveRunnable = new StunKeepAliveRunnable();
@@ -2696,7 +2696,7 @@ public class Agent
     }
 
     /**
-     * Schedulable task to perform Stun Keep Alive
+     * Schedulable task to perform Stun keep-alive checks
      */
     private final class StunKeepAliveRunnable implements Runnable
     {
