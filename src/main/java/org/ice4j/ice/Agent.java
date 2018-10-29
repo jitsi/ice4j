@@ -215,11 +215,11 @@ public class Agent
         }
 
         private void maybeCancelFurtherKeepAlives() {
-            if (!runInStunKeepAliveThreadCondition())
+            if (!runStunKeepAliveCondition())
             {
                 synchronized (stunKeepAliveFutureSyncRoot)
                 {
-                    if (!runInStunKeepAliveThreadCondition())
+                    if (!runStunKeepAliveCondition())
                     {
                         if (stunKeepAliveFuture != null)
                         {
@@ -2323,11 +2323,8 @@ public class Agent
             = StackProperties.getBoolean(
                 StackProperties.NO_KEEP_ALIVES,
                 false);
-        if (noKeepAlives) {
-            return;
-        }
-
-        if (!runInStunKeepAliveThreadCondition()) {
+        if (noKeepAlives || !runStunKeepAliveCondition())
+        {
             return;
         }
 
@@ -2337,6 +2334,8 @@ public class Agent
             {
                 if (stunKeepAliveFuture == null)
                 {
+                    logger.info("Starting periodic Stun Keep Alive.");
+
                     long consentFreshnessInterval = Long.getLong(
                         StackProperties.CONSENT_FRESHNESS_INTERVAL,
                         DEFAULT_CONSENT_FRESHNESS_INTERVAL);
@@ -2555,7 +2554,7 @@ public class Agent
      * @return <tt>true</tt> if <tt>{@link #stunKeepAliveRunnable}</tt> is to run;
      * otherwise, <tt>false</tt>
      */
-    private boolean runInStunKeepAliveThreadCondition()
+    private boolean runStunKeepAliveCondition()
     {
         IceProcessingState state = this.state;
 
