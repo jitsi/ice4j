@@ -214,7 +214,8 @@ public class Agent
             maybeCancelFurtherKeepAlives();
         }
 
-        private void maybeCancelFurtherKeepAlives() {
+        private void maybeCancelFurtherKeepAlives()
+        {
             if (!runStunKeepAliveCondition())
             {
                 synchronized (stunKeepAliveFutureSyncRoot)
@@ -223,8 +224,7 @@ public class Agent
                     {
                         if (stunKeepAliveFuture != null)
                         {
-                            stunKeepAliveFuture.cancel(
-                                false);
+                            stunKeepAliveFuture.cancel(false);
                             stunKeepAliveFuture = null;
                             logger.info("Stop periodic Stun Keep Alive.");
                         }
