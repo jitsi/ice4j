@@ -170,28 +170,27 @@ public class Agent
      */
     private final Runnable stunKeepAliveRunnable = new Runnable()
     {
+        private int originalConsentFreshnessWaitInterval = Integer.getInteger(
+            StackProperties.CONSENT_FRESHNESS_ORIGINAL_WAIT_INTERVAL,
+            DEFAULT_CONSENT_FRESHNESS_ORIGINAL_WAIT_INTERVAL);
+
+        private int maxConsentFreshnessWaitInterval = Integer.getInteger(
+            StackProperties.CONSENT_FRESHNESS_MAX_WAIT_INTERVAL,
+            DEFAULT_CONSENT_FRESHNESS_MAX_WAIT_INTERVAL);
+
+        private int consentFreshnessMaxRetransmissions = Integer.getInteger(
+            StackProperties.CONSENT_FRESHNESS_MAX_RETRANSMISSIONS,
+            DEFAULT_CONSENT_FRESHNESS_MAX_RETRANSMISSIONS);
+
         @Override
         public void run()
         {
-            int originalConsentFreshnessWaitInterval = Integer.getInteger(
-                StackProperties.CONSENT_FRESHNESS_ORIGINAL_WAIT_INTERVAL,
-                DEFAULT_CONSENT_FRESHNESS_ORIGINAL_WAIT_INTERVAL);
-
-            int maxConsentFreshnessWaitInterval = Integer.getInteger(
-                StackProperties.CONSENT_FRESHNESS_MAX_WAIT_INTERVAL,
-                DEFAULT_CONSENT_FRESHNESS_MAX_WAIT_INTERVAL);
-
-            int consentFreshnessMaxRetransmissions = Integer.getInteger(
-                StackProperties.CONSENT_FRESHNESS_MAX_RETRANSMISSIONS,
-                DEFAULT_CONSENT_FRESHNESS_MAX_RETRANSMISSIONS);
-
             for (IceMediaStream stream : getStreams())
             {
                 for (Component component : stream.getComponents())
                 {
                     for (CandidatePair pair : component.getKeepAlivePairs())
                     {
-
                         if (pair != null)
                         {
                             if (performConsentFreshness)
@@ -212,6 +211,10 @@ public class Agent
                 }
             }
 
+            maybeCancelFurtherKeepAlives();
+        }
+
+        private void maybeCancelFurtherKeepAlives() {
             if (!runInStunKeepAliveThreadCondition())
             {
                 synchronized (stunKeepAliveFutureSyncRoot)
@@ -373,15 +376,14 @@ public class Agent
     private final Object terminationFutureSyncRoot = new Object();
 
     /**
+     * The scheduled task which sends periodic STUN keep-alive.
+     */
+    private ScheduledFuture<?> stunKeepAliveFuture;
+
+    /**
      * The object used to synchronize access to {@link #stunKeepAliveFuture}.
      */
     private final Object stunKeepAliveFutureSyncRoot = new Object();
-
-
-    /**
-     * The thread that we use for STUN keep-alive.
-     */
-    private ScheduledFuture<?> stunKeepAliveFuture;
 
     /**
      * Some protocols, such as XMPP, need to be able to distinguish the separate
@@ -2063,6 +2065,8 @@ public class Agent
             return;
         }
 
+        // keep ICE running (answer STUN Binding requests, send STUN Binding
+        // indications or requests)
         scheduleStunKeepAlive();
 
         scheduleTermination();
@@ -2310,8 +2314,8 @@ public class Agent
     }
 
     /**
-     * Initializes and starts the background <tt>Thread</tt> which is to send
-     * STUN keep-alives once this <tt>Agent</tt> is <tt>COMPLETED</tt>.
+     * Schedules repeated background task which sends STUN keep-alives
+     * once this <tt>Agent</tt> is <tt>COMPLETED</tt>.
      */
     private void scheduleStunKeepAlive()
     {
