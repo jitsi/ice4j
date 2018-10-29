@@ -2327,6 +2327,10 @@ public class Agent
             return;
         }
 
+        if (!runInStunKeepAliveThreadCondition()) {
+            return;
+        }
+
         if (stunKeepAliveFuture == null)
         {
             synchronized (stunKeepAliveFutureSyncRoot)
