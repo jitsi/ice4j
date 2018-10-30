@@ -47,7 +47,6 @@ import org.ice4j.util.*;
  * @author Lyubomir Marinov
  */
 public class StunClientTransaction
-    implements Runnable
 {
     /**
      * Our class logger.
@@ -168,6 +167,34 @@ public class StunClientTransaction
     private final Condition lockCondition = lock.newCondition();
 
     /**
+     * Implements the retransmissions algorithm. Retransmits the request
+     * starting with an interval of 100ms, doubling every retransmit until the
+     * interval reaches 1.6s.  Retransmissions continue with intervals of 1.6s
+     * until a response is received, or a total of 7 requests have been sent.
+     * If no response is received by 1.6 seconds after the last request has been
+     * sent, we consider the transaction to have failed.
+     * <p>
+     * The method acquires {@link #lock} and invokes {@link #runLocked()}.
+     * </p>
+     */
+    private final Runnable retransmissionsRunnable = new Runnable()
+    {
+        @Override
+        public void run()
+        {
+            lock.lock();
+            try
+            {
+                runLocked();
+            }
+            finally
+            {
+                lock.unlock();
+            }
+        }
+    };
+
+    /**
      * Creates a client transaction.
      *
      * @param stackCallback the stack that created us.
@@ -234,31 +261,6 @@ public class StunClientTransaction
             throw new IllegalArgumentException(
                     "The TransactionID class generated an invalid transaction"
                         + " ID");
-        }
-    }
-
-    /**
-     * Implements the retransmissions algorithm. Retransmits the request
-     * starting with an interval of 100ms, doubling every retransmit until the
-     * interval reaches 1.6s.  Retransmissions continue with intervals of 1.6s
-     * until a response is received, or a total of 7 requests have been sent.
-     * If no response is received by 1.6 seconds after the last request has been
-     * sent, we consider the transaction to have failed.
-     * <p>
-     * The method acquires {@link #lock} and invokes {@link #runLocked()}.
-     * </p>
-     */
-    @Override
-    public void run()
-    {
-        lock.lock();
-        try
-        {
-            runLocked();
-        }
-        finally
-        {
-            lock.unlock();
         }
     }
 
@@ -352,7 +354,7 @@ public class StunClientTransaction
                     + localAddress + " to " + requestDestination);
         sendRequest0();
 
-        retransmissionThreadPool.execute(this);
+        retransmissionThreadPool.execute(this.retransmissionsRunnable);
     }
 
     /**
