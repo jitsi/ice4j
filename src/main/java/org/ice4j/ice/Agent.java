@@ -383,7 +383,7 @@ public class Agent
         SecureRandom random = new SecureRandom();
 
         connCheckServer = new ConnectivityCheckServer(this);
-        connCheckClient = new ConnectivityCheckClient(this);
+        connCheckClient = new ConnectivityCheckClient(this, agentTasksScheduler);
 
         //add the FINGERPRINT attribute to all messages.
         System.setProperty(StackProperties.ALWAYS_SIGN, "true");
