@@ -456,9 +456,11 @@ public class StunClientTransaction
                     return;
                 }
 
+                retransmissionCounter++;
+
                 int curWaitInterval = nextRetransmissionDelay;
-                nextRetransmissionDelay =
-                    Math.min(maxWaitInterval, 2* nextRetransmissionDelay);
+                nextRetransmissionDelay
+                    = Math.min(maxWaitInterval, 2 * nextRetransmissionDelay);
 
                 try
                 {
@@ -466,7 +468,7 @@ public class StunClientTransaction
                         "retrying STUN tid " + transactionID + " from "
                             + localAddress + " to " + requestDestination
                             + " waited " + curWaitInterval + " ms retrans "
-                            + (retransmissionCounter + 1) + " of "
+                            + retransmissionCounter + " of "
                             + maxRetransmissions);
                     sendRequest0();
                 }
