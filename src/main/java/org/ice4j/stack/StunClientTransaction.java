@@ -19,6 +19,7 @@ package org.ice4j.stack;
 
 import java.io.*;
 import java.util.concurrent.*;
+import java.util.concurrent.atomic.*;
 import java.util.concurrent.locks.*;
 import java.util.logging.*;
 
@@ -146,53 +147,12 @@ public class StunClientTransaction
     /**
      * Determines whether the transaction is active or not.
      */
-    private boolean cancelled = false;
+    private final AtomicBoolean cancelled = new AtomicBoolean(false);
 
     /**
-     * The <tt>Lock</tt> which synchronizes the access to the state of this
-     * instance. Introduced along with {@link #lockCondition} in order to allow
-     * the invocation of {@link #cancel(boolean)} without a requirement to
-     * acquire the synchronization root. Otherwise, callers of
-     * <tt>cancel(boolean)</tt> may (and have be reported multiple times to)
-     * fall into a deadlock merely because they want to cancel this
-     * <tt>StunClientTransaction</tt>.
+     * A transaction request retransmitter
      */
-    private final Lock lock = new ReentrantLock();
-
-    /**
-     * The <tt>Condition</tt> of {@link #lock} which this instance uses to wait
-     * for either the next retransmission interval or the cancellation of this
-     * <tt>StunClientTransaction</tt>.
-     */
-    private final Condition lockCondition = lock.newCondition();
-
-    /**
-     * Implements the retransmissions algorithm. Retransmits the request
-     * starting with an interval of 100ms, doubling every retransmit until the
-     * interval reaches 1.6s.  Retransmissions continue with intervals of 1.6s
-     * until a response is received, or a total of 7 requests have been sent.
-     * If no response is received by 1.6 seconds after the last request has been
-     * sent, we consider the transaction to have failed.
-     * <p>
-     * The method acquires {@link #lock} and invokes {@link #runLocked()}.
-     * </p>
-     */
-    private final Runnable retransmissionsRunnable = new Runnable()
-    {
-        @Override
-        public void run()
-        {
-            lock.lock();
-            try
-            {
-                runLocked();
-            }
-            finally
-            {
-                lock.unlock();
-            }
-        }
-    };
+    private final Retransmitter retransmitter = new Retransmitter();
 
     /**
      * Creates a client transaction.
@@ -265,77 +225,6 @@ public class StunClientTransaction
     }
 
     /**
-     * Implements the retransmissions algorithm. Retransmits the request
-     * starting with an interval of 100ms, doubling every retransmit until the
-     * interval reaches 1.6s.  Retransmissions continue with intervals of 1.6s
-     * until a response is received, or a total of 7 requests have been sent.
-     * If no response is received by 1.6 seconds after the last request has been
-     * sent, we consider the transaction to have failed.
-     * <p>
-     * The method assumes that the current thread has already acquired
-     * {@link #lock}.
-     * </p>
-     */
-    private void runLocked()
-    {
-        // Indicates how many times we have retransmitted so far.
-        int retransmissionCounter = 0;
-        // How much did we wait after our last retransmission?
-        int nextWaitInterval = originalWaitInterval;
-
-        for (retransmissionCounter = 0;
-             retransmissionCounter < maxRetransmissions;
-             retransmissionCounter ++)
-        {
-            waitFor(nextWaitInterval);
-
-            //did someone tell us to get lost?
-            if(cancelled)
-                return;
-
-            int curWaitInterval = nextWaitInterval;
-            if(nextWaitInterval < maxWaitInterval)
-                nextWaitInterval *= 2;
-
-            try
-            {
-                logger.fine(
-                        "retrying STUN tid " + transactionID + " from "
-                            + localAddress + " to " + requestDestination
-                            + " waited " + curWaitInterval + " ms retrans "
-                            + (retransmissionCounter + 1) + " of "
-                            + maxRetransmissions);
-                sendRequest0();
-            }
-            catch (Exception ex)
-            {
-                //I wonder whether we should notify anyone that a retransmission
-                // has failed
-                logger.log(
-                        Level.INFO,
-                        "A client tran retransmission failed",
-                        ex);
-            }
-        }
-
-        //before stating that a transaction has timeout-ed we should first wait
-        //for a reception of the response
-        if(nextWaitInterval < maxWaitInterval)
-            nextWaitInterval *= 2;
-
-        waitFor(nextWaitInterval);
-
-        if(cancelled)
-            return;
-
-        stackCallback.removeClientTransaction(this);
-        responseCollector.processTimeout(
-                new StunTimeoutEvent(
-                        stackCallback,
-                        this.request, getLocalAddress(), transactionID));
-    }
-
-    /**
      * Sends the request and schedules the first retransmission for after
      * {@link #originalWaitInterval} and thus starts the retransmission
      * algorithm.
@@ -354,7 +243,7 @@ public class StunClientTransaction
                     + localAddress + " to " + requestDestination);
         sendRequest0();
 
-        retransmissionThreadPool.execute(this.retransmissionsRunnable);
+        this.retransmitter.schedule();
     }
 
     /**
@@ -368,7 +257,7 @@ public class StunClientTransaction
     private void sendRequest0()
         throws IllegalArgumentException, IOException
     {
-        if(cancelled)
+        if (cancelled.get())
         {
             logger.finer("Trying to resend a cancelled transaction.");
         }
@@ -392,73 +281,17 @@ public class StunClientTransaction
     }
 
     /**
-     * Waits until next retransmission is due or until the transaction is
-     * cancelled (whichever comes first).
-     *
-     * @param millis the number of milliseconds to wait for.
-     */
-    void waitFor(long millis)
-    {
-        lock.lock();
-        try
-        {
-            lockCondition.await(millis, TimeUnit.MILLISECONDS);
-        }
-        catch (InterruptedException ex)
-        {
-            throw new RuntimeException(ex);
-        }
-        finally
-        {
-            lock.unlock();
-        }
-    }
-
-    /**
-     * Cancels the transaction. Once this method is called the transaction is
-     * considered terminated and will stop retransmissions.
-     *
-     * @param waitForResponse indicates whether we should wait for the current
-     * RTO to expire before ending the transaction or immediately terminate.
-     */
-    void cancel(boolean waitForResponse)
-    {
-        // XXX The cancelled field is initialized to false and then the one and
-        // only write access to it is here to set it to true. The rest of the
-        // code just checks whether it has become true. Consequently, there
-        // shouldn't be a problem if the set is outside a synchronized block.
-        // However, it being outside a synchronized block will decrease the risk
-        // of deadlocks.
-        cancelled = true;
-
-        if(!waitForResponse)
-        {
-            // Try to interrupt #waitFor(long) if possible. But don't risk a
-            // deadlock. It is not a problem if it is not possible to interrupt
-            // #waitFor(long) here because it will complete in finite time and
-            // this StunClientTransaction will eventually notice that it has
-            // been cancelled.
-            if (lock.tryLock())
-            {
-                try
-                {
-                    lockCondition.signal();
-                }
-                finally
-                {
-                    lock.unlock();
-                }
-            }
-        }
-    }
-
-    /**
      * Cancels the transaction. Once this method is called the transaction is
      * considered terminated and will stop retransmissions.
      */
     void cancel()
     {
-        cancel(false);
+        // The cancelled field is initialized to false and then the one and
+        // only write access to it is here to set it to true. The rest of the
+        // code just checks whether it has become true.
+        cancelled.set(true);
+
+        this.retransmitter.cancel(false);
     }
 
     /**
@@ -469,27 +302,21 @@ public class StunClientTransaction
      */
     public void handleResponse(StunMessageEvent evt)
     {
-        lock.lock();
-        try
-        {
-            TransactionID transactionID = getTransactionID();
+        TransactionID transactionID = getTransactionID();
 
-            logger.log(Level.FINE, "handleResponse tid " + transactionID);
-            if(!Boolean.getBoolean(StackProperties.KEEP_CRANS_AFTER_A_RESPONSE))
-                cancel();
-
-            responseCollector.processResponse(
-                    new StunResponseEvent(
-                            stackCallback,
-                            evt.getRawMessage(),
-                            (Response) evt.getMessage(),
-                            request,
-                            transactionID));
-        }
-        finally
+        logger.log(Level.FINE, "handleResponse tid " + transactionID);
+        if(!Boolean.getBoolean(StackProperties.KEEP_CRANS_AFTER_A_RESPONSE))
         {
-            lock.unlock();
+            cancel();
         }
+
+        responseCollector.processResponse(
+            new StunResponseEvent(
+                stackCallback,
+                evt.getRawMessage(),
+                (Response) evt.getMessage(),
+                request,
+                transactionID));
     }
 
     /**
@@ -590,5 +417,200 @@ public class StunClientTransaction
     public TransportAddress getRemoteAddress()
     {
         return requestDestination;
+    }
+
+    /**
+     * Implements the retransmissions algorithm. Retransmits the request
+     * starting with an interval of 100ms, doubling every retransmit until the
+     * interval reaches 1.6s.  Retransmissions continue with intervals of 1.6s
+     * until a response is received, or a total of 7 requests have been sent.
+     * If no response is received by 1.6 seconds after the last request has been
+     * sent, we consider the transaction to have failed.
+     */
+    private final class Retransmitter
+    {
+        /**
+         * The <tt>Lock</tt> which synchronizes the access to the state of this
+         * instance. Introduced along with {@link #lockCondition} in order to allow
+         * the invocation of {@link #cancel()} without a requirement to
+         * acquire the synchronization root. Otherwise, callers of
+         * <tt>cancel(boolean)</tt> may (and have be reported multiple times to)
+         * fall into a deadlock merely because they want to cancel this
+         * <tt>StunClientTransaction</tt>.
+         */
+        private final Lock lock = new ReentrantLock();
+
+        /**
+         * The <tt>Condition</tt> of {@link #lock} which this instance uses to wait
+         * for either the next retransmission interval or the cancellation of this
+         * <tt>StunClientTransaction</tt>.
+         */
+        private final Condition lockCondition = lock.newCondition();
+
+        /**
+         * The scheduled runnable that acquires {@link #lock} and
+         * invokes {@link #runLocked()}.
+         */
+        private final Runnable run = new Runnable()
+        {
+            @Override
+            public void run()
+            {
+                lock.lock();
+                try
+                {
+                    runLocked();
+                }
+                finally
+                {
+                    lock.unlock();
+                }
+            }
+        };
+
+        private ScheduledFuture<?> retransmissionFuture;
+
+        void schedule()
+        {
+            if (retransmissionFuture != null)
+            {
+                return;
+            }
+            retransmissionFuture = retransmissionThreadPool.schedule(
+                run, 0, TimeUnit.MILLISECONDS);
+        }
+
+        /**
+         * Cancels the transaction. Once this method is called the transaction is
+         * considered terminated and will stop retransmissions.
+         *
+         * @param waitForResponse indicates whether we should wait for the current
+         * RTO to expire before ending the transaction or immediately terminate.
+         */
+        void cancel(boolean waitForResponse)
+        {
+            lock.lock();
+
+            try
+            {
+                if(!waitForResponse)
+                {
+                    // Try to interrupt #waitFor(long) if possible. But don't risk a
+                    // deadlock. It is not a problem if it is not possible to interrupt
+                    // #waitFor(long) here because it will complete in finite time and
+                    // this StunClientTransaction will eventually notice that it has
+                    // been cancelled.
+                    if (lock.tryLock())
+                    {
+                        try
+                        {
+                            lockCondition.signal();
+                        }
+                        finally
+                        {
+                            lock.unlock();
+                        }
+                    }
+                }
+            }
+            finally
+            {
+                lock.unlock();
+            }
+        }
+
+        /**
+         * Implements the retransmissions algorithm. Retransmits the request
+         * starting with an interval of 100ms, doubling every retransmit until the
+         * interval reaches 1.6s.  Retransmissions continue with intervals of 1.6s
+         * until a response is received, or a total of 7 requests have been sent.
+         * If no response is received by 1.6 seconds after the last request has been
+         * sent, we consider the transaction to have failed.
+         * <p>
+         * The method assumes that the current thread has already acquired
+         * {@link #lock}.
+         * </p>
+         */
+        private void runLocked()
+        {
+            // Indicates how many times we have retransmitted so far.
+            int retransmissionCounter = 0;
+            // How much did we wait after our last retransmission?
+            int nextWaitInterval = originalWaitInterval;
+
+            for (retransmissionCounter = 0;
+                 retransmissionCounter < maxRetransmissions;
+                 retransmissionCounter ++)
+            {
+                waitFor(nextWaitInterval);
+
+                //did someone tell us to get lost?
+                if(cancelled.get())
+                    return;
+
+                int curWaitInterval = nextWaitInterval;
+                if(nextWaitInterval < maxWaitInterval)
+                    nextWaitInterval *= 2;
+
+                try
+                {
+                    logger.fine(
+                        "retrying STUN tid " + transactionID + " from "
+                            + localAddress + " to " + requestDestination
+                            + " waited " + curWaitInterval + " ms retrans "
+                            + (retransmissionCounter + 1) + " of "
+                            + maxRetransmissions);
+                    sendRequest0();
+                }
+                catch (Exception ex)
+                {
+                    //I wonder whether we should notify anyone that a retransmission
+                    // has failed
+                    logger.log(
+                        Level.INFO,
+                        "A client tran retransmission failed",
+                        ex);
+                }
+            }
+
+            //before stating that a transaction has timeout-ed we should first wait
+            //for a reception of the response
+            if(nextWaitInterval < maxWaitInterval)
+                nextWaitInterval *= 2;
+
+            waitFor(nextWaitInterval);
+
+            if(cancelled.get())
+                return;
+
+            stackCallback.removeClientTransaction(StunClientTransaction.this);
+            responseCollector.processTimeout(
+                new StunTimeoutEvent(
+                    stackCallback,
+                    getRequest(), getLocalAddress(), getTransactionID()));
+        }
+
+        /**
+         * Waits until next retransmission is due or until the transaction is
+         * cancelled (whichever comes first).
+         *
+         * @param millis the number of milliseconds to wait for.
+         */
+        private void waitFor(long millis)
+        {
+            lock.lock();
+            try
+            {
+                lockCondition.await(millis, TimeUnit.MILLISECONDS);
+            }
+            catch (InterruptedException ex)
+            {
+                throw new RuntimeException(ex);
+            }
+            finally
+            {
+                lock.unlock();
+            }
+        }
     }
 }
