@@ -69,7 +69,7 @@ class ConnectivityCheckClient
     /**
      * The {@link PaceMaker}s that are currently running checks in this client.
      */
-    private final AbstractCollection<PaceMaker> paceMakers
+    private final Queue<PaceMaker> paceMakers
         = new ConcurrentLinkedQueue<>();
 
     /**
@@ -982,6 +982,10 @@ class ConnectivityCheckClient
          */
         void schedule()
         {
+            if (cancelled.get())
+            {
+                return;
+            }
             scheduledCheck
                 = scheduledExecutorService.schedule(
                     connectivityChecker,
@@ -1016,12 +1020,14 @@ class ConnectivityCheckClient
      */
     public void stop()
     {
-        Iterator<PaceMaker> paceMakersIter = paceMakers.iterator();
-        while(paceMakersIter.hasNext())
+        while (true)
         {
-            final PaceMaker paceMaker = paceMakersIter.next();
+            final PaceMaker paceMaker = paceMakers.poll();
+            if (paceMaker == null)
+            {
+                break;
+            }
             paceMaker.cancel();
-            paceMakersIter.remove();
         }
     }
 }
