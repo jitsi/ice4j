@@ -895,7 +895,9 @@ class ConnectivityCheckClient
 
                 //if there are no triggered checks, go for an ordinary one.
                 if (pairToCheck == null)
+                {
                     pairToCheck = checkList.getNextOrdinaryPairToCheck();
+                }
 
                 if (pairToCheck != null)
                 {
@@ -919,7 +921,9 @@ class ConnectivityCheckClient
                             pairToCheck.setStateFailed();
                         }
                         else
+                        {
                             pairToCheck.setStateInProgress(transactionID);
+                        }
                     }
                 }
                 else
