@@ -24,6 +24,7 @@ import java.util.logging.*;
 
 import org.ice4j.*;
 import org.ice4j.message.*;
+import org.ice4j.util.*;
 
 /**
  * The {@code StunClientTransaction} class retransmits requests as specified by
@@ -51,8 +52,8 @@ public class StunClientTransaction
     /**
      * Our class logger.
      */
-    private static final Logger logger
-        = Logger.getLogger(StunClientTransaction.class.getName());
+    private static final java.util.logging.Logger logger
+        = java.util.logging.Logger.getLogger(StunClientTransaction.class.getName());
 
     /**
      * The number of times to retransmit a request if no explicit value has been
@@ -77,40 +78,20 @@ public class StunClientTransaction
      * The pool of <tt>Thread</tt>s which retransmit
      * <tt>StunClientTransaction</tt>s.
      */
-    private static final ExecutorService retransmissionThreadPool
-        = Executors.newCachedThreadPool(
-                new ThreadFactory()
-                {
-                    /**
-                     * The default {@code ThreadFactory} implementation which is
-                     * augmented by this instance to create daemon
-                     * {@code Thread}s.
-                     */
-                    private final ThreadFactory defaultThreadFactory
-                        = Executors.defaultThreadFactory();
+    private static final ScheduledExecutorService retransmissionThreadPool;
 
-                    @Override
-                    public Thread newThread(Runnable r)
-                    {
-                        Thread t = defaultThreadFactory.newThread(r);
+    static {
+        CustomizableThreadFactory threadFactory
+            = new CustomizableThreadFactory("ice4j.StunClientTransaction-", true);
 
-                        if (t != null)
-                        {
-                            t.setDaemon(true);
-
-                            // Additionally, make it known through the name of
-                            // the Thread that it is associated with the
-                            // StunClientTransaction class for
-                            // debugging/informational purposes.
-                            String name = t.getName();
-
-                            if (name == null)
-                                name = "";
-                            t.setName("StunClientTransaction-" + name);
-                        }
-                        return t;
-                    }
-                });
+        final ScheduledThreadPoolExecutor terminationExecutor
+            = new ScheduledThreadPoolExecutor(0, threadFactory);
+        terminationExecutor.setKeepAliveTime(60, TimeUnit.SECONDS);
+        terminationExecutor.setRemoveOnCancelPolicy(true);
+        retransmissionThreadPool
+            = Executors.unconfigurableScheduledExecutorService(
+            terminationExecutor);
+    }
 
     /**
      * Maximum number of retransmissions. Once this number is reached and if no
