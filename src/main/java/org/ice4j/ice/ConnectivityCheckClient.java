@@ -19,6 +19,8 @@ package org.ice4j.ice;
 
 import java.net.*;
 import java.util.*;
+import java.util.concurrent.*;
+import java.util.concurrent.atomic.*;
 import java.util.logging.*;
 
 import org.ice4j.*;
@@ -55,6 +57,11 @@ class ConnectivityCheckClient
     private final Agent parentAgent;
 
     /**
+     * A scheduled executor service to perform scheduled task of the client
+     */
+    private final ScheduledExecutorService scheduledExecutorService;
+
+    /**
      * The <tt>StunStack</tt> that we will use for connectivity checks.
      */
     private final StunStack stunStack;
@@ -62,13 +69,15 @@ class ConnectivityCheckClient
     /**
      * The {@link PaceMaker}s that are currently running checks in this client.
      */
-    private final List<PaceMaker> paceMakers = new LinkedList<>();
+    private final AbstractCollection<PaceMaker> paceMakers
+        = new ConcurrentLinkedQueue<>();
 
     /**
      * Timer that is used to let some seconds before a CheckList is considered
      * as FAILED.
      */
-    private Map<String, Timer> timers = new HashMap<>();
+    private ConcurrentMap<String, ScheduledFuture<?>>
+        checkListCompletionCheckers = new ConcurrentHashMap<>();
 
     /**
      * A flag that determines whether we have received a STUN response or not.
@@ -86,10 +95,15 @@ class ConnectivityCheckClient
      * information such as user fragments for example.
      *
      * @param parentAgent the <tt>Agent</tt> that is creating this instance.
+     * @param scheduledExecutorService the <tt>ScheduledExecutorService</tt>
+     *                                 to execute clients tasks
      */
-    public ConnectivityCheckClient(Agent parentAgent)
+    public ConnectivityCheckClient(
+        Agent parentAgent,
+        ScheduledExecutorService scheduledExecutorService)
     {
         this.parentAgent = parentAgent;
+        this.scheduledExecutorService = scheduledExecutorService;
         logger = new Logger(classLogger, parentAgent.getLogger());
 
         stunStack = this.parentAgent.getStunStack();
@@ -149,12 +163,8 @@ class ConnectivityCheckClient
     public void startChecks(CheckList checkList)
     {
         PaceMaker paceMaker = new PaceMaker(checkList);
-
-        synchronized (paceMakers)
-        {
-            paceMakers.add(paceMaker);
-        }
-        paceMaker.start();
+        paceMakers.add(paceMaker);
+        paceMaker.schedule();
     }
 
     /**
@@ -431,14 +441,12 @@ class ConnectivityCheckClient
             if ( !stream.validListContainsAllComponents())
             {
                 final String streamName = stream.getName();
-                Timer timer = timers.get(streamName);
-
-                if (timer == null)
+                if (!checkListCompletionCheckers.containsKey(streamName))
                 {
-                    logger.info("CheckList will failed in a few seconds if no" +
-                            "succeeded checks come");
+                    logger.info("CheckList will failed in a few seconds" +
+                        " if no succeeded checks come");
 
-                    TimerTask task = new TimerTask()
+                    Runnable checkLickCompletedChecker = new Runnable()
                     {
                         @Override
                         public void run()
@@ -453,9 +461,20 @@ class ConnectivityCheckClient
                             }
                         }
                     };
-                    timer = new Timer();
-                    timers.put(streamName, timer);
-                    timer.schedule(task, 5000);
+
+                    final ScheduledFuture<?> scheduledCheckerFuture
+                        = scheduledExecutorService.schedule(
+                            checkLickCompletedChecker,
+                            5000,
+                            TimeUnit.MILLISECONDS);
+
+                    final ScheduledFuture<?> existingCheckerFuture
+                        = checkListCompletionCheckers
+                            .putIfAbsent(streamName, scheduledCheckerFuture);
+                    if (existingCheckerFuture != null)
+                    {
+                        scheduledCheckerFuture.cancel(false);
+                    }
                 }
             }
 
@@ -847,22 +866,90 @@ class ConnectivityCheckClient
     }
 
     /**
-     * The thread that actually sends the checks for a particular check list
-     * in the pace defined in RFC 5245.
+     * A class to control periodically scheduled runnable that actually sends
+     * the checks for a particular check list in the pace defined in RFC 5245.
      */
-    private class PaceMaker
-        extends Thread
+    private final class PaceMaker
     {
         /**
-         * Indicates whether this <tt>Thread</tt> should still be running.
+         * Indicates whether this <tt>Runnable</tt> should continue running.
          */
-        boolean running = true;
+        private final AtomicBoolean cancelled = new AtomicBoolean();
+
+        /**
+         * Sends connectivity checks at the pace determined by the {@link
+         * Agent#calculateTa()} method and using either the trigger check queue
+         * or the regular check lists.
+         */
+        private final Runnable connectivityChecker = new Runnable()
+        {
+            @Override
+            public void run()
+            {
+                if (cancelled.get())
+                {
+                    return;
+                }
+
+                CandidatePair pairToCheck = checkList.popTriggeredCheck();
+
+                //if there are no triggered checks, go for an ordinary one.
+                if (pairToCheck == null)
+                    pairToCheck = checkList.getNextOrdinaryPairToCheck();
+
+                if (pairToCheck != null)
+                {
+                    /*
+                     * Since we suspect that it is possible to
+                     * startCheckForPair, processSuccessResponse and only
+                     * then setStateInProgress, we'll synchronize. The
+                     * synchronization root is the one of the
+                     * CandidatePair#setState method.
+                     */
+                    synchronized (pairToCheck)
+                    {
+                        TransactionID transactionID
+                            = startCheckForPair(pairToCheck);
+
+                        if (transactionID == null)
+                        {
+                            logger.info(
+                                "Pair failed: "
+                                    + pairToCheck.toShortString());
+                            pairToCheck.setStateFailed();
+                        }
+                        else
+                            pairToCheck.setStateInProgress(transactionID);
+                    }
+                }
+                else
+                {
+                    /*
+                     * We are done sending checks for this list. We'll set
+                     * its final state in either the processResponse(),
+                     * processTimeout() or processFailure() method.
+                     */
+                    logger.finest("will skip a check beat.");
+                    checkList.fireEndOfOrdinaryChecks();
+                }
+
+                if (!cancelled.get())
+                {
+                    schedule();
+                }
+            }
+        };
 
         /**
          * The {@link CheckList} that this <tt>PaceMaker</tt> will be running
          * checks for.
          */
         private final CheckList checkList;
+
+        /**
+         * Scheduled instance of {@link #connectivityChecker} runnable
+         */
+        private ScheduledFuture<?> scheduledCheck;
 
         /**
          * Creates a new {@link PaceMaker} for this
@@ -873,18 +960,33 @@ class ConnectivityCheckClient
          */
         public PaceMaker(CheckList checkList)
         {
-            super("ICE PaceMaker: " + parentAgent.getLocalUfrag());
-
             this.checkList = checkList;
+        }
 
-            /*
-             * Because PaceMaker does not seem to be a daemon at least on Ubuntu
-             * in the run-sample target and it looks like it should be from the
-             * standpoint of the application, explicitly tell it to be a daemon.
-             * Otherwise, it could prevent the application from exiting because
-             * of a problem in the ICE implementation.
-             */
-            setDaemon(true);
+        /**
+         * Cancel execution of current and further connectivity checks
+         */
+        void cancel()
+        {
+            cancelled.set(true);
+
+            final ScheduledFuture<?> scheduledCheck = this.scheduledCheck;
+            if (scheduledCheck != null)
+            {
+                scheduledCheck.cancel(true);
+            }
+        }
+
+        /**
+         * Schedules execution of checks for check list
+         */
+        void schedule()
+        {
+            scheduledCheck
+                = scheduledExecutorService.schedule(
+                    connectivityChecker,
+                    getNextWaitInterval(),
+                    TimeUnit.MILLISECONDS);
         }
 
         /**
@@ -907,95 +1009,6 @@ class ConnectivityCheckClient
 
             return parentAgent.calculateTa() * activeCheckLists;
         }
-
-        /**
-         * Sends connectivity checks at the pace determined by the {@link
-         * Agent#calculateTa()} method and using either the trigger check queue
-         * or the regular check lists.
-         */
-        @Override
-        public synchronized void run()
-        {
-            try
-            {
-                while(running)
-                {
-                    long waitFor = getNextWaitInterval();
-
-                    if (waitFor > 0)
-                    {
-                        /*
-                         * waitFor will be 0 for the first check since we won't
-                         * have any active check lists at that point yet.
-                         */
-                        try
-                        {
-                            wait(waitFor);
-                        }
-                        catch (InterruptedException e)
-                        {
-                            logger.log(Level.FINER, "PaceMaker got interrupted",
-                                    e);
-                        }
-
-                        if (!running)
-                            break;
-                    }
-
-                    CandidatePair pairToCheck = checkList.popTriggeredCheck();
-
-                    //if there are no triggered checks, go for an ordinary one.
-                    if (pairToCheck == null)
-                        pairToCheck = checkList.getNextOrdinaryPairToCheck();
-
-                    if (pairToCheck != null)
-                    {
-                        /*
-                         * Since we suspect that it is possible to
-                         * startCheckForPair, processSuccessResponse and only
-                         * then setStateInProgress, we'll synchronize. The
-                         * synchronization root is the one of the
-                         * CandidatePair#setState method.
-                         */
-                        synchronized (pairToCheck)
-                        {
-                            TransactionID transactionID
-                                = startCheckForPair(pairToCheck);
-
-                            if (transactionID == null)
-                            {
-                                logger.info(
-                                        "Pair failed: "
-                                            + pairToCheck.toShortString());
-                                pairToCheck.setStateFailed();
-                            }
-                            else
-                                pairToCheck.setStateInProgress(transactionID);
-                        }
-                    }
-                    else
-                    {
-                        /*
-                         * We are done sending checks for this list. We'll set
-                         * its final state in either the processResponse(),
-                         * processTimeout() or processFailure() method.
-                         */
-                        logger.finest("will skip a check beat.");
-                        checkList.fireEndOfOrdinaryChecks();
-                    }
-                }
-            }
-            finally
-            {
-                synchronized (paceMakers)
-                {
-                    synchronized (this)
-                    {
-                        paceMakers.remove(this);
-                    }
-                }
-            }
-        }
     }
 
     /**
@@ -1003,22 +1016,12 @@ class ConnectivityCheckClient
      */
     public void stop()
     {
-        synchronized (paceMakers)
+        Iterator<PaceMaker> paceMakersIter = paceMakers.iterator();
+        while(paceMakersIter.hasNext())
         {
-            Iterator<PaceMaker> paceMakersIter = paceMakers.iterator();
-
-            while(paceMakersIter.hasNext())
-            {
-                PaceMaker paceMaker = paceMakersIter.next();
-
-                synchronized (paceMaker)
-                {
-                    paceMaker.running = false;
-                    paceMaker.notify();
-                }
-
-                paceMakersIter.remove();
-            }
+            final PaceMaker paceMaker = paceMakersIter.next();
+            paceMaker.cancel();
+            paceMakersIter.remove();
         }
     }
 }
