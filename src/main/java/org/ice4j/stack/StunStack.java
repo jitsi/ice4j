@@ -1524,10 +1524,23 @@ public class StunStack
     }
 
     /**
-     * Class which performs collections
+     * Class which performs periodic collection of expired transactions.
+     * It's execution is controlled outside by {@link #schedule()}
+     * and {@link #cancel()} methods. Whenever expired transactions collector
+     * is scheduled it does self reschedule with fixed delay
+     * of StunServerTransaction.LIFETIME_MILLIS,
+     * until {@link #serverTransactions} is empty, in that case it self-cancel
+     * further execution and need to be scheduled again when new item added
+     * to {@link #serverTransactions} container.
      */
     private final class ExpiredServerTransactionsCollector
     {
+        /**
+         * Runnable which walks {@link #serverTransactions}, check if
+         * transaction is expired and if so - remove it
+         * from {@link #serverTransactions}.
+         * Self-cancels when {@link #serverTransactions} is empty
+         */
         private final Runnable collector = new Runnable()
         {
             @Override
@@ -1550,10 +1563,35 @@ public class StunStack
                             }
                         }
                     }
+
+                    synchronized (scheduledCollectorFutureSyncRoot)
+                    {
+                        if (serverTransactions.isEmpty())
+                        {
+                            scheduledCollectorFuture.cancel(false);
+                            scheduledCollectorFuture = null;
+                            if (logger.isLoggable(Level.FINEST))
+                            {
+                                logger.finest("Cancel expired collector " +
+                                    "due to no more server transactions");
+                            }
+                        }
+                    }
                 }
             }
         };
 
+        /**
+         * Synchronization root for {@link #scheduledCollectorFuture}
+         * which intended to resolve race between self-cancel and schedule
+         * requests
+         */
+        private final Object scheduledCollectorFutureSyncRoot
+            = new Object();
+
+        /**
+         * Scheduled execution of {@link #collector} runnable
+         */
         private ScheduledFuture<?> scheduledCollectorFuture;
 
         /**
@@ -1562,27 +1600,34 @@ public class StunStack
          */
         void schedule()
         {
-            if (scheduledCollectorFuture != null)
+            synchronized (scheduledCollectorFutureSyncRoot)
             {
-                return;
+                if (scheduledCollectorFuture != null)
+                {
+                    return;
+                }
+                scheduledCollectorFuture = tasksScheduler.scheduleWithFixedDelay(
+                    collector,
+                    StunServerTransaction.LIFETIME_MILLIS,
+                    StunServerTransaction.LIFETIME_MILLIS,
+                    TimeUnit.MILLISECONDS);
             }
-            scheduledCollectorFuture = tasksScheduler.scheduleWithFixedDelay(
-                collector,
-                StunServerTransaction.LIFETIME_MILLIS,
-                StunServerTransaction.LIFETIME_MILLIS,
-                TimeUnit.MILLISECONDS);
         }
 
         /**
-         * Cancels execution of scheduled expired transactions collector
+         * Cancels execution of scheduled expired transactions collector if
+         * it is running
          */
         void cancel()
         {
-            final ScheduledFuture<?> scheduledCollectorFuture =
-                this.scheduledCollectorFuture;
-            if (scheduledCollectorFuture != null)
+            synchronized (scheduledCollectorFutureSyncRoot)
             {
-                scheduledCollectorFuture.cancel(false);
+                final ScheduledFuture<?> scheduledCollectorFuture =
+                    this.scheduledCollectorFuture;
+                if (scheduledCollectorFuture != null)
+                {
+                    scheduledCollectorFuture.cancel(false);
+                }
             }
         }
     }
