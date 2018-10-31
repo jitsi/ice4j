@@ -303,7 +303,7 @@ public class StunClientTransaction
     {
         TransactionID transactionID = getTransactionID();
 
-        logger.log(Level.FINE, "handleResponse tid " + transactionID);
+        logger.fine("handleResponse tid " + transactionID);
         if(!Boolean.getBoolean(StackProperties.KEEP_CRANS_AFTER_A_RESPONSE))
         {
             cancel();
