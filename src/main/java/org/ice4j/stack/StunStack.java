@@ -1582,8 +1582,8 @@ public class StunStack
                             scheduledCollectorFuture.cancel(false);
                             scheduledCollectorFuture = null;
 
-                            logger.finest("Cancel expired collector " +
-                                "due to no more server transactions");
+                            logger.finest("Cancel expired collector "
+                                + "due to no more server transactions");
                         }
                     }
                 }
