@@ -1567,11 +1567,8 @@ public class StunStack
                             // remove both key and value
                             it.remove();
 
-                            if (logger.isLoggable(Level.FINEST))
-                            {
-                                logger.finest("Removed expired transaction "
-                                        + pair.getKey());
-                            }
+                            logger.finest("Removed expired transaction "
+                                + pair.getKey());
                         }
                     }
 
@@ -1581,11 +1578,9 @@ public class StunStack
                         {
                             scheduledCollectorFuture.cancel(false);
                             scheduledCollectorFuture = null;
-                            if (logger.isLoggable(Level.FINEST))
-                            {
-                                logger.finest("Cancel expired collector " +
-                                    "due to no more server transactions");
-                            }
+
+                            logger.finest("Cancel expired collector " +
+                                "due to no more server transactions");
                         }
                     }
                 }
