@@ -164,7 +164,8 @@ public class StunServerTransaction
             throw new IllegalArgumentException("response must not be null");
         }
 
-        if (this.response == null){
+        if (this.response == null)
+        {
             this.response = response;
             //the transaction id might already have been set, but its our job
             //to make sure of that
@@ -193,7 +194,7 @@ public class StunServerTransaction
     {
         //don't retransmit if we are expired or if the user application
         //hasn't yet transmitted a first response
-        if(isExpired() || !isRetransmitting())
+        if (isExpired() || !isRetransmitting())
         {
             return;
         }
