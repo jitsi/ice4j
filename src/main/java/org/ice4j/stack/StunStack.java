@@ -1548,18 +1548,23 @@ public class StunStack
             {
                 synchronized (serverTransactions)
                 {
-                    for (Iterator<StunServerTransaction> it
-                         = serverTransactions.values().iterator();
-                         it.hasNext();)
+                    Iterator<Map.Entry<TransactionID, StunServerTransaction>>
+                        it = serverTransactions.entrySet().iterator();
+                    while (it.hasNext())
                     {
-                        StunServerTransaction serverTransaction = it.next();
-                        if (serverTransaction.isExpired())
+                        Map.Entry<TransactionID, StunServerTransaction>
+                            pair = it.next();
+
+                        final StunServerTransaction tran = pair.getValue();
+                        if (tran == null || tran.isExpired())
                         {
+                            // remove both key and value
                             it.remove();
+
                             if (logger.isLoggable(Level.FINEST))
                             {
                                 logger.finest("Removed expired transaction "
-                                        + serverTransaction.getTransactionID());
+                                        + pair.getKey());
                             }
                         }
                     }
