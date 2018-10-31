@@ -51,14 +51,14 @@ public class StunServerTransaction
     static final long LIFETIME = 16000;
 
     /**
+     * The id of the transaction.
+     */
+    private final TransactionID transactionID;
+
+    /**
      * The <tt>StunStack</tt> that created us.
      */
     private final StunStack stackCallback;
-
-    /**
-     * The address that we are sending responses to.
-     */
-    private TransportAddress responseDestination = null;
 
     /**
      * The address that we are receiving requests from.
@@ -66,24 +66,24 @@ public class StunServerTransaction
     private final TransportAddress requestSource;
 
     /**
-     * The response sent in response to the request.
-     */
-    private Response response = null;
-
-    /**
      * The <tt>TransportAddress</tt> that we received our request on.
      */
     private final TransportAddress localListeningAddress;
 
     /**
+     * The response sent in response to the request.
+     */
+    private Response response = null;
+
+    /**
+     * The address that we are sending responses to.
+     */
+    private TransportAddress responseDestination = null;
+
+    /**
      * The <tt>TransportAddress</tt> we use when sending responses
      */
     private TransportAddress localSendingAddress = null;
-
-    /**
-     * The id of the transaction.
-     */
-    private final TransactionID transactionID;
 
     /**
      * The time in milliseconds when the next retransmission should follow.
