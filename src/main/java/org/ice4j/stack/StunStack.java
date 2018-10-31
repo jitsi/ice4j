@@ -1502,7 +1502,7 @@ public class StunStack
                 {
                     try
                     {
-                        serverTransactions.wait(StunServerTransaction.LIFETIME);
+                        serverTransactions.wait(StunServerTransaction.LIFETIME_MILLIS);
                     }
                     catch (InterruptedException ie)
                     {

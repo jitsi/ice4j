@@ -48,7 +48,7 @@ public class StunServerTransaction
     /**
      * The time that we keep server transactions active.
      */
-    static final long LIFETIME = 16000;
+    static final long LIFETIME_MILLIS = 16000;
 
     /**
      * The id of the transaction.
@@ -132,7 +132,7 @@ public class StunServerTransaction
         if (expirationTime == -1)
         {
             expired = false;
-            expirationTime = LIFETIME + System.currentTimeMillis();
+            expirationTime = LIFETIME_MILLIS + System.currentTimeMillis();
         }
         else
         {
