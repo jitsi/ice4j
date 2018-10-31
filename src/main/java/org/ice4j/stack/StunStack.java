@@ -1572,6 +1572,9 @@ public class StunStack
                         }
                     }
 
+                    logger.fine("Non-expired server transactions count "
+                        + serverTransactions.size());
+
                     synchronized (scheduledCollectorFutureSyncRoot)
                     {
                         if (serverTransactions.isEmpty())
