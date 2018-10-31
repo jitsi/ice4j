@@ -295,12 +295,15 @@ public class StunStack
 
         synchronized (clientTransactions)
         {
-            Iterator<StunClientTransaction> clientTransactionsIter
-                = clientTransactions.values().iterator();
+            final Iterator<Map.Entry<TransactionID, StunClientTransaction>>
+                clientTransactionsIter
+                    = clientTransactions.entrySet().iterator();
 
             while (clientTransactionsIter.hasNext())
             {
-                StunClientTransaction tran = clientTransactionsIter.next();
+                final Map.Entry<TransactionID, StunClientTransaction> entry
+                    = clientTransactionsIter.next();
+                StunClientTransaction tran = entry.getValue();
 
                 if (tran.getLocalAddress().equals(localAddr)
                         && (remoteAddr == null
@@ -336,12 +339,15 @@ public class StunStack
 
         synchronized (serverTransactions)
         {
-            Iterator<StunServerTransaction> serverTransactionsIter
-                = serverTransactions.values().iterator();
+            final Iterator<Map.Entry<TransactionID, StunServerTransaction>>
+                serverTransactionsIter
+                    = serverTransactions.entrySet().iterator();
 
             while (serverTransactionsIter.hasNext())
             {
-                StunServerTransaction tran = serverTransactionsIter.next();
+                final Map.Entry<TransactionID, StunServerTransaction> entry
+                    = serverTransactionsIter.next();
+                final StunServerTransaction tran = entry.getValue();
                 TransportAddress listenAddr = tran.getLocalListeningAddress();
                 TransportAddress sendingAddr = tran.getSendingAddress();
 
@@ -1556,7 +1562,7 @@ public class StunStack
                             pair = it.next();
 
                         final StunServerTransaction tran = pair.getValue();
-                        if (tran == null || tran.isExpired())
+                        if (tran.isExpired())
                         {
                             // remove both key and value
                             it.remove();
