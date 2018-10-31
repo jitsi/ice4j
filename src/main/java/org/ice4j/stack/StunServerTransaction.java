@@ -96,13 +96,6 @@ public class StunServerTransaction
     private boolean expired = true;
 
     /**
-     * Determines whether or not the transaction is in a retransmitting state.
-     * In other words whether a response has already been sent once to the
-     * transaction request.
-     */
-    private boolean isRetransmitting = false;
-
-    /**
      * Creates a server transaction
      * @param stackCallback the stack that created us.
      * @param tranID the transaction id contained by the request that was the
@@ -165,7 +158,12 @@ public class StunServerTransaction
                IOException,
                IllegalArgumentException
     {
-        if(!isRetransmitting){
+        if (response == null)
+        {
+            throw new IllegalArgumentException("response must not be null");
+        }
+
+        if (this.response == null){
             this.response = response;
             //the transaction id might already have been set, but its our job
             //to make sure of that
@@ -174,7 +172,6 @@ public class StunServerTransaction
             this.responseDestination   = sendTo;
         }
 
-        isRetransmitting = true;
         retransmitResponse();
     }
 
@@ -195,8 +192,10 @@ public class StunServerTransaction
     {
         //don't retransmit if we are expired or if the user application
         //hasn't yet transmitted a first response
-        if(isExpired() || !isRetransmitting)
+        if(isExpired() || !isRetransmitting())
+        {
             return;
+        }
 
         stackCallback.getNetAccessManager().sendMessage(
                 response,
@@ -258,15 +257,16 @@ public class StunServerTransaction
     }
 
     /**
-     * Specifies whether this server transaction is in the retransmitting state.
-     * Or in other words - has it already sent a first response or not?
+     * Determines whether or not the transaction is in a retransmitting state.
+     * In other words whether a response has already been sent once to the
+     * transaction request.
      *
      * @return <tt>true</tt> if this transaction is still retransmitting and
      * false <tt>otherwise</tt>
      */
     public boolean isRetransmitting()
     {
-        return isRetransmitting;
+        return response != null;
     }
 
     /**
