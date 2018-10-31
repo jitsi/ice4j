@@ -18,6 +18,8 @@
 package org.ice4j.stack;
 
 import java.io.*;
+import java.util.concurrent.*;
+import java.util.concurrent.atomic.*;
 
 import org.ice4j.*;
 import org.ice4j.message.*;
@@ -86,14 +88,16 @@ public class StunServerTransaction
     private TransportAddress localSendingAddress = null;
 
     /**
-     * The time in milliseconds when the next retransmission should follow.
-     */
-    private long expirationTime = -1;
-
-    /**
      * Determines whether or not the transaction has expired.
      */
-    private boolean expired = true;
+    private final AtomicBoolean expired = new AtomicBoolean(false);
+
+    /**
+     * The timestamp when transaction is started. Used to determine if
+     * transaction is expired
+     */
+    private final AtomicLong transactionStartedTimestampNanos
+        = new AtomicLong(-1);
 
     /**
      * Creates a server transaction
@@ -120,18 +124,15 @@ public class StunServerTransaction
      * Start the transaction. This launches the countdown to the moment the
      * transaction would expire.
      */
-    public synchronized void start()
+    public void start()
     {
-        if (expirationTime == -1)
-        {
-            expired = false;
-            expirationTime = LIFETIME_MILLIS + System.currentTimeMillis();
-        }
-        else
-        {
+        final boolean isUpdated = transactionStartedTimestampNanos
+            .compareAndSet(-1, System.nanoTime());
+
+        if (!isUpdated) {
             throw new IllegalStateException(
-                    "StunServerTransaction " + getTransactionID()
-                        + " has already been started!");
+                "StunServerTransaction " + getTransactionID()
+                    + " has already been started!");
         }
     }
 
@@ -207,13 +208,9 @@ public class StunServerTransaction
      * Cancels the transaction. Once this method is called the transaction is
      * considered terminated and will stop retransmissions.
      */
-    public synchronized void expire()
+    public void expire()
     {
-        expired = true;
-        /*
-         * StunStack has a background Thread running with the purpose of
-         * removing expired StunServerTransactions.
-         */
+        expired.set(true);
     }
 
     /**
@@ -224,26 +221,25 @@ public class StunServerTransaction
      */
     public boolean isExpired()
     {
-        return isExpired(System.currentTimeMillis());
-    }
-
-    /**
-     * Determines whether this <tt>StunServerTransaction</tt> will be expired at
-     * a specific point in time.
-     *
-     * @param now the time in milliseconds at which the <tt>expired</tt> state
-     * of this <tt>StunServerTransaction</tt> is to be returned
-     * @return <tt>true</tt> if this <tt>StunServerTransaction</tt> will be
-     * expired at the specified point in time; otherwise, <tt>false</tt>
-     */
-    public synchronized boolean isExpired(long now)
-    {
-        if (expirationTime == -1)
-            return false;
-        else if (expirationTime < now)
+        if (expired.get())
+        {
             return true;
-        else
-            return expired;
+        }
+
+        if (isStarted())
+        {
+            return false;
+        }
+
+        long elapsedTime
+            = System.nanoTime() - transactionStartedTimestampNanos.get();
+
+        if (elapsedTime > TimeUnit.MILLISECONDS.toNanos(LIFETIME_MILLIS))
+        {
+            expire();
+            return true;
+        }
+        return false;
     }
 
     /**
@@ -329,5 +325,14 @@ public class StunServerTransaction
     protected Response getResponse()
     {
         return response;
+    }
+
+    /**
+     * Determines if transaction is started
+     * @return true when transaction is started
+     */
+    private boolean isStarted()
+    {
+        return transactionStartedTimestampNanos.get() != -1;
     }
 }

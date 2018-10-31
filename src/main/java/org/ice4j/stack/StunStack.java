@@ -219,7 +219,7 @@ public class StunStack
             {
                 StunServerTransaction serverTransaction = i.next();
 
-                if (serverTransaction.isExpired(now))
+                if (serverTransaction.isExpired())
                     i.remove();
                 else if (serverTransaction.getTransactionID().equals(
                         transactionID))
@@ -1544,7 +1544,7 @@ public class StunStack
                             {
                                 i.remove();
                             }
-                            else if (serverTransaction.isExpired(now))
+                            else if (serverTransaction.isExpired())
                             {
                                 i.remove();
                                 serverTransaction.expire();
