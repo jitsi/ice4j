@@ -226,7 +226,7 @@ public class StunServerTransaction
             return true;
         }
 
-        if (isStarted())
+        if (!isStarted())
         {
             return false;
         }
