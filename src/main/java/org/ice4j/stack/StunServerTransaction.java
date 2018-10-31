@@ -231,10 +231,10 @@ public class StunServerTransaction
             return false;
         }
 
-        long elapsedTime
+        long elapsedTimeNanos
             = System.nanoTime() - transactionStartedTimestampNanos.get();
 
-        if (elapsedTime > TimeUnit.MILLISECONDS.toNanos(LIFETIME_MILLIS))
+        if (TimeUnit.NANOSECONDS.toMillis(elapsedTimeNanos) >= LIFETIME_MILLIS)
         {
             expire();
             return true;
