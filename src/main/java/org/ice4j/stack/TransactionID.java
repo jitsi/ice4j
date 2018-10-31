@@ -172,7 +172,24 @@ public class TransactionID
             return serTran.getTransactionID();
 
         // Perform defensive-cloning of byte-array not to break existing code
-        return new TransactionID(transactionID.clone());
+        return wrapToTransactionID(transactionID.clone());
+    }
+
+    /**
+     * Returns a <tt>TransactionID</tt> instance for the specified id.
+     * Byte array is stored by reference. It is assumed that caller will
+     * not modify <tt>transactionID</tt> content after <tt>TransactionID</tt>
+     * is constructed.
+     *
+     * @param transactionID the value of the ID.
+     *
+     * @return a reference to the <tt>TransactionID</tt> corresponding to
+     * the value of <tt>transactionID</tt>
+     */
+    public static TransactionID wrapToTransactionID(
+        byte[] transactionID)
+    {
+        return new TransactionID(transactionID);
     }
 
     /**

@@ -187,16 +187,10 @@ public class StunStack
     {
         synchronized (clientTransactions)
         {
-            Collection<StunClientTransaction> cTrans
-                = clientTransactions.values();
-
-            for (StunClientTransaction tran : cTrans)
-            {
-                if (tran.getTransactionID().equals(transactionID))
-                    return tran;
-            }
+            final TransactionID tid =
+                TransactionID.wrapToTransactionID(transactionID);
+            return clientTransactions.get(tid);
         }
-        return null;
     }
 
     /**
@@ -209,24 +203,8 @@ public class StunStack
      */
     protected StunServerTransaction getServerTransaction(byte[] transactionID)
     {
-        synchronized (serverTransactions)
-        {
-            long now = System.currentTimeMillis();
-
-            for (Iterator<StunServerTransaction> i
-                        = serverTransactions.values().iterator();
-                    i.hasNext();)
-            {
-                StunServerTransaction serverTransaction = i.next();
-
-                if (serverTransaction.isExpired())
-                    i.remove();
-                else if (serverTransaction.getTransactionID().equals(
-                        transactionID))
-                    return serverTransaction;
-            }
-        }
-        return null;
+        return getServerTransaction(
+            TransactionID.wrapToTransactionID(transactionID));
     }
 
     /**
