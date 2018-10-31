@@ -360,28 +360,8 @@ public class StunStack
     public StunStack(PeerUdpMessageEventHandler peerUdpMessageEventHandler,
             ChannelDataEventHandler channelDataEventHandler)
     {
-        /*
-         * The Mac instantiation used in MessageIntegrityAttribute could take
-         * several hundred milliseconds so we don't want it instantiated only
-         * after we get a response because the delay may cause the transaction
-         * to fail.
-         */
-        synchronized (StunStack.class)
-        {
-            if (mac == null)
-            {
-                try
-                {
-                    mac
-                        = Mac.getInstance(
-                                MessageIntegrityAttribute.HMAC_SHA1_ALGORITHM);
-                }
-                catch (NoSuchAlgorithmException nsaex)
-                {
-                    nsaex.printStackTrace();
-                }
-            }
-        }
+        preloadHMAC();
+
         netAccessManager =
             new NetAccessManager(this, peerUdpMessageEventHandler,
                 channelDataEventHandler);
@@ -1617,4 +1597,32 @@ public class StunStack
         }
     }
 
+    /**
+     * The Mac instantiation used in MessageIntegrityAttribute could take
+     * several hundred milliseconds so we don't want it instantiated only
+     * after we get a response because the delay may cause the transaction
+     * to fail.
+     */
+    private static void preloadHMAC()
+    {
+        if (mac == null)
+        {
+            synchronized (StunStack.class)
+            {
+                if (mac == null)
+                {
+                    try
+                    {
+                        mac
+                            = Mac.getInstance(
+                            MessageIntegrityAttribute.HMAC_SHA1_ALGORITHM);
+                    }
+                    catch (NoSuchAlgorithmException nsaex)
+                    {
+                        nsaex.printStackTrace();
+                    }
+                }
+            }
+        }
+    }
 }
