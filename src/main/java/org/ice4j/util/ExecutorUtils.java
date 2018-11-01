@@ -21,19 +21,59 @@ package org.ice4j.util;
 import java.util.concurrent.*;
 
 /**
- * Helper class which contains functions to work with executors
+ * Helper class which contains functions to create pre-configured executors
  */
 public class ExecutorUtils
 {
     /**
-     * Creates pre-configured {@link ScheduledExecutorService} instance with
-     * defaults suitable for ice4j
+     * Create {@link ScheduledExecutorService} with single executor thread
      * @param threadNamePrefix - name prefix for threads created by pool
-     * @param threadKeepAliveTime - keep alive thread even when no more work
+     * @param threadKeepAliveTime - keep alive time before idle thread is freed
      * @param timeUnit - time unit of <tt>threadKeepAliveTime</tt>
      * @return pre-configured {@link ScheduledExecutorService}
      */
-    public static ScheduledExecutorService createdScheduledExecutor(
+    public static ScheduledExecutorService createSingleThreadScheduledExecutor(
+        String threadNamePrefix,
+        int threadKeepAliveTime,
+        TimeUnit timeUnit)
+    {
+        return createdScheduledExecutor(
+            1,
+            threadNamePrefix,
+            threadKeepAliveTime,
+            timeUnit);
+    }
+
+    /**
+     * Create {@link ScheduledExecutorService} with number of threads up to
+     * number of CPU cores on machine
+     * @param threadNamePrefix - name prefix for threads created by pool
+     * @param threadKeepAliveTime - keep alive time before idle thread is freed
+     * @param timeUnit - time unit of <tt>threadKeepAliveTime</tt>
+     * @return pre-configured {@link ScheduledExecutorService}
+     */
+    public static ScheduledExecutorService createdCPUBoundScheduledExecutor(
+        String threadNamePrefix,
+        int threadKeepAliveTime,
+        TimeUnit timeUnit)
+    {
+        return createdScheduledExecutor(
+            Runtime.getRuntime().availableProcessors(),
+            threadNamePrefix,
+            threadKeepAliveTime,
+            timeUnit);
+    }
+    /**
+     * Creates pre-configured {@link ScheduledExecutorService} instance with
+     * defaults suitable for ice4j
+     * @param threadNamePrefix - name prefix for threads created by pool
+     * @param poolSize - max number of threads to keep in pool.
+     * @param threadKeepAliveTime - keep alive time before idle thread is freed
+     * @param timeUnit - time unit of <tt>threadKeepAliveTime</tt>
+     * @return pre-configured {@link ScheduledExecutorService}
+     */
+    private static ScheduledExecutorService createdScheduledExecutor(
+        int poolSize,
         String threadNamePrefix,
         int threadKeepAliveTime,
         TimeUnit timeUnit)
@@ -47,8 +87,10 @@ public class ExecutorUtils
         // there is no work to execute.
         // Based on these requirements the following default configuration is
         // chosen.
-        // <tt>corePoolSize</tt> to be equal to number of processors on the
-        // current machine. Even so spec says that corePoolSize is number of
+        // <tt>corePoolSize</tt> for {@link ScheduledThreadPoolExecutor} is
+        // behaved both as <tt>corePoolSize</tt> and <tt>maxPoolSize</tt>, so
+        // it is actually fixed-size pool.
+        // Even so spec says that corePoolSize is number of
         // threads to keep in pool they are actually created on demand, so if
         // there is no load, then threads are not created. But until pool has
         // less than <tt>corePoolSize</tt> threads, pool will create new thread,
@@ -64,8 +106,7 @@ public class ExecutorUtils
         // <tt>maximumPoolSize</tt> is observed to create only 1 thread in pool
         // no matter how many task are queued and become eligible to execute.
         final ScheduledThreadPoolExecutor executor
-            = new ScheduledThreadPoolExecutor(
-                Runtime.getRuntime().availableProcessors(), threadFactory);
+            = new ScheduledThreadPoolExecutor(poolSize, threadFactory);
         executor.setKeepAliveTime(threadKeepAliveTime, timeUnit);
         executor.allowCoreThreadTimeOut(true);
         executor.setRemoveOnCancelPolicy(true);
