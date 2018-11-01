@@ -77,20 +77,9 @@ public class StunClientTransaction
      * The pool of <tt>Thread</tt>s which retransmit
      * <tt>StunClientTransaction</tt>s.
      */
-    private static final ScheduledExecutorService retransmissionThreadPool;
-
-    static {
-        CustomizableThreadFactory threadFactory
-            = new CustomizableThreadFactory("ice4j.StunClientTransaction-", true);
-
-        final ScheduledThreadPoolExecutor terminationExecutor
-            = new ScheduledThreadPoolExecutor(0, threadFactory);
-        terminationExecutor.setKeepAliveTime(60, TimeUnit.SECONDS);
-        terminationExecutor.setRemoveOnCancelPolicy(true);
-        retransmissionThreadPool
-            = Executors.unconfigurableScheduledExecutorService(
-            terminationExecutor);
-    }
+    private static final ScheduledExecutorService retransmissionThreadPool
+        = ExecutorUtils.createdScheduledExecutor(
+            "ice4j.StunClientTransaction-", 60, TimeUnit.SECONDS);
 
     /**
      * Maximum number of retransmissions. Once this number is reached and if no

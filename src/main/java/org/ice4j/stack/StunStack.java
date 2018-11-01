@@ -70,22 +70,9 @@ public class StunStack
      *  The ScheduledExecutorService to execute StunStack scheduled tasks,
      *  in particular - expired server transactions collector.
      */
-    private static final ScheduledExecutorService tasksScheduler;
-
-    static
-    {
-        CustomizableThreadFactory threadFactory
-            = new CustomizableThreadFactory("ice4j.StunStack-", true);
-
-        final ScheduledThreadPoolExecutor terminationExecutor
-            = new ScheduledThreadPoolExecutor(0, threadFactory);
-        terminationExecutor.setKeepAliveTime(10, TimeUnit.SECONDS);
-        terminationExecutor.setRemoveOnCancelPolicy(true);
-        tasksScheduler
-            = Executors.unconfigurableScheduledExecutorService(
-                terminationExecutor);
-    }
-
+    private static final ScheduledExecutorService tasksScheduler
+        = ExecutorUtils.createdScheduledExecutor(
+            "ice4j.StunStack-", 10, TimeUnit.SECONDS);
 
     /**
      * Our network gateway.
