@@ -71,7 +71,7 @@ public class StunStack
      *  in particular - expired server transactions collector.
      */
     private static final ScheduledExecutorService tasksScheduler
-        = ExecutorUtils.createSingleThreadScheduledExecutor(
+        = ExecutorFactory.createSingleThreadScheduledExecutor(
             "ice4j.StunStack-", 10, TimeUnit.SECONDS);
 
     /**

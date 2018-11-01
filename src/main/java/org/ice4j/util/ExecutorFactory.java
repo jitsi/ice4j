@@ -23,7 +23,7 @@ import java.util.concurrent.*;
 /**
  * Helper class which contains functions to create pre-configured executors
  */
-public class ExecutorUtils
+public class ExecutorFactory
 {
     /**
      * Create {@link ScheduledExecutorService} with single executor thread

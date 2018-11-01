@@ -78,7 +78,7 @@ public class StunClientTransaction
      * <tt>StunClientTransaction</tt>s.
      */
     private static final ScheduledExecutorService retransmissionThreadPool
-        = ExecutorUtils.createdCPUBoundScheduledExecutor(
+        = ExecutorFactory.createdCPUBoundScheduledExecutor(
             "ice4j.StunClientTransaction-", 60, TimeUnit.SECONDS);
 
     /**
