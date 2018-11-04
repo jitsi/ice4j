@@ -20,7 +20,7 @@ package org.ice4j.stack;
 import java.io.*;
 import java.net.*;
 import java.nio.channels.*;
-import java.util.concurrent.*;
+import java.util.function.*;
 import java.util.logging.*;
 
 import org.ice4j.*;
@@ -44,9 +44,9 @@ class Connector
         = Logger.getLogger(Connector.class.getName());
 
     /**
-     * The message queue is where incoming messages are added.
+     * The consumer of incoming <tt>RawMessage</tt>s
      */
-    private final BlockingQueue<RawMessage> messageQueue;
+    private final Consumer<RawMessage> messageConsumer;
 
     /**
      * The socket object that used by this access point to access the network.
@@ -87,16 +87,16 @@ class Connector
      * communication.
      * @param remoteAddress the remote address of the socket of this
      * {@link Connector} if it is a TCP socket, or null if it is UDP.
-     * @param messageQueue the Queue where incoming messages should be queued
+     * @param messageConsumer the incoming messages consumer
      * @param errorHandler the instance to notify when errors occur.
      */
     protected Connector(IceSocketWrapper socket,
                         TransportAddress remoteAddress,
-                        BlockingQueue<RawMessage> messageQueue,
+                        Consumer<RawMessage> messageConsumer,
                         ErrorHandler   errorHandler)
     {
         this.sock = socket;
-        this.messageQueue = messageQueue;
+        this.messageConsumer = messageConsumer;
         this.errorHandler = errorHandler;
         this.remoteAddress = remoteAddress;
 
@@ -230,7 +230,7 @@ class Connector
                                     listenAddress.getTransport()),
                             listenAddress);
 
-                messageQueue.add(rawMessage);
+                messageConsumer.accept(rawMessage);
             }
             catch (SocketException ex)
             {

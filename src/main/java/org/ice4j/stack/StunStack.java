@@ -44,12 +44,6 @@ import org.ice4j.util.*;
 public class StunStack
     implements MessageEventHandler
 {
-
-    /**
-     * The number of threads to split our flow in.
-     */
-    public static final int DEFAULT_THREAD_POOL_SIZE = 3;
-
     /**
      * The <tt>Logger</tt> used by the <tt>StunStack</tt> class and its
      * instances for logging output.
@@ -118,18 +112,6 @@ public class StunStack
      * The packet logger instance.
      */
     private static PacketLogger packetLogger;
-
-    /**
-     * Sets the number of Message processors running in the same time.
-     *
-     * @param threadPoolSize the number of message process threads to run.
-     * @throws IllegalArgumentException if threadPoolSize is not a valid size.
-     */
-    public void setThreadPoolSize(int threadPoolSize)
-        throws IllegalArgumentException
-    {
-        netAccessManager.setThreadPoolSize(threadPoolSize);
-    }
 
     /**
      * Creates and starts a Network Access Point (Connector) based on the
