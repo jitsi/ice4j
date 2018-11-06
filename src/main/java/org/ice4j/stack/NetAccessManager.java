@@ -484,7 +484,7 @@ class NetAccessManager
 
     /**
      * Enqueues incoming message
-     * @param message
+     * @param message <tt>RawMessage</tt> to process
      */
     private void onIncomingRawMessage(final RawMessage message)
     {
