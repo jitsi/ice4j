@@ -286,7 +286,7 @@ public abstract class AbstractTcpListener
         boolean useIPv6 = !StackProperties.getBoolean(
                 StackProperties.DISABLE_IPv6,
                 false);
-        boolean useIPv6LinkLocal = !StackProperties.getBoolean(
+        boolean useLinkLocalAddresses = !StackProperties.getBoolean(
                 StackProperties.DISABLE_LINK_LOCAL_ADDRESSES,
                 false);
 
@@ -335,8 +335,7 @@ public abstract class AbstractTcpListener
             if (!useIPv6 && (address instanceof Inet6Address))
                 continue;
 
-            if (!useIPv6LinkLocal
-                    && (address instanceof Inet6Address)
+            if (!useLinkLocalAddresses
                     && address.isLinkLocalAddress())
             {
                 logger.info("Not using link-local address " + address +" for"

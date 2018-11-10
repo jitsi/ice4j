@@ -232,7 +232,7 @@ public class HostCandidateHarvester
         boolean isIPv6Disabled = StackProperties.getBoolean(
                 StackProperties.DISABLE_IPv6,
                 false);
-        boolean isIPv6LinkLocalDisabled = StackProperties.getBoolean(
+        boolean isLinkLocalAddressesDisabled = StackProperties.getBoolean(
                 StackProperties.DISABLE_LINK_LOCAL_ADDRESSES,
                 false);
 
@@ -259,8 +259,7 @@ public class HostCandidateHarvester
 
                     if (isIPv6Disabled && address instanceof Inet6Address)
                         continue;
-                    if (isIPv6LinkLocalDisabled
-                            && address instanceof Inet6Address
+                    if (isLinkLocalAddressesDisabled
                             && address.isLinkLocalAddress())
                         continue;
 
@@ -316,7 +315,7 @@ public class HostCandidateHarvester
                 StackProperties.DISABLE_IPv6,
                 false);
 
-        boolean isIPv6LinkLocalDisabled = StackProperties.getBoolean(
+        boolean isLinkLocalAddressesDisabled = StackProperties.getBoolean(
                 StackProperties.DISABLE_LINK_LOCAL_ADDRESSES,
                 false);
 
@@ -353,8 +352,7 @@ public class HostCandidateHarvester
                     continue;
                 }
 
-                if (isIPv6LinkLocalDisabled
-                        && (addr instanceof Inet6Address)
+                if (isLinkLocalAddressesDisabled
                         && addr.isLinkLocalAddress())
                 {
                     continue;
