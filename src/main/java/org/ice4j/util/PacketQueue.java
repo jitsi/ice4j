@@ -17,6 +17,7 @@ package org.ice4j.util;
 
 import java.util.*;
 import java.util.concurrent.*;
+import java.util.concurrent.atomic.*;
 import java.util.logging.Logger; // Disambiguation.
 
 /**
@@ -39,6 +40,13 @@ public abstract class PacketQueue<T>
      */
     private static final Logger logger
         = Logger.getLogger(PacketQueue.class.getName());
+
+    /**
+     * Executor service to run <tt>AsyncPacketReader</tt>, which asynchronously
+     * invokes specified {@link #handler} on queued packets.
+     */
+    private static final ExecutorService executor
+        = Executors.newWorkStealingPool();
 
     /**
      * The default capacity of a {@link PacketQueue}.
@@ -90,14 +98,15 @@ public abstract class PacketQueue<T>
     private final QueueStatistics queueStatistics;
 
     /**
-     * The {@link Thread} optionally used to perpetually read packets from this
-     * queue and handle them using {@link #handler}.
+     * The optionally used {@link AsyncPacketReader} to perpetually read packets
+     * from {@link #queue} on separate thread and handle them
+     * using {@link #handler}.
      */
-    private final Thread thread;
+    private final AsyncPacketReader reader;
 
     /**
      * The {@link org.ice4j.util.PacketQueue.PacketHandler} optionally used to
-     * handle packets read from this queue by {@link #thread}.
+     * handle packets read from this queue by {@link #reader}.
      */
     private final PacketHandler<T> handler;
 
@@ -109,7 +118,7 @@ public abstract class PacketQueue<T>
     /**
      * Whether this queue has been closed.
      */
-    private boolean closed = false;
+    private final AtomicBoolean closed = new AtomicBoolean(false);
 
     /**
      * The number of packets which were dropped from this {@link PacketQueue} as
@@ -175,80 +184,15 @@ public abstract class PacketQueue<T>
         if (packetHandler != null)
         {
             handler = packetHandler;
-
-            thread = new Thread(){
-                @Override
-                public void run()
-                {
-                    runInReadingThread();
-                }
-            };
-            thread.setName(getClass().getName() + "-" + id);
-            thread.setDaemon(true);
-            thread.start();
+            reader = new AsyncPacketReader();
         }
         else
         {
-            thread = null;
+            reader = null;
             handler = null;
         }
 
         logger.fine("Initialized a PacketQueue instance with ID " + id);
-    }
-
-    /**
-     * Perpetually reads packets from this {@link PacketQueue} and uses
-     * {@link #handler} on each of them.
-     */
-    private void runInReadingThread()
-    {
-        if (Thread.currentThread() != thread)
-        {
-            logger.warning("runInReadingThread executing in "
-                               + Thread.currentThread());
-            return;
-        }
-
-        if (handler == null)
-        {
-            logger.warning("No handler set, the reading thread will be stopped.");
-            return;
-        }
-
-        while (!closed)
-        {
-            T pkt;
-
-            synchronized (queue)
-            {
-                pkt = queue.poll();
-                if (pkt == null)
-                {
-                    try
-                    {
-                        queue.wait(100);
-                    }
-                    catch (InterruptedException ie)
-                    {
-                    }
-                    continue;
-                }
-            }
-
-            if (queueStatistics != null)
-            {
-                queueStatistics.remove(System.currentTimeMillis());
-            }
-
-            try
-            {
-                handler.handlePacket(pkt);
-            }
-            catch (Exception e)
-            {
-                logger.warning("Failed to handle packet: " + e);
-            }
-        }
     }
 
     /**
@@ -319,12 +263,12 @@ public abstract class PacketQueue<T>
      */
     private void doAdd(T pkt)
     {
-        if (closed)
+        if (closed.get())
             return;
 
         synchronized (queue)
         {
-            if (queue.size() >= capacity)
+            while (queue.size() >= capacity)
             {
                 // Drop from the head of the queue.
                 T p = queue.poll();
@@ -348,7 +292,10 @@ public abstract class PacketQueue<T>
             }
             queue.offer(pkt);
 
-            queue.notifyAll();
+            if (reader != null)
+            {
+                reader.schedule();
+            }
         }
     }
 
@@ -371,7 +318,7 @@ public abstract class PacketQueue<T>
 
         while (true)
         {
-            if (closed)
+            if (closed.get())
                 return null;
             synchronized (queue)
             {
@@ -404,7 +351,7 @@ public abstract class PacketQueue<T>
      */
     public T poll()
     {
-        if (closed)
+        if (closed.get())
             return null;
 
         if (handler != null)
@@ -430,13 +377,11 @@ public abstract class PacketQueue<T>
 
     public void close()
     {
-        if (!closed)
+        if (closed.compareAndSet(false, true))
         {
-            closed = true;
-
-            synchronized (queue)
+            if (reader != null)
             {
-                queue.notifyAll();
+                reader.cancel();
             }
         }
     }
@@ -494,5 +439,152 @@ public abstract class PacketQueue<T>
          * {@code false} otherwise.
          */
         boolean handlePacket(T pkt);
+    }
+
+    /**
+     * Asynchronously reads packets from {@link #queue} on separate thread.
+     * Thread is not blocked when queue is empty and returned back to
+     * {@link #executor} pool. New or existing thread is borrowed from
+     * {@link #executor} when queue is non empty and {@link #reader} is not
+     * running
+     */
+    private final class AsyncPacketReader
+    {
+        /**
+         * Maximum number of packets processed in row before temporary stop
+         * reader execution to give other users of {@link #executor} to proceed
+         */
+        private final int MAX_HANDLED_PACKETS_BEFORE_YIELD = 50;
+
+        /**
+         * Stores <tt>Future</tt> of currently executing {@link #reader}
+         */
+        private Future<?> readerFuture;
+
+        /**
+         * Perpetually reads packets from this {@link PacketQueue} and uses
+         * {@link #handler} on each of them.
+         */
+        private final Runnable reader = new Runnable()
+        {
+            @Override
+            public void run()
+            {
+                int handledPackets = 0;
+
+                while (!closed.get())
+                {
+                    T pkt;
+
+                    synchronized (queue)
+                    {
+                        /* All instances of AsyncPacketReader executed on single
+                           shared instance of ExecutorService to better use
+                           existing threads and to reduce number of idle
+                           threads when reader's queue is empty.
+
+                           Having limited number of threads to execute might
+                           lead to other problem, when queue is always non-empty
+                           reader will keep running, while other readers might
+                           suffer from execution starvation. One way to solve
+                           this, is to to artificially interrupt current reader
+                           execution and pump it via internal executor's queue.
+                         */
+                        if (handledPackets > MAX_HANDLED_PACKETS_BEFORE_YIELD)
+                        {
+                            onYield();
+                            return;
+                        }
+
+                        pkt = queue.poll();
+
+                        if (pkt == null)
+                        {
+                            stop(false);
+                            return;
+                        }
+                        handledPackets++;
+                    }
+
+                    if (queueStatistics != null)
+                    {
+                        queueStatistics.remove(System.currentTimeMillis());
+                    }
+
+                    try
+                    {
+                        handler.handlePacket(pkt);
+                    }
+                    catch (Exception e)
+                    {
+                        logger.warning("Failed to handle packet: " + e);
+                    }
+                }
+            }
+        };
+
+        /**
+         * Cancels execution of {@link #reader} if running
+         */
+        void cancel()
+        {
+            synchronized (queue)
+            {
+                stop(true);
+            }
+        }
+
+        /**
+         * Checks if {@link #reader} is running on one of {@link #executor}
+         * thread and if no submits execution of {@link #reader} on executor.
+         */
+        void schedule()
+        {
+            if (closed.get())
+            {
+                return;
+            }
+
+            if (handler == null)
+            {
+                logger.warning("No handler set, the reading will not start.");
+                return;
+            }
+
+            synchronized (queue)
+            {
+                if (readerFuture == null || readerFuture.isDone())
+                {
+                    readerFuture = executor.submit(reader);
+                }
+            }
+        }
+
+        /**
+         * Invoked when execution of {@link #reader} is about to temporary
+         * stop and further execution need to be re-scheduled
+         */
+        private void onYield()
+        {
+            logger.fine("Yielding AsyncPacketReader associated with "
+                + "PacketQueue with ID = " + id);
+            readerFuture = null;
+            schedule();
+        }
+
+        /**
+         * Stop currently running reader. Assuming called when lock
+         * on {@link #queue} is already taken
+         * @param mayInterruptIfRunning indicates if {@link #reader} allowed
+         * to be interrupted if running
+         */
+        private void stop(boolean mayInterruptIfRunning)
+        {
+            if (readerFuture != null)
+            {
+                readerFuture.cancel(mayInterruptIfRunning);
+                readerFuture = null;
+            }
+        }
     }
 }
