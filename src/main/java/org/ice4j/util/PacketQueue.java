@@ -427,6 +427,18 @@ public abstract class PacketQueue<T>
         byte[] buf, int off, int len, Object context);
 
     /**
+     * Releases packet when it is handled by provided {@link #handler}.
+     * This method is not called when <tt>PacketQueue</tt> was created without
+     * {@link #handler} and hence no automatic queue processing is done.
+     * Default implementation is empty, but it might be used to impalement
+     * packet pooling to re-use them.
+     * @param pkt packet to release
+     */
+    protected void releasePacket(T pkt)
+    {
+    }
+
+    /**
      * A simple interface to handle packets.
      * @param <T> the type of the packets.
      */
@@ -518,6 +530,10 @@ public abstract class PacketQueue<T>
                     catch (Exception e)
                     {
                         logger.warning("Failed to handle packet: " + e);
+                    }
+                    finally
+                    {
+                        releasePacket(pkt);
                     }
                 }
             }
