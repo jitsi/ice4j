@@ -210,8 +210,11 @@ public abstract class PacketQueue<T>
      * packetHandler for items added to queue. If no explicit executor specified
      * then default {@link #sharedExecutor} will be used.
      */
-    public PacketQueue(int capacity, boolean copy,
-        boolean enableStatistics, String id,
+    public PacketQueue(
+        int capacity,
+        boolean copy,
+        boolean enableStatistics,
+        String id,
         PacketHandler<T> packetHandler,
         ExecutorService executor)
     {
