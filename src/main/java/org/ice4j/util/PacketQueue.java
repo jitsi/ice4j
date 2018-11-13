@@ -42,13 +42,6 @@ public abstract class PacketQueue<T>
         = Logger.getLogger(PacketQueue.class.getName());
 
     /**
-     * Executor service to run <tt>AsyncPacketReader</tt>, which asynchronously
-     * invokes specified {@link #handler} on queued packets.
-     */
-    private static final ExecutorService executor
-        = Executors.newWorkStealingPool();
-
-    /**
      * The default capacity of a {@link PacketQueue}.
      */
     private final static int DEFAULT_CAPACITY = 256;
@@ -57,6 +50,22 @@ public abstract class PacketQueue<T>
      * The capacity of the {@code byte[]} cache, if it is enabled.
      */
     private final static int CACHE_CAPACITY = 100;
+
+    /**
+     * The default <tt>ExecutorService</tt> to run <tt>AsyncPacketReader</tt>
+     * when there is no user provided executor.
+     */
+    private final static ExecutorService sharedExecutor
+        = Executors.newWorkStealingPool();
+
+    /**
+     * Maximum number of packets processed in row before temporary stop
+     * reader execution to give possible other users of same {@link #executor}
+     * to proceed their execution. This mode of execution, when task is
+     * temporary stopped itself to give a chance to other tasks sharing same
+     * executor to run is called cooperative multi-tasking.
+     */
+    private final static int MAX_HANDLED_PACKETS_BEFORE_YIELD = 50;
 
     /**
      * Returns true if a warning should be logged after a queue has dropped
@@ -71,6 +80,12 @@ public abstract class PacketQueue<T>
                 (numDroppedPackets <= 1000 && numDroppedPackets % 100 == 0) ||
                 numDroppedPackets % 1000 == 0;
     }
+
+    /**
+     * Executor service to run <tt>AsyncPacketReader</tt>, which asynchronously
+     * invokes specified {@link #handler} on queued packets.
+     */
+    private final ExecutorService executor;
 
     /**
      * The underlying {@link Queue} which holds packets.
@@ -173,6 +188,33 @@ public abstract class PacketQueue<T>
                        boolean enableStatistics, String id,
                        PacketHandler<T> packetHandler)
     {
+        this(capacity, copy, enableStatistics, id, packetHandler, null);
+    }
+
+    /**
+     * Initializes a new {@link PacketQueue} instance.
+     * @param capacity the capacity of the queue.
+     * @param copy whether the queue is to store the instances it is given via
+     * the various {@code add} methods, or create a copy.
+     * @param enableStatistics whether detailed statistics should be calculated
+     * and printed. WARNING: this will produce copious output (one line per
+     * packet added or removed).
+     * @param id the ID of the packet queue, to be used for logging.
+     * @param packetHandler An optional handler to be used by the queue for
+     * packets read from it. If a non-null value is passed the queue will
+     * start its own thread, which will read packets from the queue and execute
+     * {@code handler.handlePacket} on them. If set to null, no thread will be
+     * created, and the queue will provide access to the head element via
+     * {@link #get()} and {@link #poll()}.
+     * @param executor An optional executor service to use to execute
+     * packetHandler for items added to queue. If no explicit executor specified
+     * then default {@link #sharedExecutor} will be used.
+     */
+    public PacketQueue(int capacity, boolean copy,
+        boolean enableStatistics, String id,
+        PacketHandler<T> packetHandler,
+        ExecutorService executor)
+    {
         this.copy = copy;
         this.capacity = capacity;
         this.id = id;
@@ -180,6 +222,8 @@ public abstract class PacketQueue<T>
 
         queueStatistics
             = enableStatistics ? new QueueStatistics(id) : null;
+
+        this.executor = executor != null ? executor : sharedExecutor;
 
         if (packetHandler != null)
         {
@@ -462,12 +506,6 @@ public abstract class PacketQueue<T>
      */
     private final class AsyncPacketReader
     {
-        /**
-         * Maximum number of packets processed in row before temporary stop
-         * reader execution to give other users of {@link #executor} to proceed
-         */
-        private final int MAX_HANDLED_PACKETS_BEFORE_YIELD = 50;
-
         /**
          * Stores <tt>Future</tt> of currently executing {@link #reader}
          */
