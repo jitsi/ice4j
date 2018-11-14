@@ -52,6 +52,13 @@ public abstract class PacketQueue<T>
     private final static int CACHE_CAPACITY = 100;
 
     /**
+     * ScheduledExecutorService to implement delay during throttling in
+     * <tt>AsyncPacketReader</tt>
+     */
+    private final static ScheduledExecutorService timer
+        = Executors.newSingleThreadScheduledExecutor();
+
+    /**
      * The default <tt>ExecutorService</tt> to run <tt>AsyncPacketReader</tt>
      * when there is no user provided executor.
      */
@@ -498,6 +505,84 @@ public abstract class PacketQueue<T>
          * {@code false} otherwise.
          */
         boolean handlePacket(T pkt);
+
+        /**
+         * Specifies max number {@link #handlePacket(Object)} invocation
+         * per {@link #perNanos()}
+         * @return positive number of allowed pages in case of throttling
+         * must be enabled.
+         */
+        default long maxPackets() {
+            return -1;
+        }
+
+        /**
+         * Specifies time interval in nanoseconds
+         * @return positive nanoseconds count in case of throttling must be
+         * enabled.
+         */
+        default long perNanos() {
+            return -1;
+        }
+    }
+
+    /**
+     * Helper class to calculate throttle delay when throttling must be enabled
+     */
+    private class ThrottleCalculator
+    {
+        /**
+         * The number of {@link T}s already processed during the current
+         * <tt>perNanos</tt> interval.
+         */
+        private long packetsHandledWithinInterval = 0;
+
+        /**
+         * The time stamp in nanoseconds of the start of the current
+         * <tt>perNanos</tt> interval.
+         */
+        private long intervalStartTimeNanos = 0;
+
+        /**
+         * Calculate necessary delay based current time and number packets
+         * processed processed during current time interval
+         * @return 0 in case delay is not necessary or value in nanos
+         */
+        long getDelayNanos()
+        {
+            if (handler == null)
+            {
+                return Long.MAX_VALUE;
+            }
+
+            final long perNanos = handler.perNanos();
+            final long maxPackets = handler.maxPackets();
+
+            if (perNanos > 0 && maxPackets > 0)
+            {
+                final long now = System.nanoTime();
+                final long nanosRemainingTime = now - intervalStartTimeNanos;
+
+                if (nanosRemainingTime >= perNanos)
+                {
+                    intervalStartTimeNanos = now;
+                    packetsHandledWithinInterval = 0;
+                }
+                else if (packetsHandledWithinInterval >= maxPackets)
+                {
+                    return nanosRemainingTime;
+                }
+            }
+            return 0;
+        }
+
+        /**
+         * Count number of processed packets
+         */
+        void onPacketProcessed()
+        {
+            packetsHandledWithinInterval++;
+        }
     }
 
     /**
@@ -509,6 +594,13 @@ public abstract class PacketQueue<T>
      */
     private final class AsyncPacketReader
     {
+        /**
+         * Throttle calculator which is used for counting handled packets and
+         * computing necessary delay before processing next packet when
+         * throttling is enabled.
+         */
+        private final ThrottleCalculator throttler = new ThrottleCalculator();
+
         /**
          * Stores <tt>Future</tt> of currently executing {@link #reader}
          */
@@ -543,6 +635,14 @@ public abstract class PacketQueue<T>
                            this, is to to artificially interrupt current reader
                            execution and pump it via internal executor's queue.
                          */
+
+                        long delay = throttler.getDelayNanos();
+                        if (delay > 0)
+                        {
+                            onDelay(delay, TimeUnit.NANOSECONDS);
+                            return;
+                        }
+
                         if (handledPackets > MAX_HANDLED_PACKETS_BEFORE_YIELD)
                         {
                             onYield();
@@ -557,6 +657,7 @@ public abstract class PacketQueue<T>
                             return;
                         }
                         handledPackets++;
+                        throttler.onPacketProcessed();
                     }
 
                     if (queueStatistics != null)
@@ -577,6 +678,29 @@ public abstract class PacketQueue<T>
                         releasePacket(pkt);
                     }
                 }
+            }
+        };
+
+        /**
+         * Stores <tt>ScheduledFuture</tt> of currently delayed
+         * execution {@link #reader}
+         */
+        private ScheduledFuture<?> delayedFuture;
+
+        /**
+         * Runnable which is scheduled with delay to perform actual schedule of
+         * {@link #reader}
+         */
+        private final Runnable delayedSchedule = new Runnable()
+        {
+            @Override
+            public void run()
+            {
+                synchronized (queue)
+                {
+                    delayedFuture = null;
+                }
+                schedule();
             }
         };
 
@@ -610,7 +734,8 @@ public abstract class PacketQueue<T>
 
             synchronized (queue)
             {
-                if (readerFuture == null || readerFuture.isDone())
+                if ((readerFuture == null || readerFuture.isDone())
+                    && delayedFuture == null)
                 {
                     readerFuture = executor.submit(reader);
                 }
@@ -625,8 +750,22 @@ public abstract class PacketQueue<T>
         {
             logger.fine("Yielding AsyncPacketReader associated with "
                 + "PacketQueue with ID = " + id);
-            readerFuture = null;
+            stop(false);
             schedule();
+        }
+
+        /**
+         * Invoked when next execution of {@link #reader} should be delayed
+         * @param delay the time from now to delay execution
+         * @param unit the time unit of the delay parameter
+         */
+        private void onDelay(long delay, TimeUnit unit)
+        {
+            logger.fine("Delaying AsyncPacketReader associated with "
+                + "PacketQueue with ID = " + id + " for "
+                + unit.toNanos(delay) + "us");
+            stop(false);
+            delayedFuture = timer.schedule(delayedSchedule, delay, unit);
         }
 
         /**
@@ -637,6 +776,12 @@ public abstract class PacketQueue<T>
          */
         private void stop(boolean mayInterruptIfRunning)
         {
+            if (delayedFuture != null)
+            {
+                delayedFuture.cancel(mayInterruptIfRunning);
+                delayedFuture = null;
+            }
+
             if (readerFuture != null)
             {
                 readerFuture.cancel(mayInterruptIfRunning);
