@@ -197,10 +197,10 @@ class MessageProcessor
         }
         finally
         {
-            // On processed callback must be invoked in call cases, even when
+            // On processed callback must be invoked in all cases, even when
             // cancellation or early exist happen, otherwise
-            // NetAccessManager internal tracking of pooled and active objects
-            // will be confused.
+            // NetAccessManager internal tracking of pooled and active
+            // message processors will missbehave.
             if (onProcessed != null)
             {
                 onProcessed.accept(this);
