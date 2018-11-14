@@ -22,6 +22,7 @@ import java.net.*;
 import java.util.*;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.*;
+import java.util.function.*;
 import java.util.logging.*;
 
 import org.ice4j.*;
@@ -61,10 +62,17 @@ class NetAccessManager
         = Executors.newWorkStealingPool();
 
     /**
+     * Pool of <tt>MessageProcessor</tt> objects to avoid extra-allocations of
+     * processor object per <tt>RawMessage</tt> needed to process.
+     */
+    private final ArrayBlockingQueue<MessageProcessor> messageProcessorsPool
+        = new ArrayBlockingQueue<>(8);
+
+    /**
      * The set of <tt>Future</tt>'s of not yet processed <tt>RawMessage</tt>s
      */
-    private final ConcurrentHashMap.KeySetView<Future<?>, Boolean>
-        unprocessedMessageFutures = ConcurrentHashMap.newKeySet();
+    private final ConcurrentHashMap.KeySetView<MessageProcessor, Boolean>
+        activeMessageProcessors = ConcurrentHashMap.newKeySet();
 
     /**
      * All <tt>Connectors</tt> currently in use with UDP. The table maps a local
@@ -124,6 +132,16 @@ class NetAccessManager
      * Indicates if this <tt>NetAccessManager</tt> is stopped
      */
     private final AtomicBoolean isStopped = new AtomicBoolean(false);
+
+    /**
+     * Callback to be called when scheduled <tt>MessageProcessor</tt> completes
+     * processing it's <tt>RawMessage</tt>.
+     */
+    private final Consumer<MessageProcessor>
+        onMessageProcessorProcessedRawMessage = messageProcessor -> {
+        activeMessageProcessors.remove(messageProcessor);
+        messageProcessorsPool.offer(messageProcessor);
+    };
 
     /**
      * Constructs a NetAccessManager.
@@ -416,11 +434,11 @@ class NetAccessManager
         // no item can be added to {@link #unprocessedMessageFutures} when
         // NetAccessManager is stopped, so it is safe to iterate without
         // removing item in-place.
-        for (Future<?> future: unprocessedMessageFutures)
+        for (MessageProcessor messageProcessor: activeMessageProcessors)
         {
-            future.cancel(true);
+            messageProcessor.cancel();
         }
-        unprocessedMessageFutures.clear();
+        activeMessageProcessors.clear();
 
         for (Object o : new Object[]{udpConnectors, tcpConnectors})
         {
@@ -494,18 +512,18 @@ class NetAccessManager
             return;
         }
 
-        final MessageProcessor messageProcessor
-            = new MessageProcessor(this, message);
-        final CompletableFuture<Void> completableFuture = CompletableFuture
-            .runAsync(messageProcessor, messageProcessorExecutor);
+        MessageProcessor messageProcessor = messageProcessorsPool.poll();
+        if (messageProcessor == null)
+        {
+            messageProcessor = new MessageProcessor(this);
+        }
 
-        unprocessedMessageFutures.add(completableFuture);
-        completableFuture.handle((result, error) -> {
-           unprocessedMessageFutures.remove(completableFuture);
-           return null;
-        });
+        messageProcessor.setMessage(
+            message,
+            onMessageProcessorProcessedRawMessage);
+
+        messageProcessorExecutor.execute(messageProcessor);
     }
-
 
     //--------------- SENDING MESSAGES -----------------------------------------
     /**

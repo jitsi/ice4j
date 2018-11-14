@@ -17,6 +17,8 @@
  */
 package org.ice4j.stack;
 
+import java.util.concurrent.atomic.*;
+import java.util.function.*;
 import java.util.logging.*;
 
 import org.ice4j.*;
@@ -24,7 +26,11 @@ import org.ice4j.message.*;
 
 /**
  * The class is used to parse and dispatch incoming messages by being
- * executed by concurrent {@link java.util.concurrent.ExecutorService}
+ * executed by concurrent {@link java.util.concurrent.ExecutorService}.
+ * To reduce memory allocation this <tt>Runnable</tt> implementation designed
+ * to be suitable for usage with pooling, the instance of this type is
+ * mutable such that <tt>RawMessage</tt> can be updated and instance can be
+ * reused and scheduled with new <tt>RawMessage</tt>
  *
  * @author Emil Ivov
  */
@@ -38,15 +44,16 @@ class MessageProcessor
         = Logger.getLogger(MessageProcessor.class.getName());
 
     /**
+     * Indicates that <tt>MessageProcessor</tt> is cancelled and should not
+     * process <tt>RawMessage</tt> anymore.
+     */
+    private final AtomicBoolean cancelled = new AtomicBoolean(false);
+
+    /**
      * The <tt>NetAccessManager</tt> which has created this instance and which
      * is its owner.
      */
     private final NetAccessManager netAccessManager;
-
-    /**
-     * Ram message which is being processed
-     */
-    private final RawMessage rawMessage;
 
     /**
      * The listener that will be collecting error notifications.
@@ -59,30 +66,33 @@ class MessageProcessor
     private final MessageEventHandler messageEventHandler;
 
     /**
+     * Raw message which is being processed
+     */
+    private RawMessage rawMessage;
+
+    /**
+     * Callback which is invoked when this <tt>MessageProcessor</tt>
+     * processed it's {@link #rawMessage}
+     */
+    private Consumer<MessageProcessor> rawMessageProcessedHandler;
+
+    /**
      * Creates a Message processor.
      *
      * @param netAccessManager the <tt>NetAccessManager</tt> which is creating
      * the new instance, is going to be its owner, specifies the
      * <tt>MessageEventHandler</tt> and represents the <tt>ErrorHandler</tt> to
      * handle exceptions in the new instance
-     * @param message the <tt>RawMessage</tt> to be asynchronously processed by
-     * this MessageProcessor
      * @throws IllegalArgumentException if any of the mentioned properties of
      * <tt>netAccessManager</tt> are <tt>null</tt>
      */
     MessageProcessor(
-        NetAccessManager netAccessManager,
-        RawMessage message)
+        NetAccessManager netAccessManager)
         throws IllegalArgumentException
     {
         if (netAccessManager == null)
         {
             throw new NullPointerException("netAccessManager");
-        }
-
-        if (message == null)
-        {
-            throw new IllegalArgumentException("The message may not be null");
         }
 
         MessageEventHandler messageEventHandler
@@ -97,7 +107,28 @@ class MessageProcessor
         this.netAccessManager = netAccessManager;
         this.messageEventHandler = messageEventHandler;
         this.errorHandler = netAccessManager;
+    }
+
+    /**
+     * Assigns the <tt>RawMessage</tt> that will be processed
+     * by this <tt>MessageProcessor</tt> on separate thread.
+     * @param message RawMessage to be processed
+     * @param onProcessed callback which will be invoked when processing
+     * of {@link #rawMessage} is completed
+     */
+    void setMessage(RawMessage message, Consumer<MessageProcessor> onProcessed)
+    {
+        if (message == null)
+        {
+            throw new IllegalArgumentException("The message may not be null");
+        }
         this.rawMessage = message;
+        this.rawMessageProcessedHandler = onProcessed;
+    }
+
+    public void cancel()
+    {
+        this.cancelled.set(true);
     }
 
     /**
@@ -105,18 +136,32 @@ class MessageProcessor
      */
     public void run()
     {
+        final Consumer<MessageProcessor> onProcessed = rawMessageProcessedHandler;
+        final RawMessage message = rawMessage;
         //add an extra try/catch block that handles uncatched errors
         try
         {
+            if (message == null)
+            {
+                return;
+            }
+            rawMessage = null;
+            rawMessageProcessedHandler = null;
+
+            if (this.cancelled.get())
+            {
+                return;
+            }
+
             StunStack stunStack = netAccessManager.getStunStack();
 
             Message stunMessage;
             try
             {
                 stunMessage
-                    = Message.decode(rawMessage.getBytes(),
+                    = Message.decode(message.getBytes(),
                                      (char) 0,
-                                     (char) rawMessage.getMessageLength());
+                                     (char) message.getMessageLength());
             }
             catch (StunException ex)
             {
@@ -129,13 +174,20 @@ class MessageProcessor
             logger.finest("Dispatching a StunMessageEvent.");
 
             StunMessageEvent stunMessageEvent
-                = new StunMessageEvent(stunStack, rawMessage, stunMessage);
+                = new StunMessageEvent(stunStack, message, stunMessage);
 
             messageEventHandler.handleMessageEvent(stunMessageEvent);
         }
         catch(Throwable err)
         {
             errorHandler.handleFatalError(this, "Unexpected Error!", err);
+        }
+        finally
+        {
+            if (onProcessed != null)
+            {
+                onProcessed.accept(this);
+            }
         }
     }
 }
