@@ -27,9 +27,9 @@ import org.ice4j.message.*;
 
 /**
  * The class is used to parse and dispatch incoming messages by being
- * executed by concurrent {@link java.util.concurrent.ExecutorService}.
- * To reduce memory allocation this <tt>Runnable</tt> implementation designed
- * to be suitable for usage with pooling, the instance of this type is
+ * executed by concurrent {@link java.util.concurrent.ForkJoinPool}.
+ * To reduce memory allocation this <tt>ForkJoinTask</tt> implementation
+ * designed to be suitable for usage with pooling, the instance of this type is
  * mutable such that <tt>RawMessage</tt> can be updated and instance can be
  * reused and scheduled with new <tt>RawMessage</tt>
  *

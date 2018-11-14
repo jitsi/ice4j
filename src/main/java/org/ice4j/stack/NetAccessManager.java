@@ -52,11 +52,11 @@ class NetAccessManager
     /**
      * Thread pool to execute {@link MessageProcessor}s across all
      * {@link NetAccessManager}s.
-     * The work-stealing thread pool tries to utilizes all available processors
-     * in parallel, but does not have guarantee about the order of execution,
-     * but underlying transport (UDP) also does not have such guarantee,
-     * so it is ok when some of the messages will be processed out of
-     * arrival (enqueuing) order, but faster.
+     * The work-stealing thread pool {@link java.util.concurrent.ForkJoinPool}
+     * tries to utilizes all available processors in parallel, but does not
+     * have guarantee about the order of execution, but underlying transport
+     * (UDP) also does not have such guarantee, so it is ok when some of the
+     * messages will be processed out of arrival (enqueuing) order, but faster.
      */
     private static ForkJoinPool messageProcessorExecutor
         = new ForkJoinPool(Runtime.getRuntime().availableProcessors());
@@ -69,7 +69,9 @@ class NetAccessManager
         = new ArrayBlockingQueue<>(8);
 
     /**
-     * The set of <tt>Future</tt>'s of not yet processed <tt>RawMessage</tt>s
+     * The set of <tt>Future</tt>'s of not yet processed <tt>RawMessage</tt>s,
+     * this tracking is necessary to properly cancel pending tasks in case
+     * {@link #stop()} is called.
      */
     private final ConcurrentHashMap.KeySetView<MessageProcessor, Boolean>
         activeMessageProcessors = ConcurrentHashMap.newKeySet();
