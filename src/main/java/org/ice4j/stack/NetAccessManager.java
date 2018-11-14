@@ -521,7 +521,7 @@ class NetAccessManager
         }
         else
         {
-            messageProcessor.reinitialize();
+            messageProcessor.resetState();
         }
 
         messageProcessor.setMessage(

@@ -127,6 +127,18 @@ class MessageProcessor
         this.rawMessageProcessedHandler = onProcessed;
     }
 
+    /**
+     * Performs proper reset of internal state of pooled instance.
+     */
+    public void resetState()
+    {
+        this.reinitialize();
+        this.cancelled.set(false);
+    }
+
+    /**
+     * Attempts to cancel processing of {@link #rawMessage}
+     */
     public void cancel()
     {
         this.cancelled.set(true);
@@ -185,6 +197,10 @@ class MessageProcessor
         }
         finally
         {
+            // On processed callback must be invoked in call cases, even when
+            // cancellation or early exist happen, otherwise
+            // NetAccessManager internal tracking of pooled and active objects
+            // will be confused.
             if (onProcessed != null)
             {
                 onProcessed.accept(this);
