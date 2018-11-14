@@ -58,8 +58,8 @@ class NetAccessManager
      * so it is ok when some of the messages will be processed out of
      * arrival (enqueuing) order, but faster.
      */
-    private static ExecutorService messageProcessorExecutor
-        = Executors.newWorkStealingPool();
+    private static ForkJoinPool messageProcessorExecutor
+        = new ForkJoinPool(Runtime.getRuntime().availableProcessors());
 
     /**
      * Pool of <tt>MessageProcessor</tt> objects to avoid extra-allocations of
@@ -517,12 +517,18 @@ class NetAccessManager
         {
             messageProcessor = new MessageProcessor(this);
         }
+        else
+        {
+            messageProcessor.reinitialize();
+        }
 
         messageProcessor.setMessage(
             message,
             onMessageProcessorProcessedRawMessage);
 
-        messageProcessorExecutor.execute(messageProcessor);
+        // Because MessageProcessor is ForkJoinTask<Void> it is not re-wrapped
+        // inside ForkJoinPool and no hidden allocation is done inside pool.
+        messageProcessorExecutor.submit(messageProcessor);
     }
 
     //--------------- SENDING MESSAGES -----------------------------------------

@@ -17,6 +17,7 @@
  */
 package org.ice4j.stack;
 
+import java.util.concurrent.*;
 import java.util.concurrent.atomic.*;
 import java.util.function.*;
 import java.util.logging.*;
@@ -35,7 +36,7 @@ import org.ice4j.message.*;
  * @author Emil Ivov
  */
 class MessageProcessor
-    implements Runnable
+    extends RecursiveAction
 {
     /**
      * Our class logger.
@@ -131,10 +132,8 @@ class MessageProcessor
         this.cancelled.set(true);
     }
 
-    /**
-     * Does the message parsing.
-     */
-    public void run()
+    @Override
+    protected void compute()
     {
         final Consumer<MessageProcessor> onProcessed = rawMessageProcessedHandler;
         final RawMessage message = rawMessage;
@@ -180,7 +179,9 @@ class MessageProcessor
         }
         catch(Throwable err)
         {
-            errorHandler.handleFatalError(this, "Unexpected Error!", err);
+            errorHandler.handleFatalError(
+                Thread.currentThread(),
+                "Unexpected Error!", err);
         }
         finally
         {
