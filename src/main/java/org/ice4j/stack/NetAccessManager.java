@@ -58,8 +58,7 @@ class NetAccessManager
      * (UDP) also does not have such guarantee, so it is ok when some of the
      * messages will be processed out of arrival (enqueuing) order, but faster.
      */
-    private static ForkJoinPool messageProcessorExecutor
-        = new ForkJoinPool(Runtime.getRuntime().availableProcessors());
+    private static ForkJoinPool messageProcessorExecutor = new ForkJoinPool();
 
     /**
      * Pool of <tt>MessageProcessor</tt> objects to avoid extra-allocations of
@@ -199,7 +198,7 @@ class NetAccessManager
      * Gets the <tt>PeerUdpMessageEventHandler</tt> of this
      * <tt>NetAccessManager</tt> which is to be notified when incoming UDP
      * messages have been processed and are ready for delivery.
-     * 
+     *
      * @return the <tt>PeerUdpMessageEventHandler</tt> of this
      *         <tt>NetAccessManager</tt> which is to be notified when incoming
      *         UDP messages have been processed and are ready for delivery
@@ -213,7 +212,7 @@ class NetAccessManager
      * Gets the <tt>ChannelDataEventHandler</tt> of this
      * <tt>NetAccessManager</tt> which is to be notified when incoming
      * ChannelData messages have been processed and are ready for delivery.
-     * 
+     *
      * @return the <tt>ChannelDataEventHandler</tt> of this
      *         <tt>NetAccessManager</tt> which is to be notified when incoming
      *         ChannelData messages have been processed and are ready for
