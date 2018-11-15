@@ -82,7 +82,29 @@ public class PacketQueueBenchmarkTests
     }
 
     @Test
-    public void testMultiplePacketQueueThroughputWithLimitedThreadExecutor()
+    public void testMultiplePacketQueueThroughputWithFixedSizePool()
+        throws Exception
+    {
+        /*
+         * This test is slight modification of previous test, but now threads
+         * are re-used between PacketQueues when possible.
+         */
+        measureBenchmark("FixedSizeThreadPool", () -> {
+            final ExecutorService executorService
+                = Executors.newFixedThreadPool(
+                    Runtime.getRuntime().availableProcessors());
+            Duration duration = runBenchmark(
+                executorService,
+                50 /* Because queues will share executor
+                with limited number of threads, so configure cooperative
+                multi-tasking mode*/);
+            executorService.shutdownNow();
+            return duration;
+        });
+    }
+
+    @Test
+    public void testMultiplePacketQueueThroughputWithForkJoinPool()
         throws Exception
     {
         /*
@@ -97,7 +119,8 @@ public class PacketQueueBenchmarkTests
          */
         measureBenchmark("ForkJoinPool", () -> {
             final ExecutorService executorService
-                = Executors.newWorkStealingPool();
+                = Executors.newWorkStealingPool(
+                    Runtime.getRuntime().availableProcessors());
             Duration duration = runBenchmark(
                 executorService,
                 50 /* Because queues will share executor
