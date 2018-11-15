@@ -44,8 +44,8 @@ public class PacketQueueBenchmarkTests
         throws Exception
     {
         /*
-         * This test simulates initial implementation of PacketQueue when
-         * each PacketQueue instance has it's own processing thread
+         * This test roughly simulates initial implementation of PacketQueue
+         * when each PacketQueue instance has it's own processing thread
          */
         measureBenchmark("FixedThreadPool", () -> {
             final ExecutorService executorService
@@ -65,8 +65,8 @@ public class PacketQueueBenchmarkTests
         throws Exception
     {
         /*
-         * This test is slight modification of initial implementation when
-         * threads are reused when possible.
+         * This test is slight modification of previous test, but now threads
+         * are re-used between PacketQueues when possible.
          */
         measureBenchmark("CachedThreadPool", () -> {
             final ExecutorService executorService
