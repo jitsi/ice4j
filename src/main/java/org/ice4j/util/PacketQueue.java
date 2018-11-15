@@ -47,11 +47,6 @@ public abstract class PacketQueue<T>
     private final static int DEFAULT_CAPACITY = 256;
 
     /**
-     * The capacity of the {@code byte[]} cache, if it is enabled.
-     */
-    private final static int CACHE_CAPACITY = 100;
-
-    /**
      * ScheduledExecutorService to implement delay during throttling in
      * <tt>AsyncPacketReader</tt>
      */
@@ -66,15 +61,6 @@ public abstract class PacketQueue<T>
         = Executors.newCachedThreadPool(
             new CustomizableThreadFactory(
                 "PacketQueue-", true));
-
-    /**
-     * Maximum number of packets processed in row before temporary stop
-     * reader execution to give possible other users of same {@link #executor}
-     * to proceed their execution. This mode of execution, when task is
-     * temporary stopped itself to give a chance to other tasks sharing same
-     * executor to run is called cooperative multi-tasking.
-     */
-    private final static int MAX_HANDLED_PACKETS_BEFORE_YIELD = 50;
 
     /**
      * Returns true if a warning should be logged after a queue has dropped
