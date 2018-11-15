@@ -1,12 +1,12 @@
 package org.ice4j.util;
 
 import junit.framework.TestCase;
-import org.ice4j.stunclient.ResponseSequenceServer;
 import org.junit.Assert;
+import org.junit.Test;
 
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.TimeUnit;
+import java.time.Duration;
+import java.util.ArrayList;
+import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -15,15 +15,15 @@ import java.util.logging.Logger;
  * Test various aspects of {@link PacketQueue} implementation.
  */
 public class PacketQueueTests
-    extends TestCase
 {
     /**
      * The <tt>Logger</tt> used by the <tt>PacketQueueTests</tt> class and
      * its instances for logging output.
      */
     private static final java.util.logging.Logger logger
-        = Logger.getLogger(ResponseSequenceServer.class.getName());
+        = Logger.getLogger(PacketQueueTests.class.getName());
 
+    @Test
     public void testThrottlingHandlePacket() throws InterruptedException
     {
         final long minIntervalBetweenPacketsNanos =
@@ -40,13 +40,12 @@ public class PacketQueueTests
             false,
             false,
             "dummy",
-            new PacketQueue.PacketHandler<Dummy>()
+            new PacketQueue.PacketHandler<DummyQueue.Dummy>()
             {
-
                 private long lastPacketHandledTimestampNanos = -1;
 
                 @Override
-                public boolean handlePacket(Dummy pkt)
+                public boolean handlePacket(DummyQueue.Dummy pkt)
                 {
                     final long now = System.nanoTime();
 
@@ -99,7 +98,7 @@ public class PacketQueueTests
 
         for (int i = 0; i < itemsCount; i++)
         {
-            queue.add(new Dummy());
+            queue.add(new DummyQueue.Dummy());
             Thread.sleep(TimeUnit.NANOSECONDS.toMillis(
                 minIntervalBetweenPacketsNanos / 10));
         }
@@ -113,49 +112,4 @@ public class PacketQueueTests
             allItemsWereThrottled.get());
     }
 
-    private class Dummy {
-    }
-
-    private class DummyQueue extends PacketQueue<Dummy>
-    {
-        DummyQueue(int capacity, boolean copy, boolean enableStatistics,
-            String id,
-            PacketHandler<Dummy> packetHandler,
-            ExecutorService executor)
-        {
-            super(capacity, copy, enableStatistics, id, packetHandler,
-                executor);
-        }
-
-        @Override
-        public byte[] getBuffer(Dummy pkt)
-        {
-            return null;
-        }
-
-        @Override
-        public int getOffset(Dummy pkt)
-        {
-            return 0;
-        }
-
-        @Override
-        public int getLength(Dummy pkt)
-        {
-            return 0;
-        }
-
-        @Override
-        public Object getContext(Dummy pkt)
-        {
-            return null;
-        }
-
-        @Override
-        protected Dummy createPacket(byte[] buf, int off, int len,
-            Object context)
-        {
-            return new Dummy();
-        }
-    }
 }

@@ -484,7 +484,7 @@ public abstract class PacketQueue<T>
      * Releases packet when it is handled by provided {@link #handler}.
      * This method is not called when <tt>PacketQueue</tt> was created without
      * {@link #handler} and hence no automatic queue processing is done.
-     * Default implementation is empty, but it might be used to impalement
+     * Default implementation is empty, but it might be used to implement
      * packet pooling to re-use them.
      * @param pkt packet to release
      */
@@ -524,12 +524,25 @@ public abstract class PacketQueue<T>
         default long perNanos() {
             return -1;
         }
+
+        /**
+         * Specifies the number of packets allowed to be processed sequentially
+         * without yielding control to allow other possible queues sharing
+         * same {@link ExecutorService} to process their packets.
+         * @return positive value to specify max number of packets which allows
+         * implementation of cooperative multi-tasking between different
+         * {@link PacketQueue} sharing same {@link ExecutorService}
+         */
+        default long maxSequentiallyProcessedPackets()
+        {
+            return 50;
+        }
     }
 
     /**
      * Helper class to calculate throttle delay when throttling must be enabled
      */
-    private class ThrottleCalculator
+    private final class ThrottleCalculator
     {
         /**
          * The number of {@link T}s already processed during the current
@@ -615,6 +628,9 @@ public abstract class PacketQueue<T>
             @Override
             public void run()
             {
+                final long maxSequentiallyProcessedPackets =
+                    handler.maxSequentiallyProcessedPackets();
+
                 int handledPackets = 0;
 
                 while (!closed.get())
@@ -643,7 +659,8 @@ public abstract class PacketQueue<T>
                             return;
                         }
 
-                        if (handledPackets > MAX_HANDLED_PACKETS_BEFORE_YIELD)
+                        if (maxSequentiallyProcessedPackets > 0 &&
+                            handledPackets > maxSequentiallyProcessedPackets)
                         {
                             onYield();
                             return;
@@ -656,9 +673,10 @@ public abstract class PacketQueue<T>
                             stop(false);
                             return;
                         }
-                        handledPackets++;
-                        throttler.onPacketProcessed();
                     }
+
+                    handledPackets++;
+                    throttler.onPacketProcessed();
 
                     if (queueStatistics != null)
                     {
