@@ -47,7 +47,7 @@ public class PacketQueueBenchmarkTests
          * This test roughly simulates initial implementation of PacketQueue
          * when each PacketQueue instance has it's own processing thread
          */
-        measureBenchmark("FixedThreadPool", () -> {
+        measureBenchmark("ThreadPerQueuePool", () -> {
             final ExecutorService executorService
                 = Executors.newFixedThreadPool(numberOfQueues);
             Duration duration = runBenchmark(
@@ -68,7 +68,7 @@ public class PacketQueueBenchmarkTests
          * This test is slight modification of previous test, but now threads
          * are re-used between PacketQueues when possible.
          */
-        measureBenchmark("CachedThreadPool", () -> {
+        measureBenchmark("CachedThreadPerQueuePool", () -> {
             final ExecutorService executorService
                 = Executors.newCachedThreadPool();
             Duration duration = runBenchmark(
@@ -86,10 +86,10 @@ public class PacketQueueBenchmarkTests
         throws Exception
     {
         /*
-         * This test is slight modification of previous test, but now threads
-         * are re-used between PacketQueues when possible.
+         * This test creates pool with limited number of threads, all
+         * PacketQueues share threads in cooperative multi-tasking mode.
          */
-        measureBenchmark("FixedSizeThreadPool", () -> {
+        measureBenchmark("FixedSizeCPUBoundPool", () -> {
             final ExecutorService executorService
                 = Executors.newFixedThreadPool(
                     Runtime.getRuntime().availableProcessors());
@@ -117,7 +117,7 @@ public class PacketQueueBenchmarkTests
          * This modification has noticeable better performance when executed
          * on system which is already loaded by other concurrent tasks.
          */
-        measureBenchmark("ForkJoinPool", () -> {
+        measureBenchmark("ForkJoinCPUBoundPool", () -> {
             final ExecutorService executorService
                 = Executors.newWorkStealingPool(
                     Runtime.getRuntime().availableProcessors());
