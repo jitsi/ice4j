@@ -63,7 +63,9 @@ public abstract class PacketQueue<T>
      * when there is no user provided executor.
      */
     private final static ExecutorService sharedExecutor
-        = Executors.newWorkStealingPool();
+        = Executors.newCachedThreadPool(
+            new CustomizableThreadFactory(
+                "PacketQueue-", true));
 
     /**
      * Maximum number of packets processed in row before temporary stop
@@ -535,7 +537,7 @@ public abstract class PacketQueue<T>
          */
         default long maxSequentiallyProcessedPackets()
         {
-            return 50;
+            return -1;
         }
     }
 
