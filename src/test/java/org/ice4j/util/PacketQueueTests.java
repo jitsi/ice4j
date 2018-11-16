@@ -236,7 +236,7 @@ public class PacketQueueTests
         throws Exception
     {
         final ExecutorService singleThreadExecutor
-            = Executors.newFixedThreadPool(1);
+            = Executors.newSingleThreadExecutor();
 
         final CountDownLatch queueCompletion = new CountDownLatch(1);
 
@@ -253,15 +253,16 @@ public class PacketQueueTests
 
         queue.add(new DummyQueue.Dummy());
 
-        queueCompletion.await();
+        queueCompletion.await(10, TimeUnit.MILLISECONDS);
 
         Future<?> executorCompletion = singleThreadExecutor.submit(() -> {
             // do nothing, just pump Runnable via executor's thread to
             // verify it's not stuck
         });
 
-        try {
-            executorCompletion.get(5, TimeUnit.MILLISECONDS);
+        try
+        {
+            executorCompletion.get(10, TimeUnit.MILLISECONDS);
         }
         catch (TimeoutException e)
         {
