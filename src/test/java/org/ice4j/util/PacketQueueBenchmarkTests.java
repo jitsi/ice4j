@@ -8,7 +8,7 @@ import java.util.concurrent.*;
 import java.util.logging.Logger;  // Disambiguation
 
 /**
- * Contains test for checking various performance aspects of various
+ * Contains test for checking performance aspects of various
  * PacketQueue configuration
  */
 @Ignore("Check only performance aspect of PacketQueue")

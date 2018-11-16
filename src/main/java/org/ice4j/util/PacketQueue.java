@@ -532,7 +532,7 @@ public abstract class PacketQueue<T>
     }
 
     /**
-     * Helper class to calculate throttle delay when throttling must be enabled
+     * Helper class to calculate throttle delay when throttling must be applied.
      */
     private static final class ThrottleCalculator<T>
     {
@@ -642,19 +642,6 @@ public abstract class PacketQueue<T>
 
                     synchronized (queue)
                     {
-                        /* All instances of AsyncPacketReader executed on single
-                           shared instance of ExecutorService to better use
-                           existing threads and to reduce number of idle
-                           threads when reader's queue is empty.
-
-                           Having limited number of threads to execute might
-                           lead to other problem, when queue is always non-empty
-                           reader will keep running, while other readers might
-                           suffer from execution starvation. One way to solve
-                           this, is to to artificially interrupt current reader
-                           execution and pump it via internal executor's queue.
-                         */
-
                         long delay = throttler.getDelayNanos();
                         if (delay > 0)
                         {
@@ -662,9 +649,24 @@ public abstract class PacketQueue<T>
                             return;
                         }
 
+
                         if (maxSequentiallyProcessedPackets > 0 &&
                             handledPackets >= maxSequentiallyProcessedPackets)
                         {
+                            /*
+                            All instances of AsyncPacketReader executed on
+                            single shared instance of ExecutorService to better
+                            use existing threads and to reduce number of idle
+                            threads when reader's queue is empty.
+
+                            Having limited number of threads to execute might
+                            lead to other problem, when queue is always
+                            non-empty reader will keep running, while other
+                            readers might suffer from execution starvation. One
+                            way to solve this, is to to artificially interrupt
+                            current reader execution and pump it via internal
+                            executor's queue.
+                            */
                             onYield();
                             return;
                         }
@@ -673,7 +675,7 @@ public abstract class PacketQueue<T>
 
                         if (pkt == null)
                         {
-                            stop(false);
+                            cancel(false);
                             return;
                         }
                     }
@@ -726,13 +728,13 @@ public abstract class PacketQueue<T>
         };
 
         /**
-         * Cancels execution of {@link #reader} if running
+         * Attempts to stop execution of {@link #reader} if running
          */
         void cancel()
         {
             synchronized (queue)
             {
-                stop(true);
+                cancel(true);
             }
         }
 
@@ -765,18 +767,20 @@ public abstract class PacketQueue<T>
 
         /**
          * Invoked when execution of {@link #reader} is about to temporary
-         * stop and further execution need to be re-scheduled
+         * cancel and further execution need to be re-scheduled.
+         * Assuming called when lock on {@link #queue} is already taken.
          */
         private void onYield()
         {
             logger.fine("Yielding AsyncPacketReader associated with "
                 + "PacketQueue with ID = " + id);
-            stop(false);
-            schedule();
+            cancel(false);
+            readerFuture = executor.submit(reader);
         }
 
         /**
-         * Invoked when next execution of {@link #reader} should be delayed
+         * Invoked when next execution of {@link #reader} should be delayed.
+         * Assuming called when lock on {@link #queue} is already taken.
          * @param delay the time from now to delay execution
          * @param unit the time unit of the delay parameter
          */
@@ -785,17 +789,17 @@ public abstract class PacketQueue<T>
             logger.fine("Delaying AsyncPacketReader associated with "
                 + "PacketQueue with ID = " + id + " for "
                 + unit.toNanos(delay) + "us");
-            stop(false);
+            cancel(false);
             delayedFuture = timer.schedule(delayedSchedule, delay, unit);
         }
 
         /**
-         * Stop currently running reader. Assuming called when lock
-         * on {@link #queue} is already taken
+         * Attempts to cancel currently running reader. Assuming called when
+         * lock on {@link #queue} is already taken
          * @param mayInterruptIfRunning indicates if {@link #reader} allowed
          * to be interrupted if running
          */
-        private void stop(boolean mayInterruptIfRunning)
+        private void cancel(boolean mayInterruptIfRunning)
         {
             if (delayedFuture != null)
             {
