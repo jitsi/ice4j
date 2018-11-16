@@ -201,4 +201,33 @@ public class PacketQueueTests
             }
         }
     }
+
+    @Test
+    public void testAddingWhenCapacityReachedRemovesOldestItem()
+    {
+        final int capacity = 10;
+        final DummyQueue dummyQueue = new DummyQueue(capacity);
+
+        for (int i = 0; i < capacity + 1; i++)
+        {
+            DummyQueue.Dummy item = new DummyQueue.Dummy();
+            item.seed = i;
+
+            dummyQueue.add(item);
+        }
+
+        for (int i = 0; i < capacity + 1; i++)
+        {
+            final DummyQueue.Dummy item = dummyQueue.poll();
+            if (i == capacity)
+            {
+                Assert.assertNull(item);
+            }
+            else
+            {
+                Assert.assertNotEquals("Oldest item must be removed when "
+                    + "item exceeding capacity added", 0, item.seed);
+            }
+        }
+    }
 }
