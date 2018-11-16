@@ -11,13 +11,10 @@ class DummyQueue
 {
     DummyQueue(
         int capacity,
-        boolean copy,
-        boolean enableStatistics,
-        String id,
         PacketHandler<Dummy> packetHandler,
         ExecutorService executor)
     {
-        super(capacity, copy, enableStatistics, id, packetHandler,
+        super(capacity, false, false, "DummyQueue", packetHandler,
             executor);
     }
 

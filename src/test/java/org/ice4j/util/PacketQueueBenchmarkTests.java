@@ -143,9 +143,6 @@ public class PacketQueueBenchmarkTests
         for (int i = 0; i < numberOfQueues; i++) {
             queues.add(new DummyQueue(
                 numberOfItemsInQueue,
-                false,
-                false,
-                String.valueOf(i),
                 new PacketQueue.PacketHandler<DummyQueue.Dummy>()
                 {
                     @Override

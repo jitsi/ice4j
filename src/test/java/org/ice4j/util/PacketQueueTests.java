@@ -5,6 +5,7 @@ import org.junit.*;
 import java.util.*;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.*;
+import java.util.function.*;
 import java.util.logging.*;
 import java.util.logging.Logger; // Disambiguation
 
@@ -34,9 +35,6 @@ public class PacketQueueTests
 
         final DummyQueue queue = new DummyQueue(
             itemsCount,
-            false,
-            false,
-            "dummy",
             new PacketQueue.PacketHandler<DummyQueue.Dummy>()
             {
                 private long lastPacketHandledTimestampNanos = -1;
@@ -53,7 +51,7 @@ public class PacketQueueTests
 
                         final boolean isThrottled
                             = durationSinceLastPacketNanos
-                                >= minIntervalBetweenPacketsNanos;
+                            >= minIntervalBetweenPacketsNanos;
 
                         allItemsWereThrottled.set(
                             allItemsWereThrottled.get() && isThrottled);
@@ -62,13 +60,16 @@ public class PacketQueueTests
                         {
                             logger.log(Level.SEVERE,
                                 "Throttling was not properly applied "
-                            + "between packets processing. Current packet "
-                            + "timestamp is " + now + "us, previous packet "
-                            + "timestamp is " + lastPacketHandledTimestampNanos
-                            + "us, time interval between is "
-                            + durationSinceLastPacketNanos
-                            + "us, expected at least " + perNanos() + "us "
-                            + "between " + maxPackets() + " items");
+                                    + "between packets processing. Current packet "
+                                    + "timestamp is " + now
+                                    + "us, previous packet "
+                                    + "timestamp is "
+                                    + lastPacketHandledTimestampNanos
+                                    + "us, time interval between is "
+                                    + durationSinceLastPacketNanos
+                                    + "us, expected at least " + perNanos()
+                                    + "us "
+                                    + "between " + maxPackets() + " items");
                         }
                     }
 
@@ -105,7 +106,7 @@ public class PacketQueueTests
             TimeUnit.NANOSECONDS);
 
         Assert.assertTrue("Expect throttling was done by PacketQueue "
-            + " when maxPackets() and perNanos() specified ",
+                + " when maxPackets() and perNanos() specified ",
             allItemsWereThrottled.get());
     }
 
@@ -242,9 +243,6 @@ public class PacketQueueTests
 
         final DummyQueue queue = new DummyQueue(
             10,
-            false,
-            false,
-            "DummyQueue",
             pkt -> {
                 queueCompletion.countDown();
                 return true;
@@ -267,8 +265,82 @@ public class PacketQueueTests
         catch (TimeoutException e)
         {
             Assert.fail("Executors thread must be released by PacketQueue "
-                +  "when queue is empty");
+                + "when queue is empty");
         }
+
+        singleThreadExecutor.shutdownNow();
+    }
+
+    @Test
+    public void testPacketQueueCooperativeMultiTaskingWhenSharingExecutor()
+        throws Exception
+    {
+        final int maxSequentiallyProcessedPackets = 1;
+
+        final int queueCapacity = 10 * maxSequentiallyProcessedPackets;
+
+        final CountDownLatch completionGuard
+            = new CountDownLatch(2 * queueCapacity);
+
+        final ExecutorService singleThreadExecutor
+            = Executors.newSingleThreadExecutor();
+
+        final AtomicInteger queue1Counter = new AtomicInteger();
+
+        final AtomicInteger queue2Counter = new AtomicInteger();
+
+        final AtomicBoolean queuesEvenlyProcessed
+            = new AtomicBoolean(true);
+
+        final BiFunction<AtomicInteger,
+                         AtomicInteger,
+                         PacketQueue.PacketHandler<DummyQueue.Dummy>>
+            newPacketQueue = (AtomicInteger self, AtomicInteger other) ->
+                new PacketQueue.PacketHandler<DummyQueue.Dummy>()
+                {
+                    @Override
+                    public boolean handlePacket(DummyQueue.Dummy pkt)
+                    {
+                        int diff = Math.abs(
+                            self.incrementAndGet() - other.get());
+
+                        queuesEvenlyProcessed.set(queuesEvenlyProcessed.get()
+                            && diff <= maxSequentiallyProcessedPackets());
+
+                        completionGuard.countDown();
+
+                        return false;
+                    }
+
+                    @Override
+                    public long maxSequentiallyProcessedPackets()
+                    {
+                        return maxSequentiallyProcessedPackets;
+                    }
+                };
+
+        final DummyQueue queue1 = new DummyQueue(
+            queueCapacity,
+            newPacketQueue.apply(queue1Counter, queue2Counter),
+            singleThreadExecutor);
+
+        final DummyQueue queue2 = new DummyQueue(
+            queueCapacity,
+            newPacketQueue.apply(queue2Counter, queue1Counter),
+            singleThreadExecutor);
+
+        for (int i = 0; i < queueCapacity; i++)
+        {
+            queue1.add(new DummyQueue.Dummy());
+            queue2.add(new DummyQueue.Dummy());
+        }
+
+        completionGuard.await(1, TimeUnit.SECONDS);
+
+        Assert.assertTrue(
+            "Queues sharing same thread with configured cooperative"
+                + " multi-tasking must yield execution to be processed evenly",
+            queuesEvenlyProcessed.get());
 
         singleThreadExecutor.shutdownNow();
     }

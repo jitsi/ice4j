@@ -663,7 +663,7 @@ public abstract class PacketQueue<T>
                         }
 
                         if (maxSequentiallyProcessedPackets > 0 &&
-                            handledPackets > maxSequentiallyProcessedPackets)
+                            handledPackets >= maxSequentiallyProcessedPackets)
                         {
                             onYield();
                             return;
