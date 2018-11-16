@@ -83,9 +83,11 @@ public abstract class PacketQueue<T>
     private final ExecutorService executor;
 
     /**
-     * The underlying {@link Queue} which holds packets.
+     * The underlying {@link BlockingQueue} which holds packets.
+     * Used as synchronization object between {@link #close()}, {@link #get()}
+     * and {@link #doAdd(Object)}.
      */
-    private final Queue<T> queue;
+    private final BlockingQueue<T> queue;
 
     /**
      * Whether this {@link PacketQueue} should store the {@code byte[]} or
@@ -326,11 +328,11 @@ public abstract class PacketQueue<T>
             }
 
             queue.notifyAll();
+        }
 
-            if (reader != null)
-            {
-                reader.schedule();
-            }
+        if (reader != null)
+        {
+            reader.schedule();
         }
     }
 
@@ -610,6 +612,14 @@ public abstract class PacketQueue<T>
     private final class AsyncPacketReader
     {
         /**
+         * Synchronization object of current instance state, in particular
+         * used to resolve races between {@link #schedule()} and {@link #reader}
+         * exit. In particular synchronization object used to access
+         * to field {@link #readerFuture} and {@link #delayedFuture}.
+         */
+        private final Object syncRoot = new Object();
+
+        /**
          * Throttle calculator which is used for counting handled packets and
          * computing necessary delay before processing next packet when
          * throttling is enabled.
@@ -621,6 +631,12 @@ public abstract class PacketQueue<T>
          * Stores <tt>Future</tt> of currently executing {@link #reader}
          */
         private Future<?> readerFuture;
+
+        /**
+         * Stores <tt>ScheduledFuture</tt> of currently delayed
+         * execution {@link #reader}
+         */
+        private ScheduledFuture<?> delayedFuture;
 
         /**
          * Perpetually reads packets from this {@link PacketQueue} and uses
@@ -640,7 +656,7 @@ public abstract class PacketQueue<T>
                 {
                     T pkt;
 
-                    synchronized (queue)
+                    synchronized (syncRoot)
                     {
                         long delay = throttler.getDelayNanos();
                         if (delay > 0)
@@ -705,12 +721,6 @@ public abstract class PacketQueue<T>
         };
 
         /**
-         * Stores <tt>ScheduledFuture</tt> of currently delayed
-         * execution {@link #reader}
-         */
-        private ScheduledFuture<?> delayedFuture;
-
-        /**
          * Runnable which is scheduled with delay to perform actual schedule of
          * {@link #reader}
          */
@@ -719,7 +729,7 @@ public abstract class PacketQueue<T>
             @Override
             public void run()
             {
-                synchronized (queue)
+                synchronized (syncRoot)
                 {
                     delayedFuture = null;
                 }
@@ -732,7 +742,7 @@ public abstract class PacketQueue<T>
          */
         void cancel()
         {
-            synchronized (queue)
+            synchronized (syncRoot)
             {
                 cancel(true);
             }
@@ -755,7 +765,7 @@ public abstract class PacketQueue<T>
                 return;
             }
 
-            synchronized (queue)
+            synchronized (syncRoot)
             {
                 if ((readerFuture == null || readerFuture.isDone())
                     && delayedFuture == null)
@@ -768,7 +778,7 @@ public abstract class PacketQueue<T>
         /**
          * Invoked when execution of {@link #reader} is about to temporary
          * cancel and further execution need to be re-scheduled.
-         * Assuming called when lock on {@link #queue} is already taken.
+         * Assuming called when lock on {@link #syncRoot} is already taken.
          */
         private void onYield()
         {
@@ -780,7 +790,7 @@ public abstract class PacketQueue<T>
 
         /**
          * Invoked when next execution of {@link #reader} should be delayed.
-         * Assuming called when lock on {@link #queue} is already taken.
+         * Assuming called when lock on {@link #syncRoot} is already taken.
          * @param delay the time from now to delay execution
          * @param unit the time unit of the delay parameter
          */
@@ -795,7 +805,7 @@ public abstract class PacketQueue<T>
 
         /**
          * Attempts to cancel currently running reader. Assuming called when
-         * lock on {@link #queue} is already taken
+         * lock on {@link #syncRoot} is already taken
          * @param mayInterruptIfRunning indicates if {@link #reader} allowed
          * to be interrupted if running
          */
