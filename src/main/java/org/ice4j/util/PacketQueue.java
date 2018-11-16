@@ -95,13 +95,6 @@ public abstract class PacketQueue<T>
     private final boolean copy;
 
     /**
-     * The capacity of this {@link PacketQueue}. If one of the {@code add}
-     * methods is called while the queue holds this many packets, the first
-     * packet in the queue will be dropped.
-     */
-    private final int capacity;
-
-    /**
      * The {@link QueueStatistics} instance optionally used to collect and print
      * detailed statistics about this queue.
      */
@@ -214,7 +207,6 @@ public abstract class PacketQueue<T>
         ExecutorService executor)
     {
         this.copy = copy;
-        this.capacity = capacity;
         this.id = id;
         queue = new ArrayBlockingQueue<>(capacity);
 
@@ -310,7 +302,7 @@ public abstract class PacketQueue<T>
 
         synchronized (queue)
         {
-            while (queue.size() >= capacity)
+            while (!queue.offer(pkt))
             {
                 // Drop from the head of the queue.
                 T p = queue.poll();
@@ -332,7 +324,6 @@ public abstract class PacketQueue<T>
             {
                 queueStatistics.add(System.currentTimeMillis());
             }
-            queue.offer(pkt);
 
             queue.notifyAll();
 
