@@ -419,6 +419,12 @@ public abstract class PacketQueue<T>
         }
     }
 
+    /**
+     * Closes current <tt>PacketQueue</tt> instance. No items will be added
+     * to queue when it's closed. Threads which were blocked in {@link #get()}
+     * will receive <tt>null</tt>. Asynchronous queue processing by
+     * {@link #reader} is stopped.
+     */
     public void close()
     {
         if (closed.compareAndSet(false, true))
@@ -504,7 +510,7 @@ public abstract class PacketQueue<T>
         /**
          * Specifies max number {@link #handlePacket(Object)} invocation
          * per {@link #perNanos()}
-         * @return positive number of allowed pages in case of throttling
+         * @return positive number of allowed packets in case of throttling
          * must be enabled.
          */
         default long maxPackets() {
