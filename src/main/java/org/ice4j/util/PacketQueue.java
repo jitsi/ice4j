@@ -534,7 +534,7 @@ public abstract class PacketQueue<T>
     /**
      * Helper class to calculate throttle delay when throttling must be enabled
      */
-    private final class ThrottleCalculator
+    private static final class ThrottleCalculator<T>
     {
         /**
          * The number of {@link T}s already processed during the current
@@ -549,17 +549,27 @@ public abstract class PacketQueue<T>
         private long intervalStartTimeNanos = 0;
 
         /**
+         * {@link PacketHandler<T>} instance which provide throttling
+         * configuration
+         */
+        private final PacketHandler<T> handler;
+
+        ThrottleCalculator(PacketHandler<T> handler)
+        {
+            if (handler == null)
+            {
+                throw new IllegalArgumentException("handler must not be null");
+            }
+            this.handler = handler;
+        }
+
+        /**
          * Calculate necessary delay based current time and number packets
          * processed processed during current time interval
          * @return 0 in case delay is not necessary or value in nanos
          */
         long getDelayNanos()
         {
-            if (handler == null)
-            {
-                return 0;
-            }
-
             final long perNanos = handler.perNanos();
             final long maxPackets = handler.maxPackets();
 
@@ -604,7 +614,8 @@ public abstract class PacketQueue<T>
          * computing necessary delay before processing next packet when
          * throttling is enabled.
          */
-        private final ThrottleCalculator throttler = new ThrottleCalculator();
+        private final ThrottleCalculator<T> throttler
+            = new ThrottleCalculator<>(handler);
 
         /**
          * Stores <tt>Future</tt> of currently executing {@link #reader}
