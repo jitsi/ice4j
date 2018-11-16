@@ -230,4 +230,45 @@ public class PacketQueueTests
             }
         }
     }
+
+    @Test
+    public void testPacketQueueReaderThreadIsReleasedWhenPacketQueueEmpty()
+        throws Exception
+    {
+        final ExecutorService singleThreadExecutor
+            = Executors.newFixedThreadPool(1);
+
+        final CountDownLatch queueCompletion = new CountDownLatch(1);
+
+        final DummyQueue queue = new DummyQueue(
+            10,
+            false,
+            false,
+            "DummyQueue",
+            pkt -> {
+                queueCompletion.countDown();
+                return true;
+            },
+            singleThreadExecutor);
+
+        queue.add(new DummyQueue.Dummy());
+
+        queueCompletion.await();
+
+        Future<?> executorCompletion = singleThreadExecutor.submit(() -> {
+            // do nothing, just pump Runnable via executor's thread to
+            // verify it's not stuck
+        });
+
+        try {
+            executorCompletion.get(5, TimeUnit.MILLISECONDS);
+        }
+        catch (TimeoutException e)
+        {
+            Assert.fail("Executors thread must be released by PacketQueue "
+                +  "when queue is empty");
+        }
+
+        singleThreadExecutor.shutdownNow();
+    }
 }
