@@ -192,8 +192,9 @@ public class PacketQueueBenchmarkTests
     private void measureBenchmark(String name, Callable<Duration> runWithDuration) throws Exception
     {
         final ArrayList<Duration> experimentDuration = new ArrayList<>();
-        for (int i = 0; i < 21; i++) {
-
+        for (int i = 0; i < 21; i++)
+        {
+            System.gc();
             final Duration duration = runWithDuration.call();
             if (i != 0)
             {
