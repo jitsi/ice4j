@@ -60,7 +60,7 @@ public abstract class PacketQueue<T>
     private final static ExecutorService sharedExecutor
         = Executors.newCachedThreadPool(
             new CustomizableThreadFactory(
-                "PacketQueue-", true));
+                PacketQueue.class.getName() + "-", true));
 
     /**
      * Returns true if a warning should be logged after a queue has dropped
