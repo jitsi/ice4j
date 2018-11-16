@@ -566,7 +566,7 @@ public abstract class PacketQueue<T>
         {
             if (handler == null)
             {
-                return Long.MAX_VALUE;
+                return 0;
             }
 
             final long perNanos = handler.perNanos();
