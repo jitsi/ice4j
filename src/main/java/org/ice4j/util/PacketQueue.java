@@ -334,6 +334,8 @@ public abstract class PacketQueue<T>
             }
             queue.offer(pkt);
 
+            queue.notifyAll();
+
             if (reader != null)
             {
                 reader.schedule();
@@ -424,6 +426,11 @@ public abstract class PacketQueue<T>
             if (reader != null)
             {
                 reader.cancel();
+            }
+
+            synchronized (queue)
+            {
+                queue.notifyAll();
             }
         }
     }

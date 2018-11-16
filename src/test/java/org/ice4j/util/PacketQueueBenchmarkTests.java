@@ -5,7 +5,7 @@ import org.junit.*;
 import java.time.*;
 import java.util.*;
 import java.util.concurrent.*;
-import java.util.logging.Logger;
+import java.util.logging.Logger;  // Disambiguation
 
 /**
  * Contains test for checking various performance aspects of various

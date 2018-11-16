@@ -9,13 +9,21 @@ import java.util.concurrent.ExecutorService;
 class DummyQueue
     extends PacketQueue<DummyQueue.Dummy>
 {
-    DummyQueue(int capacity, boolean copy, boolean enableStatistics,
+    DummyQueue(
+        int capacity,
+        boolean copy,
+        boolean enableStatistics,
         String id,
         PacketHandler<Dummy> packetHandler,
         ExecutorService executor)
     {
         super(capacity, copy, enableStatistics, id, packetHandler,
             executor);
+    }
+
+    DummyQueue(int capacity)
+    {
+        super(capacity, false, false, "DummyQueue", null,     null);
     }
 
     @Override
