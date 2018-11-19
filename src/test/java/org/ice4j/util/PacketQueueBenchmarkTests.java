@@ -22,6 +22,12 @@ public class PacketQueueBenchmarkTests
         = Logger.getLogger(PacketQueueBenchmarkTests.class.getName());
 
     /**
+     * Number of iteration to run benchmark and compute
+     * average execution time.
+     */
+    private final int numberOfBenchmarkIterations = 100;
+
+    /**
      * Simulates number of concurrent existing PacketQueue instances inside
      * application. In case of JVB it is linear to number of connected peers
      * to JVB instance.
@@ -193,7 +199,7 @@ public class PacketQueueBenchmarkTests
     private void measureBenchmark(String name, Callable<Duration> runWithDuration) throws Exception
     {
         final ArrayList<Duration> experimentDuration = new ArrayList<>();
-        for (int i = 0; i < 21; i++)
+        for (int i = 0; i < 1 + numberOfBenchmarkIterations; i++)
         {
             System.gc();
             final Duration duration = runWithDuration.call();
