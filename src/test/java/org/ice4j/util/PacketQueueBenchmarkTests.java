@@ -183,6 +183,10 @@ public class PacketQueueBenchmarkTests
         completionGuard.await();
         long endTime = System.nanoTime();
 
+        for (DummyQueue queue : queues) {
+            queue.close();
+        }
+
         return Duration.ofNanos(endTime - startTime);
     }
 
