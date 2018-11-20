@@ -73,7 +73,7 @@ public class TransactionID
         if (tid.length != RFC3489_TRANSACTION_ID_LENGTH &&
             tid.length != RFC5389_TRANSACTION_ID_LENGTH)
         {
-            throw new IllegalArgumentException("Illegal length");
+            throw new IllegalArgumentException("Illegal length: " + tid.length);
         }
 
         // assuming passed tid byte-array will not be modified
