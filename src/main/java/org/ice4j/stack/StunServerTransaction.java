@@ -19,7 +19,6 @@ package org.ice4j.stack;
 
 import java.io.*;
 import java.util.concurrent.*;
-import java.util.concurrent.atomic.*;
 
 import org.ice4j.*;
 import org.ice4j.message.*;
