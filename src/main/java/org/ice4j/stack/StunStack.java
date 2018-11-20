@@ -198,10 +198,16 @@ public class StunStack
     {
         synchronized (clientTransactions)
         {
-            final TransactionID tid =
-                TransactionID.wrapToTransactionID(transactionID);
-            return clientTransactions.get(tid);
+            Collection<StunClientTransaction> cTrans
+                = clientTransactions.values();
+
+            for (StunClientTransaction tran : cTrans)
+            {
+                if (tran.getTransactionID().equals(transactionID))
+                    return tran;
+            }
         }
+        return null;
     }
 
     /**
@@ -214,8 +220,24 @@ public class StunStack
      */
     protected StunServerTransaction getServerTransaction(byte[] transactionID)
     {
-        return getServerTransaction(
-            TransactionID.wrapToTransactionID(transactionID));
+        synchronized (serverTransactions)
+        {
+            long now = System.currentTimeMillis();
+
+            for (Iterator<StunServerTransaction> i
+                        = serverTransactions.values().iterator();
+                    i.hasNext();)
+            {
+                StunServerTransaction serverTransaction = i.next();
+
+                if (serverTransaction.isExpired(now))
+                    i.remove();
+                else if (serverTransaction.getTransactionID().equals(
+                        transactionID))
+                    return serverTransaction;
+            }
+        }
+        return null;
     }
 
     /**
@@ -282,15 +304,12 @@ public class StunStack
 
         synchronized (clientTransactions)
         {
-            final Iterator<Map.Entry<TransactionID, StunClientTransaction>>
-                clientTransactionsIter
-                    = clientTransactions.entrySet().iterator();
+            Iterator<StunClientTransaction> clientTransactionsIter
+                = clientTransactions.values().iterator();
 
             while (clientTransactionsIter.hasNext())
             {
-                final Map.Entry<TransactionID, StunClientTransaction> entry
-                    = clientTransactionsIter.next();
-                StunClientTransaction tran = entry.getValue();
+                StunClientTransaction tran = clientTransactionsIter.next();
 
                 if (tran.getLocalAddress().equals(localAddr)
                         && (remoteAddr == null
@@ -326,15 +345,12 @@ public class StunStack
 
         synchronized (serverTransactions)
         {
-            final Iterator<Map.Entry<TransactionID, StunServerTransaction>>
-                serverTransactionsIter
-                    = serverTransactions.entrySet().iterator();
+            Iterator<StunServerTransaction> serverTransactionsIter
+                = serverTransactions.values().iterator();
 
             while (serverTransactionsIter.hasNext())
             {
-                final Map.Entry<TransactionID, StunServerTransaction> entry
-                    = serverTransactionsIter.next();
-                final StunServerTransaction tran = entry.getValue();
+                StunServerTransaction tran = serverTransactionsIter.next();
                 TransportAddress listenAddr = tran.getLocalListeningAddress();
                 TransportAddress sendingAddr = tran.getSendingAddress();
 
@@ -377,13 +393,32 @@ public class StunStack
     public StunStack(PeerUdpMessageEventHandler peerUdpMessageEventHandler,
             ChannelDataEventHandler channelDataEventHandler)
     {
-        preloadHMAC();
-
+        /*
+         * The Mac instantiation used in MessageIntegrityAttribute could take
+         * several hundred milliseconds so we don't want it instantiated only
+         * after we get a response because the delay may cause the transaction
+         * to fail.
+         */
+        synchronized (StunStack.class)
+        {
+            if (mac == null)
+            {
+                try
+                {
+                    mac
+                        = Mac.getInstance(
+                                MessageIntegrityAttribute.HMAC_SHA1_ALGORITHM);
+                }
+                catch (NoSuchAlgorithmException nsaex)
+                {
+                    nsaex.printStackTrace();
+                }
+            }
+        }
         netAccessManager =
             new NetAccessManager(this, peerUdpMessageEventHandler,
                 channelDataEventHandler);
     }
-
     /**
      * Initializes a new <tt>StunStack</tt> instance.
      */
@@ -1488,35 +1523,6 @@ public class StunStack
     }
 
     /**
-     * The Mac instantiation used in MessageIntegrityAttribute could take
-     * several hundred milliseconds so we don't want it instantiated only
-     * after we get a response because the delay may cause the transaction
-     * to fail.
-     */
-    private static void preloadHMAC()
-    {
-        if (mac == null)
-        {
-            synchronized (StunStack.class)
-            {
-                if (mac == null)
-                {
-                    try
-                    {
-                        mac
-                            = Mac.getInstance(
-                            MessageIntegrityAttribute.HMAC_SHA1_ALGORITHM);
-                    }
-                    catch (NoSuchAlgorithmException nsaex)
-                    {
-                        nsaex.printStackTrace();
-                    }
-                }
-            }
-        }
-    }
-
-    /**
      * Class which performs periodic collection of expired transactions.
      * It's execution is controlled outside by {@link #schedule()}
      * and {@link #cancel()} methods. Whenever expired transactions collector
@@ -1539,52 +1545,56 @@ public class StunStack
             @Override
             public void run()
             {
-                synchronized (serverTransactions)
+                try
                 {
-                    Iterator<Map.Entry<TransactionID, StunServerTransaction>>
-                        it = serverTransactions.entrySet().iterator();
-                    final int transactionsBeforeCollection
-                        = serverTransactions.size();
-                    while (it.hasNext())
+                    synchronized (serverTransactions)
                     {
-                        Map.Entry<TransactionID, StunServerTransaction>
-                            entry = it.next();
+                        final int transactionsBeforeCollection
+                            = serverTransactions.size();
 
-                        final StunServerTransaction tran = entry.getValue();
-                        if (tran.isExpired())
+                        long now = System.currentTimeMillis();
+
+                        for (Iterator<StunServerTransaction> i
+                                    = serverTransactions.values().iterator();
+                                i.hasNext();)
                         {
-                            // remove both key and value
-                            it.remove();
+                            StunServerTransaction serverTransaction = i.next();
 
-                            logger.finest("Removed expired transaction "
-                                + entry.getKey());
+                            if (serverTransaction == null)
+                            {
+                                i.remove();
+                            }
+                            else if (serverTransaction.isExpired(now))
+                            {
+                                i.remove();
+                                serverTransaction.expire();
+                            }
+                        }
+
+                        logger.fine("Non-expired server transactions "
+                            + "count " + serverTransactions.size()
+                            + ", transactions before collection "
+                            + transactionsBeforeCollection);
+
+                        if (serverTransactions.isEmpty())
+                        {
+                            cancel();
+                            logger.finest("Cancel expired collector "
+                                + "due to no more server transactions");
                         }
                     }
-
-                    logger.fine("Non-expired server transactions count "
-                        + serverTransactions.size() + ", transactions before "
-                        + "collection " + transactionsBeforeCollection);
-
-                    if (serverTransactions.isEmpty())
-                    {
-                        cancel();
-                        logger.finest("Cancel expired collector "
-                            + "due to no more server transactions");
-                    }
+                }
+                catch (Throwable t)
+                {
+                    logger.log(Level.FINE,
+                        "Failed to expire server transactions", t);
                 }
             }
         };
 
         /**
-         * Synchronization root for {@link #scheduledCollectorFuture}
-         * which intended to resolve race between self-cancel and schedule
-         * requests
-         */
-        private final Object scheduledCollectorFutureSyncRoot
-            = new Object();
-
-        /**
-         * Scheduled execution of {@link #collector} runnable
+         * Scheduled execution of {@link #collector} runnable.
+         * Access synchronized via {@link #serverTransactions}.
          */
         private ScheduledFuture<?> scheduledCollectorFuture;
 
@@ -1594,7 +1604,7 @@ public class StunStack
          */
         void schedule()
         {
-            synchronized (scheduledCollectorFutureSyncRoot)
+            synchronized (serverTransactions)
             {
                 if (scheduledCollectorFuture == null ||
                     scheduledCollectorFuture.isDone())
@@ -1602,8 +1612,8 @@ public class StunStack
                     scheduledCollectorFuture
                         = tasksScheduler.scheduleWithFixedDelay(
                             collector,
-                            StunServerTransaction.LIFETIME_MILLIS,
-                            StunServerTransaction.LIFETIME_MILLIS,
+                            StunServerTransaction.LIFETIME,
+                            StunServerTransaction.LIFETIME,
                             TimeUnit.MILLISECONDS);
                 }
             }
@@ -1615,7 +1625,7 @@ public class StunStack
          */
         void cancel()
         {
-            synchronized (scheduledCollectorFutureSyncRoot)
+            synchronized (serverTransactions)
             {
                 if (scheduledCollectorFuture != null)
                 {

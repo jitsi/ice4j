@@ -18,7 +18,6 @@
 package org.ice4j.stack;
 
 import java.io.*;
-import java.util.concurrent.*;
 
 import org.ice4j.*;
 import org.ice4j.message.*;
@@ -49,12 +48,7 @@ public class StunServerTransaction
     /**
      * The time that we keep server transactions active.
      */
-    static final long LIFETIME_MILLIS = 16000;
-
-    /**
-     * The id of the transaction.
-     */
-    private final TransactionID transactionID;
+    static final long LIFETIME = 16000;
 
     /**
      * The <tt>StunStack</tt> that created us.
@@ -62,14 +56,14 @@ public class StunServerTransaction
     private final StunStack stackCallback;
 
     /**
+     * The address that we are sending responses to.
+     */
+    private TransportAddress responseDestination = null;
+
+    /**
      * The address that we are receiving requests from.
      */
     private final TransportAddress requestSource;
-
-    /**
-     * The <tt>TransportAddress</tt> that we received our request on.
-     */
-    private final TransportAddress localListeningAddress;
 
     /**
      * The response sent in response to the request.
@@ -77,9 +71,9 @@ public class StunServerTransaction
     private Response response = null;
 
     /**
-     * The address that we are sending responses to.
+     * The <tt>TransportAddress</tt> that we received our request on.
      */
-    private TransportAddress responseDestination = null;
+    private final TransportAddress localListeningAddress;
 
     /**
      * The <tt>TransportAddress</tt> we use when sending responses
@@ -87,15 +81,26 @@ public class StunServerTransaction
     private TransportAddress localSendingAddress = null;
 
     /**
-     * Determines whether or not the transaction has expired.
+     * The id of the transaction.
      */
-    private boolean expired = false;
+    private final TransactionID transactionID;
 
     /**
-     * The timestamp when transaction is started. Used to determine if
-     * transaction is expired
+     * The time in milliseconds when the next retransmission should follow.
      */
-    private long transactionStartedTimestampNanos = -1;
+    private long expirationTime = -1;
+
+    /**
+     * Determines whether or not the transaction has expired.
+     */
+    private boolean expired = true;
+
+    /**
+     * Determines whether or not the transaction is in a retransmitting state.
+     * In other words whether a response has already been sent once to the
+     * transaction request.
+     */
+    private boolean isRetransmitting = false;
 
     /**
      * Creates a server transaction
@@ -124,13 +129,17 @@ public class StunServerTransaction
      */
     public synchronized void start()
     {
-        if (isStarted())
+        if (expirationTime == -1)
+        {
+            expired = false;
+            expirationTime = LIFETIME + System.currentTimeMillis();
+        }
+        else
         {
             throw new IllegalStateException(
-                "StunServerTransaction " + getTransactionID()
-                    + " has already been started!");
+                    "StunServerTransaction " + getTransactionID()
+                        + " has already been started!");
         }
-        transactionStartedTimestampNanos = System.nanoTime();
     }
 
     /**
@@ -156,13 +165,7 @@ public class StunServerTransaction
                IOException,
                IllegalArgumentException
     {
-        if (this.response == null)
-        {
-            if (response == null)
-            {
-                throw new IllegalArgumentException("response must not be null");
-            }
-
+        if(!isRetransmitting){
             this.response = response;
             //the transaction id might already have been set, but its our job
             //to make sure of that
@@ -171,6 +174,7 @@ public class StunServerTransaction
             this.responseDestination   = sendTo;
         }
 
+        isRetransmitting = true;
         retransmitResponse();
     }
 
@@ -191,10 +195,8 @@ public class StunServerTransaction
     {
         //don't retransmit if we are expired or if the user application
         //hasn't yet transmitted a first response
-        if (isExpired() || !isRetransmitting())
-        {
+        if(isExpired() || !isRetransmitting)
             return;
-        }
 
         stackCallback.getNetAccessManager().sendMessage(
                 response,
@@ -221,27 +223,28 @@ public class StunServerTransaction
      * @return <tt>true</tt> if this <tt>StunServerTransaction</tT> is expired
      * now; otherwise, <tt>false</tt>
      */
-    public synchronized boolean isExpired()
+    public boolean isExpired()
     {
-        if (expired)
-        {
-            return true;
-        }
+        return isExpired(System.currentTimeMillis());
+    }
 
-        if (!isStarted())
-        {
+    /**
+     * Determines whether this <tt>StunServerTransaction</tt> will be expired at
+     * a specific point in time.
+     *
+     * @param now the time in milliseconds at which the <tt>expired</tt> state
+     * of this <tt>StunServerTransaction</tt> is to be returned
+     * @return <tt>true</tt> if this <tt>StunServerTransaction</tt> will be
+     * expired at the specified point in time; otherwise, <tt>false</tt>
+     */
+    public synchronized boolean isExpired(long now)
+    {
+        if (expirationTime == -1)
             return false;
-        }
-
-        final long elapsedTimeNanos
-            = System.nanoTime() - transactionStartedTimestampNanos;
-
-        if (TimeUnit.NANOSECONDS.toMillis(elapsedTimeNanos) >= LIFETIME_MILLIS)
-        {
-            expire();
+        else if (expirationTime < now)
             return true;
-        }
-        return false;
+        else
+            return expired;
     }
 
     /**
@@ -255,16 +258,15 @@ public class StunServerTransaction
     }
 
     /**
-     * Determines whether or not the transaction is in a retransmitting state.
-     * In other words whether a response has already been sent once to the
-     * transaction request.
+     * Specifies whether this server transaction is in the retransmitting state.
+     * Or in other words - has it already sent a first response or not?
      *
      * @return <tt>true</tt> if this transaction is still retransmitting and
      * false <tt>otherwise</tt>
      */
     public boolean isRetransmitting()
     {
-        return response != null;
+        return isRetransmitting;
     }
 
     /**
@@ -327,14 +329,5 @@ public class StunServerTransaction
     protected Response getResponse()
     {
         return response;
-    }
-
-    /**
-     * Determines if transaction is started
-     * @return true when transaction is started
-     */
-    private boolean isStarted()
-    {
-        return transactionStartedTimestampNanos != -1;
     }
 }
