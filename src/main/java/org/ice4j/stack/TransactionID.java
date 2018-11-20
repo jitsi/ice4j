@@ -171,8 +171,16 @@ public class TransactionID
         if(serTran != null)
             return serTran.getTransactionID();
 
-        // Perform defensive-cloning of byte-array not to break existing code
-        return wrapToTransactionID(transactionID.clone());
+        byte[] tid =
+            new byte[transactionID.length == RFC3489_TRANSACTION_ID_LENGTH
+                ? RFC3489_TRANSACTION_ID_LENGTH
+                : RFC5389_TRANSACTION_ID_LENGTH];
+
+        // Copy no more than allocated by tid array, allowing incorrectly sized
+        // transaction ID's coming from network.
+        System.arraycopy(transactionID, 0, tid, 0, tid.length);
+
+        return wrapToTransactionID(tid);
     }
 
     /**
