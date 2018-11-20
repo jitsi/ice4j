@@ -156,13 +156,13 @@ public class StunServerTransaction
                IOException,
                IllegalArgumentException
     {
-        if (response == null)
-        {
-            throw new IllegalArgumentException("response must not be null");
-        }
-
         if (this.response == null)
         {
+            if (response == null)
+            {
+                throw new IllegalArgumentException("response must not be null");
+            }
+
             this.response = response;
             //the transaction id might already have been set, but its our job
             //to make sure of that
