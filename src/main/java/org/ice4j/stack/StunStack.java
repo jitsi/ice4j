@@ -21,6 +21,7 @@ import java.io.*;
 import java.net.*;
 import java.security.*;
 import java.util.*;
+import java.util.concurrent.*;
 import java.util.logging.*;
 
 import javax.crypto.*;
@@ -30,6 +31,7 @@ import org.ice4j.attribute.*;
 import org.ice4j.message.*;
 import org.ice4j.security.*;
 import org.ice4j.socket.*;
+import org.ice4j.util.*;
 
 /**
  * The entry point to the Stun4J stack. The class is used to start, stop and
@@ -52,8 +54,8 @@ public class StunStack
      * The <tt>Logger</tt> used by the <tt>StunStack</tt> class and its
      * instances for logging output.
      */
-    private static final Logger logger
-        = Logger.getLogger(StunStack.class.getName());
+    private static final java.util.logging.Logger logger
+        = java.util.logging.Logger.getLogger(StunStack.class.getName());
 
     /**
      * The indicator which determines whether
@@ -63,6 +65,14 @@ public class StunStack
      * @see #StunStack()
      */
     private static Mac mac;
+
+    /**
+     *  The ScheduledExecutorService to execute StunStack scheduled tasks,
+     *  in particular - expired server transactions collector.
+     */
+    private static final ScheduledExecutorService tasksScheduler
+        = ExecutorFactory.createSingleThreadScheduledExecutor(
+            "ice4j.StunStack-", 60, TimeUnit.SECONDS);
 
     /**
      * Our network gateway.
@@ -84,11 +94,12 @@ public class StunStack
             = new Hashtable<>();
 
     /**
-     * The <tt>Thread</tt> which expires the <tt>StunServerTransaction</tt>s of
-     * this <tt>StunStack</tt> and removes them from
-     * {@link #serverTransactions}.
+     * The <tt>ExpiredServerTransactionsCollector</tt> which expires
+     * the <tt>StunServerTransaction</tt>s of this <tt>StunStack</tt> and
+     * removes them from {@link #serverTransactions}.
      */
-    private Thread serverTransactionExpireThread;
+    private ExpiredServerTransactionsCollector expiredTransactionsCollector
+        = new ExpiredServerTransactionsCollector();
 
     /**
      * Currently open server transactions. The vector contains transaction ids
@@ -408,7 +419,6 @@ public class StunStack
             new NetAccessManager(this, peerUdpMessageEventHandler,
                 channelDataEventHandler);
     }
-    
     /**
      * Initializes a new <tt>StunStack</tt> instance.
      */
@@ -966,7 +976,7 @@ public class StunStack
                 synchronized (serverTransactions)
                 {
                     serverTransactions.put(serverTid, sTran);
-                    maybeStartServerTransactionExpireThread();
+                    expiredTransactionsCollector.schedule();
                 }
             }
 
@@ -1105,6 +1115,8 @@ public class StunStack
 
         // serverTransactions
         Collection<StunServerTransaction> serverTransactionsToExpire;
+
+        expiredTransactionsCollector.cancel();
 
         synchronized (serverTransactions)
         {
@@ -1443,135 +1455,6 @@ public class StunStack
     }
 
     /**
-     * Initializes and starts {@link #serverTransactionExpireThread} if
-     * necessary.
-     */
-    private void maybeStartServerTransactionExpireThread()
-    {
-        synchronized (serverTransactions)
-        {
-            if (!serverTransactions.isEmpty()
-                    && (serverTransactionExpireThread == null))
-            {
-                Thread t
-                    = new Thread()
-                            {
-                                @Override
-                                public void run()
-                                {
-                                    runInServerTransactionExpireThread();
-                                }
-                            };
-
-                t.setDaemon(true);
-                t.setName(
-                        getClass().getName()
-                            + ".serverTransactionExpireThread");
-
-                boolean started = false;
-
-                serverTransactionExpireThread = t;
-                try
-                {
-                    t.start();
-                    started = true;
-                }
-                finally
-                {
-                    if (!started && (serverTransactionExpireThread == t))
-                        serverTransactionExpireThread = null;
-                }
-            }
-        }
-    }
-
-    /**
-     * Runs in {@link #serverTransactionExpireThread} and expires the
-     * <tt>StunServerTransaction</tt>s of this <tt>StunStack</tt> and removes
-     * them from {@link #serverTransactions}.
-     */
-    private void runInServerTransactionExpireThread()
-    {
-        try
-        {
-            long idleStartTime = -1;
-
-            do
-            {
-                synchronized (serverTransactions)
-                {
-                    try
-                    {
-                        serverTransactions.wait(StunServerTransaction.LIFETIME);
-                    }
-                    catch (InterruptedException ie)
-                    {
-                    }
-
-                    /*
-                     * Is the current Thread still designated to expire the
-                     * StunServerTransactions of this StunStack?
-                     */
-                    if (Thread.currentThread() != serverTransactionExpireThread)
-                        break;
-
-                    long now = System.currentTimeMillis();
-
-                    /*
-                     * Has the current Thread been idle long enough to merit
-                     * disposing of it?
-                     */
-                    if (serverTransactions.isEmpty())
-                    {
-                        if (idleStartTime == -1)
-                            idleStartTime = now;
-                        else if (now - idleStartTime > 60 * 1000)
-                            break;
-                    }
-                    else
-                    {
-                        // Expire the StunServerTransactions of this StunStack.
-
-                        idleStartTime = -1;
-
-                        for (Iterator<StunServerTransaction> i
-                                    = serverTransactions.values().iterator();
-                                i.hasNext();)
-                        {
-                            StunServerTransaction serverTransaction = i.next();
-
-                            if (serverTransaction == null)
-                            {
-                                i.remove();
-                            }
-                            else if (serverTransaction.isExpired(now))
-                            {
-                                i.remove();
-                                serverTransaction.expire();
-                            }
-                        }
-                    }
-                }
-            }
-            while (true);
-        }
-        finally
-        {
-            synchronized (serverTransactions)
-            {
-                if (serverTransactionExpireThread == Thread.currentThread())
-                    serverTransactionExpireThread = null;
-                /*
-                 * If serverTransactionExpireThread dies unexpectedly and yet it
-                 * is still necessary, resurrect it.
-                 */
-                if (serverTransactionExpireThread == null)
-                    maybeStartServerTransactionExpireThread();
-            }
-        }
-    }
-    
-    /**
      * Returns the Error Response object with specified errorCode and
      * reasonPhrase corresponding to input type.
      * 
@@ -1639,4 +1522,117 @@ public class StunStack
         }
     }
 
+    /**
+     * Class which performs periodic collection of expired transactions.
+     * It's execution is controlled outside by {@link #schedule()}
+     * and {@link #cancel()} methods. Whenever expired transactions collector
+     * is scheduled it does self reschedule with fixed delay
+     * of StunServerTransaction.LIFETIME_MILLIS,
+     * until {@link #serverTransactions} is empty, in that case it self-cancel
+     * further execution and need to be scheduled again when new item added
+     * to {@link #serverTransactions} container.
+     */
+    private final class ExpiredServerTransactionsCollector
+    {
+        /**
+         * Runnable which walks {@link #serverTransactions}, check if
+         * transaction is expired and if so - remove it
+         * from {@link #serverTransactions}.
+         * Self-cancels when {@link #serverTransactions} is empty
+         */
+        private final Runnable collector = new Runnable()
+        {
+            @Override
+            public void run()
+            {
+                try
+                {
+                    synchronized (serverTransactions)
+                    {
+                        final int transactionsBeforeCollection
+                            = serverTransactions.size();
+
+                        long now = System.currentTimeMillis();
+
+                        for (Iterator<StunServerTransaction> i
+                                    = serverTransactions.values().iterator();
+                                i.hasNext();)
+                        {
+                            StunServerTransaction serverTransaction = i.next();
+
+                            if (serverTransaction == null)
+                            {
+                                i.remove();
+                            }
+                            else if (serverTransaction.isExpired(now))
+                            {
+                                i.remove();
+                                serverTransaction.expire();
+                            }
+                        }
+
+                        logger.fine("Non-expired server transactions "
+                            + "count " + serverTransactions.size()
+                            + ", transactions before collection "
+                            + transactionsBeforeCollection);
+
+                        if (serverTransactions.isEmpty())
+                        {
+                            cancel();
+                            logger.finest("Cancel expired collector "
+                                + "due to no more server transactions");
+                        }
+                    }
+                }
+                catch (Throwable t)
+                {
+                    logger.log(Level.FINE,
+                        "Failed to expire server transactions", t);
+                }
+            }
+        };
+
+        /**
+         * Scheduled execution of {@link #collector} runnable.
+         * Access synchronized via {@link #serverTransactions}.
+         */
+        private ScheduledFuture<?> scheduledCollectorFuture;
+
+        /**
+         * Schedules repeated collector execution in background
+         * task executor. If collector is already scheduled - do nothing
+         */
+        void schedule()
+        {
+            synchronized (serverTransactions)
+            {
+                if (scheduledCollectorFuture == null ||
+                    scheduledCollectorFuture.isDone())
+                {
+                    scheduledCollectorFuture
+                        = tasksScheduler.scheduleWithFixedDelay(
+                            collector,
+                            StunServerTransaction.LIFETIME,
+                            StunServerTransaction.LIFETIME,
+                            TimeUnit.MILLISECONDS);
+                }
+            }
+        }
+
+        /**
+         * Cancels execution of scheduled expired transactions collector if
+         * it is running
+         */
+        void cancel()
+        {
+            synchronized (serverTransactions)
+            {
+                if (scheduledCollectorFuture != null)
+                {
+                    scheduledCollectorFuture.cancel(false);
+                    scheduledCollectorFuture = null;
+                }
+            }
+        }
+    }
 }

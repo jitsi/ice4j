@@ -119,21 +119,9 @@ public class Agent
     /**
      *  The ScheduledExecutorService to execute Agent's scheduled tasks
      */
-    private static final ScheduledExecutorService agentTasksScheduler;
-
-    static
-    {
-        CustomizableThreadFactory threadFactory
-            = new CustomizableThreadFactory("ice4j.Agent-", true);
-
-        final ScheduledThreadPoolExecutor terminationExecutor
-            = new ScheduledThreadPoolExecutor(0, threadFactory);
-        terminationExecutor.setKeepAliveTime(10, TimeUnit.SECONDS);
-        terminationExecutor.setRemoveOnCancelPolicy(true);
-        agentTasksScheduler
-            = Executors.unconfigurableScheduledExecutorService(
-                terminationExecutor);
-    }
+    private static final ScheduledExecutorService agentTasksScheduler
+        = ExecutorFactory.createCPUBoundScheduledExecutor(
+            "ice4j.Agent-", 60, TimeUnit.SECONDS);
 
     /**
      * Termination task which will be scheduled with timeout
