@@ -121,7 +121,7 @@ public class Agent
      */
     private static final ScheduledExecutorService agentTasksScheduler
         = ExecutorFactory.createdCPUBoundScheduledExecutor(
-            "ice4j.Agent-", 10, TimeUnit.SECONDS);
+            "ice4j.Agent-", 60, TimeUnit.SECONDS);
 
     /**
      * Termination task which will be scheduled with timeout

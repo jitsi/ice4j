@@ -1081,6 +1081,8 @@ public class StunStack
         // serverTransactions
         Collection<StunServerTransaction> serverTransactionsToExpire;
 
+        expiredTransactionsCollector.cancel();
+
         synchronized (serverTransactions)
         {
             serverTransactionsToExpire
@@ -1091,8 +1093,6 @@ public class StunStack
             tran.expire();
 
         netAccessManager.stop();
-
-        expiredTransactionsCollector.cancel();
     }
 
     /**
@@ -1543,35 +1543,33 @@ public class StunStack
                 {
                     Iterator<Map.Entry<TransactionID, StunServerTransaction>>
                         it = serverTransactions.entrySet().iterator();
+                    final int transactionsBeforeCollection
+                        = serverTransactions.size();
                     while (it.hasNext())
                     {
                         Map.Entry<TransactionID, StunServerTransaction>
-                            pair = it.next();
+                            entry = it.next();
 
-                        final StunServerTransaction tran = pair.getValue();
+                        final StunServerTransaction tran = entry.getValue();
                         if (tran.isExpired())
                         {
                             // remove both key and value
                             it.remove();
 
                             logger.finest("Removed expired transaction "
-                                + pair.getKey());
+                                + entry.getKey());
                         }
                     }
 
                     logger.fine("Non-expired server transactions count "
-                        + serverTransactions.size());
+                        + serverTransactions.size() + ", transactions before "
+                        + "collection " + transactionsBeforeCollection);
 
-                    synchronized (scheduledCollectorFutureSyncRoot)
+                    if (serverTransactions.isEmpty())
                     {
-                        if (serverTransactions.isEmpty())
-                        {
-                            scheduledCollectorFuture.cancel(false);
-                            scheduledCollectorFuture = null;
-
-                            logger.finest("Cancel expired collector "
-                                + "due to no more server transactions");
-                        }
+                        cancel();
+                        logger.finest("Cancel expired collector "
+                            + "due to no more server transactions");
                     }
                 }
             }
@@ -1598,15 +1596,16 @@ public class StunStack
         {
             synchronized (scheduledCollectorFutureSyncRoot)
             {
-                if (scheduledCollectorFuture != null)
+                if (scheduledCollectorFuture == null ||
+                    scheduledCollectorFuture.isDone())
                 {
-                    return;
+                    scheduledCollectorFuture
+                        = tasksScheduler.scheduleWithFixedDelay(
+                            collector,
+                            StunServerTransaction.LIFETIME_MILLIS,
+                            StunServerTransaction.LIFETIME_MILLIS,
+                            TimeUnit.MILLISECONDS);
                 }
-                scheduledCollectorFuture = tasksScheduler.scheduleWithFixedDelay(
-                    collector,
-                    StunServerTransaction.LIFETIME_MILLIS,
-                    StunServerTransaction.LIFETIME_MILLIS,
-                    TimeUnit.MILLISECONDS);
             }
         }
 
@@ -1618,11 +1617,10 @@ public class StunStack
         {
             synchronized (scheduledCollectorFutureSyncRoot)
             {
-                final ScheduledFuture<?> scheduledCollectorFuture =
-                    this.scheduledCollectorFuture;
                 if (scheduledCollectorFuture != null)
                 {
                     scheduledCollectorFuture.cancel(false);
+                    scheduledCollectorFuture = null;
                 }
             }
         }

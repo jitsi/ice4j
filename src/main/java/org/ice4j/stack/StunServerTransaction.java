@@ -90,14 +90,13 @@ public class StunServerTransaction
     /**
      * Determines whether or not the transaction has expired.
      */
-    private final AtomicBoolean expired = new AtomicBoolean(false);
+    private boolean expired = false;
 
     /**
      * The timestamp when transaction is started. Used to determine if
      * transaction is expired
      */
-    private final AtomicLong transactionStartedTimestampNanos
-        = new AtomicLong(-1);
+    private long transactionStartedTimestampNanos = -1;
 
     /**
      * Creates a server transaction
@@ -124,16 +123,15 @@ public class StunServerTransaction
      * Start the transaction. This launches the countdown to the moment the
      * transaction would expire.
      */
-    public void start()
+    public synchronized void start()
     {
-        final boolean isUpdated = transactionStartedTimestampNanos
-            .compareAndSet(-1, System.nanoTime());
-
-        if (!isUpdated) {
+        if (isStarted())
+        {
             throw new IllegalStateException(
                 "StunServerTransaction " + getTransactionID()
                     + " has already been started!");
         }
+        transactionStartedTimestampNanos = System.nanoTime();
     }
 
     /**
@@ -209,9 +207,13 @@ public class StunServerTransaction
      * Cancels the transaction. Once this method is called the transaction is
      * considered terminated and will stop retransmissions.
      */
-    public void expire()
+    public synchronized void expire()
     {
-        expired.set(true);
+        expired = true;
+        /*
+         * StunStack has a background Thread running with the purpose of
+         * removing expired StunServerTransactions.
+         */
     }
 
     /**
@@ -220,9 +222,9 @@ public class StunServerTransaction
      * @return <tt>true</tt> if this <tt>StunServerTransaction</tT> is expired
      * now; otherwise, <tt>false</tt>
      */
-    public boolean isExpired()
+    public synchronized boolean isExpired()
     {
-        if (expired.get())
+        if (expired)
         {
             return true;
         }
@@ -232,8 +234,8 @@ public class StunServerTransaction
             return false;
         }
 
-        long elapsedTimeNanos
-            = System.nanoTime() - transactionStartedTimestampNanos.get();
+        final long elapsedTimeNanos
+            = System.nanoTime() - transactionStartedTimestampNanos;
 
         if (TimeUnit.NANOSECONDS.toMillis(elapsedTimeNanos) >= LIFETIME_MILLIS)
         {
@@ -334,6 +336,6 @@ public class StunServerTransaction
      */
     private boolean isStarted()
     {
-        return transactionStartedTimestampNanos.get() != -1;
+        return transactionStartedTimestampNanos != -1;
     }
 }
