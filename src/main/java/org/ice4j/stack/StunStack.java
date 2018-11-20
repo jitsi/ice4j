@@ -72,7 +72,7 @@ public class StunStack
      */
     private static final ScheduledExecutorService tasksScheduler
         = ExecutorFactory.createSingleThreadScheduledExecutor(
-            "ice4j.StunStack-", 10, TimeUnit.SECONDS);
+            "ice4j.StunStack-", 60, TimeUnit.SECONDS);
 
     /**
      * Our network gateway.
