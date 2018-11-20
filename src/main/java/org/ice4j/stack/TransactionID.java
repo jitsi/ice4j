@@ -70,10 +70,9 @@ public class TransactionID
      */
     private TransactionID(byte[] tid)
     {
-        if (tid.length != RFC3489_TRANSACTION_ID_LENGTH &&
-            tid.length != RFC5389_TRANSACTION_ID_LENGTH)
+        if (tid == null)
         {
-            throw new IllegalArgumentException("Illegal length: " + tid.length);
+            throw new IllegalArgumentException("TransactionID is null");
         }
 
         // assuming passed tid byte-array will not be modified
@@ -219,6 +218,16 @@ public class TransactionID
     public boolean isRFC3489Compatible()
     {
         return (transactionID.length == RFC3489_TRANSACTION_ID_LENGTH);
+    }
+
+    /**
+     * If the transaction is compatible with RFC5389 (12 bytes).
+     *
+     * @return true if transaction ID is compatible with RFC5389
+     */
+    public boolean isRFC5389Compatible()
+    {
+        return (transactionID.length == RFC5389_TRANSACTION_ID_LENGTH);
     }
 
     /**
