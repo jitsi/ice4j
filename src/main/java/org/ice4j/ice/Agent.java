@@ -120,7 +120,7 @@ public class Agent
      *  The ScheduledExecutorService to execute Agent's scheduled tasks
      */
     private static final ScheduledExecutorService agentTasksScheduler
-        = ExecutorFactory.createdCPUBoundScheduledExecutor(
+        = ExecutorFactory.createCPUBoundScheduledExecutor(
             "ice4j.Agent-", 60, TimeUnit.SECONDS);
 
     /**

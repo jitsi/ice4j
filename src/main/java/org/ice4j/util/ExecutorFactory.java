@@ -37,7 +37,7 @@ public class ExecutorFactory
         int threadKeepAliveTime,
         TimeUnit timeUnit)
     {
-        return createdScheduledExecutor(
+        return createScheduledExecutor(
             1,
             threadNamePrefix,
             threadKeepAliveTime,
@@ -52,12 +52,12 @@ public class ExecutorFactory
      * @param timeUnit - time unit of <tt>threadKeepAliveTime</tt>
      * @return pre-configured {@link ScheduledExecutorService}
      */
-    public static ScheduledExecutorService createdCPUBoundScheduledExecutor(
+    public static ScheduledExecutorService createCPUBoundScheduledExecutor(
         String threadNamePrefix,
         int threadKeepAliveTime,
         TimeUnit timeUnit)
     {
-        return createdScheduledExecutor(
+        return createScheduledExecutor(
             Runtime.getRuntime().availableProcessors(),
             threadNamePrefix,
             threadKeepAliveTime,
@@ -72,7 +72,7 @@ public class ExecutorFactory
      * @param timeUnit - time unit of <tt>threadKeepAliveTime</tt>
      * @return pre-configured {@link ScheduledExecutorService}
      */
-    private static ScheduledExecutorService createdScheduledExecutor(
+    private static ScheduledExecutorService createScheduledExecutor(
         int poolSize,
         String threadNamePrefix,
         int threadKeepAliveTime,
