@@ -30,9 +30,9 @@ import org.ice4j.message.*;
 import org.ice4j.socket.*;
 
 /**
- * Manages <tt>Connector</tt>s and <tt>MessageProcessor</tt> pooling. This class
- * serves as a layer that masks network primitives and provides equivalent STUN
- * abstractions. Instances that operate with the NetAccessManager are only
+ * Manages <tt>Connector</tt>s and <tt>MessageProcessingTask</tt> pooling. This
+ * class serves as a layer that masks network primitives and provides equivalent
+ * STUN abstractions. Instances that operate with the NetAccessManager are only
  * supposed to understand STUN talk and shouldn't be aware of datagrams sockets,
  * and etc.
  * 
@@ -50,7 +50,7 @@ class NetAccessManager
         = Logger.getLogger(NetAccessManager.class.getName());
 
     /**
-     * Thread pool to execute {@link MessageProcessor}s across all
+     * Thread pool to execute {@link MessageProcessingTask}s across all
      * {@link NetAccessManager}s.
      * The work-stealing thread pool {@link java.util.concurrent.ForkJoinPool}
      * tries to utilizes all available processors in parallel, but does not
@@ -58,13 +58,13 @@ class NetAccessManager
      * (UDP) also does not have such guarantee, so it is ok when some of the
      * messages will be processed out of arrival (enqueuing) order, but faster.
      */
-    private static ForkJoinPool messageProcessorExecutor = new ForkJoinPool();
+    private static ForkJoinPool messageProcessingExecutor = new ForkJoinPool();
 
     /**
-     * Pool of <tt>MessageProcessor</tt> objects to avoid extra-allocations of
-     * processor object per <tt>RawMessage</tt> needed to process.
+     * Pool of <tt>MessageProcessingTask</tt> objects to avoid extra-allocations
+     * of processor object per <tt>RawMessage</tt> needed to process.
      */
-    private final ArrayBlockingQueue<MessageProcessor> messageProcessorsPool
+    private final ArrayBlockingQueue<MessageProcessingTask> tasksPool
         = new ArrayBlockingQueue<>(8);
 
     /**
@@ -72,8 +72,8 @@ class NetAccessManager
      * this tracking is necessary to properly cancel pending tasks in case
      * {@link #stop()} is called.
      */
-    private final ConcurrentHashMap.KeySetView<MessageProcessor, Boolean>
-        activeMessageProcessors = ConcurrentHashMap.newKeySet();
+    private final ConcurrentHashMap.KeySetView<MessageProcessingTask, Boolean>
+        activeTasks = ConcurrentHashMap.newKeySet();
 
     /**
      * All <tt>Connectors</tt> currently in use with UDP. The table maps a local
@@ -135,13 +135,13 @@ class NetAccessManager
     private final AtomicBoolean isStopped = new AtomicBoolean(false);
 
     /**
-     * Callback to be called when scheduled <tt>MessageProcessor</tt> completes
-     * processing it's <tt>RawMessage</tt>.
+     * Callback to be called when scheduled <tt>MessageProcessingTask</tt>
+     * completes processing it's <tt>RawMessage</tt>.
      */
-    private final Consumer<MessageProcessor>
-        onMessageProcessorProcessedRawMessage = messageProcessor -> {
-        activeMessageProcessors.remove(messageProcessor);
-        messageProcessorsPool.offer(messageProcessor);
+    private final Consumer<MessageProcessingTask>
+        onMessageProcessorProcessedRawMessage = messageProcessingTask -> {
+        activeTasks.remove(messageProcessingTask);
+        tasksPool.offer(messageProcessingTask);
     };
 
     /**
@@ -367,7 +367,11 @@ class NetAccessManager
             if (!connectorsForLocalAddress.containsKey(remoteAddress))
             {
                 Connector connector
-                    = new Connector(socket, remoteAddress, this::onIncomingRawMessage, this);
+                    = new Connector(
+                        socket,
+                        remoteAddress,
+                        this::onIncomingRawMessage,
+                        this);
 
                 connectorsForLocalAddress.put(remoteAddress, connector);
                 connector.start();
@@ -423,7 +427,8 @@ class NetAccessManager
     }
 
     /**
-     * Stops <tt>NetAccessManager</tt> and all of its <tt>MessageProcessor</tt>.
+     * Stops <tt>NetAccessManager</tt> and all of its active
+     * <tt>MessageProcessingTask</tt>.
      */
     @SuppressWarnings("unchecked")
     public void stop()
@@ -435,11 +440,11 @@ class NetAccessManager
         // no item can be added to {@link #unprocessedMessageFutures} when
         // NetAccessManager is stopped, so it is safe to iterate without
         // removing item in-place.
-        for (MessageProcessor messageProcessor: activeMessageProcessors)
+        for (MessageProcessingTask messageProcessingTask : activeTasks)
         {
-            messageProcessor.cancel();
+            messageProcessingTask.cancel();
         }
-        activeMessageProcessors.clear();
+        activeTasks.clear();
 
         for (Object o : new Object[]{udpConnectors, tcpConnectors})
         {
@@ -513,23 +518,26 @@ class NetAccessManager
             return;
         }
 
-        MessageProcessor messageProcessor = messageProcessorsPool.poll();
-        if (messageProcessor == null)
+        MessageProcessingTask messageProcessingTask
+            = tasksPool.poll();
+        if (messageProcessingTask == null)
         {
-            messageProcessor = new MessageProcessor(this);
+            messageProcessingTask
+                = new MessageProcessingTask(this);
         }
         else
         {
-            messageProcessor.resetState();
+            messageProcessingTask.resetState();
         }
 
-        messageProcessor.setMessage(
+        messageProcessingTask.setMessage(
             message,
             onMessageProcessorProcessedRawMessage);
 
-        // Because MessageProcessor is ForkJoinTask<Void> it is not re-wrapped
-        // inside ForkJoinPool and no hidden allocation is done inside pool.
-        messageProcessorExecutor.submit(messageProcessor);
+        // Because MessageProcessingTask is ForkJoinTask<Void> it is not
+        // re-wrapped inside ForkJoinPool and no hidden allocation
+        // is done inside pool.
+        messageProcessingExecutor.submit(messageProcessingTask);
     }
 
     //--------------- SENDING MESSAGES -----------------------------------------

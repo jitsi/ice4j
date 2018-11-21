@@ -35,17 +35,17 @@ import org.ice4j.message.*;
  *
  * @author Emil Ivov
  */
-class MessageProcessor
+class MessageProcessingTask
     extends RecursiveAction
 {
     /**
      * Our class logger.
      */
     private static final Logger logger
-        = Logger.getLogger(MessageProcessor.class.getName());
+        = Logger.getLogger(MessageProcessingTask.class.getName());
 
     /**
-     * Indicates that <tt>MessageProcessor</tt> is cancelled and should not
+     * Indicates that <tt>MessageProcessingTask</tt> is cancelled and should not
      * process <tt>RawMessage</tt> anymore.
      */
     private final AtomicBoolean cancelled = new AtomicBoolean(false);
@@ -72,10 +72,10 @@ class MessageProcessor
     private RawMessage rawMessage;
 
     /**
-     * Callback which is invoked when this <tt>MessageProcessor</tt>
+     * Callback which is invoked when this <tt>MessageProcessingTask</tt>
      * processed it's {@link #rawMessage}
      */
-    private Consumer<MessageProcessor> rawMessageProcessedHandler;
+    private Consumer<MessageProcessingTask> rawMessageProcessedHandler;
 
     /**
      * Creates a Message processor.
@@ -87,7 +87,7 @@ class MessageProcessor
      * @throws IllegalArgumentException if any of the mentioned properties of
      * <tt>netAccessManager</tt> are <tt>null</tt>
      */
-    MessageProcessor(
+    MessageProcessingTask(
         NetAccessManager netAccessManager)
         throws IllegalArgumentException
     {
@@ -112,12 +112,14 @@ class MessageProcessor
 
     /**
      * Assigns the <tt>RawMessage</tt> that will be processed
-     * by this <tt>MessageProcessor</tt> on separate thread.
+     * by this <tt>MessageProcessingTask</tt> on separate thread.
      * @param message RawMessage to be processed
      * @param onProcessed callback which will be invoked when processing
      * of {@link #rawMessage} is completed
      */
-    void setMessage(RawMessage message, Consumer<MessageProcessor> onProcessed)
+    void setMessage(
+        RawMessage message,
+        Consumer<MessageProcessingTask> onProcessed)
     {
         if (message == null)
         {
@@ -147,7 +149,8 @@ class MessageProcessor
     @Override
     protected void compute()
     {
-        final Consumer<MessageProcessor> onProcessed = rawMessageProcessedHandler;
+        final Consumer<MessageProcessingTask> onProcessed
+            = rawMessageProcessedHandler;
         final RawMessage message = rawMessage;
         //add an extra try/catch block that handles uncatched errors
         try
