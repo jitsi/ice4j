@@ -139,28 +139,9 @@ class NetAccessManager
      * processing it's <tt>RawMessage</tt>.
      */
     private final Consumer<MessageProcessor>
-        onMessageProcessorProcessedRawMessage = new Consumer<MessageProcessor>()
-    {
-        @Override
-        public void accept(MessageProcessor messageProcessor)
-        {
-            activeMessageProcessors.remove(messageProcessor);
-            messageProcessorsPool.offer(messageProcessor);
-        }
-    };
-
-    /**
-     * Callback to be passed into {@link Connector} to invoke when
-     * new {@link RawMessage} is received.
-     */
-    private final Consumer<RawMessage>
-        onIncomignRawMessage = new Consumer<RawMessage>()
-    {
-        @Override
-        public void accept(RawMessage rawMessage)
-        {
-            processIncomingRawMessage(rawMessage);
-        }
+        onMessageProcessorProcessedRawMessage = messageProcessor -> {
+        activeMessageProcessors.remove(messageProcessor);
+        messageProcessorsPool.offer(messageProcessor);
     };
 
     /**
@@ -386,7 +367,7 @@ class NetAccessManager
             if (!connectorsForLocalAddress.containsKey(remoteAddress))
             {
                 Connector connector
-                    = new Connector(socket, remoteAddress, onIncomignRawMessage, this);
+                    = new Connector(socket, remoteAddress, this::onIncomingRawMessage, this);
 
                 connectorsForLocalAddress.put(remoteAddress, connector);
                 connector.start();
@@ -521,10 +502,10 @@ class NetAccessManager
     }
 
     /**
-     * Enqueues incoming <tt>RawMessage</tt> for processing.
+     * Enqueues incoming message
      * @param message <tt>RawMessage</tt> to process
      */
-    private void processIncomingRawMessage(final RawMessage message)
+    private void onIncomingRawMessage(final RawMessage message)
     {
         if (this.isStopped.get())
         {
