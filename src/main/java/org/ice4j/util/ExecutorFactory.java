@@ -112,4 +112,30 @@ public class ExecutorFactory
         executor.setRemoveOnCancelPolicy(true);
         return Executors.unconfigurableScheduledExecutorService(executor);
     }
+
+
+    /**
+     * Creates a {@link ForkJoinPool} with the given parameters.
+     *
+     * @param parallelism the parallelism level. For default value,
+     * use {@link java.lang.Runtime#availableProcessors}.
+     * @param threadNamePrefix - name prefix for threads created by pool
+     */
+    public static ForkJoinPool createForkJoinPool(
+        int parallelism, String threadNamePrefix)
+    {
+        final ForkJoinPool.ForkJoinWorkerThreadFactory threadFactory = pool ->
+        {
+            final ForkJoinWorkerThread thread
+                = ForkJoinPool
+                    .defaultForkJoinWorkerThreadFactory
+                    .newThread(pool);
+            if (threadNamePrefix != null)
+            {
+                thread.setName(threadNamePrefix + thread.getName());
+            }
+            return thread;
+        };
+        return new ForkJoinPool(parallelism, threadFactory, null, false);
+    }
 }

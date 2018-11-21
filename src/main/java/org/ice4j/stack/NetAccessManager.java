@@ -24,10 +24,12 @@ import java.util.concurrent.*;
 import java.util.concurrent.atomic.*;
 import java.util.function.*;
 import java.util.logging.*;
+import java.util.logging.Logger; // Disambiguation
 
 import org.ice4j.*;
 import org.ice4j.message.*;
 import org.ice4j.socket.*;
+import org.ice4j.util.*;
 
 /**
  * Manages <tt>Connector</tt>s and <tt>MessageProcessingTask</tt> pooling. This
@@ -52,13 +54,11 @@ class NetAccessManager
     /**
      * Thread pool to execute {@link MessageProcessingTask}s across all
      * {@link NetAccessManager}s.
-     * The work-stealing thread pool {@link java.util.concurrent.ForkJoinPool}
-     * tries to utilizes all available processors in parallel, but does not
-     * have guarantee about the order of execution, but underlying transport
-     * (UDP) also does not have such guarantee, so it is ok when some of the
-     * messages will be processed out of arrival (enqueuing) order, but faster.
      */
-    private static ForkJoinPool messageProcessingExecutor = new ForkJoinPool();
+    private static ForkJoinPool messageProcessingExecutor
+        = ExecutorFactory.createForkJoinPool(
+            Runtime.getRuntime().availableProcessors(),
+            "ice4j.NetAccessManager-");
 
     /**
      * Pool of <tt>MessageProcessingTask</tt> objects to avoid extra-allocations
