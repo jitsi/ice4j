@@ -942,7 +942,6 @@ public class StunStack
                             ev.getLocalAddress(),
                             ev.getRemoteAddress());
 
-                // TODO: Consider remove this try/catch because.
                 // if there is an OOM error here, it will lead to
                 // NetAccessManager.handleFatalError that will stop the
                 // MessageProcessingTask thread and restart it that will lead
