@@ -155,7 +155,7 @@ public class ExecutorFactory
             = new CustomizableThreadFactory(threadNamePrefix, true);
 
         final ThreadPoolExecutor executor = new ThreadPoolExecutor(
-            threadsLimit, threadsLimit,60L, TimeUnit.SECONDS,
+            threadsLimit, threadsLimit, 60L, TimeUnit.SECONDS,
             new LinkedBlockingDeque<>(), threadFactory);
         executor.allowCoreThreadTimeOut(true);
 
