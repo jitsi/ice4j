@@ -36,7 +36,7 @@ import org.ice4j.message.*;
  * @author Emil Ivov
  */
 class MessageProcessingTask
-    extends RecursiveAction
+    implements Runnable
 {
     /**
      * Our class logger.
@@ -132,10 +132,11 @@ class MessageProcessingTask
     /**
      * Performs proper reset of internal state of pooled instance.
      */
-    public void resetState()
+    void resetState()
     {
-        this.reinitialize();
         this.cancelled.set(false);
+        this.rawMessage = null;
+        this.rawMessageProcessedHandler = null;
     }
 
     /**
@@ -147,7 +148,7 @@ class MessageProcessingTask
     }
 
     @Override
-    protected void compute()
+    public void run()
     {
         final Consumer<MessageProcessingTask> onProcessed
             = rawMessageProcessedHandler;

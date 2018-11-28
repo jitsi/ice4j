@@ -55,8 +55,8 @@ class NetAccessManager
      * Thread pool to execute {@link MessageProcessingTask}s across all
      * {@link NetAccessManager}s.
      */
-    private static ForkJoinPool messageProcessingExecutor
-        = ExecutorFactory.createForkJoinPool(
+    private static ExecutorService messageProcessingExecutor
+        = ExecutorFactory.createFixedThreadPool(
             Runtime.getRuntime().availableProcessors(),
             "ice4j.NetAccessManager-");
 
@@ -534,10 +534,9 @@ class NetAccessManager
             message,
             onMessageProcessorProcessedRawMessage);
 
-        // Because MessageProcessingTask is ForkJoinTask<Void> it is not
-        // re-wrapped inside ForkJoinPool and no hidden allocation
-        // is done inside pool.
-        messageProcessingExecutor.submit(messageProcessingTask);
+        // Use overload which does not return Future object to avoid
+        // unnecessary allocation
+        messageProcessingExecutor.execute(messageProcessingTask);
     }
 
     //--------------- SENDING MESSAGES -----------------------------------------
