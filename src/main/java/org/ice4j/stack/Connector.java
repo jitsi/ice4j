@@ -29,8 +29,9 @@ import org.ice4j.socket.*;
 /**
  * The Network Access Point is the most outward part of the stack. It is
  * constructed around a datagram socket and takes care of forwarding incoming
- * messages to the MessageProcessingTask as well as sending datagrams to
- * the STUN server specified by the original NetAccessPointDescriptor.
+ * messages to the provided {@link #messageConsumer} as well as sending
+ * datagrams to the STUN server specified by the
+ * original NetAccessPointDescriptor.
  *
  * @author Emil Ivov
  */
