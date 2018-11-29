@@ -227,7 +227,7 @@ class NetAccessManager
      * Gets the <tt>PeerUdpMessageEventHandler</tt> of this
      * <tt>NetAccessManager</tt> which is to be notified when incoming UDP
      * messages have been processed and are ready for delivery.
-     *
+     * 
      * @return the <tt>PeerUdpMessageEventHandler</tt> of this
      *         <tt>NetAccessManager</tt> which is to be notified when incoming
      *         UDP messages have been processed and are ready for delivery
@@ -241,7 +241,7 @@ class NetAccessManager
      * Gets the <tt>ChannelDataEventHandler</tt> of this
      * <tt>NetAccessManager</tt> which is to be notified when incoming
      * ChannelData messages have been processed and are ready for delivery.
-     *
+     * 
      * @return the <tt>ChannelDataEventHandler</tt> of this
      *         <tt>NetAccessManager</tt> which is to be notified when incoming
      *         ChannelData messages have been processed and are ready for
