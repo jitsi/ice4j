@@ -32,11 +32,11 @@ import org.ice4j.socket.*;
 import org.ice4j.util.*;
 
 /**
- * Manages <tt>Connector</tt>s and <tt>MessageProcessingTask</tt> pooling. This
- * class serves as a layer that masks network primitives and provides equivalent
- * STUN abstractions. Instances that operate with the NetAccessManager are only
- * supposed to understand STUN talk and shouldn't be aware of datagrams sockets,
- * and etc.
+ * Manages <tt>Connector</tt>s and <tt>MessageProcessingTask</tt> execution and
+ * pooling. This class serves as a layer that masks network primitives and
+ * provides equivalent STUN abstractions. Instances that operate with
+ * the NetAccessManager are only supposed to understand STUN talk and
+ * shouldn't be aware of datagrams sockets, and etc.
  * 
  * @author Emil Ivov
  * @author Aakash Garg
