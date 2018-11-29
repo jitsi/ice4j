@@ -17,7 +17,6 @@
  */
 package org.ice4j.stack;
 
-import java.util.concurrent.*;
 import java.util.concurrent.atomic.*;
 import java.util.function.*;
 import java.util.logging.*;
@@ -27,11 +26,11 @@ import org.ice4j.message.*;
 
 /**
  * The class is used to parse and dispatch incoming messages by being
- * executed by concurrent {@link java.util.concurrent.ForkJoinPool}.
- * To reduce memory allocation this <tt>ForkJoinTask</tt> implementation
- * designed to be suitable for usage with pooling, the instance of this type is
- * mutable such that <tt>RawMessage</tt> can be updated and instance can be
- * reused and scheduled with new <tt>RawMessage</tt>
+ * executed by concurrent {@link java.util.concurrent.ExecutorService}.
+ * To reduce memory allocation this class is designed to be suitable for
+ * usage with pooling, the instance of this type is mutable such that
+ * <tt>RawMessage</tt> can be updated and instance can be reused and
+ * scheduled with new <tt>RawMessage</tt>
  *
  * @author Emil Ivov
  */
