@@ -544,7 +544,7 @@ class NetAccessManager
     {
         if (this.isStopped.get())
         {
-            logger.fine("Got RawMessage when stopping, ignoring.");
+            logger.fine("Got RawMessage when stopped, ignore it.");
             return;
         }
 
