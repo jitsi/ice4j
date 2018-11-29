@@ -41,6 +41,7 @@ import org.ice4j.util.*;
  * @author Emil Ivov
  * @author Aakash Garg
  * @author Boris Grozev
+ * @author Yura Yaroshevich
  */
 class NetAccessManager
     implements ErrorHandler

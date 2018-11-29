@@ -22,6 +22,8 @@ import java.util.concurrent.*;
 
 /**
  * Helper class which contains functions to create pre-configured executors
+ *
+ * @author Yura Yaroshevich
  */
 public class ExecutorFactory
 {

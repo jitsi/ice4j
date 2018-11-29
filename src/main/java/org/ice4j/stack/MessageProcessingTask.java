@@ -33,6 +33,7 @@ import org.ice4j.message.*;
  * scheduled with new <tt>RawMessage</tt>
  *
  * @author Emil Ivov
+ * @author Yura Yaroshevich
  */
 class MessageProcessingTask
     implements Runnable
