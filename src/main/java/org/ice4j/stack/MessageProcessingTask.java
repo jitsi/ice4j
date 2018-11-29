@@ -87,8 +87,7 @@ class MessageProcessingTask
      * @throws IllegalArgumentException if any of the mentioned properties of
      * <tt>netAccessManager</tt> are <tt>null</tt>
      */
-    MessageProcessingTask(
-        NetAccessManager netAccessManager)
+    MessageProcessingTask(NetAccessManager netAccessManager)
         throws IllegalArgumentException
     {
         if (netAccessManager == null)
