@@ -564,9 +564,7 @@ class NetAccessManager
             messageProcessingTask.resetState();
         }
 
-        messageProcessingTask.setMessage(
-            message,
-            onRawMessageProcessed);
+        messageProcessingTask.setMessage(message, onRawMessageProcessed);
 
         activeTasks.add(messageProcessingTask);
 
