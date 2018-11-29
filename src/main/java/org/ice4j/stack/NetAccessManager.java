@@ -154,8 +154,9 @@ class NetAccessManager
      * Callback to be called when scheduled <tt>MessageProcessingTask</tt>
      * completes processing it's <tt>RawMessage</tt>.
      */
-    private final Consumer<MessageProcessingTask>
-        onMessageProcessorProcessedRawMessage = messageProcessingTask -> {
+    private final Consumer<MessageProcessingTask> onRawMessageProcessed
+        = messageProcessingTask -> {
+
         activeTasks.remove(messageProcessingTask);
 
         if (queueStatistics != null)
@@ -565,7 +566,7 @@ class NetAccessManager
 
         messageProcessingTask.setMessage(
             message,
-            onMessageProcessorProcessedRawMessage);
+            onRawMessageProcessed);
 
         activeTasks.add(messageProcessingTask);
 
