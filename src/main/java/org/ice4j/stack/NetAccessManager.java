@@ -75,9 +75,9 @@ class NetAccessManager
         = new ArrayBlockingQueue<>(TASK_POOL_SIZE);
 
     /**
-     * The set of <tt>Future</tt>'s of not yet processed <tt>RawMessage</tt>s,
-     * this tracking is necessary to properly cancel pending tasks in case
-     * {@link #stop()} is called.
+     * The set of {@link MessageProcessingTask}'s which are not yet finished
+     * it's, processing, tracking of active tasks is necessary to properly
+     * cancel pending tasks in case {@link #stop()} is called.
      */
     private final ConcurrentHashMap.KeySetView<MessageProcessingTask, Boolean>
         activeTasks = ConcurrentHashMap.newKeySet();
