@@ -149,14 +149,12 @@ class NetAccessManager
         onMessageProcessorProcessedRawMessage = messageProcessingTask -> {
         activeTasks.remove(messageProcessingTask);
 
-        if (!taskPool.offer(messageProcessingTask))
+        final boolean isAdded = taskPool.offer(messageProcessingTask);
+        if (!isAdded && logger.isLoggable(Level.FINEST))
         {
-            if (logger.isLoggable(Level.FINEST))
-            {
-                logger.finest("Dropping MessageProcessingTask for "
-                    + this + " because pool is full, max pool size is "
-                    + String.valueOf(TASK_POOL_SIZE));
-            }
+            logger.finest("Dropping MessageProcessingTask for "
+                + this + " because pool is full, max pool size is "
+                + String.valueOf(TASK_POOL_SIZE));
         }
     };
 
@@ -555,6 +553,7 @@ class NetAccessManager
             message,
             onMessageProcessorProcessedRawMessage);
 
+        activeTasks.add(messageProcessingTask);
         // Use overload which does not return Future object to avoid
         // unnecessary allocation
         messageProcessingExecutor.execute(messageProcessingTask);
