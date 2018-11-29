@@ -110,7 +110,7 @@ class MessageProcessingTask
 
     /**
      * Assigns the <tt>RawMessage</tt> that will be processed
-     * by this <tt>MessageProcessingTask</tt> on separate thread.
+     * by this <tt>MessageProcessingTask</tt> on executor's thread.
      * @param message RawMessage to be processed
      * @param onProcessed callback which will be invoked when processing
      * of {@link #rawMessage} is completed
