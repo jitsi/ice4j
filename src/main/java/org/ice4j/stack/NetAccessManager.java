@@ -142,12 +142,26 @@ class NetAccessManager
     private final AtomicBoolean isStopped = new AtomicBoolean(false);
 
     /**
+     * Optionally enabled QueueStatistics to keep track throughput
+     * of processing {@link MessageProcessingTask}
+     */
+    private final QueueStatistics queueStatistics
+        = logger.isLoggable(Level.FINEST)
+        ? new QueueStatistics(this.toString())
+        : null;
+
+    /**
      * Callback to be called when scheduled <tt>MessageProcessingTask</tt>
      * completes processing it's <tt>RawMessage</tt>.
      */
     private final Consumer<MessageProcessingTask>
         onMessageProcessorProcessedRawMessage = messageProcessingTask -> {
         activeTasks.remove(messageProcessingTask);
+
+        if (queueStatistics != null)
+        {
+            queueStatistics.remove(System.currentTimeMillis());
+        }
 
         final boolean isAdded = taskPool.offer(messageProcessingTask);
         if (!isAdded && logger.isLoggable(Level.FINEST))
@@ -554,6 +568,11 @@ class NetAccessManager
             onMessageProcessorProcessedRawMessage);
 
         activeTasks.add(messageProcessingTask);
+
+        if (queueStatistics != null)
+        {
+            queueStatistics.add(System.currentTimeMillis());
+        }
         // Use overload which does not return Future object to avoid
         // unnecessary allocation
         messageProcessingExecutor.execute(messageProcessingTask);
