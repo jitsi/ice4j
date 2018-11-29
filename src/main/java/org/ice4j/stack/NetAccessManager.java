@@ -61,11 +61,18 @@ class NetAccessManager
             "ice4j.NetAccessManager-");
 
     /**
+     * Maximum number of {@link MessageProcessingTask} to keep in object pool.
+     * Each {@link NetAccessManager} has it's own pool, small pool size is
+     * enough to save allocations.
+     */
+    private static final int TASK_POOL_SIZE = 8;
+
+    /**
      * Pool of <tt>MessageProcessingTask</tt> objects to avoid extra-allocations
      * of processor object per <tt>RawMessage</tt> needed to process.
      */
-    private final ArrayBlockingQueue<MessageProcessingTask> tasksPool
-        = new ArrayBlockingQueue<>(8);
+    private final ArrayBlockingQueue<MessageProcessingTask> taskPool
+        = new ArrayBlockingQueue<>(TASK_POOL_SIZE);
 
     /**
      * The set of <tt>Future</tt>'s of not yet processed <tt>RawMessage</tt>s,
@@ -141,7 +148,16 @@ class NetAccessManager
     private final Consumer<MessageProcessingTask>
         onMessageProcessorProcessedRawMessage = messageProcessingTask -> {
         activeTasks.remove(messageProcessingTask);
-        tasksPool.offer(messageProcessingTask);
+
+        if (!taskPool.offer(messageProcessingTask))
+        {
+            if (logger.isLoggable(Level.FINEST))
+            {
+                logger.finest("Dropping MessageProcessingTask for "
+                    + this + " because pool is full, max pool size is "
+                    + String.valueOf(TASK_POOL_SIZE));
+            }
+        }
     };
 
     /**
@@ -519,11 +535,16 @@ class NetAccessManager
         }
 
         MessageProcessingTask messageProcessingTask
-            = tasksPool.poll();
+            = taskPool.poll();
         if (messageProcessingTask == null)
         {
             messageProcessingTask
                 = new MessageProcessingTask(this);
+            if (logger.isLoggable(Level.FINEST))
+            {
+                logger.finest("Allocated new MessageProcessingTask for "
+                    + this + " due to absence of available pooled instances");
+            }
         }
         else
         {

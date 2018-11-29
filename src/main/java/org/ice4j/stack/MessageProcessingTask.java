@@ -99,7 +99,7 @@ class MessageProcessingTask
         MessageEventHandler messageEventHandler
             = netAccessManager.getMessageEventHandler();
 
-        if(messageEventHandler == null)
+        if (messageEventHandler == null)
         {
             throw new IllegalArgumentException(
                 "The message event handler may not be null");
