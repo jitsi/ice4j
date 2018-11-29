@@ -465,7 +465,7 @@ class NetAccessManager
         // ignoring of all concurrent requests to handle messages
         this.isStopped.set(true);
 
-        // no item can be added to {@link #unprocessedMessageFutures} when
+        // no item can be added to {@link #activeTasks} when
         // NetAccessManager is stopped, so it is safe to iterate without
         // removing item in-place.
         for (MessageProcessingTask messageProcessingTask : activeTasks)
