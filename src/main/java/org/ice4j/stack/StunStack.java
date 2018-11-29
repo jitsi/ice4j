@@ -942,10 +942,7 @@ public class StunStack
                             ev.getLocalAddress(),
                             ev.getRemoteAddress());
 
-                // if there is an OOM error here, it will lead to
-                // NetAccessManager.handleFatalError that will stop the
-                // MessageProcessingTask thread and restart it that will lead
-                // again to an OOM error and so on... So stop here right now
+                // if there is an OOM error here, stop here right now
                 try
                 {
                     sTran.start();
