@@ -191,7 +191,7 @@ class MessageProcessingTask
 
             messageEventHandler.handleMessageEvent(stunMessageEvent);
         }
-        catch(Throwable err)
+        catch (Throwable err)
         {
             errorHandler.handleFatalError(
                 Thread.currentThread(),
