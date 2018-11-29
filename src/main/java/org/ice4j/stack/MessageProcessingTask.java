@@ -145,6 +145,9 @@ class MessageProcessingTask
         cancelled.set(true);
     }
 
+    /**
+     * Does the message parsing.
+     */
     @Override
     public void run()
     {
