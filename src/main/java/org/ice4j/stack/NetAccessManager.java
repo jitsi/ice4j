@@ -536,7 +536,8 @@ class NetAccessManager
     }
 
     /**
-     * Enqueues incoming message
+     * Enqueues incoming {@link RawMessage} for asynchronous
+     * processing by {@link #messageProcessingExecutor}
      * @param message <tt>RawMessage</tt> to process
      */
     private void onIncomingRawMessage(final RawMessage message)
