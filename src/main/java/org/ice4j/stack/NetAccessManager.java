@@ -273,7 +273,7 @@ class NetAccessManager
     @Override
     public void handleError(String message, Throwable error)
     {
-        if (this.isStopped.get())
+        if (isStopped.get())
         {
             logger.log(Level.WARNING,
                 "Got error when stopped, ignoring: " + message, error);
@@ -300,7 +300,7 @@ class NetAccessManager
                                  String message,
                                  Throwable error)
     {
-        if (this.isStopped.get())
+        if (isStopped.get())
         {
             logger.log(Level.WARNING,
                 "Got fatal error when stopped, ignoring: " + message, error);
@@ -464,7 +464,7 @@ class NetAccessManager
     {
         // Mark NetAccessManager as stopped, it will immediately result in
         // ignoring of all concurrent requests to handle messages
-        this.isStopped.set(true);
+        isStopped.set(true);
 
         // no item can be added to {@link #activeTasks} when
         // NetAccessManager is stopped, so it is safe to iterate without
@@ -542,7 +542,7 @@ class NetAccessManager
      */
     private void onIncomingRawMessage(final RawMessage message)
     {
-        if (this.isStopped.get())
+        if (isStopped.get())
         {
             logger.fine("Got RawMessage when stopped, ignore it.");
             return;
