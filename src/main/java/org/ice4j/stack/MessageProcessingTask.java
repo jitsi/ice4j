@@ -123,8 +123,8 @@ class MessageProcessingTask
         {
             throw new IllegalArgumentException("The message may not be null");
         }
-        this.rawMessage = message;
-        this.rawMessageProcessedHandler = onProcessed;
+        rawMessage = message;
+        rawMessageProcessedHandler = onProcessed;
     }
 
     /**
@@ -132,9 +132,9 @@ class MessageProcessingTask
      */
     void resetState()
     {
-        this.cancelled.set(false);
-        this.rawMessage = null;
-        this.rawMessageProcessedHandler = null;
+        cancelled.set(false);
+        rawMessage = null;
+        rawMessageProcessedHandler = null;
     }
 
     /**
@@ -142,7 +142,7 @@ class MessageProcessingTask
      */
     public void cancel()
     {
-        this.cancelled.set(true);
+        cancelled.set(true);
     }
 
     @Override
@@ -161,7 +161,7 @@ class MessageProcessingTask
             rawMessage = null;
             rawMessageProcessedHandler = null;
 
-            if (this.cancelled.get())
+            if (cancelled.get())
             {
                 return;
             }
