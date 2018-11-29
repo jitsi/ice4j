@@ -22,6 +22,8 @@ import java.util.concurrent.*;
 
 /**
  * Helper class which contains functions to create pre-configured executors
+ *
+ * @author Yura Yaroshevich
  */
 public class ExecutorFactory
 {
@@ -111,5 +113,28 @@ public class ExecutorFactory
         executor.allowCoreThreadTimeOut(true);
         executor.setRemoveOnCancelPolicy(true);
         return Executors.unconfigurableScheduledExecutorService(executor);
+    }
+
+    /**
+     * Creates a {@link ExecutorService} with limited number of threads which
+     * are released after idle timeout.
+     *
+     * @param threadsLimit - numbers of threads in pool
+     * @param threadNamePrefix - name prefix for threads created by pool
+     * @return pre-configured {@link ExecutorService}
+     */
+    public static ExecutorService createFixedThreadPool(
+        int threadsLimit,
+        String threadNamePrefix)
+    {
+        final CustomizableThreadFactory threadFactory
+            = new CustomizableThreadFactory(threadNamePrefix, true);
+
+        final ThreadPoolExecutor executor = new ThreadPoolExecutor(
+            threadsLimit, threadsLimit, 60L, TimeUnit.SECONDS,
+            new LinkedBlockingDeque<>(), threadFactory);
+        executor.allowCoreThreadTimeOut(true);
+
+        return Executors.unconfigurableExecutorService(executor);
     }
 }

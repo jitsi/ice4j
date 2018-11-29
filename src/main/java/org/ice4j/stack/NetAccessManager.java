@@ -21,22 +21,27 @@ import java.io.*;
 import java.net.*;
 import java.util.*;
 import java.util.concurrent.*;
+import java.util.concurrent.atomic.*;
+import java.util.function.*;
 import java.util.logging.*;
+import java.util.logging.Logger; // Disambiguation
 
 import org.ice4j.*;
 import org.ice4j.message.*;
 import org.ice4j.socket.*;
+import org.ice4j.util.*;
 
 /**
- * Manages <tt>Connector</tt>s and <tt>MessageProcessor</tt> pooling. This class
- * serves as a layer that masks network primitives and provides equivalent STUN
- * abstractions. Instances that operate with the NetAccessManager are only
- * supposed to understand STUN talk and shouldn't be aware of datagrams sockets,
- * and etc.
+ * Manages <tt>Connector</tt>s and <tt>MessageProcessingTask</tt> execution and
+ * pooling. This class serves as a layer that masks network primitives and
+ * provides equivalent STUN abstractions. Instances that operate with
+ * the NetAccessManager are only supposed to understand STUN talk and
+ * shouldn't be aware of datagrams sockets, and etc.
  * 
  * @author Emil Ivov
  * @author Aakash Garg
  * @author Boris Grozev
+ * @author Yura Yaroshevich
  */
 class NetAccessManager
     implements ErrorHandler
@@ -46,6 +51,37 @@ class NetAccessManager
      */
     private static final Logger logger
         = Logger.getLogger(NetAccessManager.class.getName());
+
+    /**
+     * Thread pool to execute {@link MessageProcessingTask}s across all
+     * {@link NetAccessManager}s.
+     */
+    private static ExecutorService messageProcessingExecutor
+        = ExecutorFactory.createFixedThreadPool(
+            Runtime.getRuntime().availableProcessors(),
+            "ice4j.NetAccessManager-");
+
+    /**
+     * Maximum number of {@link MessageProcessingTask} to keep in object pool.
+     * Each {@link NetAccessManager} has it's own pool, small pool size is
+     * enough to save allocations.
+     */
+    private static final int TASK_POOL_SIZE = 8;
+
+    /**
+     * Pool of <tt>MessageProcessingTask</tt> objects to avoid extra-allocations
+     * of processor object per <tt>RawMessage</tt> needed to process.
+     */
+    private final ArrayBlockingQueue<MessageProcessingTask> taskPool
+        = new ArrayBlockingQueue<>(TASK_POOL_SIZE);
+
+    /**
+     * The set of {@link MessageProcessingTask}'s which are not yet finished
+     * it's, processing, tracking of active tasks is necessary to properly
+     * cancel pending tasks in case {@link #stop()} is called.
+     */
+    private final ConcurrentHashMap.KeySetView<MessageProcessingTask, Boolean>
+        activeTasks = ConcurrentHashMap.newKeySet();
 
     /**
      * All <tt>Connectors</tt> currently in use with UDP. The table maps a local
@@ -78,16 +114,6 @@ class NetAccessManager
             = new HashMap<>();
 
     /**
-     * A synchronized FIFO where incoming messages are stocked for processing.
-     */
-    private final BlockingQueue<RawMessage> messageQueue = new LinkedBlockingQueue<>();
-
-    /**
-     * A thread pool of message processors.
-     */
-    private final Vector<MessageProcessor> messageProcessors = new Vector<>();
-
-    /**
      * The instance that should be notified when an incoming message has been
      * processed and ready for delivery
      */
@@ -106,15 +132,47 @@ class NetAccessManager
     private final ChannelDataEventHandler channelDataEventHandler;
 
     /**
-     * The size of the thread pool to start with.
-     */
-    private int initialThreadPoolSize = StunStack.DEFAULT_THREAD_POOL_SIZE;
-
-    /**
      * The <tt>StunStack</tt> which has created this instance, is its owner and
      * is the handler that incoming message requests should be passed to.
      */
     private final StunStack stunStack;
+
+    /**
+     * Indicates if this <tt>NetAccessManager</tt> is stopped
+     */
+    private final AtomicBoolean isStopped = new AtomicBoolean(false);
+
+    /**
+     * Optionally enabled QueueStatistics to keep track throughput
+     * of processing {@link MessageProcessingTask}
+     */
+    private final QueueStatistics queueStatistics
+        = logger.isLoggable(Level.FINEST)
+        ? new QueueStatistics(this.toString())
+        : null;
+
+    /**
+     * Callback to be called when scheduled <tt>MessageProcessingTask</tt>
+     * completes processing it's <tt>RawMessage</tt>.
+     */
+    private final Consumer<MessageProcessingTask> onRawMessageProcessed
+        = messageProcessingTask -> {
+
+        activeTasks.remove(messageProcessingTask);
+
+        if (queueStatistics != null)
+        {
+            queueStatistics.remove(System.currentTimeMillis());
+        }
+
+        final boolean isAdded = taskPool.offer(messageProcessingTask);
+        if (!isAdded && logger.isLoggable(Level.FINEST))
+        {
+            logger.finest("Dropping MessageProcessingTask for "
+                + this + " because pool is full, max pool size is "
+                + String.valueOf(TASK_POOL_SIZE));
+        }
+    };
 
     /**
      * Constructs a NetAccessManager.
@@ -150,7 +208,6 @@ class NetAccessManager
         this.messageEventHandler = stunStack;
         this.peerUdpMessageEventHandler = peerUdpMessageEventHandler;
         this.channelDataEventHandler = channelDataEventHandler;
-        initThreadPool();
     }
 
     /**
@@ -196,17 +253,6 @@ class NetAccessManager
         return channelDataEventHandler;
     }
 
-    /**
-     * Gets the <tt>BlockingQueue</tt> of this <tt>NetAccessManager</tt> in which
-     * incoming messages are stocked for processing.
-     *
-     * @return the <tt>BlockingQueue</tt> of this <tt>NetAccessManager</tt> in
-     * which incoming messages are stocked for processing
-     */
-    BlockingQueue<RawMessage> getMessageQueue()
-    {
-        return messageQueue;
-    }
 
     /**
      * Gets the <tt>StunStack</tt> which has created this instance and is its
@@ -228,6 +274,12 @@ class NetAccessManager
     @Override
     public void handleError(String message, Throwable error)
     {
+        if (isStopped.get())
+        {
+            logger.log(Level.WARNING,
+                "Got error when stopped, ignoring: " + message, error);
+            return;
+        }
         /**
          * apart from logging, i am not sure what else we could do here.
          */
@@ -249,6 +301,13 @@ class NetAccessManager
                                  String message,
                                  Throwable error)
     {
+        if (isStopped.get())
+        {
+            logger.log(Level.WARNING,
+                "Got fatal error when stopped, ignoring: " + message, error);
+            return;
+        }
+
         if (callingThread instanceof Connector)
         {
             Connector connector = (Connector)callingThread;
@@ -265,20 +324,9 @@ class NetAccessManager
                 logger.fine("Removing connector " + connector);
             }
         }
-        else if( callingThread instanceof MessageProcessor )
+        else
         {
-            MessageProcessor mp = (MessageProcessor)callingThread;
-            logger.log( Level.WARNING, "A message processor has unexpectedly "
-                    + "stopped. AP:" + mp, error);
-
-            //make sure the guy's dead.
-            mp.stop();
-            messageProcessors.remove(mp);
-
-            mp = new MessageProcessor(this);
-            mp.start();
-            logger.fine("A message processor has been relaunched because "
-                        + "of an error.");
+            logger.log(Level.SEVERE, message, error);
         }
     }
 
@@ -349,7 +397,11 @@ class NetAccessManager
             if (!connectorsForLocalAddress.containsKey(remoteAddress))
             {
                 Connector connector
-                    = new Connector(socket, remoteAddress, messageQueue, this);
+                    = new Connector(
+                        socket,
+                        remoteAddress,
+                        this::onIncomingRawMessage,
+                        this);
 
                 connectorsForLocalAddress.put(remoteAddress, connector);
                 connector.start();
@@ -405,15 +457,24 @@ class NetAccessManager
     }
 
     /**
-     * Stops <tt>NetAccessManager</tt> and all of its <tt>MessageProcessor</tt>.
+     * Stops <tt>NetAccessManager</tt> and all of its active
+     * <tt>MessageProcessingTask</tt>.
      */
     @SuppressWarnings("unchecked")
     public void stop()
     {
-        for(MessageProcessor mp : messageProcessors)
+        // Mark NetAccessManager as stopped, it will immediately result in
+        // ignoring of all concurrent requests to handle messages
+        isStopped.set(true);
+
+        // no item can be added to {@link #activeTasks} when
+        // NetAccessManager is stopped, so it is safe to iterate without
+        // removing item in-place.
+        for (MessageProcessingTask messageProcessingTask : activeTasks)
         {
-            mp.stop();
+            messageProcessingTask.cancel();
         }
+        activeTasks.clear();
 
         for (Object o : new Object[]{udpConnectors, tcpConnectors})
         {
@@ -475,81 +536,47 @@ class NetAccessManager
         return connector;
     }
 
-    //---------------thread pool implementation --------------------------------
     /**
-     * Adjusts the number of concurrently running MessageProcessors.
-     * If the number is smaller or bigger than the number of threads
-     * currently running, then message processors are created/deleted so that
-     * their count matches the new value.
-     *
-     * @param threadPoolSize the number of MessageProcessors that should be
-     * running concurrently
-     * @throws IllegalArgumentException if threadPoolSize is not a valid size.
+     * Enqueues incoming {@link RawMessage} for asynchronous
+     * processing by {@link #messageProcessingExecutor}
+     * @param message <tt>RawMessage</tt> to process
      */
-    void setThreadPoolSize(int threadPoolSize)
-        throws IllegalArgumentException
+    private void onIncomingRawMessage(final RawMessage message)
     {
-        if(threadPoolSize < 1)
+        if (isStopped.get())
         {
-            throw new IllegalArgumentException(
-                    threadPoolSize + " is not a legal thread pool size value.");
+            logger.fine("Got RawMessage when stopped, ignore it.");
+            return;
         }
 
-        //if we are not running just record the size
-        //so that we could init later.
-        if(messageProcessors.size() < threadPoolSize)
+        MessageProcessingTask messageProcessingTask
+            = taskPool.poll();
+        if (messageProcessingTask == null)
         {
-            //create additional processors
-            fillUpThreadPool(threadPoolSize);
+            messageProcessingTask
+                = new MessageProcessingTask(this);
+            if (logger.isLoggable(Level.FINEST))
+            {
+                logger.finest("Allocated new MessageProcessingTask for "
+                    + this + " due to absence of available pooled instances");
+            }
         }
         else
         {
-            //delete extra processors
-            shrinkThreadPool(threadPoolSize);
+            messageProcessingTask.resetState();
         }
-    }
 
-    /**
-     * Fills the thread pool with the initially specified number of message
-     * processors.
-     */
-    private void initThreadPool()
-    {
-        //create additional processors
-        fillUpThreadPool(initialThreadPoolSize);
-    }
+        messageProcessingTask.setMessage(message, onRawMessageProcessed);
 
-    /**
-     * Starts all message processors
-     *
-     * @param newSize the new thread pool size
-     */
-    private void fillUpThreadPool(int newSize)
-    {
-        //make sure we don't resize more than once
-        messageProcessors.ensureCapacity(newSize);
+        activeTasks.add(messageProcessingTask);
 
-        for (int i = messageProcessors.size(); i < newSize; i++)
+        if (queueStatistics != null)
         {
-            MessageProcessor mp = new MessageProcessor(this);
-
-            messageProcessors.add(mp);
-            mp.start();
+            queueStatistics.add(System.currentTimeMillis());
         }
-    }
-
-    /**
-     * Stops message processors until processors count equals newSize.
-     *
-     * @param newSize the new thread pool size
-     */
-    private void shrinkThreadPool(int newSize)
-    {
-        while(messageProcessors.size() > newSize)
-        {
-            MessageProcessor mp = messageProcessors.remove(0);
-            mp.stop();
-        }
+        // Use overload which does not return Future object to avoid
+        // unnecessary allocation
+        messageProcessingExecutor.execute(messageProcessingTask);
     }
 
     //--------------- SENDING MESSAGES -----------------------------------------
