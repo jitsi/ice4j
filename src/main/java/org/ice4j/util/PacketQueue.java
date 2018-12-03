@@ -30,6 +30,7 @@ import java.util.logging.Logger; // Disambiguation.
  *     <br> MultiplexingSocket#received (and the rest of Multiplex* classes).
  *
  * @author Boris Grozev
+ * @author Yura Yaroshevich
  */
 public abstract class PacketQueue<T>
 {

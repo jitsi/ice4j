@@ -11,6 +11,8 @@ import java.util.logging.Logger; // Disambiguation
 
 /**
  * Test various aspects of {@link PacketQueue} implementation.
+ *
+ * @author Yura Yaroshevich
  */
 public class PacketQueueTests
 {

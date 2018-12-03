@@ -10,6 +10,8 @@ import java.util.logging.Logger;  // Disambiguation
 /**
  * Contains test for checking performance aspects of various
  * PacketQueue configuration
+ *
+ * @author Yura Yaroshevich
  */
 @Ignore("Check only performance aspect of PacketQueue")
 public class PacketQueueBenchmarkTests
