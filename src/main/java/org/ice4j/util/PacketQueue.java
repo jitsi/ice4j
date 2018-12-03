@@ -15,7 +15,6 @@
  */
 package org.ice4j.util;
 
-import java.util.*;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.*;
 import java.util.logging.Logger; // Disambiguation.
@@ -50,17 +49,19 @@ public abstract class PacketQueue<T>
      * ScheduledExecutorService to implement delay during throttling in
      * <tt>AsyncPacketReader</tt>
      */
-    private final static ScheduledExecutorService timer
-        = Executors.newSingleThreadScheduledExecutor();
+    private final static ScheduledExecutorService delayTimer
+        = Executors.newSingleThreadScheduledExecutor(
+            new CustomizableThreadFactory(
+                PacketQueue.class.getName() + "-timer-", true));
 
     /**
      * The default <tt>ExecutorService</tt> to run <tt>AsyncPacketReader</tt>
-     * when there is no user provided executor.
+     * when there is no executor injected in constructor.
      */
     private final static ExecutorService sharedExecutor
         = Executors.newCachedThreadPool(
             new CustomizableThreadFactory(
-                PacketQueue.class.getName() + "-", true));
+                PacketQueue.class.getName() + "-executor-", true));
 
     /**
      * Returns true if a warning should be logged after a queue has dropped
@@ -501,7 +502,7 @@ public abstract class PacketQueue<T>
         boolean handlePacket(T pkt);
 
         /**
-         * Specifies max number {@link #handlePacket(Object)} invocation
+         * Specifies max number {@link #handlePacket(T)} invocation
          * per {@link #perNanos()}
          * @return positive number of allowed packets in case of throttling
          * must be enabled.
@@ -511,7 +512,7 @@ public abstract class PacketQueue<T>
         }
 
         /**
-         * Specifies time interval in nanoseconds
+         * Specifies time interval in nanoseconds for {@link #maxPackets()}
          * @return positive nanoseconds count in case of throttling must be
          * enabled.
          */
@@ -521,11 +522,12 @@ public abstract class PacketQueue<T>
 
         /**
          * Specifies the number of packets allowed to be processed sequentially
-         * without yielding control to allow other possible queues sharing
-         * same {@link ExecutorService} to process their packets.
+         * without yielding control to executor's thread. Specifying positive
+         * number will allow other possible queues sharing same
+         * {@link ExecutorService} to process their packets.
          * @return positive value to specify max number of packets which allows
          * implementation of cooperative multi-tasking between different
-         * {@link PacketQueue} sharing same {@link ExecutorService}
+         * {@link PacketQueue} sharing same {@link ExecutorService}.
          */
         default long maxSequentiallyProcessedPackets()
         {
@@ -534,7 +536,7 @@ public abstract class PacketQueue<T>
     }
 
     /**
-     * Helper class to calculate throttle delay when throttling must be applied.
+     * Helper class to calculate throttle delay when throttling is enabled.
      */
     private static final class ThrottleCalculator<T>
     {
@@ -568,7 +570,7 @@ public abstract class PacketQueue<T>
         /**
          * Calculate necessary delay based current time and number packets
          * processed processed during current time interval
-         * @return 0 in case delay is not necessary or value in nanos
+         * @return 0 in case delay is not necessary or delay value in nanos
          */
         long getDelayNanos()
         {
@@ -596,14 +598,15 @@ public abstract class PacketQueue<T>
         /**
          * Count number of processed packets
          */
-        void onPacketProcessed()
+        void notifyPacketProcessed()
         {
             packetsHandledWithinInterval++;
         }
     }
 
     /**
-     * Asynchronously reads packets from {@link #queue} on separate thread.
+     * Asynchronously reads packets from {@link #queue} on separate thread
+     * borrowed from {@link #executor}.
      * Thread is not blocked when queue is empty and returned back to
      * {@link #executor} pool. New or existing thread is borrowed from
      * {@link #executor} when queue is non empty and {@link #reader} is not
@@ -650,7 +653,7 @@ public abstract class PacketQueue<T>
                 final long maxSequentiallyProcessedPackets =
                     handler.maxSequentiallyProcessedPackets();
 
-                int handledPackets = 0;
+                int sequentiallyHandledPackets = 0;
 
                 while (!closed.get())
                 {
@@ -667,7 +670,8 @@ public abstract class PacketQueue<T>
 
 
                         if (maxSequentiallyProcessedPackets > 0 &&
-                            handledPackets >= maxSequentiallyProcessedPackets)
+                            sequentiallyHandledPackets
+                                >= maxSequentiallyProcessedPackets)
                         {
                             /*
                             All instances of AsyncPacketReader executed on
@@ -696,8 +700,8 @@ public abstract class PacketQueue<T>
                         }
                     }
 
-                    handledPackets++;
-                    throttler.onPacketProcessed();
+                    sequentiallyHandledPackets++;
+                    throttler.notifyPacketProcessed();
 
                     if (queueStatistics != null)
                     {
@@ -708,7 +712,7 @@ public abstract class PacketQueue<T>
                     {
                         handler.handlePacket(pkt);
                     }
-                    catch (Exception e)
+                    catch (Throwable e)
                     {
                         logger.warning("Failed to handle packet: " + e);
                     }
@@ -768,7 +772,7 @@ public abstract class PacketQueue<T>
             synchronized (syncRoot)
             {
                 if ((readerFuture == null || readerFuture.isDone())
-                    && delayedFuture == null)
+                    && (delayedFuture == null || delayedFuture.isDone()))
                 {
                     readerFuture = executor.submit(reader);
                 }
@@ -800,7 +804,7 @@ public abstract class PacketQueue<T>
                 + "PacketQueue with ID = " + id + " for "
                 + unit.toNanos(delay) + "us");
             cancel(false);
-            delayedFuture = timer.schedule(delayedSchedule, delay, unit);
+            delayedFuture = delayTimer.schedule(delayedSchedule, delay, unit);
         }
 
         /**
