@@ -103,9 +103,12 @@ public class PacketQueueTests
                 minIntervalBetweenPacketsNanos / 10));
         }
 
-        itemsProcessed.await(
-            minIntervalBetweenPacketsNanos * itemsCount,
+        final boolean completed = itemsProcessed.await(
+            minIntervalBetweenPacketsNanos * itemsCount
+            + TimeUnit.SECONDS.toNanos(1),
             TimeUnit.NANOSECONDS);
+        Assert.assertTrue("Expected all queued items are handled "
+            + "at this time point", completed);
 
         Assert.assertTrue("Expect throttling was done by PacketQueue "
                 + " when maxPackets() and perNanos() specified ",
@@ -253,7 +256,10 @@ public class PacketQueueTests
 
         queue.add(new DummyQueue.Dummy());
 
-        queueCompletion.await(10, TimeUnit.MILLISECONDS);
+        final boolean completed
+            = queueCompletion.await(10, TimeUnit.MILLISECONDS);
+        Assert.assertTrue("Expected all queued items are handled "
+            + "at this time point", completed);
 
         Future<?> executorCompletion = singleThreadExecutor.submit(() -> {
             // do nothing, just pump Runnable via executor's thread to
@@ -337,7 +343,10 @@ public class PacketQueueTests
             queue2.add(new DummyQueue.Dummy());
         }
 
-        completionGuard.await(1, TimeUnit.SECONDS);
+        final boolean completed
+            = completionGuard.await(1, TimeUnit.SECONDS);
+        Assert.assertTrue("Expected all queued items are handled "
+            + "at this time point", completed);
 
         Assert.assertTrue(
             "Queues sharing same thread with configured cooperative"
@@ -345,5 +354,54 @@ public class PacketQueueTests
             queuesEvenlyProcessed.get());
 
         singleThreadExecutor.shutdownNow();
+    }
+
+    @Test
+    public void testManyQueuesCanShareSingleThread()
+        throws Exception
+    {
+        final ExecutorService singleThreadedExecutor
+            = Executors.newSingleThreadExecutor();
+
+        final int numberOfQueues = 1_000_000;
+
+        final ArrayList<DummyQueue> queues = new ArrayList<>();
+
+        final CountDownLatch completionGuard
+            = new CountDownLatch(numberOfQueues);
+
+        for (int i = 0; i < numberOfQueues; i++)
+        {
+            queues.add(new DummyQueue(1,
+                pkt -> {
+                    completionGuard.countDown();
+                    return true;
+                },
+                singleThreadedExecutor));
+        }
+
+        final DummyQueue.Dummy dummyPacket = new DummyQueue.Dummy();
+        for (DummyQueue queue : queues)
+        {
+            // Push item for processing to cause borrowing execution
+            // thread from ExecutorService
+            queue.add(dummyPacket);
+        }
+
+        final boolean completed
+            = completionGuard.await(1, TimeUnit.SECONDS);
+        Assert.assertTrue("Expected all queued items are handled "
+            + "at this time point", completed);
+
+        final List<Runnable> packetReaders
+            = singleThreadedExecutor.shutdownNow();
+
+        Assert.assertEquals("Queues must not utilize thread when"
+            + "there is no work.", 0, packetReaders.size());
+
+        for (DummyQueue queue : queues)
+        {
+            queue.close();
+        }
     }
 }
