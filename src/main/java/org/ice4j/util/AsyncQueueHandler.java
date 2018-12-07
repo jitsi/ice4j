@@ -17,8 +17,8 @@
 package org.ice4j.util;
 
 import java.util.concurrent.*;
-import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.logging.Logger;
+import java.util.concurrent.atomic.*;
+import java.util.logging.Logger; // Disambiguation
 
 /**
  * Asynchronously reads items from provided {@link #queue} on separate thread
