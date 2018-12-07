@@ -235,6 +235,16 @@ public final class AsyncQueueHandler<T>
         String id,
         ExecutorService executor)
     {
+        if (queue == null)
+        {
+            throw new IllegalArgumentException("queue is null");
+        }
+
+        if (handler == null)
+        {
+            throw new IllegalArgumentException("handler is null");
+        }
+
         this.executor = executor != null ? executor : sharedExecutor;
         this.queue = queue;
         this.handler = handler;
