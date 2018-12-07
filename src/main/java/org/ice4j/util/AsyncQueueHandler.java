@@ -64,13 +64,14 @@ public final class AsyncQueueHandler<T>
     private final static long emptyQueueTimeoutNanoseconds = 50;
 
     /**
-     * Executor service to run <tt>AsyncQueueHandler</tt>, which asynchronously
+     * Executor service to run {@link #reader}, which asynchronously
      * invokes specified {@link #handler} on queued items.
      */
     private final ExecutorService executor;
 
     /**
-     * An {@link BlockingQueue <T>} which will be read on separate thread.
+     * An {@link BlockingQueue <T>} whose items read on separate thread and
+     * processed by provided {@link #handler}.
      */
     private final BlockingQueue<T> queue;
 
@@ -133,7 +134,7 @@ public final class AsyncQueueHandler<T>
 
             while (!cancelled.get())
             {
-                T pkt;
+                T item;
 
                 synchronized (syncRoot)
                 {
@@ -171,15 +172,15 @@ public final class AsyncQueueHandler<T>
                         // up to hundred nanoseconds, compared to not
                         // timeout at all has about 5-10% better
                         // performance in micro-benchmark scenarios.
-                        pkt = queue.poll(
+                        item = queue.poll(
                             emptyQueueTimeoutNanoseconds, TimeUnit.NANOSECONDS);
                     }
                     catch (InterruptedException e)
                     {
-                        pkt = null;
+                        item = null;
                     }
 
-                    if (pkt == null)
+                    if (item == null)
                     {
                         cancel(false);
                         return;
@@ -191,7 +192,7 @@ public final class AsyncQueueHandler<T>
 
                 try
                 {
-                    handler.handleItem(pkt);
+                    handler.handleItem(item);
                 }
                 catch (Throwable e)
                 {
@@ -222,9 +223,9 @@ public final class AsyncQueueHandler<T>
      * Constucts instance of {@link AsyncQueueHandler<T>} which is capable of
      * asyncronous reading provided queue from thread borrowed from executor to
      * process items with provided handler.
-     * @param queue host queue which holds items to process
+     * @param queue thread-safe queue which holds items to process
      * @param handler an implementation of handler routine which will be
-     *                invoked per each item placed in the queue.
+     * invoked per each item placed in the queue.
      * @param id optional identifier of current handler for debug purpose
      * @param executor optional executor service to borrow threads from
      */
