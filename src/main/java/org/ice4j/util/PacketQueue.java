@@ -16,7 +16,6 @@
 package org.ice4j.util;
 
 import java.util.concurrent.*;
-import java.util.concurrent.atomic.*;
 import java.util.logging.Logger; // Disambiguation.
 
 /**
@@ -98,7 +97,8 @@ public abstract class PacketQueue<T>
     private final String id;
 
     /**
-     * Whether this queue has been closed.
+     * Whether this queue has been closed. Field is denoted as volatile,
+     * because it is set in one thread and could be read in while loop in other.
      */
     private volatile boolean closed = false;
 
