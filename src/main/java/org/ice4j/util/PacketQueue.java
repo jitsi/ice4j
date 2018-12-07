@@ -47,6 +47,11 @@ public abstract class PacketQueue<T>
     private final static int DEFAULT_CAPACITY = 256;
 
     /**
+     * The capacity of the {@code byte[]} cache, if it is enabled.
+     */
+    private final static int CACHE_CAPACITY = 100;
+
+    /**
      * Returns true if a warning should be logged after a queue has dropped
      * {@code numDroppedPackets} packets.
      * @param numDroppedPackets the number of dropped packets.
@@ -95,7 +100,7 @@ public abstract class PacketQueue<T>
     /**
      * Whether this queue has been closed.
      */
-    private final AtomicBoolean closed = new AtomicBoolean(false);
+    private volatile boolean closed = false;
 
     /**
      * The number of packets which were dropped from this {@link PacketQueue} as
@@ -271,7 +276,7 @@ public abstract class PacketQueue<T>
      */
     private void doAdd(T pkt)
     {
-        if (closed.get())
+        if (closed)
             return;
 
         synchronized (queue)
@@ -327,7 +332,7 @@ public abstract class PacketQueue<T>
 
         while (true)
         {
-            if (closed.get())
+            if (closed)
                 return null;
             synchronized (queue)
             {
@@ -360,7 +365,7 @@ public abstract class PacketQueue<T>
      */
     public T poll()
     {
-        if (closed.get())
+        if (closed)
             return null;
 
         if (asyncQueueHandler != null)
@@ -392,8 +397,10 @@ public abstract class PacketQueue<T>
      */
     public void close()
     {
-        if (closed.compareAndSet(false, true))
+        if (!closed)
         {
+            closed = true;
+
             if (asyncQueueHandler != null)
             {
                 asyncQueueHandler.cancel();
