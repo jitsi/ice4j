@@ -191,7 +191,6 @@ public abstract class PacketQueue<T>
         queueStatistics
             = enableStatistics ? new QueueStatistics(id) : null;
 
-
         if (packetHandler != null)
         {
             asyncQueueHandler = new AsyncQueueHandler<T>(
