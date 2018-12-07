@@ -51,9 +51,11 @@ public class PacketQueueTests
                         final long durationSinceLastPacketNanos
                             = now - lastPacketHandledTimestampNanos;
 
-                        final boolean isThrottled
-                            = durationSinceLastPacketNanos
-                            >= minIntervalBetweenPacketsNanos;
+                        final long allowedErrorNanos = 1000;
+
+                        final boolean isThrottled = durationSinceLastPacketNanos
+                            >= minIntervalBetweenPacketsNanos
+                                - allowedErrorNanos;
 
                         allItemsWereThrottled.set(
                             allItemsWereThrottled.get() && isThrottled);
@@ -144,10 +146,10 @@ public class PacketQueueTests
         try
         {
             // checks that thread stuck in PacketQueue::get notified
-            // "immediately" when item added to queue. Giving 1 ms for
+            // "immediately" when item added to queue. Giving a few ms for
             // CompletableFuture to transit to completed state.
             final DummyQueue.Dummy poppedItem = dummyItem.get(
-                1, TimeUnit.MILLISECONDS);
+                50, TimeUnit.MILLISECONDS);
             Assert.assertEquals(pushedItem, poppedItem);
         }
         catch (TimeoutException e)
@@ -257,7 +259,7 @@ public class PacketQueueTests
         queue.add(new DummyQueue.Dummy());
 
         final boolean completed
-            = queueCompletion.await(10, TimeUnit.MILLISECONDS);
+            = queueCompletion.await(50, TimeUnit.MILLISECONDS);
         Assert.assertTrue("Expected all queued items are handled "
             + "at this time point", completed);
 

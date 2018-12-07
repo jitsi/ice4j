@@ -47,24 +47,6 @@ public abstract class PacketQueue<T>
     private final static int DEFAULT_CAPACITY = 256;
 
     /**
-     * ScheduledExecutorService to implement delay during throttling in
-     * <tt>AsyncPacketReader</tt>
-     */
-    private final static ScheduledExecutorService delayTimer
-        = Executors.newSingleThreadScheduledExecutor(
-            new CustomizableThreadFactory(
-                PacketQueue.class.getName() + "-timer-", true));
-
-    /**
-     * The default <tt>ExecutorService</tt> to run <tt>AsyncPacketReader</tt>
-     * when there is no executor injected in constructor.
-     */
-    private final static ExecutorService sharedExecutor
-        = Executors.newCachedThreadPool(
-            new CustomizableThreadFactory(
-                PacketQueue.class.getName() + "-executor-", true));
-
-    /**
      * Returns true if a warning should be logged after a queue has dropped
      * {@code numDroppedPackets} packets.
      * @param numDroppedPackets the number of dropped packets.
@@ -77,12 +59,6 @@ public abstract class PacketQueue<T>
                 (numDroppedPackets <= 1000 && numDroppedPackets % 100 == 0) ||
                 numDroppedPackets % 1000 == 0;
     }
-
-    /**
-     * Executor service to run <tt>AsyncPacketReader</tt>, which asynchronously
-     * invokes specified {@link #handler} on queued packets.
-     */
-    private final ExecutorService executor;
 
     /**
      * The underlying {@link BlockingQueue} which holds packets.
@@ -105,17 +81,11 @@ public abstract class PacketQueue<T>
     private final QueueStatistics queueStatistics;
 
     /**
-     * The optionally used {@link AsyncPacketReader} to perpetually read packets
-     * from {@link #queue} on separate thread and handle them
-     * using {@link #handler}.
+     * The optionally used {@link AsyncQueueHandler} to perpetually read packets
+     * from {@link #queue} on separate thread and handle them with provided
+     * packet handler.
      */
-    private final AsyncPacketReader reader;
-
-    /**
-     * The {@link org.ice4j.util.PacketQueue.PacketHandler} optionally used to
-     * handle packets read from this queue by {@link #reader}.
-     */
-    private final PacketHandler<T> handler;
+    private final AsyncQueueHandler asyncQueueHandler;
 
     /**
      * A string used to identify this {@link PacketQueue} for logging purposes.
@@ -199,8 +169,7 @@ public abstract class PacketQueue<T>
      * created, and the queue will provide access to the head element via
      * {@link #get()} and {@link #poll()}.
      * @param executor An optional executor service to use to execute
-     * packetHandler for items added to queue. If no explicit executor specified
-     * then default {@link #sharedExecutor} will be used.
+     * packetHandler for items added to queue.
      */
     public PacketQueue(
         int capacity,
@@ -217,17 +186,18 @@ public abstract class PacketQueue<T>
         queueStatistics
             = enableStatistics ? new QueueStatistics(id) : null;
 
-        this.executor = executor != null ? executor : sharedExecutor;
 
         if (packetHandler != null)
         {
-            handler = packetHandler;
-            reader = new AsyncPacketReader();
+            asyncQueueHandler = new AsyncQueueHandler<T>(
+                queue,
+                new HandlerAdapter(packetHandler),
+                id,
+                executor);
         }
         else
         {
-            reader = null;
-            handler = null;
+            asyncQueueHandler = null;
         }
 
         logger.fine("Initialized a PacketQueue instance with ID " + id);
@@ -332,9 +302,9 @@ public abstract class PacketQueue<T>
             queue.notifyAll();
         }
 
-        if (reader != null)
+        if (asyncQueueHandler != null)
         {
-            reader.schedule();
+            asyncQueueHandler.handleQueueItemsUntilEmpty();
         }
     }
 
@@ -346,7 +316,7 @@ public abstract class PacketQueue<T>
      */
     public T get()
     {
-        if (handler != null)
+        if (asyncQueueHandler != null)
         {
             // If the queue was configured with a handler, it is running its
             // own reading thread, and reading from it via this interface would
@@ -393,7 +363,7 @@ public abstract class PacketQueue<T>
         if (closed.get())
             return null;
 
-        if (handler != null)
+        if (asyncQueueHandler != null)
         {
             // If the queue was configured with a handler, it is running its
             // own reading thread, and reading from it via this interface would
@@ -418,15 +388,15 @@ public abstract class PacketQueue<T>
      * Closes current <tt>PacketQueue</tt> instance. No items will be added
      * to queue when it's closed. Threads which were blocked in {@link #get()}
      * will receive <tt>null</tt>. Asynchronous queue processing by
-     * {@link #reader} is stopped.
+     * {@link #asyncQueueHandler} is stopped.
      */
     public void close()
     {
         if (closed.compareAndSet(false, true))
         {
-            if (reader != null)
+            if (asyncQueueHandler != null)
             {
-                reader.cancel();
+                asyncQueueHandler.cancel();
             }
 
             synchronized (queue)
@@ -477,9 +447,9 @@ public abstract class PacketQueue<T>
         byte[] buf, int off, int len, Object context);
 
     /**
-     * Releases packet when it is handled by provided {@link #handler}.
+     * Releases packet when it is handled by provided packet handler.
      * This method is not called when <tt>PacketQueue</tt> was created without
-     * {@link #handler} and hence no automatic queue processing is done.
+     * handler and hence no automatic queue processing is done.
      * Default implementation is empty, but it might be used to implement
      * packet pooling to re-use them.
      * @param pkt packet to release
@@ -537,296 +507,72 @@ public abstract class PacketQueue<T>
     }
 
     /**
-     * Helper class to calculate throttle delay when throttling is enabled.
+     * An adapter class implementing {@link AsyncQueueHandler.Handler<T>}
+     * to wrap {@link PacketHandler<T>}.
      */
-    private static final class ThrottleCalculator<T>
+    private final class HandlerAdapter implements AsyncQueueHandler.Handler<T>
     {
         /**
-         * The number of {@link T}s already processed during the current
-         * <tt>perNanos</tt> interval.
-         */
-        private long packetsHandledWithinInterval = 0;
-
-        /**
-         * The time stamp in nanoseconds of the start of the current
-         * <tt>perNanos</tt> interval.
-         */
-        private long intervalStartTimeNanos = 0;
-
-        /**
-         * {@link PacketHandler<T>} instance which provide throttling
-         * configuration
+         * An actual handler of packets.
          */
         private final PacketHandler<T> handler;
 
-        ThrottleCalculator(PacketHandler<T> handler)
+        /**
+         * Constructs adapter of {@link PacketHandler<T>} to
+         * {@link AsyncQueueHandler.Handler<T>} interface.
+         * @param handler an handler instance to adapt
+         */
+        HandlerAdapter(PacketHandler<T> handler)
         {
-            if (handler == null)
-            {
-                throw new IllegalArgumentException("handler must not be null");
-            }
             this.handler = handler;
         }
 
         /**
-         * Calculate necessary delay based current time and number packets
-         * processed processed during current time interval
-         * @return 0 in case delay is not necessary or delay value in nanos
+         * {@inheritDoc}
          */
-        long getDelayNanos()
+        @Override
+        public void handleItem(T item)
         {
-            final long perNanos = handler.perNanos();
-            final long maxPackets = handler.maxPackets();
-
-            if (perNanos > 0 && maxPackets > 0)
+            if (queueStatistics != null)
             {
-                final long now = System.nanoTime();
-                final long nanosRemainingTime = now - intervalStartTimeNanos;
-
-                if (nanosRemainingTime >= perNanos)
-                {
-                    intervalStartTimeNanos = now;
-                    packetsHandledWithinInterval = 0;
-                }
-                else if (packetsHandledWithinInterval >= maxPackets)
-                {
-                    return nanosRemainingTime;
-                }
+                queueStatistics.remove(System.currentTimeMillis());
             }
-            return 0;
-        }
 
-        /**
-         * Count number of processed packets
-         */
-        void notifyPacketProcessed()
-        {
-            packetsHandledWithinInterval++;
-        }
-    }
-
-    /**
-     * Asynchronously reads packets from {@link #queue} on separate thread
-     * borrowed from {@link #executor}.
-     * Thread is not blocked when queue is empty and returned back to
-     * {@link #executor} pool. New or existing thread is borrowed from
-     * {@link #executor} when queue is non empty and {@link #reader} is not
-     * running
-     */
-    private final class AsyncPacketReader
-    {
-        /**
-         * Synchronization object of current instance state, in particular
-         * used to resolve races between {@link #schedule()} and {@link #reader}
-         * exit. In particular synchronization object used to access
-         * to field {@link #readerFuture} and {@link #delayedFuture}.
-         */
-        private final Object syncRoot = new Object();
-
-        /**
-         * Throttle calculator which is used for counting handled packets and
-         * computing necessary delay before processing next packet when
-         * throttling is enabled.
-         */
-        private final ThrottleCalculator<T> throttler
-            = new ThrottleCalculator<>(handler);
-
-        /**
-         * Stores <tt>Future</tt> of currently executing {@link #reader}
-         */
-        private Future<?> readerFuture;
-
-        /**
-         * Stores <tt>ScheduledFuture</tt> of currently delayed
-         * execution {@link #reader}
-         */
-        private ScheduledFuture<?> delayedFuture;
-
-        /**
-         * Perpetually reads packets from this {@link PacketQueue} and uses
-         * {@link #handler} on each of them.
-         */
-        private final Runnable reader = new Runnable()
-        {
-            @Override
-            public void run()
+            try
             {
-                final long maxSequentiallyProcessedPackets =
-                    handler.maxSequentiallyProcessedPackets();
-
-                int sequentiallyHandledPackets = 0;
-
-                while (!closed.get())
-                {
-                    T pkt;
-
-                    synchronized (syncRoot)
-                    {
-                        long delay = throttler.getDelayNanos();
-                        if (delay > 0)
-                        {
-                            onDelay(delay, TimeUnit.NANOSECONDS);
-                            return;
-                        }
-
-
-                        if (maxSequentiallyProcessedPackets > 0 &&
-                            sequentiallyHandledPackets
-                                >= maxSequentiallyProcessedPackets)
-                        {
-                            /*
-                            All instances of AsyncPacketReader executed on
-                            single shared instance of ExecutorService to better
-                            use existing threads and to reduce number of idle
-                            threads when reader's queue is empty.
-
-                            Having limited number of threads to execute might
-                            lead to other problem, when queue is always
-                            non-empty reader will keep running, while other
-                            readers might suffer from execution starvation. One
-                            way to solve this, is to to artificially interrupt
-                            current reader execution and pump it via internal
-                            executor's queue.
-                            */
-                            onYield();
-                            return;
-                        }
-
-                        pkt = queue.poll();
-
-                        if (pkt == null)
-                        {
-                            cancel(false);
-                            return;
-                        }
-                    }
-
-                    sequentiallyHandledPackets++;
-                    throttler.notifyPacketProcessed();
-
-                    if (queueStatistics != null)
-                    {
-                        queueStatistics.remove(System.currentTimeMillis());
-                    }
-
-                    try
-                    {
-                        handler.handlePacket(pkt);
-                    }
-                    catch (Throwable e)
-                    {
-                        logger.warning("Failed to handle packet: " + e);
-                    }
-                    finally
-                    {
-                        releasePacket(pkt);
-                    }
-                }
+                handler.handlePacket(item);
             }
-        };
-
-        /**
-         * Runnable which is scheduled with delay to perform actual schedule of
-         * {@link #reader}
-         */
-        private final Runnable delayedSchedule = new Runnable()
-        {
-            @Override
-            public void run()
+            finally
             {
-                synchronized (syncRoot)
-                {
-                    delayedFuture = null;
-                }
-                schedule();
-            }
-        };
-
-        /**
-         * Attempts to stop execution of {@link #reader} if running
-         */
-        void cancel()
-        {
-            synchronized (syncRoot)
-            {
-                cancel(true);
+                releasePacket(item);
             }
         }
 
         /**
-         * Checks if {@link #reader} is running on one of {@link #executor}
-         * thread and if no submits execution of {@link #reader} on executor.
+         * {@inheritDoc}
          */
-        void schedule()
+        @Override
+        public long maxHandledItems()
         {
-            if (closed.get())
-            {
-                return;
-            }
-
-            if (handler == null)
-            {
-                logger.warning("No handler set, the reading will not start.");
-                return;
-            }
-
-            synchronized (syncRoot)
-            {
-                if ((readerFuture == null || readerFuture.isDone())
-                    && (delayedFuture == null || delayedFuture.isDone()))
-                {
-                    readerFuture = executor.submit(reader);
-                }
-            }
+            return handler.maxPackets();
         }
 
         /**
-         * Invoked when execution of {@link #reader} is about to temporary
-         * cancel and further execution need to be re-scheduled.
-         * Assuming called when lock on {@link #syncRoot} is already taken.
+         * {@inheritDoc}
          */
-        private void onYield()
+        @Override
+        public long perNanos()
         {
-            logger.fine("Yielding AsyncPacketReader associated with "
-                + "PacketQueue with ID = " + id);
-            cancel(false);
-            readerFuture = executor.submit(reader);
+            return handler.perNanos();
         }
 
         /**
-         * Invoked when next execution of {@link #reader} should be delayed.
-         * Assuming called when lock on {@link #syncRoot} is already taken.
-         * @param delay the time from now to delay execution
-         * @param unit the time unit of the delay parameter
+         * {@inheritDoc}
          */
-        private void onDelay(long delay, TimeUnit unit)
+        @Override
+        public long maxSequentiallyHandledItems()
         {
-            logger.fine("Delaying AsyncPacketReader associated with "
-                + "PacketQueue with ID = " + id + " for "
-                + unit.toNanos(delay) + "us");
-            cancel(false);
-            delayedFuture = delayTimer.schedule(delayedSchedule, delay, unit);
-        }
-
-        /**
-         * Attempts to cancel currently running reader. Assuming called when
-         * lock on {@link #syncRoot} is already taken
-         * @param mayInterruptIfRunning indicates if {@link #reader} allowed
-         * to be interrupted if running
-         */
-        private void cancel(boolean mayInterruptIfRunning)
-        {
-            if (delayedFuture != null)
-            {
-                delayedFuture.cancel(mayInterruptIfRunning);
-                delayedFuture = null;
-            }
-
-            if (readerFuture != null)
-            {
-                readerFuture.cancel(mayInterruptIfRunning);
-                readerFuture = null;
-            }
+            return handler.maxSequentiallyProcessedPackets();
         }
     }
 }
