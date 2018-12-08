@@ -337,7 +337,7 @@ public class MergingDatagramSocket
         synchronized (socketContainersSyncRoot)
         {
             int i = indexOf(socketContainers, socket);
-            if (i > 0)
+            if (i >= 0)
             {
                 socketContainer = socketContainers[i];
 
