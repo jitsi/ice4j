@@ -6,7 +6,6 @@ import java.util.*;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.*;
 import java.util.function.*;
-import java.util.logging.*;
 import java.util.logging.Logger; // Disambiguation
 
 /**
@@ -22,100 +21,6 @@ public class PacketQueueTests
      */
     private static final java.util.logging.Logger logger
         = Logger.getLogger(PacketQueueTests.class.getName());
-
-    @Test
-    public void testThrottlingHandlePacket() throws InterruptedException
-    {
-        final long minIntervalBetweenPacketsNanos =
-            TimeUnit.MILLISECONDS.toNanos(10);
-
-        final int itemsCount = 100;
-
-        final CountDownLatch itemsProcessed = new CountDownLatch(itemsCount);
-
-        final AtomicBoolean allItemsWereThrottled = new AtomicBoolean(true);
-
-        final DummyQueue queue = new DummyQueue(
-            itemsCount,
-            new PacketQueue.PacketHandler<DummyQueue.Dummy>()
-            {
-                private long lastPacketHandledTimestampNanos = -1;
-
-                @Override
-                public boolean handlePacket(DummyQueue.Dummy pkt)
-                {
-                    final long now = System.nanoTime();
-
-                    if (lastPacketHandledTimestampNanos != -1)
-                    {
-                        final long durationSinceLastPacketNanos
-                            = now - lastPacketHandledTimestampNanos;
-
-                        final long allowedErrorNanos = 1000;
-
-                        final boolean isThrottled = durationSinceLastPacketNanos
-                            >= minIntervalBetweenPacketsNanos
-                                - allowedErrorNanos;
-
-                        allItemsWereThrottled.set(
-                            allItemsWereThrottled.get() && isThrottled);
-
-                        if (!isThrottled)
-                        {
-                            logger.log(Level.SEVERE,
-                                "Throttling was not properly applied "
-                                    + "between packets processing. Current packet "
-                                    + "timestamp is " + now
-                                    + "us, previous packet "
-                                    + "timestamp is "
-                                    + lastPacketHandledTimestampNanos
-                                    + "us, time interval between is "
-                                    + durationSinceLastPacketNanos
-                                    + "us, expected at least " + perNanos()
-                                    + "us "
-                                    + "between " + maxPackets() + " items");
-                        }
-                    }
-
-                    itemsProcessed.countDown();
-
-                    lastPacketHandledTimestampNanos = now;
-                    return true;
-                }
-
-                @Override
-                public long maxPackets()
-                {
-                    // for easier computation and error message use 1
-                    return 1;
-                }
-
-                @Override
-                public long perNanos()
-                {
-                    // no more than 1 packet per 100 ms
-                    return minIntervalBetweenPacketsNanos;
-                }
-            }, null);
-
-        for (int i = 0; i < itemsCount; i++)
-        {
-            queue.add(new DummyQueue.Dummy());
-            Thread.sleep(TimeUnit.NANOSECONDS.toMillis(
-                minIntervalBetweenPacketsNanos / 10));
-        }
-
-        final boolean completed = itemsProcessed.await(
-            minIntervalBetweenPacketsNanos * itemsCount
-            + TimeUnit.SECONDS.toNanos(1),
-            TimeUnit.NANOSECONDS);
-        Assert.assertTrue("Expected all queued items are handled "
-            + "at this time point", completed);
-
-        Assert.assertTrue("Expect throttling was done by PacketQueue "
-                + " when maxPackets() and perNanos() specified ",
-            allItemsWereThrottled.get());
-    }
 
     @Test
     public void testAddingItemToQueueNotifiesBlockedThreadsImmediately()

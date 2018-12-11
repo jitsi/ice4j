@@ -40,15 +40,6 @@ public final class AsyncQueueHandler<T>
         = Logger.getLogger(AsyncQueueHandler.class.getName());
 
     /**
-     * ScheduledExecutorService to implement delay during throttling in
-     * <tt>AsyncQueueHandler</tt>
-     */
-    private final static ScheduledExecutorService delayTimer
-        = Executors.newSingleThreadScheduledExecutor(
-            new CustomizableThreadFactory(
-                AsyncQueueHandler.class.getName() + "-timer-", true));
-
-    /**
      * The default <tt>ExecutorService</tt> to run <tt>AsyncQueueHandler</tt>
      * when there is no executor injected in constructor.
      */
@@ -56,12 +47,6 @@ public final class AsyncQueueHandler<T>
         = Executors.newCachedThreadPool(
             new CustomizableThreadFactory(
                 AsyncQueueHandler.class.getName() + "-executor-", true));
-
-    /**
-     * Number of nanoseconds to consider queue is empty to exit reading loop in
-     * borrowed thread.
-     */
-    private final static long emptyQueueTimeoutNanoseconds = 50;
 
     /**
      * Executor service to run {@link #reader}, which asynchronously
@@ -87,36 +72,32 @@ public final class AsyncQueueHandler<T>
     private final String id;
 
     /**
-     * A flag which indicates if reading of {@link #queue} should be
-     * cancelled.
+     * Specifies the number of items allowed to be handled sequentially
+     * without yielding control to executor's thread. Specifying positive
+     * number allows implementation of cooperative multi-tasking
+     * between different {@link AsyncQueueHandler<T>} sharing
+     * same {@link ExecutorService}.
      */
-    private final AtomicBoolean cancelled = new AtomicBoolean();
+    private final long maxSequentiallyHandledItems;
+
+    /**
+     * A flag which indicates if reading of {@link #queue} is allowed
+     * to continue.
+     */
+    private final AtomicBoolean running = new AtomicBoolean();
 
     /**
      * Synchronization object of current instance state, in particular
      * used to resolve races between {@link #handleQueueItemsUntilEmpty()}
      * and {@link #reader} exit. In particular synchronization object used to
-     * access to field {@link #readerFuture} and {@link #delayedFuture}.
+     * access to field {@link #readerFuture}.
      */
     private final Object syncRoot = new Object();
-
-    /**
-     * Throttle calculator which is used for counting handled items and
-     * computing necessary delay before processing next item when
-     * throttling is enabled.
-     */
-    private final ThrottleCalculator<T> throttler;
 
     /**
      * Stores <tt>Future</tt> of currently executing {@link #reader}
      */
     private Future<?> readerFuture;
-
-    /**
-     * Stores <tt>ScheduledFuture</tt> of currently delayed
-     * execution {@link #reader}
-     */
-    private ScheduledFuture<?> delayedFuture;
 
     /**
      * Perpetually reads item from {@link #queue} and uses
@@ -127,58 +108,22 @@ public final class AsyncQueueHandler<T>
         @Override
         public void run()
         {
-            final long maxSequentiallyHandledItems =
-                handler.maxSequentiallyHandledItems();
+            long sequentiallyHandledItems = 0;
 
-            int sequentiallyHandledItems = 0;
-
-            while (!cancelled.get())
+            while (running.get())
             {
                 T item;
 
                 synchronized (syncRoot)
                 {
-                    long delay = throttler.getDelayNanos();
-                    if (delay > 0)
-                    {
-                        onDelay(delay, TimeUnit.NANOSECONDS);
-                        return;
-                    }
-
                     if (maxSequentiallyHandledItems > 0 &&
                         sequentiallyHandledItems >= maxSequentiallyHandledItems)
                     {
-                        /*
-                        All instances of AsyncQueueHandler executed on
-                        single shared instance of ExecutorService to better
-                        use existing threads and to reduce number of idle
-                        threads when reader's queue is empty.
-
-                        Having limited number of threads to execute might
-                        lead to other problem, when queue is always
-                        non-empty reader will keep running, while other
-                        readers might suffer from execution starvation. One
-                        way to solve this, is to to artificially interrupt
-                        current reader execution and pump it via internal
-                        executor's queue.
-                        */
                         onYield();
                         return;
                     }
 
-                    try
-                    {
-                        // It is observed that giving very small poll timeout,
-                        // up to hundred nanoseconds, compared to not
-                        // timeout at all has about 5-10% better
-                        // performance in micro-benchmark scenarios.
-                        item = queue.poll(
-                            emptyQueueTimeoutNanoseconds, TimeUnit.NANOSECONDS);
-                    }
-                    catch (InterruptedException e)
-                    {
-                        item = null;
-                    }
+                    item = queue.poll();
 
                     if (item == null)
                     {
@@ -188,7 +133,6 @@ public final class AsyncQueueHandler<T>
                 }
 
                 sequentiallyHandledItems++;
-                throttler.notifyItemHandled();
 
                 try
                 {
@@ -203,23 +147,6 @@ public final class AsyncQueueHandler<T>
     };
 
     /**
-     * Runnable which is scheduled with delay to perform actual
-     * scheduling of {@link #reader} execution.
-     */
-    private final Runnable delayedSchedule = new Runnable()
-    {
-        @Override
-        public void run()
-        {
-            synchronized (syncRoot)
-            {
-                delayedFuture = null;
-            }
-            handleQueueItemsUntilEmpty();
-        }
-    };
-
-    /**
      * Constucts instance of {@link AsyncQueueHandler<T>} which is capable of
      * asyncronous reading provided queue from thread borrowed from executor to
      * process items with provided handler.
@@ -228,12 +155,16 @@ public final class AsyncQueueHandler<T>
      * invoked per each item placed in the queue.
      * @param id optional identifier of current handler for debug purpose
      * @param executor optional executor service to borrow threads from
+     * @param maxSequentiallyHandledItems maximum number of items sequentially
+     * handled on thread borrowed from {@link #executor} before temporary
+     * releasing thread and re-acquiring it from {@link #executor}.
      */
     public AsyncQueueHandler(
         BlockingQueue<T> queue,
         Handler<T> handler,
         String id,
-        ExecutorService executor)
+        ExecutorService executor,
+        long maxSequentiallyHandledItems)
     {
         if (queue == null)
         {
@@ -249,7 +180,7 @@ public final class AsyncQueueHandler<T>
         this.queue = queue;
         this.handler = handler;
         this.id = id;
-        this.throttler = new ThrottleCalculator<>(handler);
+        this.maxSequentiallyHandledItems = maxSequentiallyHandledItems;
     }
 
     /**
@@ -257,7 +188,7 @@ public final class AsyncQueueHandler<T>
      */
     public void cancel()
     {
-        cancelled.set(true);
+        running.set(false);
 
         synchronized (syncRoot)
         {
@@ -271,22 +202,11 @@ public final class AsyncQueueHandler<T>
      */
     public void handleQueueItemsUntilEmpty()
     {
-        if (cancelled.get())
-        {
-            return;
-        }
-
-        if (handler == null)
-        {
-            logger.warning("No handler set, the reading will not start.");
-            return;
-        }
-
         synchronized (syncRoot)
         {
-            if ((readerFuture == null || readerFuture.isDone())
-                && (delayedFuture == null || delayedFuture.isDone()))
+            if (readerFuture == null || readerFuture.isDone())
             {
+                running.set(true);
                 readerFuture = executor.submit(reader);
             }
         }
@@ -306,21 +226,6 @@ public final class AsyncQueueHandler<T>
     }
 
     /**
-     * Invoked when next execution of {@link #reader} should be delayed.
-     * Assuming called when lock on {@link #syncRoot} is already taken.
-     * @param delay the time from now to delay execution
-     * @param unit the time unit of the delay parameter
-     */
-    private void onDelay(long delay, TimeUnit unit)
-    {
-        logger.fine("Delaying AsyncQueueHandler associated with "
-            + "AsyncQueueHandler with ID = " + id + " for "
-            + unit.toNanos(delay) + "us");
-        cancel(false);
-        delayedFuture = delayTimer.schedule(delayedSchedule, delay, unit);
-    }
-
-    /**
      * Attempts to cancel currently running reader. Assuming called when
      * lock on {@link #syncRoot} is already taken
      * @param mayInterruptIfRunning indicates if {@link #reader} allowed
@@ -328,12 +233,6 @@ public final class AsyncQueueHandler<T>
      */
     private void cancel(boolean mayInterruptIfRunning)
     {
-        if (delayedFuture != null)
-        {
-            delayedFuture.cancel(mayInterruptIfRunning);
-            delayedFuture = null;
-        }
-
         if (readerFuture != null)
         {
             readerFuture.cancel(mayInterruptIfRunning);
@@ -352,108 +251,5 @@ public final class AsyncQueueHandler<T>
          * @param item the item to do something with.
          */
         void handleItem(T item);
-
-        /**
-         * Specifies max number {@link #handleItem(T)} invocation
-         * per {@link #perNanos()}
-         * @return positive number of allowed handled items in case of
-         * throttling must be enabled.
-         */
-        default long maxHandledItems() {
-            return -1;
-        }
-
-        /**
-         * Specifies time interval in nanoseconds for {@link #maxHandledItems()}
-         * @return positive nanoseconds count in case of throttling must be
-         * enabled.
-         */
-        default long perNanos() {
-            return -1;
-        }
-
-        /**
-         * Specifies the number of items allowed to be handled sequentially
-         * without yielding control to executor's thread. Specifying positive
-         * number will allow other possible queues sharing same
-         * {@link ExecutorService} to process their items.
-         * @return positive value to specify max number of sequentially handled
-         * items which allows implementation of cooperative multi-tasking
-         * between different {@link AsyncQueueHandler<T>} sharing
-         * same {@link ExecutorService}.
-         */
-        default long maxSequentiallyHandledItems()
-        {
-            return -1;
-        }
-    }
-
-    /**
-     * Helper class to calculate throttle delay when throttling is enabled.
-     */
-    private static final class ThrottleCalculator<T>
-    {
-        /**
-         * The number of {@link T}s already processed during the current
-         * <tt>perNanos</tt> interval.
-         */
-        private long itemsHandledWithinInterval = 0;
-
-        /**
-         * The time stamp in nanoseconds of the start of the current
-         * <tt>perNanos</tt> interval.
-         */
-        private long intervalStartTimeNanos = 0;
-
-        /**
-         * {@link Handler <T>} instance which provide throttling
-         * configuration
-         */
-        private final Handler<T> handler;
-
-        ThrottleCalculator(Handler<T> handler)
-        {
-            if (handler == null)
-            {
-                throw new IllegalArgumentException("handler must not be null");
-            }
-            this.handler = handler;
-        }
-
-        /**
-         * Calculate necessary delay based current time and number of items
-         * processed during current time interval
-         * @return 0 in case delay is not necessary or delay value in nanos
-         */
-        long getDelayNanos()
-        {
-            final long perNanos = handler.perNanos();
-            final long maxHandledItems = handler.maxHandledItems();
-
-            if (perNanos > 0 && maxHandledItems > 0)
-            {
-                final long now = System.nanoTime();
-                final long nanosRemainingTime = now - intervalStartTimeNanos;
-
-                if (nanosRemainingTime >= perNanos)
-                {
-                    intervalStartTimeNanos = now;
-                    itemsHandledWithinInterval = 0;
-                }
-                else if (itemsHandledWithinInterval >= maxHandledItems)
-                {
-                    return nanosRemainingTime;
-                }
-            }
-            return 0;
-        }
-
-        /**
-         * Count number of handled items
-         */
-        void notifyItemHandled()
-        {
-            itemsHandledWithinInterval++;
-        }
     }
 }

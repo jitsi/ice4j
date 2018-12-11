@@ -197,7 +197,8 @@ public abstract class PacketQueue<T>
                 queue,
                 new HandlerAdapter(packetHandler),
                 id,
-                executor);
+                executor,
+                packetHandler.maxSequentiallyProcessedPackets());
         }
         else
         {
@@ -479,25 +480,6 @@ public abstract class PacketQueue<T>
         boolean handlePacket(T pkt);
 
         /**
-         * Specifies max number {@link #handlePacket(T)} invocation
-         * per {@link #perNanos()}
-         * @return positive number of allowed packets in case of throttling
-         * must be enabled.
-         */
-        default long maxPackets() {
-            return -1;
-        }
-
-        /**
-         * Specifies time interval in nanoseconds for {@link #maxPackets()}
-         * @return positive nanoseconds count in case of throttling must be
-         * enabled.
-         */
-        default long perNanos() {
-            return -1;
-        }
-
-        /**
          * Specifies the number of packets allowed to be processed sequentially
          * without yielding control to executor's thread. Specifying positive
          * number will allow other possible queues sharing same
@@ -552,33 +534,6 @@ public abstract class PacketQueue<T>
             {
                 releasePacket(item);
             }
-        }
-
-        /**
-         * {@inheritDoc}
-         */
-        @Override
-        public long maxHandledItems()
-        {
-            return handler.maxPackets();
-        }
-
-        /**
-         * {@inheritDoc}
-         */
-        @Override
-        public long perNanos()
-        {
-            return handler.perNanos();
-        }
-
-        /**
-         * {@inheritDoc}
-         */
-        @Override
-        public long maxSequentiallyHandledItems()
-        {
-            return handler.maxSequentiallyProcessedPackets();
         }
     }
 }
