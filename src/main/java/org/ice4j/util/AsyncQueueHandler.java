@@ -112,14 +112,14 @@ public final class AsyncQueueHandler<T>
 
             while (running.get())
             {
-                T item;
-
                 if (maxSequentiallyHandledItems > 0 &&
                     sequentiallyHandledItems >= maxSequentiallyHandledItems)
                 {
                     onYield();
                     return;
                 }
+
+                T item;
 
                 synchronized (syncRoot)
                 {
