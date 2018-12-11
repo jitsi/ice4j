@@ -114,15 +114,15 @@ public final class AsyncQueueHandler<T>
             {
                 T item;
 
+                if (maxSequentiallyHandledItems > 0 &&
+                    sequentiallyHandledItems >= maxSequentiallyHandledItems)
+                {
+                    onYield();
+                    return;
+                }
+
                 synchronized (syncRoot)
                 {
-                    if (maxSequentiallyHandledItems > 0 &&
-                        sequentiallyHandledItems >= maxSequentiallyHandledItems)
-                    {
-                        onYield();
-                        return;
-                    }
-
                     item = queue.poll();
 
                     if (item == null)
@@ -189,11 +189,7 @@ public final class AsyncQueueHandler<T>
     public void cancel()
     {
         running.set(false);
-
-        synchronized (syncRoot)
-        {
-            cancel(true);
-        }
+        cancel(true);
     }
 
     /**
@@ -219,10 +215,17 @@ public final class AsyncQueueHandler<T>
      */
     private void onYield()
     {
-        logger.fine("Yielding AsyncQueueHandler associated with "
-            + "AsyncQueueHandler with ID = " + id);
-        cancel(false);
-        readerFuture = executor.submit(reader);
+        if (logger.isLoggable(java.util.logging.Level.FINE))
+        {
+            logger.fine("Yielding AsyncQueueHandler associated with "
+                + "AsyncQueueHandler with ID = " + id);
+        }
+
+        synchronized (syncRoot)
+        {
+            cancel(false);
+            readerFuture = executor.submit(reader);
+        }
     }
 
     /**
@@ -233,10 +236,13 @@ public final class AsyncQueueHandler<T>
      */
     private void cancel(boolean mayInterruptIfRunning)
     {
-        if (readerFuture != null)
+        synchronized (syncRoot)
         {
-            readerFuture.cancel(mayInterruptIfRunning);
-            readerFuture = null;
+            if (readerFuture != null)
+            {
+                readerFuture.cancel(mayInterruptIfRunning);
+                readerFuture = null;
+            }
         }
     }
 
