@@ -207,7 +207,6 @@ public final class AsyncQueueHandler<T>
      */
     public void cancel()
     {
-        running.set(false);
         cancel(true);
     }
 
@@ -221,8 +220,7 @@ public final class AsyncQueueHandler<T>
         {
             if (readerFuture == null || readerFuture.isDone())
             {
-                running.set(true);
-                readerFuture = executor.submit(reader);
+                rescheduleReader();
             }
         }
     }
@@ -238,10 +236,7 @@ public final class AsyncQueueHandler<T>
             logger.fine("Yielding AsyncQueueHandler with ID = " + id);
         }
 
-        synchronized (syncRoot)
-        {
-            readerFuture = executor.submit(reader);
-        }
+        rescheduleReader();
     }
 
     /**
@@ -253,11 +248,25 @@ public final class AsyncQueueHandler<T>
     {
         synchronized (syncRoot)
         {
+            running.set(false);
+
             if (readerFuture != null)
             {
                 readerFuture.cancel(mayInterruptIfRunning);
                 readerFuture = null;
             }
+        }
+    }
+
+    /**
+     * Reschedules execution of {@link #reader} on {@link #executor}'s thread.
+     */
+    private void rescheduleReader()
+    {
+        synchronized (syncRoot)
+        {
+            running.set(true);
+            readerFuture = executor.submit(reader);
         }
     }
 
