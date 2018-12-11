@@ -147,8 +147,27 @@ public final class AsyncQueueHandler<T>
     };
 
     /**
-     * Constucts instance of {@link AsyncQueueHandler<T>} which is capable of
-     * asyncronous reading provided queue from thread borrowed from executor to
+     * Constructs instance of {@link AsyncQueueHandler<T>} which is capable of
+     * asynchronous reading provided queue from thread borrowed from executor to
+     * process items with provided handler.
+     * @param queue thread-safe queue which holds items to process
+     * @param handler an implementation of handler routine which will be
+     * invoked per each item placed in the queue.
+     * @param id optional identifier of current handler for debug purpose
+     * @param executor optional executor service to borrow threads from
+     */
+    public AsyncQueueHandler(
+        BlockingQueue<T> queue,
+        Handler<T> handler,
+        String id,
+        ExecutorService executor)
+    {
+        this(queue, handler, id, executor, -1);
+    }
+
+    /**
+     * Constructs instance of {@link AsyncQueueHandler<T>} which is capable of
+     * asynchronous reading provided queue from thread borrowed from executor to
      * process items with provided handler.
      * @param queue thread-safe queue which holds items to process
      * @param handler an implementation of handler routine which will be
