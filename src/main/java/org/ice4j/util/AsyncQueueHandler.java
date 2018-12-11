@@ -240,7 +240,6 @@ public final class AsyncQueueHandler<T>
 
         synchronized (syncRoot)
         {
-            cancel(false);
             readerFuture = executor.submit(reader);
         }
     }
