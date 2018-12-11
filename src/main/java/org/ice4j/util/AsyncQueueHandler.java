@@ -211,14 +211,12 @@ public final class AsyncQueueHandler<T>
     /**
      * Invoked when execution of {@link #reader} is about to temporary
      * cancel and further execution need to be re-scheduled.
-     * Assuming called when lock on {@link #syncRoot} is already taken.
      */
     private void onYield()
     {
         if (logger.isLoggable(java.util.logging.Level.FINE))
         {
-            logger.fine("Yielding AsyncQueueHandler associated with "
-                + "AsyncQueueHandler with ID = " + id);
+            logger.fine("Yielding AsyncQueueHandler with ID = " + id);
         }
 
         synchronized (syncRoot)
@@ -229,8 +227,7 @@ public final class AsyncQueueHandler<T>
     }
 
     /**
-     * Attempts to cancel currently running reader. Assuming called when
-     * lock on {@link #syncRoot} is already taken
+     * Attempts to cancel currently running reader.
      * @param mayInterruptIfRunning indicates if {@link #reader} allowed
      * to be interrupted if running
      */
