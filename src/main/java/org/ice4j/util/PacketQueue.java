@@ -15,7 +15,6 @@
  */
 package org.ice4j.util;
 
-import java.util.*;
 import java.util.concurrent.*;
 import java.util.logging.Logger; // Disambiguation.
 
@@ -30,6 +29,7 @@ import java.util.logging.Logger; // Disambiguation.
  *     <br> MultiplexingSocket#received (and the rest of Multiplex* classes).
  *
  * @author Boris Grozev
+ * @author Yura Yaroshevich
  */
 public abstract class PacketQueue<T>
 {
@@ -65,9 +65,11 @@ public abstract class PacketQueue<T>
     }
 
     /**
-     * The underlying {@link Queue} which holds packets.
+     * The underlying {@link BlockingQueue} which holds packets.
+     * Used as synchronization object between {@link #close()}, {@link #get()}
+     * and {@link #doAdd(Object)}.
      */
-    private final Queue<T> queue;
+    private final BlockingQueue<T> queue;
 
     /**
      * Whether this {@link PacketQueue} should store the {@code byte[]} or
@@ -77,29 +79,17 @@ public abstract class PacketQueue<T>
     private final boolean copy;
 
     /**
-     * The capacity of this {@link PacketQueue}. If one of the {@code add}
-     * methods is called while the queue holds this many packets, the first
-     * packet in the queue will be dropped.
-     */
-    private final int capacity;
-
-    /**
      * The {@link QueueStatistics} instance optionally used to collect and print
      * detailed statistics about this queue.
      */
     private final QueueStatistics queueStatistics;
 
     /**
-     * The {@link Thread} optionally used to perpetually read packets from this
-     * queue and handle them using {@link #handler}.
+     * The optionally used {@link AsyncQueueHandler} to perpetually read packets
+     * from {@link #queue} on separate thread and handle them with provided
+     * packet handler.
      */
-    private final Thread thread;
-
-    /**
-     * The {@link org.ice4j.util.PacketQueue.PacketHandler} optionally used to
-     * handle packets read from this queue by {@link #thread}.
-     */
-    private final PacketHandler<T> handler;
+    private final AsyncQueueHandler asyncQueueHandler;
 
     /**
      * A string used to identify this {@link PacketQueue} for logging purposes.
@@ -107,9 +97,10 @@ public abstract class PacketQueue<T>
     private final String id;
 
     /**
-     * Whether this queue has been closed.
+     * Whether this queue has been closed. Field is denoted as volatile,
+     * because it is set in one thread and could be read in while loop in other.
      */
-    private boolean closed = false;
+    private volatile boolean closed = false;
 
     /**
      * The number of packets which were dropped from this {@link PacketQueue} as
@@ -164,8 +155,36 @@ public abstract class PacketQueue<T>
                        boolean enableStatistics, String id,
                        PacketHandler<T> packetHandler)
     {
+        this(capacity, copy, enableStatistics, id, packetHandler, null);
+    }
+
+    /**
+     * Initializes a new {@link PacketQueue} instance.
+     * @param capacity the capacity of the queue.
+     * @param copy whether the queue is to store the instances it is given via
+     * the various {@code add} methods, or create a copy.
+     * @param enableStatistics whether detailed statistics should be calculated
+     * and printed. WARNING: this will produce copious output (one line per
+     * packet added or removed).
+     * @param id the ID of the packet queue, to be used for logging.
+     * @param packetHandler An optional handler to be used by the queue for
+     * packets read from it. If a non-null value is passed the queue will
+     * start its own thread, which will read packets from the queue and execute
+     * {@code handler.handlePacket} on them. If set to null, no thread will be
+     * created, and the queue will provide access to the head element via
+     * {@link #get()} and {@link #poll()}.
+     * @param executor An optional executor service to use to execute
+     * packetHandler for items added to queue.
+     */
+    public PacketQueue(
+        int capacity,
+        boolean copy,
+        boolean enableStatistics,
+        String id,
+        PacketHandler<T> packetHandler,
+        ExecutorService executor)
+    {
         this.copy = copy;
-        this.capacity = capacity;
         this.id = id;
         queue = new ArrayBlockingQueue<>(capacity);
 
@@ -174,81 +193,19 @@ public abstract class PacketQueue<T>
 
         if (packetHandler != null)
         {
-            handler = packetHandler;
-
-            thread = new Thread(){
-                @Override
-                public void run()
-                {
-                    runInReadingThread();
-                }
-            };
-            thread.setName(getClass().getName() + "-" + id);
-            thread.setDaemon(true);
-            thread.start();
+            asyncQueueHandler = new AsyncQueueHandler<T>(
+                queue,
+                new HandlerAdapter(packetHandler),
+                id,
+                executor,
+                packetHandler.maxSequentiallyProcessedPackets());
         }
         else
         {
-            thread = null;
-            handler = null;
+            asyncQueueHandler = null;
         }
 
         logger.fine("Initialized a PacketQueue instance with ID " + id);
-    }
-
-    /**
-     * Perpetually reads packets from this {@link PacketQueue} and uses
-     * {@link #handler} on each of them.
-     */
-    private void runInReadingThread()
-    {
-        if (Thread.currentThread() != thread)
-        {
-            logger.warning("runInReadingThread executing in "
-                               + Thread.currentThread());
-            return;
-        }
-
-        if (handler == null)
-        {
-            logger.warning("No handler set, the reading thread will be stopped.");
-            return;
-        }
-
-        while (!closed)
-        {
-            T pkt;
-
-            synchronized (queue)
-            {
-                pkt = queue.poll();
-                if (pkt == null)
-                {
-                    try
-                    {
-                        queue.wait(100);
-                    }
-                    catch (InterruptedException ie)
-                    {
-                    }
-                    continue;
-                }
-            }
-
-            if (queueStatistics != null)
-            {
-                queueStatistics.remove(System.currentTimeMillis());
-            }
-
-            try
-            {
-                handler.handlePacket(pkt);
-            }
-            catch (Exception e)
-            {
-                logger.warning("Failed to handle packet: " + e);
-            }
-        }
     }
 
     /**
@@ -324,7 +281,7 @@ public abstract class PacketQueue<T>
 
         synchronized (queue)
         {
-            if (queue.size() >= capacity)
+            while (!queue.offer(pkt))
             {
                 // Drop from the head of the queue.
                 T p = queue.poll();
@@ -346,9 +303,13 @@ public abstract class PacketQueue<T>
             {
                 queueStatistics.add(System.currentTimeMillis());
             }
-            queue.offer(pkt);
 
             queue.notifyAll();
+        }
+
+        if (asyncQueueHandler != null)
+        {
+            asyncQueueHandler.handleQueueItemsUntilEmpty();
         }
     }
 
@@ -360,7 +321,7 @@ public abstract class PacketQueue<T>
      */
     public T get()
     {
-        if (handler != null)
+        if (asyncQueueHandler != null)
         {
             // If the queue was configured with a handler, it is running its
             // own reading thread, and reading from it via this interface would
@@ -407,7 +368,7 @@ public abstract class PacketQueue<T>
         if (closed)
             return null;
 
-        if (handler != null)
+        if (asyncQueueHandler != null)
         {
             // If the queue was configured with a handler, it is running its
             // own reading thread, and reading from it via this interface would
@@ -428,11 +389,22 @@ public abstract class PacketQueue<T>
         }
     }
 
+    /**
+     * Closes current <tt>PacketQueue</tt> instance. No items will be added
+     * to queue when it's closed. Threads which were blocked in {@link #get()}
+     * will receive <tt>null</tt>. Asynchronous queue processing by
+     * {@link #asyncQueueHandler} is stopped.
+     */
     public void close()
     {
         if (!closed)
         {
             closed = true;
+
+            if (asyncQueueHandler != null)
+            {
+                asyncQueueHandler.cancel();
+            }
 
             synchronized (queue)
             {
@@ -482,6 +454,18 @@ public abstract class PacketQueue<T>
         byte[] buf, int off, int len, Object context);
 
     /**
+     * Releases packet when it is handled by provided packet handler.
+     * This method is not called when <tt>PacketQueue</tt> was created without
+     * handler and hence no automatic queue processing is done.
+     * Default implementation is empty, but it might be used to implement
+     * packet pooling to re-use them.
+     * @param pkt packet to release
+     */
+    protected void releasePacket(T pkt)
+    {
+    }
+
+    /**
      * A simple interface to handle packets.
      * @param <T> the type of the packets.
      */
@@ -494,5 +478,62 @@ public abstract class PacketQueue<T>
          * {@code false} otherwise.
          */
         boolean handlePacket(T pkt);
+
+        /**
+         * Specifies the number of packets allowed to be processed sequentially
+         * without yielding control to executor's thread. Specifying positive
+         * number will allow other possible queues sharing same
+         * {@link ExecutorService} to process their packets.
+         * @return positive value to specify max number of packets which allows
+         * implementation of cooperative multi-tasking between different
+         * {@link PacketQueue} sharing same {@link ExecutorService}.
+         */
+        default long maxSequentiallyProcessedPackets()
+        {
+            return -1;
+        }
+    }
+
+    /**
+     * An adapter class implementing {@link AsyncQueueHandler.Handler<T>}
+     * to wrap {@link PacketHandler<T>}.
+     */
+    private final class HandlerAdapter implements AsyncQueueHandler.Handler<T>
+    {
+        /**
+         * An actual handler of packets.
+         */
+        private final PacketHandler<T> handler;
+
+        /**
+         * Constructs adapter of {@link PacketHandler<T>} to
+         * {@link AsyncQueueHandler.Handler<T>} interface.
+         * @param handler an handler instance to adapt
+         */
+        HandlerAdapter(PacketHandler<T> handler)
+        {
+            this.handler = handler;
+        }
+
+        /**
+         * {@inheritDoc}
+         */
+        @Override
+        public void handleItem(T item)
+        {
+            if (queueStatistics != null)
+            {
+                queueStatistics.remove(System.currentTimeMillis());
+            }
+
+            try
+            {
+                handler.handlePacket(item);
+            }
+            finally
+            {
+                releasePacket(item);
+            }
+        }
     }
 }
