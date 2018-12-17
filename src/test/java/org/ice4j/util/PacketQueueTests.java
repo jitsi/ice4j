@@ -124,7 +124,7 @@ public class PacketQueueTests
         for (int i = 0; i < capacity + 1; i++)
         {
             DummyQueue.Dummy item = new DummyQueue.Dummy();
-            item.seed = i;
+            item.id = i;
 
             dummyQueue.add(item);
         }
@@ -139,7 +139,7 @@ public class PacketQueueTests
             else
             {
                 Assert.assertNotEquals("Oldest item must be removed when "
-                    + "item exceeding capacity added", 0, item.seed);
+                    + "item exceeding capacity added", 0, item.id);
             }
         }
     }
@@ -310,5 +310,48 @@ public class PacketQueueTests
         {
             queue.close();
         }
+    }
+
+    @Test
+    public void testReleasePacketCalledForPacketsPoppedDueToQueueOverflow()
+        throws Exception
+    {
+
+        final ExecutorService singleThreadedExecutor
+            = Executors.newSingleThreadExecutor();
+
+        final List<DummyQueue.Dummy> releasedPackets = new ArrayList<>();
+
+        final int queueCapacity = 1;
+
+        final DummyQueue queue = new DummyQueue(queueCapacity)
+        {
+            @Override
+            protected void releasePacket(Dummy pkt)
+            {
+                releasedPackets.add(pkt);
+            }
+        };
+
+        final int itemsToEnqueue = 10;
+
+        for (int i = 0; i < itemsToEnqueue; i++)
+        {
+            final DummyQueue.Dummy dummy = new DummyQueue.Dummy();
+            dummy.id = i + 1;
+            queue.add(dummy);
+        }
+
+        Assert.assertEquals(
+            itemsToEnqueue - queueCapacity, releasedPackets.size());
+
+        int seed = 1;
+        for (DummyQueue.Dummy releasedPacket : releasedPackets)
+        {
+            Assert.assertEquals(seed, releasedPacket.id);
+            seed++;
+        }
+
+        singleThreadedExecutor.shutdown();
     }
 }

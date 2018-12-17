@@ -57,6 +57,6 @@ class DummyQueue
     }
 
     static class Dummy {
-        int seed;
+        int id;
     }
 }

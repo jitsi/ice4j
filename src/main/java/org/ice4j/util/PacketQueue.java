@@ -16,6 +16,7 @@
 package org.ice4j.util;
 
 import java.util.concurrent.*;
+import java.util.concurrent.atomic.*;
 import java.util.logging.Logger; // Disambiguation.
 
 /**
@@ -106,7 +107,7 @@ public abstract class PacketQueue<T>
      * The number of packets which were dropped from this {@link PacketQueue} as
      * a result of a packet being added while the queue is at full capacity.
      */
-    private int numDroppedPackets = 0;
+    private final AtomicInteger numDroppedPackets = new AtomicInteger();
 
     /**
      * Initializes a new {@link PacketQueue} instance.
@@ -279,32 +280,39 @@ public abstract class PacketQueue<T>
         if (closed)
             return;
 
+        while (!queue.offer(pkt))
+        {
+            // Drop from the head of the queue.
+            T p = queue.poll();
+            if (p != null)
+            {
+                if (queueStatistics != null)
+                {
+                    queueStatistics.remove(System.currentTimeMillis());
+                }
+                final int numDroppedPackets =
+                    this.numDroppedPackets.incrementAndGet();
+                if (logDroppedPacket(numDroppedPackets))
+                {
+                    logger.warning(
+                        "Packets dropped (id=" + id + "): " + numDroppedPackets);
+                }
+
+                // Call release on dropped packet to allow proper implementation
+                // of object pooling by PacketQueue users
+                releasePacket(p);
+            }
+        }
+
+        if (queueStatistics != null)
+        {
+            queueStatistics.add(System.currentTimeMillis());
+        }
+
         synchronized (queue)
         {
-            while (!queue.offer(pkt))
-            {
-                // Drop from the head of the queue.
-                T p = queue.poll();
-                if (p != null)
-                {
-                    if (queueStatistics != null)
-                    {
-                        queueStatistics.remove(System.currentTimeMillis());
-                    }
-                    if (logDroppedPacket(++numDroppedPackets))
-                    {
-                        logger.warning(
-                            "Packets dropped (id=" + id + "): " + numDroppedPackets);
-                    }
-                }
-            }
-
-            if (queueStatistics != null)
-            {
-                queueStatistics.add(System.currentTimeMillis());
-            }
-
-            queue.notifyAll();
+            // notify single thread because only 1 item was added into queue
+            queue.notify();
         }
 
         if (asyncQueueHandler != null)
@@ -408,6 +416,8 @@ public abstract class PacketQueue<T>
 
             synchronized (queue)
             {
+                // notify all threads because PacketQueue is closed and all
+                // threads waiting on queue must stop reading it.
                 queue.notifyAll();
             }
         }
