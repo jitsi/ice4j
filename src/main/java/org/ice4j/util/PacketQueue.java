@@ -308,7 +308,8 @@ public abstract class PacketQueue<T>
 
         synchronized (queue)
         {
-            queue.notifyAll();
+            // notify single thread because only 1 item was added into queue
+            queue.notify();
         }
 
         if (asyncQueueHandler != null)
@@ -412,6 +413,8 @@ public abstract class PacketQueue<T>
 
             synchronized (queue)
             {
+                // notify all threads because PacketQueue is closed and all
+                // threads waiting on queue must stop reading it.
                 queue.notifyAll();
             }
         }
