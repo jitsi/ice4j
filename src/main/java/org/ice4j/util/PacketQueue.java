@@ -279,31 +279,36 @@ public abstract class PacketQueue<T>
         if (closed)
             return;
 
+        while (!queue.offer(pkt))
+        {
+            // Drop from the head of the queue.
+            T p = queue.poll();
+            if (p != null)
+            {
+                if (queueStatistics != null)
+                {
+                    queueStatistics.remove(System.currentTimeMillis());
+                }
+                if (logDroppedPacket(++numDroppedPackets))
+                {
+                    logger.warning(
+                        "Packets dropped (id=" + id + "): " + numDroppedPackets);
+                }
+
+                // Call release on automatically popped packet to allow
+                // proper implementation of object pooling by PacketQueue
+                // users
+                releasePacket(p);
+            }
+        }
+
+        if (queueStatistics != null)
+        {
+            queueStatistics.add(System.currentTimeMillis());
+        }
+
         synchronized (queue)
         {
-            while (!queue.offer(pkt))
-            {
-                // Drop from the head of the queue.
-                T p = queue.poll();
-                if (p != null)
-                {
-                    if (queueStatistics != null)
-                    {
-                        queueStatistics.remove(System.currentTimeMillis());
-                    }
-                    if (logDroppedPacket(++numDroppedPackets))
-                    {
-                        logger.warning(
-                            "Packets dropped (id=" + id + "): " + numDroppedPackets);
-                    }
-                }
-            }
-
-            if (queueStatistics != null)
-            {
-                queueStatistics.add(System.currentTimeMillis());
-            }
-
             queue.notifyAll();
         }
 

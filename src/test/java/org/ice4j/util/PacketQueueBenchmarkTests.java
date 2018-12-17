@@ -159,9 +159,9 @@ public class PacketQueueBenchmarkTests
                         double result = 0;
                         // some dummy computationally exp
                         final int end
-                            = pkt.seed + singleQueueItemProcessingWeight;
+                            = pkt.id + singleQueueItemProcessingWeight;
 
-                        for (int i = pkt.seed; i < end; i++)
+                        for (int i = pkt.id; i < end; i++)
                         {
                             result += Math.log(Math.sqrt(i));
                         }
