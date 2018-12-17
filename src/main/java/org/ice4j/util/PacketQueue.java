@@ -290,7 +290,9 @@ public abstract class PacketQueue<T>
                 {
                     queueStatistics.remove(System.currentTimeMillis());
                 }
-                if (logDroppedPacket(numDroppedPackets.incrementAndGet()))
+                final int numDroppedPackets =
+                    this.numDroppedPackets.incrementAndGet();
+                if (logDroppedPacket(numDroppedPackets))
                 {
                     logger.warning(
                         "Packets dropped (id=" + id + "): " + numDroppedPackets);
