@@ -16,6 +16,7 @@
 package org.ice4j.util;
 
 import java.util.concurrent.*;
+import java.util.concurrent.atomic.*;
 import java.util.logging.Logger; // Disambiguation.
 
 /**
@@ -106,7 +107,7 @@ public abstract class PacketQueue<T>
      * The number of packets which were dropped from this {@link PacketQueue} as
      * a result of a packet being added while the queue is at full capacity.
      */
-    private int numDroppedPackets = 0;
+    private final AtomicInteger numDroppedPackets = new AtomicInteger();
 
     /**
      * Initializes a new {@link PacketQueue} instance.
@@ -289,7 +290,7 @@ public abstract class PacketQueue<T>
                 {
                     queueStatistics.remove(System.currentTimeMillis());
                 }
-                if (logDroppedPacket(++numDroppedPackets))
+                if (logDroppedPacket(numDroppedPackets.incrementAndGet()))
                 {
                     logger.warning(
                         "Packets dropped (id=" + id + "): " + numDroppedPackets);
