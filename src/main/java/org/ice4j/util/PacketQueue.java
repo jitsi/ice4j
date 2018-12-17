@@ -295,9 +295,8 @@ public abstract class PacketQueue<T>
                         "Packets dropped (id=" + id + "): " + numDroppedPackets);
                 }
 
-                // Call release on automatically popped packet to allow
-                // proper implementation of object pooling by PacketQueue
-                // users
+                // Call release on dropped packet to allow proper implementation
+                // of object pooling by PacketQueue users
                 releasePacket(p);
             }
         }
