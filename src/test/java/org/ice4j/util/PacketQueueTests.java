@@ -314,7 +314,8 @@ public class PacketQueueTests
 
     @Test
     public void testReleasePacketCalledForPacketsPoppedDueToQueueOverflow()
-        throws Exception {
+        throws Exception
+    {
 
         final ExecutorService singleThreadedExecutor
             = Executors.newSingleThreadExecutor();
@@ -323,7 +324,8 @@ public class PacketQueueTests
 
         final int queueCapacity = 1;
 
-        final DummyQueue queue = new DummyQueue(queueCapacity) {
+        final DummyQueue queue = new DummyQueue(queueCapacity)
+        {
             @Override
             protected void releasePacket(Dummy pkt)
             {
