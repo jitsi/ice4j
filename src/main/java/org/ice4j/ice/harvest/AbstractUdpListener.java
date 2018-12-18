@@ -491,7 +491,7 @@ public abstract class AbstractUdpListener
                     queueStatistics.add(System.currentTimeMillis());
                 }
 
-                queue.notifyAll();
+                queue.notify();
             }
         }
 
