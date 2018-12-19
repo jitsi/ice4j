@@ -141,15 +141,8 @@ public class SafeCloseDatagramSocket
 
         final Lock closeLock = receiveCloseLock.writeLock();
         closeLock.lock();
-        try
-        {
-            // nothing to do, all threads blocked in receive method are
-            // released at this point
-        }
-        finally
-        {
-            closeLock.unlock();
-        }
+        // we now know all read threads have finished
+        closeLock.unlock();
     }
 
     /**
