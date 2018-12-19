@@ -797,7 +797,7 @@ public class MergingDatagramSocket
                     queue.put(buffer);
                     synchronized (receiveLock)
                     {
-                        receiveLock.notifyAll();
+                        receiveLock.notify();
                     }
                 }
                 catch (InterruptedException ie)
