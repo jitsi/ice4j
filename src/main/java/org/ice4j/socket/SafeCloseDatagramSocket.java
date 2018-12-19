@@ -19,6 +19,7 @@ package org.ice4j.socket;
 
 import java.io.*;
 import java.net.*;
+import java.util.concurrent.locks.*;
 
 /**
  * Represents a <tt>DatagramSocket</tt> which fixes the following problem: when
@@ -29,22 +30,17 @@ import java.net.*;
  * returns.
  *
  * @author Lubomir Marinov
+ * @author Yura Yaroshevich
  */
 public class SafeCloseDatagramSocket
     extends DelegatingDatagramSocket
 {
-
     /**
-     * The number of {@link #receive(DatagramPacket)} calls that have to return
-     * before {@link #close()} returns.
+     * A reader-writer lock to prevent {@link #close()} completion if any thread
+     * is blocked within {@link #receive(DatagramPacket)}.
      */
-    private int inReceive = 0;
-
-    /**
-     * The <tt>Object</tt> which synchronizes the access to {@link #inReceive}
-     * and implements the related inter-thread communication.
-     */
-    private final Object inReceiveSyncRoot = new Object();
+    private final ReadWriteLock receiveCloseLock
+        = new ReentrantReadWriteLock();
 
     /**
      * Initializes a new <tt>SafeCloseDatagramSocket</tt> instance and binds it
@@ -143,22 +139,10 @@ public class SafeCloseDatagramSocket
     {
         super.close();
 
-        synchronized (inReceiveSyncRoot)
-        {
-            boolean interrupted = false;
-
-            while (inReceive > 0)
-                try
-                {
-                    inReceiveSyncRoot.wait();
-                }
-                catch (InterruptedException iex)
-                {
-                    interrupted = true;
-                }
-            if (interrupted)
-                Thread.currentThread().interrupt();
-        }
+        final Lock closeLock = receiveCloseLock.writeLock();
+        closeLock.lock();
+        // we now know all read threads have finished
+        closeLock.unlock();
     }
 
     /**
@@ -182,21 +166,15 @@ public class SafeCloseDatagramSocket
     public void receive(DatagramPacket p)
         throws IOException
     {
-        synchronized (inReceiveSyncRoot)
-        {
-            inReceive++;
-        }
+        final Lock receiveLock = receiveCloseLock.readLock();
+        receiveLock.lock();
         try
         {
             super.receive(p);
         }
         finally
         {
-            synchronized (inReceiveSyncRoot)
-            {
-                inReceive--;
-                inReceiveSyncRoot.notifyAll();
-            }
+            receiveLock.unlock();
         }
     }
 }
