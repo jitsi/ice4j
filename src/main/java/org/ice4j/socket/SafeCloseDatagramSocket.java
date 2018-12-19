@@ -30,6 +30,7 @@ import java.util.concurrent.locks.*;
  * returns.
  *
  * @author Lubomir Marinov
+ * @author Yura Yaroshevich
  */
 public class SafeCloseDatagramSocket
     extends DelegatingDatagramSocket
