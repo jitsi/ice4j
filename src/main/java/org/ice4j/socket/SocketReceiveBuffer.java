@@ -19,70 +19,111 @@ package org.ice4j.socket;
 
 import java.net.*;
 import java.util.*;
+import java.util.concurrent.*;
+import java.util.function.*;
 
 /**
- * Implements a list of <tt>DatagramPacket</tt>s received by a
+ * Implements a buffer of <tt>DatagramPacket</tt>s received by a
  * <tt>DatagramSocket</tt> or a <tt>Socket</tt>. The list enforces the
  * <tt>SO_RCVBUF</tt> option for the associated <tt>DatagramSocket</tt> or
  * <tt>Socket</tt>.
  *
  * @author Lyubomir Marinov
+ * @author Yura Yaroshevich
  */
-abstract class SocketReceiveBuffer
-    extends LinkedList<DatagramPacket>
+class SocketReceiveBuffer
 {
+    /**
+     * Default size in bytes of socket receive buffer.
+     */
     private static final int DEFAULT_RECEIVE_BUFFER_SIZE = 1024 * 1024;
 
-    private static final long serialVersionUID = 2804762379509257652L;
+    /**
+     * Queue to store received datagrams.
+     */
+    private final BlockingQueue<DatagramPacket> buffer
+        = new LinkedBlockingQueue<>();
 
     /**
      * The value of the <tt>SO_RCVBUF</tt> option for the associated
      * <tt>DatagramSocket</tt> or <tt>Socket</tt>. Cached for the sake of
      * performance.
      */
-    private int receiveBufferSize;
+    private int cachedReceiveBufferSize;
 
     /**
      * The (total) size in bytes of this receive buffer.
      */
-    private int size;
+    private int totalBuffersByteSize;
 
     /**
-     * {@inheritDoc}
+     * Counts total number of packets added to buffer.
      */
-    @Override
-    public boolean add(DatagramPacket p)
+    private int totalPacketsAdded;
+
+    /**
+     * A user provided getter of receive buffer size, might
+     * fail with {@link Exception} when called.
+     */
+    private final Callable<Integer> receiveBufferSizeSupplier;
+
+    /**
+     * Constructs {@link SocketReceiveBuffer} with user-provided
+     * @param receiveBufferSizeSupplier a function to obtain receive buffer
+     * size from associated socket.
+     */
+    public SocketReceiveBuffer(Callable<Integer> receiveBufferSizeSupplier) {
+        this.receiveBufferSizeSupplier = receiveBufferSizeSupplier;
+    }
+
+    /**
+     * Check if receive buffer is empty
+     * @return true if buffer is empty, false - otherwise.
+     */
+    public boolean isEmpty() {
+        return buffer.isEmpty();
+    }
+
+    /**
+     * Adds {@link DatagramPacket} at the end of the socket receive buffer.
+     * @param p datagram to add into receive buffer
+     * @return true if datagram was added, false - otherwise.
+     */
+    public boolean offer(DatagramPacket p)
     {
-        boolean added = super.add(p);
+        boolean added = buffer.offer(p);
 
         // Keep track of the (total) size in bytes of this receive buffer in
         // order to be able to enforce SO_RCVBUF.
-        if (added && (p != null))
+        if (added)
         {
+            ++totalPacketsAdded;
+
             int pSize = p.getLength();
 
             if (pSize > 0)
             {
-                size += pSize;
+                totalBuffersByteSize += pSize;
 
                 // If the added packet is the only element of this list, do not
                 // drop it because of the enforcement of SO_RCVBUF.
-                if (size() > 1)
+                if (buffer.size() > 1)
                 {
                     // For the sake of performance, do not invoke the method
                     // getReceiveBufferSize() of DatagramSocket or Socket on
                     // every packet added to this buffer.
-                    int receiveBufferSize = this.receiveBufferSize;
+                    int receiveBufferSize = this.cachedReceiveBufferSize;
 
-                    if ((receiveBufferSize <= 0) || (modCount % 1000 == 0))
+                    if ((receiveBufferSize <= 0)
+                        || (totalPacketsAdded % 1000 == 0))
                     {
-                        try
-                        {
-                            receiveBufferSize = getReceiveBufferSize();
+                        try {
+                            receiveBufferSize
+                                = this.receiveBufferSizeSupplier.call();
+                        } catch (Exception e) {
+                            // nothing to do
                         }
-                        catch (SocketException sex)
-                        {
-                        }
+
                         if (receiveBufferSize <= 0)
                         {
                             receiveBufferSize = DEFAULT_RECEIVE_BUFFER_SIZE;
@@ -101,10 +142,12 @@ abstract class SocketReceiveBuffer
                                     = DEFAULT_RECEIVE_BUFFER_SIZE;
                             }
                         }
-                        this.receiveBufferSize = receiveBufferSize;
+                        this.cachedReceiveBufferSize = receiveBufferSize;
                     }
-                    if (size > receiveBufferSize)
-                        remove(0);
+                    if (totalBuffersByteSize > receiveBufferSize)
+                    {
+                        poll(0, TimeUnit.NANOSECONDS);
+                    }
                 }
             }
         }
@@ -112,25 +155,22 @@ abstract class SocketReceiveBuffer
     }
 
     /**
-     * Gets the value of the <tt>SO_RCVBUF</tt> option for the associated
-     * <tt>DatagramSocket</tt> or <tt>Socket</tt> which is the buffer size used
-     * by the platform for input on the <tt>DatagramSocket</tt> or
-     * <tt>Socket</tt>.
-     *
-     * @return the value of the <tt>SO_RCVBUF</tt> option for the associated
-     * <tt>DatagramSocket</tt> or <tt>Socket</tt>
-     * @throws SocketException if there is an error in the underlying protocol
+     * Polls socket receive buffer for {@link DatagramPacket}
+     * with specified timeout
+     * @param timeout how long to wait before giving up, in units of
+     * {@code unit}
+     * @param unit a {@code TimeUnit} determining how to interpret the
+     * {@code timeout} parameter
+     * @return the head of this queue, or {@code null} if the
+     * specified waiting time elapses before an element is available
      */
-    public abstract int getReceiveBufferSize()
-        throws SocketException;
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public DatagramPacket remove(int index)
+    public DatagramPacket poll(int timeout, TimeUnit unit)
     {
-        DatagramPacket p = super.remove(index);
+        DatagramPacket p = null;
+        try {
+            p = buffer.poll(timeout, unit);
+        } catch (InterruptedException e) {
+        }
 
         // Keep track of the (total) size in bytes of this receive buffer in
         // order to be able to enforce SO_RCVBUF.
@@ -140,11 +180,48 @@ abstract class SocketReceiveBuffer
 
             if (pSize > 0)
             {
-                size -= pSize;
-                if (size < 0)
-                    size = 0;
+                totalBuffersByteSize -= pSize;
+                if (totalBuffersByteSize < 0)
+                {
+                    totalBuffersByteSize = 0;
+                }
             }
         }
         return p;
     }
+
+    /**
+     * Scans buffer of received {@link DatagramPacket}s and move
+     * datagrams which matches the {@code filter} into returned list.
+     * @param filter a predicate to filter {@link DatagramPacket} stored
+     * in receive buffer.
+     * @return list of datagrams matched to {@code filter}.
+     */
+    public List<DatagramPacket> scan(DatagramPacketFilter filter) {
+        List<DatagramPacket> matchedDatagrams = null;
+        final Iterator<DatagramPacket> it = buffer.iterator();
+
+        while (it.hasNext())
+        {
+            final DatagramPacket p = it.next();
+
+            if (filter.accept(p))
+            {
+                if (matchedDatagrams == null)
+                {
+                    matchedDatagrams = new ArrayList<>();
+                }
+                matchedDatagrams.add(p);
+
+                it.remove();
+            }
+        }
+
+        if (matchedDatagrams != null)
+        {
+            return matchedDatagrams;
+        }
+        return Collections.emptyList();
+    }
+
 }

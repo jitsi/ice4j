@@ -265,11 +265,11 @@ abstract class MultiplexingXXXSocketSupport
             {
                 if (getFilter(socket).accept(p))
                 {
-                    List<DatagramPacket> socketReceived = getReceived(socket);
+                    SocketReceiveBuffer socketReceived = getReceived(socket);
 
                     synchronized (socketReceived)
                     {
-                        socketReceived.add(
+                        socketReceived.offer(
                                 accepted ? clone(p, /* arraycopy */ true) : p);
                         socketReceived.notifyAll();
                     }
@@ -281,11 +281,11 @@ abstract class MultiplexingXXXSocketSupport
             }
             if (!accepted)
             {
-                List<DatagramPacket> thisReceived = getReceived();
+                SocketReceiveBuffer thisReceived = getReceived();
 
                 synchronized (thisReceived)
                 {
-                    thisReceived.add(p);
+                    thisReceived.offer(p);
                     thisReceived.notifyAll();
                 }
             }
@@ -370,7 +370,7 @@ abstract class MultiplexingXXXSocketSupport
      * not accepted by any (existing) {@code DatagramPacketFilter} at the time of
      * receipt
      */
-    protected abstract List<DatagramPacket> getReceived();
+    protected abstract SocketReceiveBuffer getReceived();
 
     /**
      * Gets the list of {@code DatagramPacket}s received by this multiplexing
@@ -383,7 +383,7 @@ abstract class MultiplexingXXXSocketSupport
      * socket and accepted by the {@code DatagramPacketFilter} of the
      * multiplexed {@code socket} at the time of receipt
      */
-    protected abstract List<DatagramPacket> getReceived(
+    protected abstract SocketReceiveBuffer getReceived(
             MultiplexedXXXSocketT socket);
 
     /**
@@ -488,35 +488,13 @@ abstract class MultiplexingXXXSocketSupport
     {
         // Pull the packets which have been received already and are accepted by
         // the specified multiplexed socket out of the multiplexing socket.
-        List<DatagramPacket> thisReceived = getReceived();
+        SocketReceiveBuffer thisReceived = getReceived();
         DatagramPacketFilter socketFilter = getFilter(socket);
-        List<DatagramPacket> toMove = null;
+        List<DatagramPacket> toMove;
 
         synchronized (thisReceived)
         {
-            if (thisReceived.isEmpty())
-            {
-                return;
-            }
-            else
-            {
-                for (Iterator<DatagramPacket> i = thisReceived.iterator();
-                        i.hasNext();)
-                {
-                    DatagramPacket p = i.next();
-
-                    if (socketFilter.accept(p))
-                    {
-                        if (toMove == null)
-                            toMove = new LinkedList<>();
-                        toMove.add(p);
-
-                        // XXX In the method receive, we allow multiple filters
-                        // to accept one and the same packet.
-                        i.remove();
-                    }
-                }
-            }
+            toMove = thisReceived.scan(socketFilter);
         }
 
         // Push the packets which have been accepted already and are accepted by
@@ -524,11 +502,13 @@ abstract class MultiplexingXXXSocketSupport
         // question.
         if (toMove != null)
         {
-            List<DatagramPacket> socketReceived = getReceived(socket);
+            SocketReceiveBuffer socketReceived = getReceived(socket);
 
             synchronized (socketReceived)
             {
-                socketReceived.addAll(toMove);
+                for (DatagramPacket datagramPacket : toMove) {
+                    socketReceived.offer(datagramPacket);
+                }
                 // The notifyAll will practically likely be unnecessary because
                 // the specified socket will likely be a newly-created one to
                 // which noone else has a reference. Anyway, dp the invocation
@@ -557,7 +537,7 @@ abstract class MultiplexingXXXSocketSupport
      * @throws SocketTimeoutException if <tt>timeout</tt> is positive and has
      * expired
      */
-    void receive(List<DatagramPacket> received, DatagramPacket p, int timeout)
+    void receive(SocketReceiveBuffer received, DatagramPacket p, int timeout)
         throws IOException
     {
         long startTime = System.currentTimeMillis();
@@ -573,12 +553,9 @@ abstract class MultiplexingXXXSocketSupport
             // SocketTimeoutException.
             synchronized (received)
             {
-                if (!received.isEmpty())
-                {
-                    receivedPacket = received.remove(0);
-                    if (receivedPacket != null)
-                        break;
-                }
+                receivedPacket = received.poll(0, TimeUnit.NANOSECONDS);
+                if (receivedPacket != null)
+                    break;
             }
 
             // Throw a SocketTimeoutException if the timeout is over/up.
