@@ -20,7 +20,6 @@ package org.ice4j.socket;
 import java.io.*;
 import java.net.*;
 import java.util.*;
-import java.util.concurrent.*;
 import java.util.logging.*;
 
 /**
@@ -269,7 +268,7 @@ abstract class MultiplexingXXXSocketSupport
 
                     synchronized (socketReceived)
                     {
-                        socketReceived.offer(
+                        socketReceived.add(
                                 accepted ? clone(p, /* arraycopy */ true) : p);
                         socketReceived.notifyAll();
                     }
@@ -285,7 +284,7 @@ abstract class MultiplexingXXXSocketSupport
 
                 synchronized (thisReceived)
                 {
-                    thisReceived.offer(p);
+                    thisReceived.add(p);
                     thisReceived.notifyAll();
                 }
             }
@@ -507,7 +506,7 @@ abstract class MultiplexingXXXSocketSupport
             synchronized (socketReceived)
             {
                 for (DatagramPacket datagramPacket : toMove) {
-                    socketReceived.offer(datagramPacket);
+                    socketReceived.add(datagramPacket);
                 }
                 // The notifyAll will practically likely be unnecessary because
                 // the specified socket will likely be a newly-created one to

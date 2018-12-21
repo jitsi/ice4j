@@ -77,9 +77,8 @@ class SocketReceiveBuffer
     /**
      * Adds {@link DatagramPacket} at the end of the socket receive buffer.
      * @param p datagram to add into receive buffer
-     * @return true if datagram was added, false - otherwise.
      */
-    public boolean offer(DatagramPacket p)
+    public void add(DatagramPacket p)
     {
         while (!buffer.offer(p))
         {
@@ -94,8 +93,6 @@ class SocketReceiveBuffer
             // enforce SO_RCVBUF restriction
             poll();
         }
-
-        return true;
     }
 
     /**
