@@ -231,10 +231,12 @@ class SocketReceiveBuffer
                 if ((receiveBufferSize <= 0)
                     || (totalDatagramsAdded % 1000 == 0))
                 {
-                    try {
+                    try
+                    {
                         receiveBufferSize
                             = this.receiveBufferSizeSupplier.call();
-                    } catch (Exception e)
+                    }
+                    catch (Exception e)
                     {
                         // nothing to do
                     }
