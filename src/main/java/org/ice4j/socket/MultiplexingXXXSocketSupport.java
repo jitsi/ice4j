@@ -553,7 +553,7 @@ abstract class MultiplexingXXXSocketSupport
             // SocketTimeoutException.
             synchronized (received)
             {
-                receivedPacket = received.poll(0, TimeUnit.NANOSECONDS);
+                receivedPacket = received.poll();
                 if (receivedPacket != null)
                     break;
             }
