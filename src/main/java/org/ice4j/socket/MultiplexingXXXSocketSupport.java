@@ -499,7 +499,7 @@ abstract class MultiplexingXXXSocketSupport
         // Push the packets which have been accepted already and are accepted by
         // the specified multiplexed socket into the multiplexed socket in
         // question.
-        if (toMove != null)
+        if (!toMove.isEmpty())
         {
             final SocketReceiveBuffer socketReceived = getReceived(socket);
 
