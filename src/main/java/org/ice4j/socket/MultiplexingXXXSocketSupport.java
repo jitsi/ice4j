@@ -487,9 +487,9 @@ abstract class MultiplexingXXXSocketSupport
     {
         // Pull the packets which have been received already and are accepted by
         // the specified multiplexed socket out of the multiplexing socket.
-        SocketReceiveBuffer thisReceived = getReceived();
-        DatagramPacketFilter socketFilter = getFilter(socket);
-        List<DatagramPacket> toMove;
+        final SocketReceiveBuffer thisReceived = getReceived();
+        final DatagramPacketFilter socketFilter = getFilter(socket);
+        final List<DatagramPacket> toMove;
 
         synchronized (thisReceived)
         {
@@ -501,7 +501,7 @@ abstract class MultiplexingXXXSocketSupport
         // question.
         if (toMove != null)
         {
-            SocketReceiveBuffer socketReceived = getReceived(socket);
+            final SocketReceiveBuffer socketReceived = getReceived(socket);
 
             synchronized (socketReceived)
             {
