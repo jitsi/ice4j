@@ -648,8 +648,10 @@ abstract class MultiplexingXXXSocketSupport
                 {
                     receivePacket = new DatagramPacket(
                         new byte[POOLED_DATAGRAM_PACKET_SIZE],
-                        0, POOLED_DATAGRAM_PACKET_SIZE);
+                        POOLED_DATAGRAM_PACKET_SIZE);
                 }
+
+                receivePacket.setLength(POOLED_DATAGRAM_PACKET_SIZE);
 
                 synchronized (receiveSyncRoot)
                 {
