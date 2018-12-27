@@ -18,9 +18,9 @@
 package org.ice4j.socket;
 
 import java.io.*;
-import java.lang.reflect.*;
 import java.net.*;
 import java.util.*;
+import java.util.concurrent.*;
 import java.util.logging.*;
 
 /**
@@ -187,6 +187,24 @@ abstract class MultiplexingXXXSocketSupport
             }
         }
     }
+
+    /**
+     * The max number of {@link DatagramPacket}'s stored in the receive pool.
+     */
+    private static final int RECEIVE_DATAGRAM_PACKETS_POOL_SIZE = 64;
+
+    /**
+     * The buffer size of pooled datagram packet used to read from
+     * underlying socket.
+     */
+    private static final int POOLED_DATAGRAM_PACKET_SIZE = 1500;
+
+    /**
+     * A pool of {@link DatagramPacket}s used to receive data from unrelying
+     * socket.
+     */
+    private final BlockingQueue<DatagramPacket> receiveDatagramPacketsPool
+        = new ArrayBlockingQueue<>(RECEIVE_DATAGRAM_PACKETS_POOL_SIZE);
 
     /**
      * The indicator which determines whether this <tt>DatagramSocket</tt> is
@@ -543,7 +561,7 @@ abstract class MultiplexingXXXSocketSupport
         throws IOException
     {
         long startTime = System.currentTimeMillis();
-        DatagramPacket r = null;
+        DatagramPacket receivedPacket;
 
         do
         {
@@ -557,8 +575,8 @@ abstract class MultiplexingXXXSocketSupport
             {
                 if (!received.isEmpty())
                 {
-                    r = received.remove(0);
-                    if (r != null)
+                    receivedPacket = received.remove(0);
+                    if (receivedPacket != null)
                         break;
                 }
             }
@@ -622,8 +640,16 @@ abstract class MultiplexingXXXSocketSupport
                     continue;
                 }
 
-                // The caller will receive from the network.
-                DatagramPacket c = clone(p, /* arraycopy */ false);
+                // The pooled datagram packet instance will be used to receive
+                // from the network.
+                DatagramPacket receivePacket
+                    = receiveDatagramPacketsPool.poll();
+                if (receivePacket == null)
+                {
+                    receivePacket = new DatagramPacket(
+                        new byte[POOLED_DATAGRAM_PACKET_SIZE],
+                        0, POOLED_DATAGRAM_PACKET_SIZE);
+                }
 
                 synchronized (receiveSyncRoot)
                 {
@@ -641,11 +667,11 @@ abstract class MultiplexingXXXSocketSupport
                         }
                     }
                 }
-                doReceive(c);
+                doReceive(receivePacket);
 
                 // The caller received from the network. Copy/add the packet to
                 // the receive list of the sockets which accept it.
-                acceptBySocketsOrThis(c);
+                acceptBySocketsOrThis(receivePacket);
             }
             finally
             {
@@ -658,7 +684,12 @@ abstract class MultiplexingXXXSocketSupport
         }
         while (true);
 
-        copy(r, p);
+        copy(receivedPacket, p);
+
+        // receivePacket is a datagram packet retrieved from SocketReceiveBuffer
+        // SocketReceiveBuffers only store datagrams borrowed from pool,
+        // so return datagram back to pool.
+        receiveDatagramPacketsPool.offer(receivedPacket);
     }
 
     /**
