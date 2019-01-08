@@ -34,7 +34,7 @@ public class DatagramPacketBufferTest
         // holds flag if all checks were succeeded.
         final AtomicBoolean allChecksSucceeded = new AtomicBoolean(true);
 
-        final int MAX_SEND_DATAGRAM_SIZE = 256;
+        final int maxSendDatagramSize = 256;
 
         final ExecutorService serverExecutor
             = Executors.newSingleThreadExecutor();
@@ -53,13 +53,13 @@ public class DatagramPacketBufferTest
                 {
                     // Specify max datagram size, which
                     // server socket can receive
-                    final int MAX_RECV_DATAGRAM_SIZE = 16;
+                    final int maxRecvDatagramSize = 16;
 
                     // Specify the number of padding bytes. They are used
                     // to ensure DatagramSocket does not write out of the bounds
                     // specified by DatagramPacket(buffer, offset, length)
                     // passed into DatagramSocket.receive()
-                    final int PAD_SIZE = 8;
+                    final int padSize = 8;
 
                     // Use single shared array to represent "big" receive buffer
                     // which can serve multiple DatagramPacket instances
@@ -69,7 +69,7 @@ public class DatagramPacketBufferTest
                     // when DatagramPacket is constructed to have disjoint
                     // byte range within underlying byte[] buffer.
                     final byte[] receiveBuffer =
-                        new byte[PAD_SIZE + MAX_RECV_DATAGRAM_SIZE + PAD_SIZE];
+                        new byte[padSize + maxRecvDatagramSize + padSize];
 
                     // Allocate byte-range within `receiveBuffer` array where
                     // DatagramSocket/Packet will store received bytes.
@@ -77,9 +77,9 @@ public class DatagramPacketBufferTest
                     // by socket implementation.
                     final DatagramPacket receivePacket
                         = new DatagramPacket(
-                            receiveBuffer, PAD_SIZE, MAX_RECV_DATAGRAM_SIZE);
+                            receiveBuffer, padSize, maxRecvDatagramSize);
 
-                    for (int iter = 1; iter < MAX_SEND_DATAGRAM_SIZE; iter++)
+                    for (int iter = 1; iter < maxSendDatagramSize; iter++)
                     {
                         // erase whole receive buffer to later verify
                         // that no data is written by socket out of bounds
@@ -94,22 +94,22 @@ public class DatagramPacketBufferTest
                         // When receive() is called only the length field of
                         // received datagram is changed, not the length field
                         // of the underlying buffer.
-                        receivePacket.setLength(MAX_RECV_DATAGRAM_SIZE);
+                        receivePacket.setLength(maxRecvDatagramSize);
 
                         server.receive(receivePacket);
 
                         logger.fine(
-                            "received packet from " + receivePacket.getAddress()
-                                + " of size " + receivePacket.getLength()
-                                + " with content: " + Arrays
-                                .toString(receivePacket.getData()));
+                            "Received packet from " + receivePacket.getAddress()
+                            + " of size " + receivePacket.getLength()
+                            + " with content: "
+                            + Arrays.toString(receivePacket.getData()));
 
-                        Assert.assertEquals("DatagramSocket.receive() "
-                                + "must not replace an receive byte-buffer",
+                        Assert.assertEquals("DatagramSocket.receive()"
+                            + " must not replace an receive byte-buffer",
                             receiveBuffer, receivePacket.getData());
 
                         final int expectedReceivedBytes
-                            = Math.min(iter, MAX_RECV_DATAGRAM_SIZE);
+                            = Math.min(iter, maxRecvDatagramSize);
 
                         Assert.assertEquals("DatagramSocket.receive() "
                             + "must respect the length of DatagramPacket",
@@ -117,8 +117,8 @@ public class DatagramPacketBufferTest
 
                         for (int i = 0; i < receiveBuffer.length; i++)
                         {
-                            if (i >= PAD_SIZE &&
-                                i < PAD_SIZE + receivePacket.getLength())
+                            if (i >= padSize &&
+                                i < padSize + receivePacket.getLength())
                             {
                                 Assert.assertEquals("DatagramSocket.receive()"
                                     + " must fill DatagramPacket's buffer with"
@@ -161,7 +161,7 @@ public class DatagramPacketBufferTest
 
             try (DatagramSocket client = new DatagramSocket())
             {
-                for (int iter = 1; iter < MAX_SEND_DATAGRAM_SIZE; iter++)
+                for (int iter = 1; iter < maxSendDatagramSize; iter++)
                 {
                     // fill packet with predictable length and content, i.e.
                     // iteration (packet) number, so server can verify received
