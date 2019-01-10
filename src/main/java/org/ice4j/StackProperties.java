@@ -220,7 +220,7 @@ public class StackProperties
             = "org.ice4j.ice.harvest.ALLOWED_ADDRESSES";
 
     /**
-     * The name of the property which, if set to true, specifies that IPv6
+     * The name of the property which, if set to true, specifies that
      * link local addresses should not be used for candidate allocations.
      */
     public static final String DISABLE_LINK_LOCAL_ADDRESSES
