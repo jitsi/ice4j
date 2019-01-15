@@ -19,132 +19,269 @@ package org.ice4j.socket;
 
 import java.net.*;
 import java.util.*;
+import java.util.concurrent.*;
 
 /**
- * Implements a list of <tt>DatagramPacket</tt>s received by a
+ * Implements a buffer of <tt>DatagramPacket</tt>s received by a
  * <tt>DatagramSocket</tt> or a <tt>Socket</tt>. The list enforces the
  * <tt>SO_RCVBUF</tt> option for the associated <tt>DatagramSocket</tt> or
  * <tt>Socket</tt>.
  *
  * @author Lyubomir Marinov
+ * @author Yura Yaroshevich
  */
-abstract class SocketReceiveBuffer
-    extends LinkedList<DatagramPacket>
+class SocketReceiveBuffer
 {
+    /**
+     * Default size in bytes of socket receive buffer.
+     */
     private static final int DEFAULT_RECEIVE_BUFFER_SIZE = 1024 * 1024;
 
-    private static final long serialVersionUID = 2804762379509257652L;
+    /**
+     * Maxumum number of datagrams buffer is capable to store regardless
+     * of total datagram size in bytes.
+     */
+    private static final int DATAGRAMS_BUFFER_CAPACITY = 10000;
 
     /**
-     * The value of the <tt>SO_RCVBUF</tt> option for the associated
-     * <tt>DatagramSocket</tt> or <tt>Socket</tt>. Cached for the sake of
-     * performance.
+     * Queue to store received datagrams.
      */
-    private int receiveBufferSize;
+    private final BlockingQueue<DatagramPacket> buffer
+        = new ArrayBlockingQueue<>(DATAGRAMS_BUFFER_CAPACITY);
 
     /**
-     * The (total) size in bytes of this receive buffer.
+     * An instance of datagram size tracker to compute total number of bytes
+     * stored in datagrams witin {@link #buffer}.
      */
-    private int size;
+    private final DatagramSizeTracker tracker;
 
     /**
-     * {@inheritDoc}
+     * Constructs {@link SocketReceiveBuffer} with user-provided
+     * @param receiveBufferSizeSupplier a function to obtain receive buffer
+     * size from associated socket.
      */
-    @Override
-    public boolean add(DatagramPacket p)
+    public SocketReceiveBuffer(Callable<Integer> receiveBufferSizeSupplier)
     {
-        boolean added = super.add(p);
-
-        // Keep track of the (total) size in bytes of this receive buffer in
-        // order to be able to enforce SO_RCVBUF.
-        if (added && (p != null))
-        {
-            int pSize = p.getLength();
-
-            if (pSize > 0)
-            {
-                size += pSize;
-
-                // If the added packet is the only element of this list, do not
-                // drop it because of the enforcement of SO_RCVBUF.
-                if (size() > 1)
-                {
-                    // For the sake of performance, do not invoke the method
-                    // getReceiveBufferSize() of DatagramSocket or Socket on
-                    // every packet added to this buffer.
-                    int receiveBufferSize = this.receiveBufferSize;
-
-                    if ((receiveBufferSize <= 0) || (modCount % 1000 == 0))
-                    {
-                        try
-                        {
-                            receiveBufferSize = getReceiveBufferSize();
-                        }
-                        catch (SocketException sex)
-                        {
-                        }
-                        if (receiveBufferSize <= 0)
-                        {
-                            receiveBufferSize = DEFAULT_RECEIVE_BUFFER_SIZE;
-                        }
-                        else if (receiveBufferSize
-                                < DEFAULT_RECEIVE_BUFFER_SIZE)
-                        {
-                            // Well, a manual page on SO_RCVBUF talks about
-                            // doubling. In order to stay on the safe side and
-                            // given that there was no limit on the size of the
-                            // buffer before, double the receive buffer size.
-                            receiveBufferSize *= 2;
-                            if (receiveBufferSize <= 0)
-                            {
-                                receiveBufferSize
-                                    = DEFAULT_RECEIVE_BUFFER_SIZE;
-                            }
-                        }
-                        this.receiveBufferSize = receiveBufferSize;
-                    }
-                    if (size > receiveBufferSize)
-                        remove(0);
-                }
-            }
-        }
-        return added;
+        this.tracker = new DatagramSizeTracker(receiveBufferSizeSupplier);
     }
 
     /**
-     * Gets the value of the <tt>SO_RCVBUF</tt> option for the associated
-     * <tt>DatagramSocket</tt> or <tt>Socket</tt> which is the buffer size used
-     * by the platform for input on the <tt>DatagramSocket</tt> or
-     * <tt>Socket</tt>.
-     *
-     * @return the value of the <tt>SO_RCVBUF</tt> option for the associated
-     * <tt>DatagramSocket</tt> or <tt>Socket</tt>
-     * @throws SocketException if there is an error in the underlying protocol
+     * Check if receive buffer is empty
+     * @return true if buffer is empty, false - otherwise.
      */
-    public abstract int getReceiveBufferSize()
-        throws SocketException;
+    public boolean isEmpty()
+    {
+        return buffer.isEmpty();
+    }
 
     /**
-     * {@inheritDoc}
+     * Adds {@link DatagramPacket} at the end of the socket receive buffer.
+     * @param p datagram to add into receive buffer
      */
-    @Override
-    public DatagramPacket remove(int index)
+    public void add(DatagramPacket p)
     {
-        DatagramPacket p = super.remove(index);
+        while (!buffer.offer(p))
+        {
+            // ensure buffer capacity restriction enforced
+            poll();
+        }
+
+        tracker.trackDatagramAdded(p);
+
+        while (tracker.isExceedReceiveBufferSize() && buffer.size() > 1)
+        {
+            // enforce SO_RCVBUF restriction
+            poll();
+        }
+    }
+
+    /**
+     * Polls socket receive buffer for already stored {@link DatagramPacket}
+     * @return the first datagram in the buffer, or {@code null} if buffer
+     * is empty.
+     */
+    public DatagramPacket poll()
+    {
+        DatagramPacket p = buffer.poll();
 
         // Keep track of the (total) size in bytes of this receive buffer in
-        // order to be able to enforce SO_RCVBUF.
+        // order to be able to enforce SO_RCVBUF restriction.
         if (p != null)
         {
-            int pSize = p.getLength();
+            tracker.trackDatagramRemoved(p);
+        }
 
-            if (pSize > 0)
+        return p;
+    }
+
+    /**
+     * Scans buffer of received {@link DatagramPacket}s and move
+     * datagrams which matches the {@code filter} into returned list.
+     * @param filter a predicate to filter {@link DatagramPacket} stored
+     * in receive buffer.
+     * @return list of datagrams matched to {@code filter}.
+     */
+    public List<DatagramPacket> scan(DatagramPacketFilter filter)
+    {
+        List<DatagramPacket> matchedDatagrams = null;
+        final Iterator<DatagramPacket> it = buffer.iterator();
+
+        while (it.hasNext())
+        {
+            final DatagramPacket p = it.next();
+
+            if (filter.accept(p))
             {
-                size -= pSize;
-                if (size < 0)
-                    size = 0;
+                if (matchedDatagrams == null)
+                {
+                    matchedDatagrams = new ArrayList<>();
+                }
+                matchedDatagrams.add(p);
+
+                it.remove();
+
+                tracker.trackDatagramRemoved(p);
             }
         }
-        return p;
+
+        if (matchedDatagrams != null)
+        {
+            return matchedDatagrams;
+        }
+        return Collections.emptyList();
+    }
+
+    /**
+     * A helper class to keep track of total size in bytes of all
+     * {@link DatagramPacket} instances stored in {@link #buffer} to
+     * be able to enforce SO_RCVBUF.
+     */
+    private final class DatagramSizeTracker
+    {
+        /**
+         * The value of the <tt>SO_RCVBUF</tt> option for the associated
+         * <tt>DatagramSocket</tt> or <tt>Socket</tt>. Cached for the sake of
+         * performance.
+         */
+        private int cachedReceiveBufferSize;
+
+        /**
+         * The (total) size in bytes of this receive buffer.
+         */
+        private int totalBuffersByteSize;
+
+        /**
+         * Counts total number of datagrams added to buffer.
+         */
+        private int totalDatagramsAdded;
+
+        /**
+         * A user provided getter of receive buffer size, might
+         * fail with {@link Exception} when called.
+         */
+        private final Callable<Integer> receiveBufferSizeSupplier;
+
+        /**
+         * Create a tracker of datagram packet size stored in buffer.
+         * @param receiveBufferSizeSupplier a function to obtain receive buffer
+         * size from associated socket.
+         */
+        public DatagramSizeTracker(
+            Callable<Integer> receiveBufferSizeSupplier)
+        {
+            this.receiveBufferSizeSupplier = receiveBufferSizeSupplier;
+        }
+
+        /**
+         * Check if total bytes stored in {@link #buffer} exceeds socket's
+         * receive buffer size.
+         * @return true if size exceeded, false - otherwise
+         */
+        boolean isExceedReceiveBufferSize()
+        {
+            return totalBuffersByteSize > cachedReceiveBufferSize;
+        }
+
+        /**
+         * Updates computed value of total datagrams size in bytes
+         * stored in {@link #buffer} with datagram just added to buffer.
+         * @param p datagram packed added to {@link #buffer}
+         */
+        void trackDatagramAdded(DatagramPacket p)
+        {
+            ++totalDatagramsAdded;
+
+            final int pSize = p.getLength();
+            if (pSize <= 0)
+            {
+                return;
+            }
+
+            totalBuffersByteSize += pSize;
+
+            // If the added packet is the only element of this list, do not
+            // drop it because of the enforcement of SO_RCVBUF.
+            if (buffer.size() > 1)
+            {
+                // For the sake of performance, do not invoke the method
+                // getReceiveBufferSize() of DatagramSocket or Socket on
+                // every packet added to this buffer.
+                int receiveBufferSize = this.cachedReceiveBufferSize;
+
+                if ((receiveBufferSize <= 0)
+                    || (totalDatagramsAdded % 1000 == 0))
+                {
+                    try
+                    {
+                        receiveBufferSize
+                            = this.receiveBufferSizeSupplier.call();
+                    }
+                    catch (Exception e)
+                    {
+                        // nothing to do
+                    }
+
+                    if (receiveBufferSize <= 0)
+                    {
+                        receiveBufferSize = DEFAULT_RECEIVE_BUFFER_SIZE;
+                    }
+                    else if (receiveBufferSize
+                        < DEFAULT_RECEIVE_BUFFER_SIZE)
+                    {
+                        // Well, a manual page on SO_RCVBUF talks about
+                        // doubling. In order to stay on the safe side and
+                        // given that there was no limit on the size of the
+                        // buffer before, double the receive buffer size.
+                        receiveBufferSize *= 2;
+                        if (receiveBufferSize <= 0)
+                        {
+                            receiveBufferSize
+                                = DEFAULT_RECEIVE_BUFFER_SIZE;
+                        }
+                    }
+                    this.cachedReceiveBufferSize = receiveBufferSize;
+                }
+            }
+        }
+
+        /**
+         * Updates computed value of total datagrams size in bytes
+         * stored in {@link #buffer} with datagram just removed from buffer.
+         * @param p datagram packed removed from {@link #buffer}
+         */
+        void trackDatagramRemoved(DatagramPacket p)
+        {
+            final int pSize = p.getLength();
+            if (pSize <= 0)
+            {
+                return;
+            }
+
+            totalBuffersByteSize -= pSize;
+            if (totalBuffersByteSize < 0)
+            {
+                totalBuffersByteSize = 0;
+            }
+        }
     }
 }

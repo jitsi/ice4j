@@ -81,7 +81,7 @@ public class MultiplexingDatagramSocket
                  * {@inheritDoc}
                  */
                 @Override
-                protected List<DatagramPacket> getReceived()
+                protected SocketReceiveBuffer getReceived()
                 {
                     return received;
                 }
@@ -90,7 +90,7 @@ public class MultiplexingDatagramSocket
                  * {@inheritDoc}
                  */
                 @Override
-                protected List<DatagramPacket> getReceived(
+                protected SocketReceiveBuffer getReceived(
                         MultiplexedDatagramSocket socket)
                 {
                     return socket.received;
@@ -103,19 +103,8 @@ public class MultiplexingDatagramSocket
      * {@link MultiplexedDatagramSocket} of this instance at the time of the
      * reading from the network.
      */
-    private final List<DatagramPacket> received
-        = new SocketReceiveBuffer()
-        {
-            private static final long serialVersionUID
-                = 3125772367019091216L;
-
-            @Override
-            public int getReceiveBufferSize()
-                throws SocketException
-            {
-                return MultiplexingDatagramSocket.this.getReceiveBufferSize();
-            }
-        };
+    private final SocketReceiveBuffer received
+        = new SocketReceiveBuffer(this::getReceiveBufferSize);
 
     /**
      * Buffer variable for storing the SO_TIMEOUT value set by the
