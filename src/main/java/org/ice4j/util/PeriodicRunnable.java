@@ -91,13 +91,16 @@ public abstract class PeriodicRunnable
             return;
         }
 
+        final long delayMillis =
+            getMillisecondsDelayUntilNextRun();
+
         synchronized (syncRoot)
         {
             if (running)
             {
                 return;
             }
-            scheduleNextRun();
+            scheduleNextRun(delayMillis);
         }
     }
 
@@ -134,15 +137,15 @@ public abstract class PeriodicRunnable
     }
 
     /**
-     * Perform either cancellation or actual scheduling based on current
-     * delay until next run.
+     * Perform either cancellation or actual scheduling based on delay until
+     * next run.
+     * @param delayMillis delay in milliseconds before next
+     *                    execution of {@link #run()}.
      */
-    private void scheduleNextRun()
+    private void scheduleNextRun(long delayMillis)
     {
-        final long delayMillis =
-            getMillisecondsDelayUntilNextRun();
-
-        if (delayMillis < 0) {
+        if (delayMillis < 0)
+        {
             running = false;
             return;
         }
@@ -194,11 +197,14 @@ public abstract class PeriodicRunnable
         {
             if (running)
             {
+                final long delayMillis =
+                    getMillisecondsDelayUntilNextRun();
+
                 synchronized (syncRoot)
                 {
                     if (running)
                     {
-                        scheduleNextRun();
+                        scheduleNextRun(delayMillis);
                     }
                 }
             }
