@@ -4,6 +4,11 @@ import org.junit.*;
 
 import java.util.concurrent.*;
 
+/**
+ * Test various aspects of {@link PeriodicRunnable} implementation.
+ *
+ * @author Yura Yaroshevich
+ */
 public class PeriodicRunnableTests
 {
     @Test
