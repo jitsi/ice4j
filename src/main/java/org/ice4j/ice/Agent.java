@@ -22,6 +22,7 @@ import java.io.*;
 import java.math.*;
 import java.net.*;
 import java.security.*;
+import java.time.*;
 import java.util.*;
 import java.util.concurrent.*;
 import java.util.logging.*;
@@ -2718,13 +2719,13 @@ public class Agent
         }
 
         @Override
-        protected long getMillisecondsDelayUntilNextRun()
+        protected Duration getDelayUntilNextRun()
         {
             if (shouldRunStunKeepAlive())
             {
-                return keepAliveSent == 0 ? 0 : consentFreshnessInterval;
+                return Duration.ofMillis(keepAliveSent == 0 ? 0 : consentFreshnessInterval);
             }
-            return -1;
+            return Duration.ofMillis(-1);
         }
 
         @Override

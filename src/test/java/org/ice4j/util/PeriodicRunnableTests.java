@@ -2,6 +2,7 @@ package org.ice4j.util;
 
 import org.junit.*;
 
+import java.time.*;
 import java.util.concurrent.*;
 
 /**
@@ -22,8 +23,7 @@ public class PeriodicRunnableTests
         final PeriodicRunnable scheduledRunnable = PeriodicRunnable.create(
             timer,
             executor,
-            100,
-            TimeUnit.MILLISECONDS,
+            Duration.ofMillis(100),
             latch::countDown);
 
         scheduledRunnable.schedule();
@@ -49,8 +49,7 @@ public class PeriodicRunnableTests
         final PeriodicRunnable scheduledRunnable = PeriodicRunnable.create(
             timer,
             executor,
-            -1,
-            TimeUnit.MILLISECONDS,
+            Duration.ofMillis(-1),
             latch::countDown);
 
         scheduledRunnable.schedule();
@@ -75,9 +74,9 @@ public class PeriodicRunnableTests
             new PeriodicRunnable(timer, executor)
             {
                 @Override
-                protected long getMillisecondsDelayUntilNextRun()
+                protected Duration getDelayUntilNextRun()
                 {
-                    return latch.getCount() > 1 ? 100 : -1;
+                    return Duration.ofMillis(latch.getCount() > 1 ? 100 : -1);
                 }
 
                 @Override
@@ -108,8 +107,7 @@ public class PeriodicRunnableTests
         final PeriodicRunnable scheduledRunnable = PeriodicRunnable.create(
             timer,
             executor,
-            500,
-            TimeUnit.MILLISECONDS,
+            Duration.ofMillis(500),
             latch::countDown);
 
         scheduledRunnable.schedule();
@@ -140,8 +138,7 @@ public class PeriodicRunnableTests
         final PeriodicRunnable scheduledRunnable = PeriodicRunnable.create(
             timer,
             executor,
-            200,
-            TimeUnit.MILLISECONDS,
+            Duration.ofMillis(200),
             latch::countDown);
 
         scheduledRunnable.schedule();

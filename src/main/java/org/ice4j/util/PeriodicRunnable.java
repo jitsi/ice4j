@@ -1,5 +1,6 @@
 package org.ice4j.util;
 
+import java.time.*;
 import java.util.concurrent.*;
 
 /**
@@ -73,7 +74,7 @@ public abstract class PeriodicRunnable
      * performed with specified delay, negative value if execution should not
      * be done.
      */
-    protected abstract long getMillisecondsDelayUntilNextRun();
+    protected abstract Duration getDelayUntilNextRun();
 
     /**
      * Periodically executed method on {@link #executor}'s thread.
@@ -91,8 +92,8 @@ public abstract class PeriodicRunnable
             return;
         }
 
-        final long delayMillis =
-            getMillisecondsDelayUntilNextRun();
+        final Duration delay =
+            getDelayUntilNextRun();
 
         synchronized (syncRoot)
         {
@@ -100,7 +101,7 @@ public abstract class PeriodicRunnable
             {
                 return;
             }
-            scheduleNextRun(delayMillis);
+            scheduleNextRun(delay);
         }
     }
 
@@ -139,12 +140,11 @@ public abstract class PeriodicRunnable
     /**
      * Perform either cancellation or actual scheduling based on delay until
      * next run.
-     * @param delayMillis delay in milliseconds before next
-     *                    execution of {@link #run()}.
+     * @param delay delay before next execution of {@link #run()}.
      */
-    private void scheduleNextRun(long delayMillis)
+    private void scheduleNextRun(Duration delay)
     {
-        if (delayMillis < 0)
+        if (delay.isNegative())
         {
             running = false;
             return;
@@ -152,7 +152,7 @@ public abstract class PeriodicRunnable
 
         running = true;
 
-        if (delayMillis == 0)
+        if (delay.isZero())
         {
             submitExecuteRun();
         }
@@ -160,8 +160,8 @@ public abstract class PeriodicRunnable
         {
             scheduledSubmit = timer.schedule(
                 this::submitExecuteRun,
-                delayMillis,
-                TimeUnit.MILLISECONDS);
+                delay.toNanos(),
+                TimeUnit.NANOSECONDS);
         }
     }
 
@@ -197,8 +197,8 @@ public abstract class PeriodicRunnable
         {
             if (running)
             {
-                final long delayMillis =
-                    getMillisecondsDelayUntilNextRun();
+                final Duration delayMillis =
+                    getDelayUntilNextRun();
 
                 synchronized (syncRoot)
                 {
@@ -217,8 +217,7 @@ public abstract class PeriodicRunnable
      * fixed delay.
      * @param timer {@link ScheduledExecutorService} to be used as timer
      * @param executor {@link ExecutorService} to execute provided runnable
-     * @param delay delay between subsequent execution of runnable
-     * @param unit time units of delay
+     * @param period delay between subsequent execution of runnable
      * @param r {@link Runnable} to for periodic execution.
      * @return {@link PeriodicRunnable} instance constructed with provided
      * arguments
@@ -226,16 +225,15 @@ public abstract class PeriodicRunnable
     static PeriodicRunnable create(
         ScheduledExecutorService timer,
         ExecutorService executor,
-        long delay,
-        TimeUnit unit,
+        Duration period,
         Runnable r)
     {
         return new PeriodicRunnable(timer, executor)
         {
             @Override
-            protected long getMillisecondsDelayUntilNextRun()
+            protected Duration getDelayUntilNextRun()
             {
-                return unit.toMillis(delay);
+                return period;
             }
 
             @Override
