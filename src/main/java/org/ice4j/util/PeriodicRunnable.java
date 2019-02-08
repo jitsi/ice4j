@@ -95,14 +95,7 @@ public abstract class PeriodicRunnable
         final Duration delay =
             getDelayUntilNextRun();
 
-        synchronized (syncRoot)
-        {
-            if (running)
-            {
-                return;
-            }
-            scheduleNextRun(delay);
-        }
+        scheduleNextRun(delay);
     }
 
     /**
@@ -144,24 +137,36 @@ public abstract class PeriodicRunnable
      */
     private void scheduleNextRun(Duration delay)
     {
-        if (delay.isNegative())
+        synchronized (syncRoot)
         {
-            running = false;
-            return;
-        }
+            final boolean isRecurrentRun = submittedExecute != null;
+            if (isRecurrentRun && !running)
+            {
+                // was cancelled
+                return;
+            }
 
-        running = true;
+            if (delay.isNegative())
+            {
+                running = false;
+                scheduledSubmit = null;
+                submittedExecute = null;
+                return;
+            }
 
-        if (delay.isZero())
-        {
-            submitExecuteRun();
-        }
-        else
-        {
-            scheduledSubmit = timer.schedule(
-                this::submitExecuteRun,
-                delay.toNanos(),
-                TimeUnit.NANOSECONDS);
+            running = true;
+
+            if (delay.isZero())
+            {
+                submitExecuteRun();
+            }
+            else
+            {
+                scheduledSubmit = timer.schedule(
+                    this::submitExecuteRun,
+                    delay.toNanos(),
+                    TimeUnit.NANOSECONDS);
+            }
         }
     }
 
@@ -175,7 +180,14 @@ public abstract class PeriodicRunnable
         {
             return;
         }
-        submittedExecute = this.executor.submit(this::executeRun);
+        synchronized (syncRoot)
+        {
+            if (!running)
+            {
+                return;
+            }
+            submittedExecute = this.executor.submit(this::executeRun);
+        }
     }
 
     /**
@@ -200,13 +212,7 @@ public abstract class PeriodicRunnable
                 final Duration delayMillis =
                     getDelayUntilNextRun();
 
-                synchronized (syncRoot)
-                {
-                    if (running)
-                    {
-                        scheduleNextRun(delayMillis);
-                    }
-                }
+                scheduleNextRun(delayMillis);
             }
         }
     }
