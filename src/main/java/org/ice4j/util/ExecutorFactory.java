@@ -112,7 +112,7 @@ public class ExecutorFactory
         executor.setKeepAliveTime(threadKeepAliveTime, timeUnit);
         executor.allowCoreThreadTimeOut(true);
         executor.setRemoveOnCancelPolicy(true);
-        return Executors.unconfigurableScheduledExecutorService(executor);
+        return executor;
     }
 
     /**
@@ -135,6 +135,22 @@ public class ExecutorFactory
             new LinkedBlockingDeque<>(), threadFactory);
         executor.allowCoreThreadTimeOut(true);
 
-        return Executors.unconfigurableExecutorService(executor);
+        return executor;
+    }
+
+    /**
+     * Creates an {@link ExecutorService} with an unlimited number of threads
+     * which are released after idle timeout.
+     *
+     * @param threadNamePrefix - name prefix for threads created by pool
+     * @return pre-configured {@link ExecutorService}
+     */
+    public static ExecutorService createCachedThreadPool(
+            String threadNamePrefix)
+    {
+        final CustomizableThreadFactory threadFactory
+                = new CustomizableThreadFactory(threadNamePrefix, true);
+
+        return Executors.newCachedThreadPool(threadFactory);
     }
 }
