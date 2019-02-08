@@ -112,7 +112,7 @@ public class ExecutorFactory
         executor.setKeepAliveTime(threadKeepAliveTime, timeUnit);
         executor.allowCoreThreadTimeOut(true);
         executor.setRemoveOnCancelPolicy(true);
-        return Executors.unconfigurableScheduledExecutorService(executor);
+        return executor;
     }
 
     /**
