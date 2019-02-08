@@ -151,7 +151,6 @@ public class ExecutorFactory
         final CustomizableThreadFactory threadFactory
                 = new CustomizableThreadFactory(threadNamePrefix, true);
 
-        return Executors.unconfigurableExecutorService(
-                Executors.newCachedThreadPool(threadFactory));
+        return Executors.newCachedThreadPool(threadFactory);
     }
 }
