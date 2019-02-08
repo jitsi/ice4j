@@ -135,7 +135,7 @@ public class ExecutorFactory
             new LinkedBlockingDeque<>(), threadFactory);
         executor.allowCoreThreadTimeOut(true);
 
-        return Executors.unconfigurableExecutorService(executor);
+        return executor;
     }
 
     /**
