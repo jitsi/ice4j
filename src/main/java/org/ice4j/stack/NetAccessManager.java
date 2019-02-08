@@ -57,9 +57,7 @@ class NetAccessManager
      * {@link NetAccessManager}s.
      */
     private static ExecutorService messageProcessingExecutor
-        = ExecutorFactory.createFixedThreadPool(
-            Runtime.getRuntime().availableProcessors(),
-            "ice4j.NetAccessManager-");
+        = ExecutorFactory.createCachedThreadPool("ice4j.NetAccessManager-");
 
     /**
      * Maximum number of {@link MessageProcessingTask} to keep in object pool.

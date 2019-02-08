@@ -137,4 +137,21 @@ public class ExecutorFactory
 
         return Executors.unconfigurableExecutorService(executor);
     }
+
+    /**
+     * Creates an {@link ExecutorService} with an unlimited number of threads
+     * which are released after idle timeout.
+     *
+     * @param threadNamePrefix - name prefix for threads created by pool
+     * @return pre-configured {@link ExecutorService}
+     */
+    public static ExecutorService createCachedThreadPool(
+            String threadNamePrefix)
+    {
+        final CustomizableThreadFactory threadFactory
+                = new CustomizableThreadFactory(threadNamePrefix, true);
+
+        return Executors.unconfigurableExecutorService(
+                Executors.newCachedThreadPool(threadFactory));
+    }
 }
