@@ -22,6 +22,7 @@ import java.io.*;
 import java.math.*;
 import java.net.*;
 import java.security.*;
+import java.time.*;
 import java.util.*;
 import java.util.concurrent.*;
 import java.util.logging.*;
@@ -121,7 +122,14 @@ public class Agent
      */
     private static final ScheduledExecutorService agentTasksScheduler
         = ExecutorFactory.createCPUBoundScheduledExecutor(
-            "ice4j.Agent-", 60, TimeUnit.SECONDS);
+            "ice4j.Agent-timer-", 60, TimeUnit.SECONDS);
+
+    /**
+     *  The ExecutorService to execute Agent's tasks
+     */
+    private static final ExecutorService agentTasksExecutor
+        = Executors.newCachedThreadPool(
+            new CustomizableThreadFactory("ice4j.Agent-executor-", true));
 
     /**
      * Termination task which will be scheduled with timeout
@@ -2685,7 +2693,7 @@ public class Agent
     /**
      * A class to schedule and perform Stun keep-alive checks
      */
-    private final class StunKeepAliveRunner
+    private final class StunKeepAliveRunner extends PeriodicRunnable
     {
         private final long consentFreshnessInterval = Long.getLong(
             StackProperties.CONSENT_FRESHNESS_INTERVAL,
@@ -2703,97 +2711,62 @@ public class Agent
             StackProperties.CONSENT_FRESHNESS_MAX_RETRANSMISSIONS,
             DEFAULT_CONSENT_FRESHNESS_MAX_RETRANSMISSIONS);
 
-        /**
-         * The scheduled task which sends periodic STUN keep-alive checks.
-         */
-        private ScheduledFuture<?> stunKeepAliveFuture;
+        private int keepAliveSent = 0;
 
-        /**
-         * The object used to synchronize access to {@link #stunKeepAliveFuture}.
-         */
-        private final Object stunKeepAliveFutureSyncRoot = new Object();
-
-        /**
-         * Execute STUN keep-alive checks
-         */
-        private final Runnable runnableCheck = new Runnable()
+        StunKeepAliveRunner()
         {
-            @Override
-            public void run()
-            {
-                for (IceMediaStream stream : getStreams())
-                {
-                    for (Component component : stream.getComponents())
-                    {
-                        for (CandidatePair pair : component.getKeepAlivePairs())
-                        {
-                            if (pair != null)
-                            {
-                                if (performConsentFreshness)
-                                {
-                                    connCheckClient.startCheckForPair(
-                                        pair,
-                                        originalConsentFreshnessWaitInterval,
-                                        maxConsentFreshnessWaitInterval,
-                                        consentFreshnessMaxRetransmissions);
-                                }
-                                else
-                                {
-                                    connCheckClient
-                                        .sendBindingIndicationForPair(pair);
-                                }
-                            }
-                        }
-                    }
-                }
+            super(agentTasksScheduler, agentTasksExecutor);
+        }
 
-                if (!shouldRunStunKeepAlive())
-                {
-                    cancel();
-                }
+        @Override
+        protected Duration getDelayUntilNextRun()
+        {
+            if (shouldRunStunKeepAlive())
+            {
+                return Duration.ofMillis(keepAliveSent == 0 ? 0 : consentFreshnessInterval);
             }
-        };
+            return Duration.ofMillis(-1);
+        }
 
-        /**
-         * Schedules execution of periodic task which performs
-         * STUN keep-alive checks
-         */
-        void schedule()
+        @Override
+        protected void run()
         {
-            if (stunKeepAliveFuture == null)
+            try
             {
-                synchronized (stunKeepAliveFutureSyncRoot)
-                {
-                    if (stunKeepAliveFuture == null)
-                    {
-                        logger.info("Starting periodic Stun Keep Alive.");
-
-                        stunKeepAliveFuture
-                            = agentTasksScheduler.scheduleWithFixedDelay(
-                            runnableCheck,
-                            0,
-                            consentFreshnessInterval,
-                            TimeUnit.MILLISECONDS);
-                    }
-                }
+                sendKeepAlive();
+            }
+            catch (Exception e)
+            {
+                logger.log(Level.WARNING, "Error while sending keep alive", e);
             }
         }
 
-        /**
-         * Cancel scheduled periodic task which performs
-         * STUN keep-alive checks
-         */
-        void cancel()
+        private void sendKeepAlive()
         {
-            if (stunKeepAliveFuture != null)
+            ++keepAliveSent;
+
+            for (IceMediaStream stream : getStreams())
             {
-                synchronized (stunKeepAliveFutureSyncRoot)
+                for (Component component : stream.getComponents())
                 {
-                    if (stunKeepAliveFuture != null)
+                    for (CandidatePair pair : component.getKeepAlivePairs())
                     {
-                        stunKeepAliveFuture.cancel(false);
-                        stunKeepAliveFuture = null;
-                        logger.info("Stop periodic Stun Keep Alive.");
+                        if (pair != null)
+                        {
+                            if (performConsentFreshness)
+                            {
+                                connCheckClient.startCheckForPair(
+                                    pair,
+                                    originalConsentFreshnessWaitInterval,
+                                    maxConsentFreshnessWaitInterval,
+                                    consentFreshnessMaxRetransmissions);
+                            }
+                            else
+                            {
+                                connCheckClient
+                                    .sendBindingIndicationForPair(pair);
+                            }
+                        }
                     }
                 }
             }
