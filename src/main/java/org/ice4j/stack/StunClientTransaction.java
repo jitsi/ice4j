@@ -18,6 +18,7 @@
 package org.ice4j.stack;
 
 import java.io.*;
+import java.time.*;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.*;
 import java.util.logging.*;
@@ -74,12 +75,21 @@ public class StunClientTransaction
     public static final int DEFAULT_ORIGINAL_WAIT_INTERVAL = 100;
 
     /**
-     * The pool of <tt>Thread</tt>s which retransmit
+     * The pool of <tt>Thread</tt>s which schedules retransmission of
      * <tt>StunClientTransaction</tt>s.
      */
-    private static final ScheduledExecutorService retransmissionThreadPool
-        = ExecutorFactory.createCPUBoundScheduledExecutor(
-            "ice4j.StunClientTransaction-", 60, TimeUnit.SECONDS);
+    private static final ScheduledExecutorService retransmissionTimer
+        = ExecutorFactory.createSingleThreadScheduledExecutor(
+            "ice4j.StunClientTransaction-timer-", 60, TimeUnit.SECONDS);
+
+    /**
+     * The pool of <tt>Thread</tt>s which retransmits
+     * <tt>StunClientTransaction</tt>s.
+     */
+    private static final ExecutorService retransmissionExecutor
+        = ExecutorFactory.createCachedThreadPool(
+            "ice4j.StunClientTransaction-executor-");
+
 
     /**
      * Maximum number of retransmissions. Once this number is reached and if no
@@ -415,7 +425,7 @@ public class StunClientTransaction
      * If no response is received by 1.6 seconds after the last request has been
      * sent, we consider the transaction to have failed.
      */
-    private final class Retransmitter
+    private final class Retransmitter extends PeriodicRunnable
     {
         /**
          * Current number of retransmission attempts
@@ -427,30 +437,28 @@ public class StunClientTransaction
          */
         private int nextRetransmissionDelay = originalWaitInterval;
 
-        /**
-         * Currently scheduled retransmission task
-         */
-        private ScheduledFuture<?> retransmissionFuture;
-
-        /**
-         * The scheduled runnable that perform retransmit attempt
-         */
-        private final Runnable retransmissionAttempt = new Runnable()
+        protected Retransmitter()
         {
-            @Override
-            public void run()
+            super(retransmissionTimer, retransmissionExecutor);
+        }
+
+        @Override
+        protected Duration getDelayUntilNextRun()
+        {
+            return Duration.ofMillis(nextRetransmissionDelay);
+        }
+
+        @Override
+        protected void run()
+        {
+            retransmissionCounter++;
+
+            int curWaitInterval = nextRetransmissionDelay;
+            nextRetransmissionDelay
+                = Math.min(maxWaitInterval, 2 * nextRetransmissionDelay);
+
+            if (retransmissionCounter <= maxRetransmissions)
             {
-                if (cancelled.get())
-                {
-                    return;
-                }
-
-                retransmissionCounter++;
-
-                int curWaitInterval = nextRetransmissionDelay;
-                nextRetransmissionDelay
-                    = Math.min(maxWaitInterval, 2 * nextRetransmissionDelay);
-
                 try
                 {
                     logger.fine(
@@ -470,50 +478,9 @@ public class StunClientTransaction
                         "A client tran retransmission failed",
                         ex);
                 }
-
-                if(!cancelled.get())
-                {
-                    reschedule();
-                }
             }
-
-            private void reschedule()
+            else
             {
-                if (retransmissionCounter < maxRetransmissions)
-                {
-                    retransmissionFuture = retransmissionThreadPool.schedule(
-                        retransmissionAttempt,
-                        nextRetransmissionDelay,
-                        TimeUnit.MILLISECONDS);
-                }
-                else
-                {
-                    // before stating that a transaction has timeout-ed we
-                    // should first wait for a reception of the response
-                    nextRetransmissionDelay =
-                        Math.min(maxWaitInterval, 2* nextRetransmissionDelay);
-
-                    retransmissionFuture = retransmissionThreadPool.schedule(
-                        transactionTimedOut,
-                        nextRetransmissionDelay,
-                        TimeUnit.MILLISECONDS);
-                }
-            }
-        };
-
-        /**
-         * Scheduled runnable to time-out STUN transaction
-         */
-        private final Runnable transactionTimedOut = new Runnable()
-        {
-            @Override
-            public void run()
-            {
-                if (cancelled.get())
-                {
-                    return;
-                }
-
                 stackCallback.removeClientTransaction(
                     StunClientTransaction.this);
 
@@ -521,36 +488,8 @@ public class StunClientTransaction
                     new StunTimeoutEvent(
                         stackCallback,
                         getRequest(), getLocalAddress(), getTransactionID()));
-            }
-        };
 
-        /**
-         * Schedules STUN transaction retransmission
-         */
-        void schedule()
-        {
-            if (retransmissionFuture != null)
-            {
-                return;
-            }
-
-            retransmissionFuture = retransmissionThreadPool.schedule(
-                retransmissionAttempt,
-                nextRetransmissionDelay,
-                TimeUnit.MILLISECONDS);
-        }
-
-        /**
-         * Cancels the transaction. Once this method is called the transaction
-         * is considered terminated and will stop retransmissions.
-         */
-        void cancel()
-        {
-            final ScheduledFuture<?> retransmissionFuture =
-                this.retransmissionFuture;
-            if (retransmissionFuture != null)
-            {
-                retransmissionFuture.cancel(true);
+                nextRetransmissionDelay = -1;
             }
         }
     }
