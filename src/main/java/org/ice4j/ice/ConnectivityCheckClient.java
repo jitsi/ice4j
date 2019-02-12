@@ -63,7 +63,7 @@ class ConnectivityCheckClient
     private final ScheduledExecutorService scheduledExecutorService;
 
     /**
-     * A scheduled executor service to perform background tasks of the client
+     * An executor service to perform background tasks of the client
      */
     private final ExecutorService executorService;
 
