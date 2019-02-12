@@ -18,9 +18,9 @@
 package org.ice4j.ice;
 
 import java.net.*;
+import java.time.*;
 import java.util.*;
 import java.util.concurrent.*;
-import java.util.concurrent.atomic.*;
 import java.util.logging.*;
 
 import org.ice4j.*;
@@ -28,6 +28,7 @@ import org.ice4j.attribute.*;
 import org.ice4j.message.*;
 import org.ice4j.socket.*;
 import org.ice4j.stack.*;
+import org.ice4j.util.*;
 import org.ice4j.util.Logger; //Disambiguation
 
 /**
@@ -57,9 +58,14 @@ class ConnectivityCheckClient
     private final Agent parentAgent;
 
     /**
-     * A scheduled executor service to perform scheduled task of the client
+     * A scheduled executor service to perform periodic tasks of the client
      */
     private final ScheduledExecutorService scheduledExecutorService;
+
+    /**
+     * A scheduled executor service to perform background tasks of the client
+     */
+    private final ExecutorService executorService;
 
     /**
      * The <tt>StunStack</tt> that we will use for connectivity checks.
@@ -97,13 +103,17 @@ class ConnectivityCheckClient
      * @param parentAgent the <tt>Agent</tt> that is creating this instance.
      * @param scheduledExecutorService the <tt>ScheduledExecutorService</tt>
      *                                 to execute clients tasks
+     * @param executorService the <tt>ExecutorService</tt> to execute
+     *                        background tasks of connectivity check client
      */
     public ConnectivityCheckClient(
         Agent parentAgent,
-        ScheduledExecutorService scheduledExecutorService)
+        ScheduledExecutorService scheduledExecutorService,
+        ExecutorService executorService)
     {
         this.parentAgent = parentAgent;
         this.scheduledExecutorService = scheduledExecutorService;
+        this.executorService = executorService;
         logger = new Logger(classLogger, parentAgent.getLogger());
 
         stunStack = this.parentAgent.getStunStack();
@@ -869,91 +879,13 @@ class ConnectivityCheckClient
      * A class to control periodically scheduled runnable that actually sends
      * the checks for a particular check list in the pace defined in RFC 5245.
      */
-    private final class PaceMaker
+    private final class PaceMaker extends PeriodicRunnable
     {
-        /**
-         * Indicates whether this <tt>Runnable</tt> should continue running.
-         */
-        private final AtomicBoolean cancelled = new AtomicBoolean();
-
-        /**
-         * Sends connectivity checks at the pace determined by the {@link
-         * Agent#calculateTa()} method and using either the trigger check queue
-         * or the regular check lists.
-         */
-        private final Runnable connectivityChecker = new Runnable()
-        {
-            @Override
-            public void run()
-            {
-                if (cancelled.get())
-                {
-                    return;
-                }
-
-                CandidatePair pairToCheck = checkList.popTriggeredCheck();
-
-                //if there are no triggered checks, go for an ordinary one.
-                if (pairToCheck == null)
-                {
-                    pairToCheck = checkList.getNextOrdinaryPairToCheck();
-                }
-
-                if (pairToCheck != null)
-                {
-                    /*
-                     * Since we suspect that it is possible to
-                     * startCheckForPair, processSuccessResponse and only
-                     * then setStateInProgress, we'll synchronize. The
-                     * synchronization root is the one of the
-                     * CandidatePair#setState method.
-                     */
-                    synchronized (pairToCheck)
-                    {
-                        TransactionID transactionID
-                            = startCheckForPair(pairToCheck);
-
-                        if (transactionID == null)
-                        {
-                            logger.info(
-                                "Pair failed: "
-                                    + pairToCheck.toShortString());
-                            pairToCheck.setStateFailed();
-                        }
-                        else
-                        {
-                            pairToCheck.setStateInProgress(transactionID);
-                        }
-                    }
-                }
-                else
-                {
-                    /*
-                     * We are done sending checks for this list. We'll set
-                     * its final state in either the processResponse(),
-                     * processTimeout() or processFailure() method.
-                     */
-                    logger.finest("will skip a check beat.");
-                    checkList.fireEndOfOrdinaryChecks();
-                }
-
-                if (!cancelled.get())
-                {
-                    schedule();
-                }
-            }
-        };
-
         /**
          * The {@link CheckList} that this <tt>PaceMaker</tt> will be running
          * checks for.
          */
         private final CheckList checkList;
-
-        /**
-         * Scheduled instance of {@link #connectivityChecker} runnable
-         */
-        private ScheduledFuture<?> scheduledCheck;
 
         /**
          * Creates a new {@link PaceMaker} for this
@@ -964,37 +896,63 @@ class ConnectivityCheckClient
          */
         public PaceMaker(CheckList checkList)
         {
+            super(scheduledExecutorService, executorService);
             this.checkList = checkList;
         }
 
         /**
-         * Cancel execution of current and further connectivity checks
+         * Sends connectivity checks at the pace determined by the {@link
+         * Agent#calculateTa()} method and using either the trigger check queue
+         * or the regular check lists.
          */
-        void cancel()
+        @Override
+        protected void run()
         {
-            cancelled.set(true);
+            CandidatePair pairToCheck = checkList.popTriggeredCheck();
 
-            final ScheduledFuture<?> scheduledCheck = this.scheduledCheck;
-            if (scheduledCheck != null)
+            //if there are no triggered checks, go for an ordinary one.
+            if (pairToCheck == null)
             {
-                scheduledCheck.cancel(true);
+                pairToCheck = checkList.getNextOrdinaryPairToCheck();
             }
-        }
 
-        /**
-         * Schedules execution of checks for check list
-         */
-        void schedule()
-        {
-            if (cancelled.get())
+            if (pairToCheck != null)
             {
-                return;
+                /*
+                 * Since we suspect that it is possible to
+                 * startCheckForPair, processSuccessResponse and only
+                 * then setStateInProgress, we'll synchronize. The
+                 * synchronization root is the one of the
+                 * CandidatePair#setState method.
+                 */
+                synchronized (pairToCheck)
+                {
+                    TransactionID transactionID
+                        = startCheckForPair(pairToCheck);
+
+                    if (transactionID == null)
+                    {
+                        logger.info(
+                            "Pair failed: "
+                                + pairToCheck.toShortString());
+                        pairToCheck.setStateFailed();
+                    }
+                    else
+                    {
+                        pairToCheck.setStateInProgress(transactionID);
+                    }
+                }
             }
-            scheduledCheck
-                = scheduledExecutorService.schedule(
-                    connectivityChecker,
-                    getNextWaitInterval(),
-                    TimeUnit.MILLISECONDS);
+            else
+            {
+                /*
+                 * We are done sending checks for this list. We'll set
+                 * its final state in either the processResponse(),
+                 * processTimeout() or processFailure() method.
+                 */
+                logger.finest("will skip a check beat.");
+                checkList.fireEndOfOrdinaryChecks();
+            }
         }
 
         /**
@@ -1004,7 +962,7 @@ class ConnectivityCheckClient
          * @return  the number milliseconds to wait before we send the next
          * check.
          */
-        private long getNextWaitInterval()
+        protected Duration getDelayUntilNextRun()
         {
             int activeCheckLists = parentAgent.getActiveCheckListCount();
 
@@ -1015,7 +973,7 @@ class ConnectivityCheckClient
                 activeCheckLists = 1;
             }
 
-            return parentAgent.calculateTa() * activeCheckLists;
+            return Duration.ofMillis(parentAgent.calculateTa() * activeCheckLists);
         }
     }
 
