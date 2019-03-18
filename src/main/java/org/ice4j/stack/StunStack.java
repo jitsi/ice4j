@@ -31,7 +31,7 @@ import org.ice4j.attribute.*;
 import org.ice4j.message.*;
 import org.ice4j.security.*;
 import org.ice4j.socket.*;
-import org.ice4j.util.*;
+import org.jitsi.javautils.*;
 
 /**
  * The entry point to the Stun4J stack. The class is used to start, stop and

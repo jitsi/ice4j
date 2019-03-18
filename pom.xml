@@ -22,6 +22,11 @@
 
   <dependencies>
     <dependency>
+      <groupId>org.jitsi</groupId>
+      <artifactId>jitsi-java-utils</artifactId>
+      <version>1.0.0-SNAPSHOT</version>
+    </dependency>
+    <dependency>
       <groupId>org.opentelecoms.sdp</groupId>
       <artifactId>java-sdp-nist-bridge</artifactId>
     </dependency>

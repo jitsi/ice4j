@@ -20,7 +20,7 @@ package org.ice4j.ice.harvest;
 import org.ice4j.*;
 import org.ice4j.attribute.*;
 import org.ice4j.message.*;
-import org.ice4j.util.*;
+import org.jitsi.javautils.*;
 
 import java.io.*;
 import java.net.*;

@@ -29,7 +29,7 @@ import java.util.logging.Logger; // Disambiguation
 import org.ice4j.*;
 import org.ice4j.message.*;
 import org.ice4j.socket.*;
-import org.ice4j.util.*;
+import org.jitsi.javautils.*;
 
 /**
  * Manages <tt>Connector</tt>s and <tt>MessageProcessingTask</tt> execution and

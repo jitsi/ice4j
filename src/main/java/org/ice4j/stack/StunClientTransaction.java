@@ -26,6 +26,7 @@ import java.util.logging.*;
 import org.ice4j.*;
 import org.ice4j.message.*;
 import org.ice4j.util.*;
+import org.jitsi.javautils.*;
 
 /**
  * The {@code StunClientTransaction} class retransmits requests as specified by
