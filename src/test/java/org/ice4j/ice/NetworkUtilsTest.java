@@ -24,6 +24,40 @@ import org.junit.*;
 public class NetworkUtilsTest
 {
     @Test
+    public void testIpv4StringToBytes()
+    {
+        byte[] addr = NetworkUtils.strToIPv4("1");
+        assertNotNull(addr);
+        assertEquals(1, addr[3]);
+
+        addr = NetworkUtils.strToIPv4("1.2");
+        assertNotNull(addr);
+        assertEquals(2, addr[3]);
+
+        addr = NetworkUtils.strToIPv4("1.2.3");
+        assertNotNull(addr);
+        assertEquals(3, addr[3]);
+
+        addr = NetworkUtils.strToIPv4("1.2.3.4");
+        assertNotNull(addr);
+        assertEquals(4, addr[3]);
+
+        assertNull(NetworkUtils.strToIPv4(""));
+        assertNull(NetworkUtils.strToIPv4("-1"));
+        assertNull(NetworkUtils.strToIPv4("1.-2"));
+        assertNull(NetworkUtils.strToIPv4("-1.2"));
+        assertNull(NetworkUtils.strToIPv4("1.-2.3"));
+        assertNull(NetworkUtils.strToIPv4("1.2.-3"));
+        assertNull(NetworkUtils.strToIPv4("-1.2.3"));
+        assertNull(NetworkUtils.strToIPv4("1.-2.3.4"));
+        assertNull(NetworkUtils.strToIPv4("1.2.-3.4"));
+        assertNull(NetworkUtils.strToIPv4("1.2.3.-4"));
+        assertNull(NetworkUtils.strToIPv4("-1.2.3.4"));
+        assertNull(NetworkUtils.strToIPv4("1.2.3.4.5"));
+        assertNull(NetworkUtils.strToIPv4("1.2.3.256"));
+    }
+
+    @Test
     public void testIpv6StringToBytes()
     {
         byte[] addr = NetworkUtils.strToIPv6("::12");
@@ -42,6 +76,12 @@ public class NetworkUtilsTest
         assertNotNull(addr);
         assertEquals(18, addr[15]);
 
+        assertNull(NetworkUtils.strToIPv6(""));
+        assertNull(NetworkUtils.strToIPv6(":::"));
+        assertNull(NetworkUtils.strToIPv6("[^"));
+        assertNull(NetworkUtils.strToIPv6("[%"));
+        assertNull(NetworkUtils.strToIPv6(":?0"));
         assertNull(NetworkUtils.strToIPv6("[::12]%1"));
+        assertNull(NetworkUtils.strToIPv6("[::65536]%1"));
     }
 }
