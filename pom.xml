@@ -21,14 +21,9 @@
 
   <dependencies>
     <dependency>
-      <groupId>org.opentelecoms.sdp</groupId>
-      <artifactId>java-sdp-nist-bridge</artifactId>
-      <version>1.1</version>
-    </dependency>
-    <dependency>
-      <groupId>org.jitsi</groupId>
-      <artifactId>jain-sip-ri-ossonly</artifactId>
-      <version>1.2.98c7f8c-jitsi-oss1</version>
+      <groupId>javax.sip</groupId>
+      <artifactId>jain-sip-ri</artifactId>
+      <version>1.3.0-91</version>
     </dependency>
     <dependency>
       <groupId>org.bitlet</groupId>

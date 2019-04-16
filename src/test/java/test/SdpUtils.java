@@ -24,7 +24,6 @@ import javax.sdp.*;
 import org.ice4j.*;
 import org.ice4j.ice.*;
 import org.ice4j.ice.sdp.*;
-import org.opentelecoms.javax.sdp.*;
 
 /**
  * Utilities for manipulating SDP. Some of the utilities in this method <b>do
@@ -54,7 +53,7 @@ public class SdpUtils
      */
     public static String createSDPDescription(Agent agent) throws Throwable
     {
-        SdpFactory factory = new NistSdpFactory();
+        SdpFactory factory = SdpFactory.getInstance();
         SessionDescription sdess = factory.createSessionDescription();
 
         IceSdpUtils.initSessionDescription(sdess, agent);
@@ -76,7 +75,7 @@ public class SdpUtils
     public static void parseSDP(Agent localAgent, String sdp)
         throws Exception
     {
-        SdpFactory factory = new NistSdpFactory();
+        SdpFactory factory = SdpFactory.getInstance();
         SessionDescription sdess = factory.createSessionDescription(sdp);
 
         for(IceMediaStream stream : localAgent.getStreams())

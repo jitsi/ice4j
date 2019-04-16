@@ -30,7 +30,7 @@ import org.ice4j.security.*;
 
 /**
  * Sample program which first uses ICE to discover UDP connectivity. After that
- * selected cadidates are used by "remote" and "local" pseudoTCP peers to
+ * selected candidates are used by "remote" and "local" pseudoTCP peers to
  * transfer some test data.
  *
  * @author Pawel Domas

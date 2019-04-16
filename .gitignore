@@ -7,3 +7,7 @@
 .project
 .settings/
 bin/
+
+# Ignore IntelliJ IDEA files
+.idea
+*.iml
