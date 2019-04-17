@@ -150,7 +150,7 @@ public class StunClientTransaction
     /**
      * A transaction request retransmitter
      */
-    private final Retransmitter retransmitter = new Retransmitter();
+    private final Retransmitter retransmitter;
 
     /**
      * Creates a client transaction.
@@ -205,6 +205,8 @@ public class StunClientTransaction
         this.requestDestination = requestDestination;
 
         initTransactionConfiguration();
+
+        retransmitter = new Retransmitter(); // create it here to support 'originalWaitInterval' configuration
 
         this.transactionID = transactionID;
 
