@@ -316,6 +316,63 @@ public class ShallowStackTest extends TestCase
                    Arrays.equals(expectedReturn, actualReturn));
     }
 
+    /**
+     * Verify StackProperties.FIRST_CTRAN_RETRANS_AFTER can indeed update StunClientTransaction.Retransmitter
+     */
+    public void testRetransmissionOriginalWait()
+        throws Exception
+    {
+        long originalWait = 200; // milliseconds
+        System.setProperty(StackProperties.FIRST_CTRAN_RETRANS_AFTER, String.valueOf(originalWait));
+
+        Request bindingRequest = MessageFactory.createBindingRequest();
+
+        dgramCollector.startListening(dummyServerSocket);
+
+        long firstTime = System.currentTimeMillis();
+
+        stunStack.sendRequest(bindingRequest,
+                dummyServerAddress,
+                localAddress,
+                new SimpleResponseCollector());
+
+        //wait for its arrival
+        dgramCollector.waitForPacket();
+        DatagramPacket receivedPacket = dgramCollector.collectPacket();
+
+        assertTrue("The stack did not properly send a Binding Request",
+                (receivedPacket.getLength() > 0));
+
+        Request receivedRequest =
+                (Request)Request.decode(receivedPacket.getData(),
+                        (char)0,
+                        (char)receivedPacket.getLength());
+        assertEquals("The received request did not match the "
+                        +"one that was sent.",
+                bindingRequest, //expected
+                receivedRequest); // actual
+
+        // wait for the 1st retransmission with originalWait
+        dgramCollector.startListening(dummyServerSocket);
+        dgramCollector.waitForPacket();
+        receivedPacket = dgramCollector.collectPacket();
+
+        assertTrue("The stack did not retransmit a Binding Request",
+                (receivedPacket.getLength() > 0));
+
+        receivedRequest = (Request)Request.decode(
+                receivedPacket.getData(),
+                (char)0,
+                (char)receivedPacket.getLength());
+        assertEquals("The retransmitted request did not match the original.",
+                bindingRequest, //expected
+                receivedRequest); // actual
+
+        // verify the retransmission is longer than the originalWait
+        long secondTime = System.currentTimeMillis();
+         assertTrue((secondTime - firstTime) >= originalWait);
+    }
+
     //--------------------------------------- listener implementations ---------
     /**
      * A simple utility that allows us to asynchronously collect messages.

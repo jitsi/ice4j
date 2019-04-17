@@ -36,7 +36,8 @@ public class DatagramCollector
     {
         try
         {
-
+            // The 'receive' method synchronized the packet, hence the 'getData()' (also synchronized) will block
+            // on this anyway even after 'waitForPacket' and 'collectPacket' calls.
             sock.receive(receivedPacket);
 
             synchronized (this)
