@@ -371,6 +371,8 @@ public class ShallowStackTest extends TestCase
         // verify the retransmission is longer than the originalWait
         long secondTime = System.currentTimeMillis();
          assertTrue((secondTime - firstTime) >= originalWait);
+
+         System.clearProperty(StackProperties.FIRST_CTRAN_RETRANS_AFTER);
     }
 
     //--------------------------------------- listener implementations ---------
