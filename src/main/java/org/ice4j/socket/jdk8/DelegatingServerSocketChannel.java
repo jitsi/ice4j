@@ -24,7 +24,6 @@ import java.util.logging.*;
 
 import org.ice4j.socket.*;
 
-import org.ice4j.util.Logger;
 import sun.nio.ch.*;
 
 /**
