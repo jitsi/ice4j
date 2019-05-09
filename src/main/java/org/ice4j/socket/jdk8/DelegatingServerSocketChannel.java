@@ -1,7 +1,7 @@
 /*
  * ice4j, the OpenSource Java Solution for NAT and Firewall Traversal.
  *
- * Copyright @ 2015 Atlassian Pty Ltd
+ * Copyright @ 2018 - present 8x8, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,7 +18,9 @@
 package org.ice4j.socket.jdk8;
 
 import java.io.*;
+import java.lang.reflect.*;
 import java.nio.channels.*;
+import java.util.logging.*;
 
 import org.ice4j.socket.*;
 
@@ -36,10 +38,28 @@ class DelegatingServerSocketChannel<T extends ServerSocketChannel>
     implements SelChImpl
 {
     /**
+     * The {@link Logger} used by the {@link DelegatingServerSocketChannel}
+     * class and its instances for logging output.
+     */
+    private static final java.util.logging.Logger classLogger
+        = java.util.logging.Logger.getLogger(
+            DelegatingServerSocketChannel.class.getName());
+
+    /**
      * The view of {@link #delegate} as a <tt>SelChImpl</tt> interface instance
      * required by {@link Selector} and related functionality.
      */
     protected final SelChImpl delegateAsSelChImpl;
+
+    /**
+     * The translateAndSetInterestOps method available in java 8.
+     */
+    private final Method translateAndSetInterestOpsMethod;
+
+    /**
+     * The translateInterestOps method available in java 11.
+     */
+    private final Method translateInterestOpsMethod;
 
     /**
      * Initializes a new {@code DelegatingServerSocketChannel} instance which is
@@ -54,6 +74,37 @@ class DelegatingServerSocketChannel<T extends ServerSocketChannel>
 
         delegateAsSelChImpl
             = (delegate instanceof SelChImpl) ? (SelChImpl) delegate : null;
+
+        Method method;
+        try
+        {
+            method = SelChImpl.class.getMethod(
+                "translateAndSetInterestOps",
+                Integer.TYPE, SelectionKeyImpl.class);
+        }
+        catch(NoSuchMethodException e)
+        {
+            method = null;
+
+            classLogger.log(
+                Level.SEVERE,
+                "Cannot find method translateAndSetInterestOps", e);
+        }
+        translateAndSetInterestOpsMethod = method;
+
+        try
+        {
+            method = SelChImpl.class.getMethod(
+                "translateInterestOps", Integer.TYPE);
+        }
+        catch(NoSuchMethodException e)
+        {
+            method = null;
+
+            classLogger.log(
+                Level.SEVERE, "Cannot find method translateInterestOps", e);
+        }
+        translateInterestOpsMethod = method;
     }
 
     /**
@@ -95,10 +146,49 @@ class DelegatingServerSocketChannel<T extends ServerSocketChannel>
      *
      * Forwards to {@link #delegate}.
      */
-    @Override
+    @SuppressWarnings("unused")
     public void translateAndSetInterestOps(int ops, SelectionKeyImpl sk)
     {
-        delegateAsSelChImpl.translateAndSetInterestOps(ops, sk);
+        try
+        {
+            if (translateAndSetInterestOpsMethod != null)
+            {
+                translateAndSetInterestOpsMethod.invoke(
+                    delegateAsSelChImpl, ops, sk);
+            }
+        }
+        catch(IllegalAccessException | InvocationTargetException e)
+        {
+            classLogger.log(
+                Level.SEVERE,
+                "Cannot execute method translateAndSetInterestOpsMethod", e);
+        }
+    }
+
+    /**
+     * {@inheritDoc}
+     *
+     * Forwards to {@link #delegate}.
+     */
+    @SuppressWarnings("unused")
+    public int translateInterestOps(int ops)
+    {
+        try
+        {
+            if (translateInterestOpsMethod != null)
+            {
+                return (Integer) translateInterestOpsMethod.invoke(
+                    delegateAsSelChImpl, ops);
+            }
+        }
+        catch(IllegalAccessException | InvocationTargetException e)
+        {
+            classLogger.log(
+                Level.SEVERE,
+                "Cannot execute method translateInterestOpsMethod", e);
+        }
+
+        return 0;
     }
 
     /**
