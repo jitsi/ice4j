@@ -85,10 +85,6 @@ class DelegatingServerSocketChannel<T extends ServerSocketChannel>
         catch(NoSuchMethodException e)
         {
             method = null;
-
-            classLogger.log(
-                Level.SEVERE,
-                "Cannot find method translateAndSetInterestOps", e);
         }
         translateAndSetInterestOpsMethod = method;
 
@@ -101,10 +97,16 @@ class DelegatingServerSocketChannel<T extends ServerSocketChannel>
         {
             method = null;
 
-            classLogger.log(
-                Level.SEVERE, "Cannot find method translateInterestOps", e);
         }
         translateInterestOpsMethod = method;
+
+        if (translateInterestOpsMethod == null
+            && translateAndSetInterestOpsMethod == null)
+        {
+            classLogger.log(
+                Level.SEVERE, "Cannot find translateInterestOps " +
+                    "or translateAndSetInterestOps!");
+        }
     }
 
     /**
