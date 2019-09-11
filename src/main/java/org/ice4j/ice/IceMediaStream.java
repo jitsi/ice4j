@@ -914,4 +914,9 @@ public class IceMediaStream
     {
         return remotePassword;
     }
+
+    public Logger getLogger()
+    {
+        return logger;
+    }
 }
