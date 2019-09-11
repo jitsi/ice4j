@@ -1123,4 +1123,9 @@ public class Component
             keepAlivePairs.add(pair);
         }
     }
+
+    public Logger getLogger()
+    {
+        return logger;
+    }
 }
