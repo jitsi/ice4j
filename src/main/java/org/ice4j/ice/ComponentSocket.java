@@ -71,19 +71,19 @@ public class ComponentSocket
     /**
      * The {@link Logger} used by {@link MergingDatagramSocket} instances.
      */
-    private final Logger logger;
+//    private final Logger logger;
 
     /**
      * Initializes a new {@link MergingDatagramSocket} instance.
      * @throws SocketException
      */
-    ComponentSocket(Component component, Logger levelDelegate)
+    ComponentSocket(Component component, org.jitsi.utils.logging2.Logger parentLogger)
         throws SocketException
     {
-        super(levelDelegate);
+        super(parentLogger);
 
         this.component = component;
-        this.logger = new Logger(classLogger, levelDelegate);
+//        this.logger = new Logger(classLogger, levelDelegate);
         component.getParentStream().addPairChangeListener(this);
     }
 
