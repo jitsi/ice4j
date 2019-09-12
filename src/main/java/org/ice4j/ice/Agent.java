@@ -345,7 +345,12 @@ public class Agent
      */
     public Agent()
     {
-        this(null);
+        this(null, null);
+    }
+
+    public Agent(Logger parentLogger)
+    {
+        this(null, parentLogger);
     }
 
     /**
@@ -353,9 +358,23 @@ public class Agent
      * @param ufragPrefix an optional prefix to the generated local ICE username
      * fragment.
      */
-    public Agent(String ufragPrefix)
+    public Agent(String ufragPrefix, Logger parentLogger)
     {
         SecureRandom random = new SecureRandom();
+
+        String ufrag = ufragPrefix == null ? "" : ufragPrefix;
+        ufrag += new BigInteger(24, random).toString(32);
+        ufrag += BigInteger.valueOf(System.currentTimeMillis()).toString(32);
+        ufrag = ensureIceAttributeLength(ufrag, /* min */ 4, /* max */ 256);
+        this.ufrag = ufrag;
+        if (parentLogger != null)
+        {
+            logger = parentLogger.createChildLogger(this.getClass().getName(), JMap.of("ufrag", this.ufrag));
+        }
+        else
+        {
+            logger = new LoggerImpl(Agent.class.getName(), new LogContext(JMap.of("ufrag", this.ufrag)));
+        }
 
         connCheckServer = new ConnectivityCheckServer(this);
         connCheckClient = new ConnectivityCheckClient(
@@ -368,12 +387,6 @@ public class Agent
         if (StackProperties.getString(StackProperties.SOFTWARE) == null)
             System.setProperty(StackProperties.SOFTWARE, "ice4j.org");
 
-        String ufrag = ufragPrefix == null ? "" : ufragPrefix;
-        ufrag += new BigInteger(24, random).toString(32);
-        ufrag += BigInteger.valueOf(System.currentTimeMillis()).toString(32);
-        ufrag = ensureIceAttributeLength(ufrag, /* min */ 4, /* max */ 256);
-        this.ufrag = ufrag;
-        logger = new LoggerImpl(Agent.class.getName(), new LogContext(JMap.of("ufrag", this.ufrag)));
 
         password
             = ensureIceAttributeLength(
