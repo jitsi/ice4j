@@ -31,7 +31,9 @@ import org.ice4j.*;
 import org.ice4j.ice.harvest.*;
 import org.ice4j.stack.*;
 import org.ice4j.util.*;
-import org.ice4j.util.Logger; // Disambiguation.
+import org.jitsi.utils.collections.*;
+import org.jitsi.utils.logging2.*;
+import org.jitsi.utils.logging2.Logger;
 
 /**
  * An <tt>Agent</tt> could be described as the main class (i.e. the chef
@@ -343,7 +345,12 @@ public class Agent
      */
     public Agent()
     {
-        this(Level.INFO, null);
+        this(null, null);
+    }
+
+    public Agent(Logger parentLogger)
+    {
+        this(null, parentLogger);
     }
 
     /**
@@ -351,32 +358,23 @@ public class Agent
      * @param ufragPrefix an optional prefix to the generated local ICE username
      * fragment.
      */
-    public Agent(String ufragPrefix)
+    public Agent(String ufragPrefix, Logger parentLogger)
     {
-        this(Level.INFO, ufragPrefix);
-    }
-
-    /**
-     * Creates an empty <tt>Agent</tt> with no streams, and no address.
-     * @param loggingLevel the logging level to be used by the agent and all of
-     * its components.
-     */
-    public Agent(Level loggingLevel)
-    {
-        this(loggingLevel, null);
-    }
-
-    /**
-     * Creates an empty <tt>Agent</tt> with no streams, and no address.
-     * @param loggingLevel the logging level to be used by the agent and all of
-     * its components.
-     * @param ufragPrefix an optional prefix to the generated local ICE username
-     * fragment.
-     */
-    public Agent(Level loggingLevel, String ufragPrefix)
-    {
-        logger = new Logger(classLogger, loggingLevel);
         SecureRandom random = new SecureRandom();
+
+        String ufrag = ufragPrefix == null ? "" : ufragPrefix;
+        ufrag += new BigInteger(24, random).toString(32);
+        ufrag += BigInteger.valueOf(System.currentTimeMillis()).toString(32);
+        ufrag = ensureIceAttributeLength(ufrag, /* min */ 4, /* max */ 256);
+        this.ufrag = ufrag;
+        if (parentLogger != null)
+        {
+            logger = parentLogger.createChildLogger(this.getClass().getName(), JMap.of("ufrag", this.ufrag));
+        }
+        else
+        {
+            logger = new LoggerImpl(Agent.class.getName(), new LogContext(JMap.of("ufrag", this.ufrag)));
+        }
 
         connCheckServer = new ConnectivityCheckServer(this);
         connCheckClient = new ConnectivityCheckClient(
@@ -389,11 +387,6 @@ public class Agent
         if (StackProperties.getString(StackProperties.SOFTWARE) == null)
             System.setProperty(StackProperties.SOFTWARE, "ice4j.org");
 
-        String ufrag = ufragPrefix == null ? "" : ufragPrefix;
-        ufrag += new BigInteger(24, random).toString(32);
-        ufrag += BigInteger.valueOf(System.currentTimeMillis()).toString(32);
-        ufrag = ensureIceAttributeLength(ufrag, /* min */ 4, /* max */ 256);
-        this.ufrag = ufrag;
 
         password
             = ensureIceAttributeLength(
@@ -409,10 +402,7 @@ public class Agent
             addCandidateHarvester(harvester);
         }
 
-        if (logger.isLoggable(Level.FINE))
-        {
-            logger.fine("Created a new Agent, ufrag=" + ufrag);
-        }
+        logger.debug(() -> "Created a new Agent");
     }
 
     /**
@@ -434,7 +424,7 @@ public class Agent
      */
     public IceMediaStream createMediaStream(String mediaStreamName)
     {
-        logger.debug("Create media stream for " + mediaStreamName);
+        logger.debug(() -> "Create media stream for " + mediaStreamName);
 
         IceMediaStream mediaStream
             = new IceMediaStream(Agent.this, mediaStreamName);
@@ -679,7 +669,7 @@ public class Agent
         else
         {
             if (hostHarvesters.isEmpty())
-                logger.warning("No host harvesters available!");
+                logger.warn("No host harvesters available!");
         }
 
         for (CandidateHarvester harvester : hostHarvesters)
@@ -688,7 +678,7 @@ public class Agent
         }
 
         if (component.getLocalCandidateCount() == 0)
-            logger.warning("Failed to gather any host candidates!");
+            logger.warn("Failed to gather any host candidates!");
 
         //in case we are not trickling, apply other harvesters here
         if (!isTrickling())
@@ -697,7 +687,7 @@ public class Agent
             harvesters.harvest(component);
         }
 
-        logger.fine("Candidate count in first harvest: " +
+        logger.debug(() -> "Candidate count in first harvest: " +
             component.getLocalCandidateCount());
 
         // Emil: Because of trickle, we now assign foundations, compute
@@ -733,7 +723,7 @@ public class Agent
 
         if (harvestingStarted)
         {
-            logger.warning(
+            logger.warn(
                 "Hmmm ... why are you harvesting twice? You shouldn't be!");
         }
 
@@ -1102,7 +1092,7 @@ public class Agent
         if (stream == null)
         {
             ret = null;
-            logger.warning(
+            logger.warn(
                     "Agent contains no IceMediaStream with name " + media
                         + "!");
         }
@@ -1113,7 +1103,7 @@ public class Agent
             if (remoteUfrag == null)
             {
                 ret = null;
-                logger.warning(
+                logger.warn(
                         "Remote ufrag of IceMediaStream with name " + media
                             + " is null!");
             }
@@ -1660,7 +1650,7 @@ public class Agent
         CandidatePair triggeredPair
             = createCandidatePair(localCandidate, remoteCandidate);
 
-        logger.fine("set use-candidate " + useCandidate + " for pair " +
+        logger.debug(() -> "set use-candidate " + useCandidate + " for pair " +
             triggeredPair.toShortString());
         if (useCandidate)
         {
@@ -1671,7 +1661,7 @@ public class Agent
         {
             if (state == IceProcessingState.WAITING)
             {
-                logger.fine("Receive STUN checks before our ICE has started");
+                logger.debug(() -> "Receive STUN checks before our ICE has started");
                 //we are not started yet so we'd better wait until we get the
                 //remote candidates in case we are holding to a new PR one.
                 this.preDiscoveredPairsQueue.add(triggeredPair);
@@ -1682,12 +1672,8 @@ public class Agent
             }
             else //Running, Connected or Terminated.
             {
-                if (logger.isLoggable(Level.FINE))
-                {
-                    logger.debug("Received check from "
-                        + triggeredPair.toShortString() + " triggered a check. "
-                        + "Local ufrag " + getLocalUfrag());
-                }
+                logger.debug(() -> "Received check from "
+                    + triggeredPair.toShortString() + " triggered a check.");
 
                 // We have been started, and have not failed (yet). If this is
                 // a new pair, handle it (even if we have already completed).
@@ -1735,7 +1721,7 @@ public class Agent
                 //7.2.1.5. Updating the Nominated Flag
                 if (!isControlling() && useCand)
                 {
-                    logger.fine("update nominated flag");
+                    logger.debug(() -> "update nominated flag");
                     // If the Binding request received by the agent had the
                     // USE-CANDIDATE attribute set, and the agent is in the
                     // controlled role, the agent looks at the state of the
@@ -1943,7 +1929,7 @@ public class Agent
         if (!atLeastOneListSucceeded)
         {
             //all lists ended but none succeeded. No love today ;(
-            if (logger.isLoggable(Level.INFO))
+            if (logger.isInfoEnabled())
             {
                 if (connCheckClient.isAlive()
                     || connCheckServer.isAlive())
@@ -2344,7 +2330,7 @@ public class Agent
      */
     public void free()
     {
-        logger.fine("Free ICE agent");
+        logger.debug(() -> "Free ICE agent");
 
         shutdown = true;
 
@@ -2380,17 +2366,17 @@ public class Agent
         // Free its IceMediaStreams, Components and Candidates.
         boolean interrupted = false;
 
-        logger.fine("remove streams");
+        logger.debug(() -> "remove streams");
         for (IceMediaStream stream : getStreams())
         {
             try
             {
                 removeStream(stream);
-                logger.fine("remove stream " + stream.getName());
+                logger.debug("remove stream " + stream.getName());
             }
             catch (Throwable t)
             {
-                logger.fine(
+                logger.debug(() ->
                         "remove stream " + stream.getName() + " failed: " + t);
                 if (t instanceof InterruptedException)
                     interrupted = true;
@@ -2403,7 +2389,7 @@ public class Agent
 
         getStunStack().shutDown();
 
-        logger.fine("ICE agent freed");
+        logger.debug(() -> "ICE agent freed");
     }
 
     /**
@@ -2738,7 +2724,7 @@ public class Agent
             }
             catch (Exception e)
             {
-                logger.log(Level.WARNING, "Error while sending keep alive", e);
+                logger.warn("Error while sending keep alive", e);
             }
         }
 

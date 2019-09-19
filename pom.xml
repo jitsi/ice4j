@@ -35,6 +35,12 @@
       <artifactId>weupnp</artifactId>
       <version>0.1.4</version>
     </dependency>
+    <dependency>
+      <groupId>${project.groupId}</groupId>
+      <artifactId>jitsi-utils</artifactId>
+      <version>1.0-12-gcdf6537</version>
+    </dependency>
+
     <!-- test -->
     <dependency>
       <groupId>junit</groupId>
@@ -249,4 +255,19 @@
       </build>
     </profile>
   </profiles>
+
+  <repositories>
+    <repository>
+      <id>jitsi-maven-repository-releases</id>
+      <layout>default</layout>
+      <name>Jitsi Maven Repository (Releases)</name>
+      <releases>
+        <enabled>true</enabled>
+      </releases>
+      <snapshots>
+        <enabled>false</enabled>
+      </snapshots>
+      <url>https://github.com/jitsi/jitsi-maven-repository/raw/master/releases/</url>
+    </repository>
+  </repositories>
 </project>

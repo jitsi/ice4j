@@ -22,11 +22,11 @@ import java.io.*;
 import java.net.*;
 import java.util.*;
 import java.util.concurrent.*;
-import java.util.logging.*;
 
 import org.ice4j.*;
 import org.ice4j.socket.*;
-import org.ice4j.util.Logger; //Disambiguation
+import org.jitsi.utils.collections.*;
+import org.jitsi.utils.logging2.*;
 
 /**
  * A component is a piece of a media stream requiring a single transport
@@ -43,15 +43,6 @@ import org.ice4j.util.Logger; //Disambiguation
 public class Component
     implements PropertyChangeListener
 {
-    /**
-     * Our class logger.
-     * Note that this shouldn't be used directly by instances of
-     * {@link IceMediaStream}, because it doesn't take into account the
-     * per-instance log level.updateRemoteCandidates Instances should use {@link #logger} instead.
-     */
-    private static final java.util.logging.Logger classLogger
-        = java.util.logging.Logger.getLogger(Component.class.getName());
-
     /**
      * The component ID to use with RTP streams.
      */
@@ -175,9 +166,10 @@ public class Component
      */
     protected Component(int componentID,
                         IceMediaStream mediaStream,
-                        KeepAliveStrategy keepAliveStrategy)
+                        KeepAliveStrategy keepAliveStrategy,
+                        Logger parentLogger)
     {
-        this(componentID, mediaStream, keepAliveStrategy, true);
+        this(componentID, mediaStream, keepAliveStrategy, true, parentLogger);
     }
 
     /**
@@ -192,21 +184,24 @@ public class Component
     protected Component(int componentID,
                         IceMediaStream mediaStream,
                         KeepAliveStrategy keepAliveStrategy,
-                        boolean useComponentSocket)
+                        boolean useComponentSocket,
+                        Logger parentLogger)
     {
         // the max value for componentID is 256
         this.componentID = componentID;
         this.parentStream = mediaStream;
         this.keepAliveStrategy
             = Objects.requireNonNull(keepAliveStrategy, "keepAliveStrategy");
-
-        Logger agentLogger = mediaStream.getParentAgent().getLogger();
+        this.logger = parentLogger.createChildLogger(
+                this.getClass().getName(),
+                JMap.of("componentId", Integer.toString(componentID))
+        );
 
         if (useComponentSocket)
         {
             try
             {
-                componentSocket = new ComponentSocket(this, agentLogger);
+                componentSocket = new ComponentSocket(this, logger);
                 socket = new MultiplexingDatagramSocket(componentSocket);
                 socketWrapper = new IceUdpSocketWrapper(socket);
             }
@@ -223,7 +218,6 @@ public class Component
         }
 
         mediaStream.addPairChangeListener(this);
-        logger = new Logger(classLogger, agentLogger);
     }
 
     /**
@@ -694,11 +688,7 @@ public class Component
                             && (cand.getPriority() >= cand2.getPriority()))
                     {
                         localCandidates.remove(j);
-                        if (logger.isLoggable(Level.FINEST))
-                        {
-                            logger.finest(
-                                    "eliminating redundant cand: "+ cand2);
-                        }
+                        logger.trace(() -> "eliminating redundant cand: "+ cand2);
                     }
                     else
                         j++;
@@ -899,12 +889,7 @@ public class Component
              */
             if (t instanceof ThreadDeath)
                 throw (ThreadDeath) t;
-            if (logger.isLoggable(Level.INFO))
-            {
-                logger.log(
-                        Level.INFO,
-                        "Failed to free LocalCandidate: " + localCandidate);
-            }
+            logger.info(() -> "Failed to free LocalCandidate: " + localCandidate);
         }
     }
 
@@ -1017,7 +1002,7 @@ public class Component
      * parent of this component.
      * @return Component
      */
-    public static Component build(int componentID, IceMediaStream mediaStream)
+    public static Component build(int componentID, IceMediaStream mediaStream, Logger parentLogger)
     {
         return
             new Component(
@@ -1025,7 +1010,9 @@ public class Component
                     mediaStream,
                     KeepAliveStrategy.SELECTED_ONLY,
                     StackProperties.getBoolean(
-                        StackProperties.USE_COMPONENT_SOCKET, true));
+                        StackProperties.USE_COMPONENT_SOCKET, true),
+                    parentLogger
+            );
     }
 
     /**
@@ -1135,5 +1122,10 @@ public class Component
         {
             keepAlivePairs.add(pair);
         }
+    }
+
+    public Logger getLogger()
+    {
+        return logger;
     }
 }

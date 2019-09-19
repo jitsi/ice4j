@@ -34,14 +34,6 @@ public class ComponentSocket
     implements PropertyChangeListener
 {
     /**
-     * The {@link Logger} used by the {@link MergingDatagramSocket} class and
-     * its instances for logging output.
-     */
-    private static final java.util.logging.Logger classLogger
-        = java.util.logging.Logger.getLogger
-                (MergingDatagramSocket.class.getName());
-
-    /**
      * Controls access to {@link #authorizedAddresses}.
      */
     private final Object authorizedAddressesSyncRoot = new Object();
@@ -69,21 +61,15 @@ public class ComponentSocket
     private final Object initializedActiveSyncRoot = new Object();
 
     /**
-     * The {@link Logger} used by {@link MergingDatagramSocket} instances.
-     */
-    private final Logger logger;
-
-    /**
      * Initializes a new {@link MergingDatagramSocket} instance.
      * @throws SocketException
      */
-    ComponentSocket(Component component, Logger levelDelegate)
+    ComponentSocket(Component component, org.jitsi.utils.logging2.Logger parentLogger)
         throws SocketException
     {
-        super(levelDelegate);
+        super(parentLogger);
 
         this.component = component;
-        this.logger = new Logger(classLogger, levelDelegate);
         component.getParentStream().addPairChangeListener(this);
     }
 

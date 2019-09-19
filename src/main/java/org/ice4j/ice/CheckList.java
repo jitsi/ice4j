@@ -17,10 +17,10 @@
  */
 package org.ice4j.ice;
 
+import org.jitsi.utils.logging2.*;
+
 import java.beans.*;
 import java.util.*;
-
-import org.ice4j.util.Logger;
 
 /**
  * A check list is a list of <tt>CandidatePair</tt>s with a state (i.e. a
@@ -35,15 +35,6 @@ import org.ice4j.util.Logger;
 public class CheckList
     extends Vector<CandidatePair>
 {
-    /**
-     * The class logger.
-     * Note that this shouldn't be used directly by instances of
-     * {@link CheckList}, because it doesn't take into account the per-instance
-     * log level. Instances should use {@link #logger} instead.
-     */
-    private static final java.util.logging.Logger classLogger
-        = java.util.logging.Logger.getLogger(CheckList.class.getName());
-
     /**
      * A dummy serialization id.
      */
@@ -107,8 +98,7 @@ public class CheckList
     protected CheckList(IceMediaStream parentStream)
     {
         this.parentStream = parentStream;
-        logger
-            = new Logger(classLogger, parentStream.getParentAgent().getLogger());
+        logger = parentStream.getLogger().createChildLogger(this.getClass().getName());
     }
 
     /**

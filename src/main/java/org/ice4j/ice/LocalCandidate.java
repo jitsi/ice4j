@@ -19,12 +19,11 @@ package org.ice4j.ice;
 
 import java.io.*;
 import java.net.*;
-import java.util.logging.*;
 
 import org.ice4j.*;
 import org.ice4j.socket.*;
 import org.ice4j.stack.*;
-import org.ice4j.util.Logger; // Disambiguation.
+import org.jitsi.utils.logging2.*;
 
 /**
  * <tt>LocalCandidate</tt>s are obtained by an agent for every stream component
@@ -66,7 +65,7 @@ public abstract class LocalCandidate
     /**
      * The {@link Logger} used by {@link LocalCandidate} instances.
      */
-    private Logger logger;
+    private final Logger logger;
 
     /**
      * Creates a <tt>LocalCandidate</tt> instance for the specified transport
@@ -91,12 +90,10 @@ public abstract class LocalCandidate
                           CandidateType    type,
                           CandidateExtendedType extendedType,
                           LocalCandidate  relatedCandidate)
+
     {
         super(transportAddress, parentComponent, type, relatedCandidate);
-        logger
-            = new Logger(classLogger,
-                         parentComponent.
-                             getParentStream().getParentAgent().getLogger());
+        logger = parentComponent.getLogger().createChildLogger(this.getClass().getName());
         this.extendedType = extendedType;
     }
 
@@ -205,8 +202,7 @@ public abstract class LocalCandidate
                 }
                 catch (SocketException sex) //don't u just luv da name? ;)
                 {
-                    logger.log(Level.SEVERE,
-                               "Failed to acquire Socket"
+                    logger.error("Failed to acquire Socket"
                                    + " specific to STUN communication.",
                                sex);
                     exception = sex;
@@ -262,8 +258,7 @@ public abstract class LocalCandidate
                 }
                 catch (SocketException sex) //don't u just luv da name? ;)
                 {
-                    logger.log(Level.SEVERE,
-                               "Failed to acquire DatagramSocket"
+                    logger.error("Failed to acquire DatagramSocket"
                                    + " specific to STUN communication.",
                                sex);
                     exception = sex;
