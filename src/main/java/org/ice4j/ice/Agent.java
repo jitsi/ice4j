@@ -1407,6 +1407,8 @@ public class Agent
      */
     public void setControlling(boolean isControlling)
     {
+        this.logger.info(() -> "Changing agent " + this.toString() + " role from controlling = "
+            + this.isControlling + " to controlling = " + isControlling);
         this.isControlling = isControlling;
 
         //in case we have already initialized our check lists we'd need to

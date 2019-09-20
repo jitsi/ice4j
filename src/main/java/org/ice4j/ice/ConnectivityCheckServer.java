@@ -36,23 +36,6 @@ class ConnectivityCheckServer
                CredentialsAuthority
 {
     /**
-     * Compares <tt>a</tt> and <tt>b</tt> as unsigned long values. Serves the
-     * same purpose as the <tt>Long.compareUnsigned</tt> method available in
-     * Java 1.8.
-     * @return <tt>-1</tt> if <tt>a</tt> is less than <tt>b</tt>, <tt>0</tt> if
-     * they are equal and <tt>1</tt> if <tt>a</tt> is bigger.
-     */
-    private static int compareUnsignedLong(long a, long b)
-    {
-        if (a == b)
-            return 0;
-        else if ((a + Long.MIN_VALUE) < (b + Long.MIN_VALUE))
-            return -1;
-        else
-            return 1;
-    }
-
-    /**
      * The agent that created us.
      */
     private final Agent parentAgent;
@@ -259,107 +242,78 @@ class ConnectivityCheckServer
      */
     private boolean repairRoleConflict(StunMessageEvent evt)
     {
-        Message req = evt.getMessage();
-        long ourTieBreaker = parentAgent.getTieBreaker();
-
+        final Message req = evt.getMessage();
+        final boolean selfIceControlling = parentAgent.isControlling();
 
         // If the agent is in the controlling role, and the
         // ICE-CONTROLLING attribute is present in the request:
-        if(parentAgent.isControlling()
-                        && req.containsAttribute(Attribute.ICE_CONTROLLING))
-        {
-            IceControllingAttribute controlling = (IceControllingAttribute)
-                req.getAttribute(Attribute.ICE_CONTROLLING);
+        final boolean bothControllingConflict = selfIceControlling &&
+            req.containsAttribute(Attribute.ICE_CONTROLLING);
 
-            long theirTieBreaker = controlling.getTieBreaker();
-
-            // If the agent's tie-breaker is larger than or equal to the
-            // contents of the ICE-CONTROLLING attribute, the agent generates
-            // a Binding error response and includes an ERROR-CODE attribute
-            // with a value of 487 (Role Conflict) but retains its role.
-            if(compareUnsignedLong(ourTieBreaker, theirTieBreaker) >= 0)
-            {
-                Response response = MessageFactory.createBindingErrorResponse(
-                                ErrorCodeAttribute.ROLE_CONFLICT);
-
-                try
-                {
-                    stunStack.sendResponse(
-                            evt.getTransactionID().getBytes(),
-                            response,
-                            evt.getLocalAddress(),
-                            evt.getRemoteAddress());
-
-                    return false;
-                }
-                catch(Exception exc)
-                {
-                    //rethrow so that we would send a 500 response instead.
-                    throw new RuntimeException("Failed to send a 487", exc);
-                }
-            }
-            //If the agent's tie-breaker is less than the contents of the
-            //ICE-CONTROLLING attribute, the agent switches to the controlled
-            //role.
-            else
-            {
-                logger.trace(() ->
-                        "Switching to controlled because theirTieBreaker="
-                        + theirTieBreaker + " and ourTieBreaker="
-                        + ourTieBreaker);
-                parentAgent.setControlling(false);
-                return true;
-            }
-        }
         // If the agent is in the controlled role, and the ICE-CONTROLLED
         // attribute is present in the request:
-        else if(!parentAgent.isControlling()
-                        && req.containsAttribute(Attribute.ICE_CONTROLLED))
+        final boolean bothControlledConflict = !selfIceControlling &&
+            req.containsAttribute(Attribute.ICE_CONTROLLED);
+
+        if (!(bothControllingConflict || bothControlledConflict)) {
+            // we don't have a role conflict
+            return true;
+        }
+
+        final long selfTieBreaker = parentAgent.getTieBreaker();
+
+        final IceControlAttribute theirIceControl = bothControllingConflict
+            ? (IceControlAttribute)req.getAttribute(Attribute.ICE_CONTROLLING)
+            : (IceControlAttribute)req.getAttribute(Attribute.ICE_CONTROLLED);
+
+        final long theirTieBreaker = theirIceControl.getTieBreaker();
+
+        // If the agent's tie-breaker is larger than or equal to the
+        // contents of the ICE control attribute, the agent generates
+        // a Binding error response and includes an ERROR-CODE attribute
+        // with a value of 487 (Role Conflict) but retains its role.
+        if (Long.compareUnsigned(selfTieBreaker, theirTieBreaker) >= 0)
         {
-            IceControlledAttribute controlled = (IceControlledAttribute)
-                req.getAttribute(Attribute.ICE_CONTROLLED);
+            final UsernameAttribute requestUserName = (UsernameAttribute)req
+                .getAttribute(Attribute.USERNAME);
 
-            long theirTieBreaker = controlled.getTieBreaker();
+            final Response response =
+                MessageFactory.createBindingErrorResponse(
+                    ErrorCodeAttribute.ROLE_CONFLICT);
 
-            //If the agent's tie-breaker is larger than or equal to the
-            //contents of the ICE-CONTROLLED attribute, the agent switches to
-            //the controlling role.
-            if(compareUnsignedLong(ourTieBreaker, theirTieBreaker) >= 0)
+            final Attribute messageIntegrityAttribute =
+                AttributeFactory.createMessageIntegrityAttribute(
+                    new String(requestUserName.getUsername()));
+            response.putAttribute(messageIntegrityAttribute);
+
+            try
             {
-                logger.trace(() ->
-                        "Switching to controlling because theirTieBreaker="
-                        + theirTieBreaker + " and ourTieBreaker="
-                        + ourTieBreaker);
-                parentAgent.setControlling(true);
-                return true;
+                stunStack.sendResponse(
+                    evt.getTransactionID().getBytes(),
+                    response,
+                    evt.getLocalAddress(),
+                    evt.getRemoteAddress());
+                return false;
             }
-            // If the agent's tie-breaker is less than the contents of the
-            // ICE-CONTROLLED attribute, the agent generates a Binding error
-            // response and includes an ERROR-CODE attribute with a value of
-            // 487 (Role Conflict) but retains its role.
-            else
+            catch(Exception exc)
             {
-                Response response = MessageFactory.createBindingErrorResponse(
-                            ErrorCodeAttribute.ROLE_CONFLICT);
-
-                try
-                {
-                    stunStack.sendResponse(
-                            evt.getTransactionID().getBytes(),
-                            response,
-                            evt.getLocalAddress(),
-                            evt.getRemoteAddress());
-
-                    return false;
-                }
-                catch(Exception exc)
-                {
-                    //rethrow so that we would send a 500 response instead.
-                    throw new RuntimeException("Failed to send a 487", exc);
-                }
+                //rethrow so that we would send a 500 response instead.
+                throw new RuntimeException("Failed to send a 487", exc);
             }
         }
-        return true; // we don't have a role conflict
+        //If the agent's tie-breaker is less than the contents of the
+        //ICE control attribute, the agent toggles it's ICE control role.
+        else
+        {
+            final String selfNextControlState
+                = selfIceControlling ? "controlled" : "controlling";
+            logger.trace(() ->
+                "Switching to " + selfNextControlState + " because " +
+                " theirTieBreaker= " + theirTieBreaker + " and " +
+                "selfTieBreaker= " + selfTieBreaker);
+            parentAgent.setControlling(!selfIceControlling);
+            return true;
+        }
     }
 
     /**
