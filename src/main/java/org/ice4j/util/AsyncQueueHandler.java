@@ -16,9 +16,11 @@
 
 package org.ice4j.util;
 
+import org.jitsi.utils.concurrent.*;
+
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.*;
-import java.util.logging.Logger; // Disambiguation
+import java.util.logging.*;
 
 /**
  * Asynchronously reads items from provided {@link #queue} on separate thread

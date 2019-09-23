@@ -20,7 +20,6 @@ package org.ice4j.ice;
 import org.ice4j.*;
 import org.ice4j.ice.harvest.*;
 import org.ice4j.stack.*;
-import org.ice4j.util.CustomizableThreadFactory;
 import org.ice4j.util.PeriodicRunnable;
 import org.jitsi.utils.collections.*;
 import org.jitsi.utils.concurrent.*;
