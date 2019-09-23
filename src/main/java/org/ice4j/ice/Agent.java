@@ -17,6 +17,16 @@
  */
 package org.ice4j.ice;
 
+import org.ice4j.*;
+import org.ice4j.ice.harvest.*;
+import org.ice4j.stack.*;
+import org.ice4j.util.CustomizableThreadFactory;
+import org.ice4j.util.PeriodicRunnable;
+import org.jitsi.utils.collections.*;
+import org.jitsi.utils.concurrent.*;
+import org.jitsi.utils.logging2.Logger;
+import org.jitsi.utils.logging2.*;
+
 import java.beans.*;
 import java.io.*;
 import java.math.*;
@@ -26,14 +36,6 @@ import java.time.*;
 import java.util.*;
 import java.util.concurrent.*;
 import java.util.logging.*;
-
-import org.ice4j.*;
-import org.ice4j.ice.harvest.*;
-import org.ice4j.stack.*;
-import org.ice4j.util.*;
-import org.jitsi.utils.collections.*;
-import org.jitsi.utils.logging2.*;
-import org.jitsi.utils.logging2.Logger;
 
 /**
  * An <tt>Agent</tt> could be described as the main class (i.e. the chef

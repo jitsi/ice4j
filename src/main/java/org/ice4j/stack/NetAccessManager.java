@@ -17,6 +17,12 @@
  */
 package org.ice4j.stack;
 
+import org.ice4j.*;
+import org.ice4j.message.*;
+import org.ice4j.socket.*;
+import org.jitsi.utils.concurrent.*;
+import org.jitsi.utils.queue.*;
+
 import java.io.*;
 import java.net.*;
 import java.util.*;
@@ -24,13 +30,6 @@ import java.util.concurrent.*;
 import java.util.concurrent.atomic.*;
 import java.util.function.*;
 import java.util.logging.*;
-import java.util.logging.Logger; // Disambiguation
-
-import org.ice4j.*;
-import org.ice4j.message.*;
-import org.ice4j.socket.*;
-import org.ice4j.util.*;
-import org.jitsi.utils.queue.*;
 
 /**
  * Manages <tt>Connector</tt>s and <tt>MessageProcessingTask</tt> execution and
