@@ -20,7 +20,7 @@ package org.ice4j.ice.harvest;
 import org.ice4j.*;
 import org.ice4j.attribute.*;
 import org.ice4j.message.*;
-import org.ice4j.util.*;
+import org.jitsi.utils.queue.*;
 
 import java.io.*;
 import java.net.*;
@@ -456,8 +456,7 @@ public abstract class AbstractUdpListener
             this.remoteAddress = remoteAddress;
             if (logger.isLoggable(Level.FINEST))
             {
-                queueStatistics = new QueueStatistics(
-                    "SinglePort" + remoteAddress.toString().replace('/', '-'));
+                queueStatistics = new QueueStatistics();
             }
             else
             {

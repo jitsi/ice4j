@@ -15,6 +15,8 @@
  */
 package org.ice4j.util;
 
+import org.jitsi.utils.queue.*;
+
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.*;
 import java.util.logging.Logger; // Disambiguation.
@@ -190,7 +192,7 @@ public abstract class PacketQueue<T>
         queue = new ArrayBlockingQueue<>(capacity);
 
         queueStatistics
-            = enableStatistics ? new QueueStatistics(id) : null;
+            = enableStatistics ? new QueueStatistics() : null;
 
         if (packetHandler != null)
         {
