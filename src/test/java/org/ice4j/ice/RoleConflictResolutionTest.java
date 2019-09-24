@@ -67,7 +67,8 @@ public class RoleConflictResolutionTest
         {
             peer.addStateChangeListener(evt ->
             {
-                logger.info(peer.toString() + ": state changed to " + evt.toString());
+                logger.info(peer.toString() + ": state changed to "
+                    + evt.toString());
                 if (peer.getState().isEstablished())
                 {
                     countDownLatch.countDown();
@@ -97,7 +98,8 @@ public class RoleConflictResolutionTest
         disposePeer(peer2);
     }
 
-    private static Agent createPeer(String label, boolean iceControlling) throws IOException
+    private static Agent createPeer(String label, boolean iceControlling)
+        throws IOException
     {
         final Agent agent = new Agent(label, null);
         agent.setUseHostHarvester(true);
