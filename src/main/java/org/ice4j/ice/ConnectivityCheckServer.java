@@ -302,7 +302,7 @@ class ConnectivityCheckServer
             }
         }
         //If the agent's tie-breaker is less than the contents of the
-        //ICE control attribute, the agent toggles it's ICE control role.
+        //ICE control attribute, the agent toggles its ICE control role.
         else
         {
             final String selfNextControlState
