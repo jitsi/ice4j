@@ -17,21 +17,20 @@
  */
 package org.ice4j.stack;
 
+import org.ice4j.*;
+import org.ice4j.attribute.*;
+import org.ice4j.message.*;
+import org.ice4j.security.*;
+import org.ice4j.socket.*;
+import org.jitsi.utils.concurrent.*;
+
+import javax.crypto.*;
 import java.io.*;
 import java.net.*;
 import java.security.*;
 import java.util.*;
 import java.util.concurrent.*;
 import java.util.logging.*;
-
-import javax.crypto.*;
-
-import org.ice4j.*;
-import org.ice4j.attribute.*;
-import org.ice4j.message.*;
-import org.ice4j.security.*;
-import org.ice4j.socket.*;
-import org.ice4j.util.*;
 
 /**
  * The entry point to the Stun4J stack. The class is used to start, stop and
