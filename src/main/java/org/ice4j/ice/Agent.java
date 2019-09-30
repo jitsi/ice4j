@@ -243,7 +243,7 @@ public class Agent
     private long tieBreaker;
 
     /**
-     * Determines whether this is the controlling agent in a an ICE interaction.
+     * Determines whether this agent has a controlling role in an ICE interaction.
      */
     private boolean isControlling = true;
 
@@ -403,7 +403,8 @@ public class Agent
             addCandidateHarvester(harvester);
         }
 
-        logger.debug(() -> "Created a new Agent");
+        logger.debug(() -> "Created a new Agent: " + this.toString() +
+            " with ICE controlling role = " + this.isControlling);
     }
 
     /**
@@ -1408,6 +1409,13 @@ public class Agent
      */
     public void setControlling(boolean isControlling)
     {
+        if (this.isControlling != isControlling)
+        {
+            this.logger.info(() -> "Changing agent " + this.toString() +
+                " role from controlling = " + this.isControlling +
+                " to controlling = " + isControlling);
+        }
+
         this.isControlling = isControlling;
 
         //in case we have already initialized our check lists we'd need to
