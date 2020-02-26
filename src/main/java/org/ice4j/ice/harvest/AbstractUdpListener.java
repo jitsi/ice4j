@@ -476,7 +476,7 @@ public abstract class AbstractUdpListener
                 // receivers can notice the loss earlier.
                 if (queue.size() == QUEUE_SIZE)
                 {
-                    logger.info("Dropping a packet because the queue is full.");
+                    logger.info("Dropping a packet because the queue is full. Remote address = " + remoteAddress);
                     if (queueStatistics != null)
                     {
                         queueStatistics.remove(System.currentTimeMillis());
