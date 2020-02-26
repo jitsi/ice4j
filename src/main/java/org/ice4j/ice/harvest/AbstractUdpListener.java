@@ -391,12 +391,13 @@ public abstract class AbstractUdpListener
      *
      * @param remoteAddress the remote address with which to associate the new
      * socket instance.
+     * @param ufrag The username fragment associated with the socket.
      * @return the created socket instance.
      */
-    protected MySocket addSocket(InetSocketAddress remoteAddress)
+    protected MySocket addSocket(InetSocketAddress remoteAddress, String ufrag)
         throws SocketException
     {
-        MySocket newSocket = new MySocket(remoteAddress);
+        MySocket newSocket = new MySocket(remoteAddress, ufrag);
         sockets.put(remoteAddress, newSocket);
         return newSocket;
     }
@@ -440,6 +441,8 @@ public abstract class AbstractUdpListener
          */
         private boolean closed = false;
 
+        private final String ufrag;
+
         /**
          * Initializes a new <tt>MySocket</tt> instance with the given
          * remote address.
@@ -447,12 +450,13 @@ public abstract class AbstractUdpListener
          * new instance.
          * @throws SocketException
          */
-        MySocket(InetSocketAddress remoteAddress)
+        MySocket(InetSocketAddress remoteAddress, String ufrag)
             throws SocketException
         {
             // unbound
             super((SocketAddress)null);
 
+            this.ufrag = ufrag;
             this.remoteAddress = remoteAddress;
             if (logger.isLoggable(Level.FINEST))
             {
@@ -476,7 +480,9 @@ public abstract class AbstractUdpListener
                 // receivers can notice the loss earlier.
                 if (queue.size() == QUEUE_SIZE)
                 {
-                    logger.info("Dropping a packet because the queue is full. Remote address = " + remoteAddress);
+                    logger.info(
+                            "Dropping a packet because the queue is full. Remote address = "
+                                    + remoteAddress + " ufrag=" + ufrag);
                     if (queueStatistics != null)
                     {
                         queueStatistics.remove(System.currentTimeMillis());
