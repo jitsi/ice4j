@@ -145,7 +145,7 @@ public class SinglePortUdpHarvester
             // 1. Create a socket for this remote address
             // 2. Set-up de-multiplexing for future datagrams
             // with this address to this socket.
-            MySocket newSocket = addSocket(remoteAddress);
+            MySocket newSocket = addSocket(remoteAddress, ufrag);
 
             // 3. Let the candidate and its STUN stack no about the
             // new socket.
