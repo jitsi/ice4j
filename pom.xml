@@ -26,11 +26,6 @@
       <version>1.1</version>
     </dependency>
     <dependency>
-      <groupId>org.jitsi</groupId>
-      <artifactId>jain-sip-ri-ossonly</artifactId>
-      <version>1.2.98c7f8c-jitsi-oss1</version>
-    </dependency>
-    <dependency>
       <groupId>org.bitlet</groupId>
       <artifactId>weupnp</artifactId>
       <version>0.1.4</version>
