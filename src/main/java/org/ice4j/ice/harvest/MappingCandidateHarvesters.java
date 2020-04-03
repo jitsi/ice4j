@@ -84,7 +84,8 @@ public class MappingCandidateHarvesters
     /**
      * The list of already configured harvesters.
      */
-    private static MappingCandidateHarvester[] harvesters;
+    private static MappingCandidateHarvester[] harvesters
+            = new MappingCandidateHarvester[0];
 
     /**
      * Whether the discovery of a public address via STUN has failed.
