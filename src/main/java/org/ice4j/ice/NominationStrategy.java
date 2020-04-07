@@ -44,8 +44,11 @@ public enum NominationStrategy
     NOMINATE_FIRST_VALID("NominateFirstValid"),
 
     /**
-     * The strategy consists in nominating the highest priority valid pair once
-     * all checks in a list have completed.
+     * The strategy consists in nominating the highest priority valid pair.
+     * Once a pair is validated, if no higher-priority pairs remain outstanding,
+     * it is nominated; otherwise, a timer is armed, and if higher-priority
+     * pairs are still outstanding after the timeout, the highest-priority validated
+     * pair is nominated.
      */
     NOMINATE_HIGHEST_PRIO("NominateHighestPriority"),
 
@@ -89,5 +92,20 @@ public enum NominationStrategy
     public String toString()
     {
         return strategyName;
+    }
+
+    /**
+     * @return the {@link NominationStrategy} with name equal to the given
+     * string, or {@code null} if there is no such strategy.
+     * @param string the name of the strategy.
+     */
+    public static NominationStrategy fromString(String string)
+    {
+        for (NominationStrategy strategy : NominationStrategy.values())
+        {
+            if (strategy.strategyName.equals(string))
+                return strategy;
+        }
+        return null;
     }
 }

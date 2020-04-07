@@ -1850,6 +1850,18 @@ public class Agent
     }
 
     /**
+     * Returns the {@link NominationStrategy} that we use in order to
+     * decide if and when we should nominate valid pairs.
+     *
+     * @return the strategy that we are using for nominating
+     * valid {@link CandidatePair}s.
+     */
+    public NominationStrategy getNominationStrategy()
+    {
+        return this.nominator.getStrategy();
+    }
+
+    /**
      * Specifies the {@link NominationStrategy} that we should use in order to
      * decide if and when we should nominate valid pairs.
      *
