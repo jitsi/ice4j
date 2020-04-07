@@ -438,8 +438,7 @@ public class Component
                                 .getParentAgent()
                                     .createCandidatePair(localCnd, remoteCnd);
                         logger.info("new Pair added: " + pair.toShortString()
-                            + ". Local ufrag "
-                            + parentStream.getParentAgent().getLocalUfrag());
+                            + ".");
                         checkList.add(pair);
                     }
                 }
