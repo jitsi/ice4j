@@ -103,10 +103,12 @@ public class DefaultNominator
                 return;
 
             CandidatePair validPair = (CandidatePair) ev.getSource();
+            Component parentComponent = validPair.getParentComponent();
+            IceMediaStream parentStream = parentComponent.getParentStream();
 
-            // do not nominate pair if there is currently a selected pair for
+            // do not nominate pair if there is currently a nominated pair for
             // the component
-            if (validPair.getParentComponent().getSelectedPair() != null)
+            if (parentStream.validListContainsNomineeForComponent(parentComponent))
             {
                 logger.debug(() ->
                         "Keep-alive for pair: " + validPair.toShortString());
