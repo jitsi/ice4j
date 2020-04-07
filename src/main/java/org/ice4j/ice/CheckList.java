@@ -210,6 +210,25 @@ public class CheckList
     }
 
     /**
+     * Returns a pair which matches the specified local and remote candidates'
+     * transport addresses, if any, otherwise null.
+     */
+    public synchronized CandidatePair findPairMatching(LocalCandidate local, RemoteCandidate remote)
+    {
+        for (CandidatePair pair : this)
+        {
+            if (pair.getLocalCandidate() == local ||
+                pair.getLocalCandidate().getTransportAddress().equals(local.getTransportAddress()))
+            {
+                if (pair.getRemoteCandidate() == remote ||
+                    pair.getRemoteCandidate().getTransportAddress().equals(remote.getTransportAddress()))
+                    return pair;
+            }
+        }
+        return null;
+    }
+
+    /**
      * Determines whether this <tt>CheckList</tt> can be considered active.
      * RFC 5245 says: A check list with at least one pair that is Waiting is
      * called an active check list.

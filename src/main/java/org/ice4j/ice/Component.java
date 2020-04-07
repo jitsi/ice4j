@@ -437,8 +437,6 @@ public class Component
                             = getParentStream()
                                 .getParentAgent()
                                     .createCandidatePair(localCnd, remoteCnd);
-                        logger.info("new Pair added: " + pair.toShortString()
-                            + ".");
                         checkList.add(pair);
                     }
                 }
@@ -465,7 +463,24 @@ public class Component
             {
                 for (CandidatePair pair : checkList)
                 {
-                    streamCheckList.add(pair);
+                    /* Check whether the pair is already in the check list.
+                     * (This can happen for pairs with remote peer-reflexive candidates,
+                     *  since those candidates aren't added to the candidate list even
+                     *  though the pair is added to the check list).
+                     */
+                    CandidatePair existingPair = streamCheckList.findPairMatching(pair.getLocalCandidate(), pair.getRemoteCandidate());
+                    if (existingPair != null) {
+                        logger.info("existing Pair updated: " +
+                            existingPair.toShortString() +
+                            " to " + pair.toShortString() + ".");
+                        existingPair.setRemoteCandidate(pair.getRemoteCandidate());
+                        existingPair.computePriority();
+                    }
+                    else {
+                        streamCheckList.add(pair);
+                        logger.info("new Pair added: " + pair.toShortString()
+                            + ".");
+                    }
                 }
             }
         }
