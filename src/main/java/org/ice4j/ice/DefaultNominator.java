@@ -138,7 +138,7 @@ public class DefaultNominator
             CandidatePair validPair = (CandidatePair)evt.getSource();
 
             logger.info("Nominate (first valid): " + validPair.toShortString()
-                + ". Local ufrag " + parentAgent.getLocalUfrag());
+                + ".");
             parentAgent.nominate(validPair);
         }
     }

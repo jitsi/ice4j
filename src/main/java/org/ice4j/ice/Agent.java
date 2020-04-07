@@ -660,7 +660,7 @@ public class Agent
                IOException
     {
         logger.info("Gathering candidates for component " +
-                component.toShortString() +". Local ufrag " + getLocalUfrag());
+                component.toShortString() +".");
 
         if (useHostHarvester())
         {
@@ -750,8 +750,7 @@ public class Agent
     {
         synchronized(startLock)
         {
-            logger.info("Start ICE connectivity establishment. Local ufrag "
-                            + getLocalUfrag());
+            logger.info("Start ICE connectivity establishment.");
             shutdown = false;
             pruneNonMatchedStreams();
 
@@ -962,7 +961,7 @@ public class Agent
         if (!oldState.equals(newState))
         {
             logger.info("ICE state changed from " + oldState + " to "
-                            + newState + ". Local ufrag " + getLocalUfrag());
+                            + newState + ".");
             fireStateChange(oldState, newState);
 
             return true;
@@ -1998,8 +1997,7 @@ public class Agent
                 StringBuffer buf
                     = new StringBuffer( "Harvester used for selected pair for ");
                 buf.append(component.toShortString());
-                buf.append(" (local ufrag ").append(getLocalUfrag());
-                buf.append("): ");
+                buf.append(": ");
 
                 if (selectedPair == null)
                 {
