@@ -183,6 +183,18 @@ public class DefaultNominator
     }
 
     /**
+     * The {@link NominationStrategy} that this nominator is using when
+     * deciding whether or not a valid {@link CandidatePair} is suitable for
+     * nomination.
+     *
+     * @return the {@link NominationStrategy} we are using.
+     */
+    public NominationStrategy getStrategy()
+    {
+        return strategy;
+    }
+
+    /**
      * The {@link NominationStrategy} that this nominator should use when
      * deciding whether or not a valid {@link CandidatePair} is suitable for
      * nomination.
