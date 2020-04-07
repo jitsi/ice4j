@@ -104,9 +104,10 @@ public class DefaultNominator
 
             CandidatePair validPair = (CandidatePair) ev.getSource();
 
-            // do not nominate pair if there is currently a selected pair for
+            // do not nominate pair if there is currently a nominated pair for
             // the component
-            if (validPair.getParentComponent().getSelectedPair() != null)
+            if (validPair.getParentComponent().getParentStream().
+                validListContainsNomineeForComponent(validPair.getParentComponent()))
             {
                 logger.debug(() ->
                         "Keep-alive for pair: " + validPair.toShortString());
