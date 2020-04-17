@@ -308,7 +308,7 @@ public class MessageIntegrityAttribute
             logger.warning("Can not encode a message of type Indication.");
         }
 
-        Objects.requireNonNull(key, "key=null; msgType=" + msgType);
+        Objects.requireNonNull(key, "key=null; msgType=" + String.format("%04X", (int)msgType));
         //now calculate the HMAC-SHA1
         this.hmacSha1Content = calculateHmacSha1(content, offset, length, key);
 
