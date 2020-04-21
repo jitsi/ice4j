@@ -2382,6 +2382,9 @@ public class Agent
             terminate(IceProcessingState.TERMINATED);
         }
 
+        /* Stop all outstanding transactions */
+        getStunStack().shutDown();
+
         // Free its IceMediaStreams, Components and Candidates.
         boolean interrupted = false;
 
@@ -2405,8 +2408,6 @@ public class Agent
         }
         if (interrupted)
             Thread.currentThread().interrupt();
-
-        getStunStack().shutDown();
 
         logger.debug(() -> "ICE agent freed");
     }
