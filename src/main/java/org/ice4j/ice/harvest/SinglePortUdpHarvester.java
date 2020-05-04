@@ -378,7 +378,6 @@ public class SinglePortUdpHarvester
                 componentSocket.add(multiplexing);
             }
 
-            // XXX is this necessary?
             synchronized (candidateSockets)
             {
                 IceSocketWrapper oldSocket
