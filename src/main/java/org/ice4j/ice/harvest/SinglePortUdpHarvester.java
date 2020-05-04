@@ -404,8 +404,10 @@ public class SinglePortUdpHarvester
         protected IceSocketWrapper getCandidateIceSocketWrapper(
             SocketAddress remoteAddress)
         {
-            return candidateSockets.get(remoteAddress);
+            synchronized (candidateSockets)
+            {
+                return candidateSockets.get(remoteAddress);
+            }
         }
-
     }
 }
