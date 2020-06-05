@@ -79,6 +79,13 @@ public class StunMappingCandidateHarvester
                 = new IceUdpSocketWrapper(new DatagramSocket(face));
 
             mask = sad.getMappingFor(localSocket);
+
+            /* Record bound address as face. */
+            SocketAddress boundAddr = localSocket.getLocalSocketAddress();
+            if (boundAddr instanceof InetSocketAddress) {
+                face = new TransportAddress((InetSocketAddress)boundAddr, face.getTransport());
+            }
+
             if (mask != null)
             {
                 logger.info("Discovered public address " + mask
