@@ -539,9 +539,12 @@ class ConnectivityCheckClient
                         Transport.TCP);
         }
 
-        LocalCandidate validLocalCandidate = null;
-
-        validLocalCandidate = parentAgent.findLocalCandidate(mappedAddress);
+        // In some situations we may have more than one local candidate matching
+        // the mapped address. In this case we want to find the that matches
+        // the socket we received the response on.
+        LocalCandidate base = checkedPair.getLocalCandidate().getBase();
+        LocalCandidate validLocalCandidate
+                = parentAgent.findLocalCandidate(mappedAddress, base);
 
         RemoteCandidate validRemoteCandidate = checkedPair.getRemoteCandidate();
 

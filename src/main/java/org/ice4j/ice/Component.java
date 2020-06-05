@@ -920,10 +920,38 @@ public class Component
      */
     public LocalCandidate findLocalCandidate(TransportAddress localAddress)
     {
+        return findLocalCandidate(localAddress, null);
+    }
+
+    /**
+     * Returns the local <tt>LocalCandidate</tt> with the specified
+     * <tt>localAddress</tt> if it belongs to this component or <tt>null</tt>
+     * if it doesn't. If {@code base} is also specified, looks for a candidate
+     * whose base matches {@code base}.
+     *
+     * @param localAddress the {@link TransportAddress} we are looking for.
+     * @param base an optional base to match.
+     *
+     * @return  the local <tt>LocalCandidate</tt> with the specified
+     * <tt>localAddress</tt> if it belongs to this component or <tt>null</tt>
+     * if it doesn't.
+     */
+    public LocalCandidate findLocalCandidate(TransportAddress localAddress, LocalCandidate base)
+    {
         for (LocalCandidate localCnd : localCandidates)
         {
             if (localCnd.getTransportAddress().equals(localAddress))
+            {
+                if (base == null || base.equals(localCnd.getBase()))
+                    return localCnd;
+            }
+        }
+        for (LocalCandidate localCnd : localCandidates)
+        {
+            if (localCnd.getTransportAddress().equals(localAddress))
+            {
                 return localCnd;
+            }
         }
 
         return null;
