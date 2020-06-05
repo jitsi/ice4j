@@ -172,7 +172,7 @@ public class CandidatePair
      * @param localCnd the local <tt>Candidate</tt> of this
      * <tt>CandidatePair</tt>.
      */
-    protected void setLocalCandidate( LocalCandidate localCnd)
+    protected void setLocalCandidate(LocalCandidate localCnd)
     {
         this.localCandidate = localCnd;
     }
