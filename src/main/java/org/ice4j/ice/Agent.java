@@ -1484,7 +1484,7 @@ public class Agent
      * Returns the local <tt>LocalCandidate</tt> with the specified
      * <tt>localAddress</tt> if it belongs to any of this {@link Agent}'s
      * streams or <tt>null</tt> if it doesn't. If {@code base} is also specified,
-     * looks for a candidate whose base matches {@code base}.
+     * tries to find a candidate whose base matches {@code base}.
      *
      * @param localAddress the {@link TransportAddress} we are looking for.
      * @param base an optional base to match.

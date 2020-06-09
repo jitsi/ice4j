@@ -508,8 +508,8 @@ public class IceMediaStream
     /**
      * Returns the local <tt>LocalCandidate</tt> with the specified
      * <tt>localAddress</tt> if it belongs to any of this stream's components
-     * or <tt>null</tt> otherwise. If {@code base} is also specified, looks for
-     * a candidate whose base matches {@code base}.
+     * or <tt>null</tt> otherwise. If {@code base} is also specified, tries to
+     * find a candidate whose base matches {@code base}.
      *
      * @param localAddress the {@link TransportAddress} we are looking for.
      * @param base an optional base to match.
