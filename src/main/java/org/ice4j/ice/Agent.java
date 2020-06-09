@@ -1510,39 +1510,6 @@ public class Agent
     }
 
     /**
-     * Returns the local <tt>LocalCandidate</tt> with the specified
-     * <tt>localAddress</tt> if it belongs to any of this {@link Agent}'s
-     * streams or <tt>null</tt> if it doesn't.
-     *
-     * @param localAddress the {@link TransportAddress} we are looking for.
-     * @param ufrag local ufrag
-     * @return the local <tt>LocalCandidate</tt> with the specified
-     * <tt>localAddress</tt> if it belongs to any of this {@link Agent}'s
-     * streams or <tt>null</tt> if it doesn't.
-     */
-    public LocalCandidate findLocalCandidate(
-            TransportAddress localAddress,
-            String ufrag)
-    {
-        for (IceMediaStream stream : mediaStreams.values())
-        {
-            for (Component c : stream.getComponents())
-            {
-                for (LocalCandidate cnd : c.getLocalCandidates())
-                {
-                    if (cnd != null
-                            && cnd.getUfrag() != null
-                            && cnd.getUfrag().equals(ufrag))
-                    {
-                        return cnd;
-                    }
-                }
-            }
-        }
-        return null;
-    }
-
-    /**
      * Returns the remote <tt>Candidate</tt> with the specified
      * <tt>remoteAddress</tt> if it belongs to any of this {@link Agent}'s
      * streams or <tt>null</tt> if it doesn't.

@@ -206,7 +206,7 @@ class MessageProcessingTask
             // On processed callback must be invoked in all cases, even when
             // cancellation or early exist happen, otherwise
             // NetAccessManager internal tracking of pooled and active
-            // message processors will missbehave.
+            // message processors will misbehave.
             if (onProcessed != null)
             {
                 onProcessed.accept(this);

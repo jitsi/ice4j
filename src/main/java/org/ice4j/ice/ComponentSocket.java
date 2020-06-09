@@ -155,7 +155,9 @@ public class ComponentSocket
                 LocalCandidate localCandidate = pair.getLocalCandidate();
                 LocalCandidate base = localCandidate.getBase();
                 if (base != null)
+                {
                     localCandidate = base;
+                }
 
                 TransportAddress remoteAddress = null;
                 RemoteCandidate remoteCandidate = pair.getRemoteCandidate();
