@@ -957,7 +957,8 @@ public class Component
             {
                 logger.warn("Returning a candidate matching the address, "
                         + "while no candidates match both address ("
-                        + localAddress + ") and base (" + base +"): " + localCnd);
+                        + localAddress + ") and base (" + base +"): " + localCnd
+                        + " with base " + localCnd.getBase());
                 return localCnd;
             }
         }
