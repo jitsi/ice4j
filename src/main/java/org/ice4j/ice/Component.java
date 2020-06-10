@@ -956,7 +956,8 @@ public class Component
             if (localCnd.getTransportAddress().equals(localAddress))
             {
                 logger.warn("Returning a candidate matching the address, "
-                        + "while no candidates match both address and base.");
+                        + "while no candidates match both address ("
+                        + localAddress + ") and base (" + base +"): " + localCnd);
                 return localCnd;
             }
         }
