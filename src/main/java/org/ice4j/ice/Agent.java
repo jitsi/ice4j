@@ -1466,44 +1466,45 @@ public class Agent
 
     /**
      * Returns the local <tt>LocalCandidate</tt> with the specified
-     * <tt>localAddress</tt> if it belongs to any of this {@link Agent}'s
+     * <tt>address</tt> if it belongs to any of this {@link Agent}'s
      * streams or <tt>null</tt> if it doesn't.
      *
-     * @param localAddress the {@link TransportAddress} we are looking for.
+     * @param address the {@link TransportAddress} we are looking for.
      *
      * @return the local <tt>LocalCandidate</tt> with the specified
-     * <tt>localAddress</tt> if it belongs to any of this {@link Agent}'s
+     * <tt>address</tt> if it belongs to any of this {@link Agent}'s
      * streams or <tt>null</tt> if it doesn't.
      */
-    public LocalCandidate findLocalCandidate(TransportAddress localAddress)
+    public LocalCandidate findLocalCandidate(TransportAddress address)
     {
-        return findLocalCandidate(localAddress, null);
+        return findLocalCandidate(address, null);
     }
 
     /**
      * Returns the local <tt>LocalCandidate</tt> with the specified
-     * <tt>localAddress</tt> if it belongs to any of this {@link Agent}'s
+     * <tt>address</tt> if it belongs to any of this {@link Agent}'s
      * streams or <tt>null</tt> if it doesn't. If {@code base} is also specified,
      * tries to find a candidate whose base matches {@code base}.
      *
-     * @param localAddress the {@link TransportAddress} we are looking for.
+     * @param address the {@link TransportAddress} we are looking for.
      * @param base an optional base to match.
      *
      * @return the local <tt>LocalCandidate</tt> with the specified
-     * <tt>localAddress</tt> if it belongs to any of this {@link Agent}'s
+     * <tt>address</tt> if it belongs to any of this {@link Agent}'s
      * streams or <tt>null</tt> if it doesn't.
      */
     public LocalCandidate findLocalCandidate(
-            TransportAddress localAddress,
+            TransportAddress address,
             LocalCandidate base)
     {
         for (IceMediaStream stream : mediaStreams.values())
         {
-            LocalCandidate cnd = stream.findLocalCandidate(localAddress, base);
+            LocalCandidate localCandidate
+                    = stream.findLocalCandidate(address, base);
 
-            if (cnd != null)
+            if (localCandidate != null)
             {
-                return cnd;
+                return localCandidate;
             }
         }
         return null;

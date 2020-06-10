@@ -925,41 +925,41 @@ public class Component
 
     /**
      * Returns the local <tt>LocalCandidate</tt> with the specified
-     * <tt>localAddress</tt> if it belongs to this component or <tt>null</tt>
+     * <tt>address</tt> if it belongs to this component or <tt>null</tt>
      * if it doesn't. If {@code base} is also specified, tries to find a
      * candidate whose base matches {@code base}.
      *
-     * @param localAddress the {@link TransportAddress} we are looking for.
+     * @param address the {@link TransportAddress} we are looking for.
      * @param base an optional base to match.
      *
      * @return  the local <tt>LocalCandidate</tt> with the specified
-     * <tt>localAddress</tt> if it belongs to this component or <tt>null</tt>
+     * <tt>address</tt> if it belongs to this component or <tt>null</tt>
      * if it doesn't.
      */
-    public LocalCandidate findLocalCandidate(TransportAddress localAddress, LocalCandidate base)
+    public LocalCandidate findLocalCandidate(TransportAddress address, LocalCandidate base)
     {
-        for (LocalCandidate localCnd : localCandidates)
+        for (LocalCandidate localCandidate : localCandidates)
         {
-            if (localCnd.getTransportAddress().equals(localAddress))
+            if (localCandidate.getTransportAddress().equals(address))
             {
-                if (base == null || base.equals(localCnd.getBase()))
+                if (base == null || base.equals(localCandidate.getBase()))
                 {
-                    return localCnd;
+                    return localCandidate;
                 }
             }
         }
         // In case the above loop failed to find a result because `base` was
         // specified, fallback to the original behavior and return the first
-        // candidate matching `localAddress` regardless of `base`.
-        for (LocalCandidate localCnd : localCandidates)
+        // candidate matching `address` regardless of `base`.
+        for (LocalCandidate localCandidate : localCandidates)
         {
-            if (localCnd.getTransportAddress().equals(localAddress))
+            if (localCandidate.getTransportAddress().equals(address))
             {
                 logger.warn("Returning a candidate matching the address, "
                         + "while no candidates match both address ("
-                        + localAddress + ") and base (" + base +"): " + localCnd
-                        + " with base " + localCnd.getBase());
-                return localCnd;
+                        + address + ") and base (" + base +"): " + localCandidate
+                        + " with base " + localCandidate.getBase());
+                return localCandidate;
             }
         }
 
