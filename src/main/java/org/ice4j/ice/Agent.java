@@ -36,6 +36,8 @@ import java.util.*;
 import java.util.concurrent.*;
 import java.util.logging.*;
 
+import static org.ice4j.ice.AgentConfig.config;
+
 /**
  * An <tt>Agent</tt> could be described as the main class (i.e. the chef
  * d'orchestre) of an ICE implementation.
@@ -59,42 +61,6 @@ import java.util.logging.*;
  */
 public class Agent
 {
-    /**
-     * Default value for {@link StackProperties#CONSENT_FRESHNESS_INTERVAL}.
-     */
-    private static final int DEFAULT_CONSENT_FRESHNESS_INTERVAL = 15000;
-
-    /**
-     * Default value for
-     * {@link StackProperties#CONSENT_FRESHNESS_MAX_RETRANSMISSIONS}.
-     */
-    private static final int DEFAULT_CONSENT_FRESHNESS_MAX_RETRANSMISSIONS = 30;
-
-    /**
-     * Default value for
-     * {@link StackProperties#CONSENT_FRESHNESS_MAX_WAIT_INTERVAL}.
-     */
-    private static final int DEFAULT_CONSENT_FRESHNESS_MAX_WAIT_INTERVAL = 500;
-
-    /**
-     * Default value for
-     * {@link StackProperties#CONSENT_FRESHNESS_ORIGINAL_WAIT_INTERVAL}.
-     */
-    private static final int DEFAULT_CONSENT_FRESHNESS_ORIGINAL_WAIT_INTERVAL
-            = 500;
-
-    /**
-     * The default maximum size for check lists.
-     */
-    public static final int DEFAULT_MAX_CHECK_LIST_SIZE = 100;
-
-    /**
-     * The default number of milliseconds we should wait before moving from
-     * {@link IceProcessingState#COMPLETED} into {@link
-     * IceProcessingState#TERMINATED}.
-     */
-    public static final int DEFAULT_TERMINATION_DELAY = 3000;
-
     /**
      * The constant which defines an empty array with element type
      * <tt>PropertyChangeListener</tt> and represents the fact that there are no
@@ -976,31 +942,24 @@ public class Agent
      */
     protected void initCheckLists()
     {
-        //first init the check list.
-        List<IceMediaStream> streams
-            = getStreamsWithPendingConnectivityEstablishment();
+        // First init the check list.
+        List<IceMediaStream> streams = getStreamsWithPendingConnectivityEstablishment();
         int streamCount = streams.size();
 
-        //init the maximum number of check list entries per stream.
-        int maxCheckListSize = Integer.getInteger(
-               StackProperties.MAX_CHECK_LIST_SIZE,
-               DEFAULT_MAX_CHECK_LIST_SIZE);
-
-        int maxPerStreamSize =
-                streamCount == 0
-                ? 0
-                : maxCheckListSize / streamCount;
-
-        for (IceMediaStream stream : streams)
-        {
-            logger.info("Init checklist for stream " + stream.getName());
-            stream.setMaxCheckListSize(maxPerStreamSize);
-            stream.initCheckList();
-        }
-
-        //init the states of the first media stream as per 5245
         if (streamCount > 0)
+        {
+            int maxCheckListSizePerStream = config.getMaxCheckListSize() / streamCount;
+
+            for (IceMediaStream stream : streams)
+            {
+                logger.info("Init checklist for stream " + stream.getName());
+                stream.setMaxCheckListSize(maxCheckListSizePerStream);
+                stream.initCheckList();
+            }
+
+            // Init the states of the first media stream as per 5245
             streams.get(0).getCheckList().computeInitialCheckListPairStates();
+        }
     }
 
     /**
@@ -2190,10 +2149,7 @@ public class Agent
         {
             if (terminationFuture == null)
             {
-                long terminationDelay
-                    = Integer.getInteger(
-                        StackProperties.TERMINATION_DELAY,
-                        DEFAULT_TERMINATION_DELAY);
+                long terminationDelay = config.getTerminationDelay().toMillis();
 
                 if (terminationDelay > 0)
                 {
@@ -2690,21 +2646,14 @@ public class Agent
      */
     private final class StunKeepAliveRunner extends PeriodicRunnable
     {
-        private final long consentFreshnessInterval = Long.getLong(
-            StackProperties.CONSENT_FRESHNESS_INTERVAL,
-            DEFAULT_CONSENT_FRESHNESS_INTERVAL);
+        private final long consentFreshnessInterval = config.getConsentFreshnessInterval().toMillis();
+        private final int originalConsentFreshnessWaitInterval
+                = (int) config.getConsentFreshnessOriginalWaitInterval().toMillis();
 
-        private final int originalConsentFreshnessWaitInterval = Integer.getInteger(
-            StackProperties.CONSENT_FRESHNESS_ORIGINAL_WAIT_INTERVAL,
-            DEFAULT_CONSENT_FRESHNESS_ORIGINAL_WAIT_INTERVAL);
+        private final int maxConsentFreshnessWaitInterval
+                = (int) config.getConsentFreshnessMaxWaitInterval().toMillis();
 
-        private final int maxConsentFreshnessWaitInterval = Integer.getInteger(
-            StackProperties.CONSENT_FRESHNESS_MAX_WAIT_INTERVAL,
-            DEFAULT_CONSENT_FRESHNESS_MAX_WAIT_INTERVAL);
-
-        private final int consentFreshnessMaxRetransmissions = Integer.getInteger(
-            StackProperties.CONSENT_FRESHNESS_MAX_RETRANSMISSIONS,
-            DEFAULT_CONSENT_FRESHNESS_MAX_RETRANSMISSIONS);
+        private final int consentFreshnessMaxRetransmissions = config.getMaxConsentFreshnessRetransmissions();
 
         private int keepAliveSent = 0;
 

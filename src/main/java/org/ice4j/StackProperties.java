@@ -60,43 +60,6 @@ public class StackProperties
     public static final String BIND_WILDCARD = "org.ice4j.BIND_WILDCARD";
 
     /**
-     * How often a STUN Binding request used for consent freshness check will be
-     * sent(value in milliseconds).
-     */
-    public static final String CONSENT_FRESHNESS_INTERVAL
-        = "org.ice4j.ice.CONSENT_FRESHNESS_INTERVAL";
-
-    /**
-     * The maximum number of retransmissions of a STUN Binding request without
-     * a valid STUN Binding response after which consent freshness is to be
-     * considered unconfirmed according to &quot;STUN Usage for Consent
-     * Freshness&quot;.
-     */
-    public static final String CONSENT_FRESHNESS_MAX_RETRANSMISSIONS
-        = "org.ice4j.ice.CONSENT_FRESHNESS_MAX_RETRANSMISSIONS";
-
-    /**
-     * The number of milliseconds without a valid STUN Binding response after
-     * which a STUN Binding request is to be retransmitted according to
-     * &quot;STUN Usage for Consent Freshness&quot;. This is the final value
-     * for the back-off strategy.
-     * {@link #CONSENT_FRESHNESS_ORIGINAL_WAIT_INTERVAL} defines the initial
-     * interval for the first request sent. Value in milliseconds.
-     */
-    public static final String CONSENT_FRESHNESS_MAX_WAIT_INTERVAL
-        = "org.ice4j.ice.CONSENT_FRESHNESS_MAX_WAIT_INTERVAL";
-
-    /**
-     * The number of milliseconds without a valid STUN Binding response after
-     * which a STUN Binding request is to be retransmitted according to
-     * &quot;STUN Usage for Consent Freshness&quot;. This is the original value
-     * for back-off strategy. {@link #CONSENT_FRESHNESS_MAX_WAIT_INTERVAL} sets
-     * the upper limit. Value in milliseconds.
-     */
-    public static final String CONSENT_FRESHNESS_ORIGINAL_WAIT_INTERVAL
-        = "org.ice4j.ice.CONSENT_FRESHNESS_WAIT_INTERVAL";
-
-    /**
      * The number of milliseconds a client transaction should wait before
      * retransmitting, after it has sent a request for the first time.
      */
@@ -122,13 +85,6 @@ public class StackProperties
      */
     public static final String MAX_CTRAN_RETRANSMISSIONS
                                 = "org.ice4j.MAX_RETRANSMISSIONS";
-
-    /**
-     * The name of the System property that allows us to set a custom maximum
-     * for check list sizes.
-     */
-    public static final String MAX_CHECK_LIST_SIZE
-                                        = "org.ice4j.MAX_CHECK_LIST_SIZE";
 
     /**
      * The value of the SOFTWARE attribute that ice4j should include in all
@@ -163,14 +119,6 @@ public class StackProperties
      */
     public static final String REQUIRE_MESSAGE_INTEGRITY
                                     = "org.ice4j.REQUIRE_MESSAGE_INTEGRITY";
-
-    /**
-     * The name of the property that can be used to specify the number of
-     * milliseconds that we must wait after ICE processing enters a COMPLTED
-     * state and before we free candidates and move into the TERMINATED state.
-     */
-    public static final String TERMINATION_DELAY
-                                    = "org.ice4j.TERMINATION_DELAY";
 
     /**
      * The name of the property that can be used to disable STUN keep alives.
