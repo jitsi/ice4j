@@ -18,7 +18,10 @@
 package org.ice4j.ice.harvest;
 
 import org.ice4j.*;
+import org.ice4j.attribute.*;
 import org.ice4j.ice.*;
+import org.ice4j.message.*;
+import org.ice4j.security.*;
 import org.ice4j.socket.*;
 import org.ice4j.stack.*;
 
@@ -127,25 +130,62 @@ public class SinglePortUdpHarvester
      * local ufrag of {@code ufrag}, and if one is found it accepts the new
      * socket and adds it to the candidate.
      */
-    protected void maybeAcceptNewSession(Buffer buf,
-                                         InetSocketAddress remoteAddress,
-                                         String ufrag)
+    protected void maybeAcceptNewSession(Buffer buf, InetSocketAddress remoteAddress)
     {
-        MyCandidate candidate = candidates.get(ufrag);
+        Message stunMessage;
+        try
+        {
+            stunMessage = Message.decode(buf.buffer, (char) 0, (char) buf.len);
+        }
+        catch (StunException e)
+        {
+            // Not a valid STUN Message
+            return;
+        }
+
+        if (stunMessage.getMessageType() != Message.BINDING_REQUEST)
+        {
+            return;
+        }
+
+        UsernameAttribute usernameAttribute = (UsernameAttribute) stunMessage.getAttribute(Attribute.USERNAME);
+        if (usernameAttribute == null)
+        {
+            return;
+        }
+
+        String localUfrag = new String(usernameAttribute.getUsername()).split(":")[0];
+        MyCandidate candidate = candidates.get(localUfrag);
         if (candidate == null)
         {
             // A STUN Binding Request with an unknown USERNAME. Drop it.
             return;
         }
 
-        // This is a STUN Binding Request destined for this
+        MessageIntegrityAttribute messageIntegrityAttribute
+                = (MessageIntegrityAttribute) stunMessage.getAttribute(Attribute.MESSAGE_INTEGRITY);
+        if (!candidate.getStunStack().validateMessageIntegrity(
+                messageIntegrityAttribute,
+                LongTermCredential.toString(usernameAttribute.getUsername()),
+                !stunMessage.containsAttribute(Attribute.REALM) && !stunMessage.containsAttribute(Attribute.NONCE),
+                RawMessage.build(
+                        buf.buffer,
+                        buf.len,
+                        new TransportAddress(remoteAddress, Transport.UDP),
+                        localAddress)))
+        {
+            // Invalid message integrity
+            return;
+        }
+
+        // This is a verified STUN Binding Request destined for this
         // specific Candidate/Component/Agent.
         try
         {
             // 1. Create a socket for this remote address
             // 2. Set-up de-multiplexing for future datagrams
             // with this address to this socket.
-            MySocket newSocket = addSocket(remoteAddress, ufrag);
+            MySocket newSocket = addSocket(remoteAddress, localUfrag);
 
             // 3. Let the candidate and its STUN stack no about the
             // new socket.
