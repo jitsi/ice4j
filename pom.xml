@@ -17,7 +17,9 @@
 
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+    <jicoco.version>1.1-53-gdc63c67</jicoco.version>
     <kotlin.version>1.3.72</kotlin.version>
+    <kotest.version>4.1.3</kotest.version>
   </properties>
 
   <dependencies>
@@ -34,12 +36,12 @@
     <dependency>
       <groupId>${project.groupId}</groupId>
       <artifactId>jitsi-utils</artifactId>
-      <version>1.0-12-gcdf6537</version>
+      <version>1.0-59-g5dc2b5f</version>
     </dependency>
     <dependency>
       <groupId>${project.groupId}</groupId>
       <artifactId>jicoco-config</artifactId>
-      <version>1.1-53-gdc63c67</version>
+      <version>${jicoco.version}</version>
     </dependency>
 
     <!-- test -->
@@ -47,6 +49,30 @@
       <groupId>junit</groupId>
       <artifactId>junit</artifactId>
       <version>4.11</version>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+        <groupId>io.kotest</groupId>
+        <artifactId>kotest-runner-junit5-jvm</artifactId>
+        <version>${kotest.version}</version>
+        <scope>test</scope>
+    </dependency>
+    <dependency>
+        <groupId>io.kotest</groupId>
+        <artifactId>kotest-assertions-core-jvm</artifactId>
+        <version>${kotest.version}</version>
+        <scope>test</scope>
+    </dependency>
+    <dependency>
+        <groupId>io.kotest</groupId>
+        <artifactId>kotest-runner-console-jvm</artifactId>
+        <version>${kotest.version}</version>
+        <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.jitsi</groupId>
+      <artifactId>jicoco-test-kotlin</artifactId>
+      <version>${jicoco.version}</version>
       <scope>test</scope>
     </dependency>
   </dependencies>
@@ -334,6 +360,10 @@
         <enabled>false</enabled>
       </snapshots>
       <url>https://github.com/jitsi/jitsi-maven-repository/raw/master/releases/</url>
+    </repository>
+    <repository>
+      <id>jitpack.io</id>
+      <url>https://jitpack.io</url>
     </repository>
   </repositories>
 </project>
