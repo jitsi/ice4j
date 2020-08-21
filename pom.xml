@@ -39,7 +39,7 @@
     <dependency>
       <groupId>${project.groupId}</groupId>
       <artifactId>jicoco-config</artifactId>
-      <version>1.1-SNAPSHOT</version>
+      <version>1.1-53-gdc63c67</version>
     </dependency>
 
     <!-- test -->

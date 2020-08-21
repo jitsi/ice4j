@@ -17,42 +17,43 @@
 package org.ice4j.ice
 
 import org.jitsi.metaconfig.config
-import org.ice4j.config.Ice4jConfig
 import java.time.Duration
+
+import org.jitsi.config.JitsiConfig.Companion.newConfig as configSource
 
 class AgentConfig {
     val consentFreshnessInterval: Duration by config {
-        "org.ice4j.ice.CONSENT_FRESHNESS_INTERVAL".from(Ice4jConfig.legacyConfig)
+        "org.ice4j.ice.CONSENT_FRESHNESS_INTERVAL".from(configSource)
             .convertFrom<Long> { Duration.ofMillis(it) }
-        "ice4j.consent-freshness.interval".from(Ice4jConfig.newConfig)
+        "ice4j.consent-freshness.interval".from(configSource)
     }
 
     val consentFreshnessOriginalWaitInterval: Duration by config {
-        "org.ice4j.ice.CONSENT_FRESHNESS_WAIT_INTERVAL".from(Ice4jConfig.legacyConfig)
+        "org.ice4j.ice.CONSENT_FRESHNESS_WAIT_INTERVAL".from(configSource)
             .convertFrom<Long> { Duration.ofMillis(it) }
-        "ice4j.consent-freshness.original-wait-interval".from(Ice4jConfig.newConfig)
+        "ice4j.consent-freshness.original-wait-interval".from(configSource)
     }
 
     val consentFreshnessMaxWaitInterval: Duration by config {
-        "org.ice4j.ice.CONSENT_FRESHNESS_MAX_WAIT_INTERVAL".from(Ice4jConfig.legacyConfig)
+        "org.ice4j.ice.CONSENT_FRESHNESS_MAX_WAIT_INTERVAL".from(configSource)
             .convertFrom<Long> { Duration.ofMillis(it) }
-        "ice4j.consent-freshness.max-wait-interval".from(Ice4jConfig.newConfig)
+        "ice4j.consent-freshness.max-wait-interval".from(configSource)
     }
 
     val maxConsentFreshnessRetransmissions: Int by config {
-        "org.ice4j.ice.CONSENT_FRESHNESS_MAX_RETRANSMISSIONS".from(Ice4jConfig.legacyConfig)
-        "ice4j.consent-freshness.max-retransmissions".from(Ice4jConfig.newConfig)
+        "org.ice4j.ice.CONSENT_FRESHNESS_MAX_RETRANSMISSIONS".from(configSource)
+        "ice4j.consent-freshness.max-retransmissions".from(configSource)
     }
 
     val terminationDelay: Duration by config {
-        "org.ice4j.TERMINATION_DELAY".from(Ice4jConfig.legacyConfig)
+        "org.ice4j.TERMINATION_DELAY".from(configSource)
             .convertFrom<Long> { Duration.ofMillis(it) }
-        "ice4j.ice.termination-delay".from(Ice4jConfig.newConfig)
+        "ice4j.ice.termination-delay".from(configSource)
     }
 
     val maxCheckListSize: Int by config {
-        "org.ice4j.MAX_CHECK_LIST_SIZE".from(Ice4jConfig.legacyConfig)
-        "ice4j.ice.max-check-list-size".from(Ice4jConfig.newConfig)
+        "org.ice4j.MAX_CHECK_LIST_SIZE".from(configSource)
+        "ice4j.ice.max-check-list-size".from(configSource)
     }
 
     companion object {
