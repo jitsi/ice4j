@@ -24,6 +24,8 @@ import org.ice4j.*;
 import org.jitsi.utils.collections.*;
 import org.jitsi.utils.logging2.*;
 
+import static org.ice4j.ice.AgentConfig.config;
+
 /**
  * The class represents a media stream from the ICE perspective, i.e. a
  * collection of components.
@@ -127,7 +129,7 @@ public class IceMediaStream
      * across all check lists to a specific value, adn this value MUST be
      * configurable.  A default of 100 is RECOMMENDED.
      */
-    private int maxCheckListSize = Agent.DEFAULT_MAX_CHECK_LIST_SIZE;
+    private int maxCheckListSize = config.getMaxCheckListSize();
 
     /**
      * The user fragment that we received from the remote party.
