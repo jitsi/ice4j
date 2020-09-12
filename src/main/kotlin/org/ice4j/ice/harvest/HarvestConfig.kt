@@ -42,6 +42,12 @@ class HarvestConfig {
     }
     fun useIpv6() = useIpv6
 
+    val useDynamicPorts: Boolean by config {
+        "org.ice4j.ice.harvest.USE_DYNAMIC_HOST_HARVESTER".from(configSource)
+        "ice4j.harvest.udp.use-dynamic-ports".from(configSource)
+    }
+    fun useDynamicPorts() = useDynamicPorts
+
     companion object {
         @JvmField
         val config = HarvestConfig()

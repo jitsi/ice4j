@@ -102,10 +102,8 @@ public class RoleConflictResolutionTest
         throws IOException
     {
         final Agent agent = new Agent(label, null);
-        agent.setUseHostHarvester(true);
         agent.setControlling(iceControlling);
-        IceMediaStream iceStream
-            = agent.createMediaStream("media-stream");
+        IceMediaStream iceStream = agent.createMediaStream("media-stream");
 
         agent.createComponent(
             iceStream,
