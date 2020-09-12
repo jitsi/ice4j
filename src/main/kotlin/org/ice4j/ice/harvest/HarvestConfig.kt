@@ -18,6 +18,7 @@ package org.ice4j.ice.harvest
 
 import org.jitsi.metaconfig.config
 import org.jitsi.metaconfig.optionalconfig
+import java.time.Duration
 
 import org.jitsi.config.JitsiConfig.Companion.newConfig as configSource
 
@@ -47,6 +48,13 @@ class HarvestConfig {
         "ice4j.harvest.udp.use-dynamic-ports".from(configSource)
     }
     fun useDynamicPorts() = useDynamicPorts
+
+    val timeout: Duration by config {
+        "org.ice4j.ice.harvest.HARVESTING_TIMEOUT".from(configSource)
+            .convertFrom<Long> { Duration.ofSeconds(it) }
+        "ice4j.harvest.timeout".from(configSource)
+    }
+    fun timeout() = timeout
 
     companion object {
         @JvmField

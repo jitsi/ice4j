@@ -173,12 +173,6 @@ public class StackProperties
             = "org.ice4j.ice.harvest.BLOCKED_ADDRESSES";
 
     /**
-     * Timeout, in seconds, of how long to wait for an individual harvest before timing out
-     */
-    public static final String HARVESTING_TIMEOUT
-            = "org.ice4j.ice.harvest.HARVESTING_TIMEOUT";
-
-    /**
      * The name of the property which specifies whether the per-component
      * merging socket should be enabled by default (the default value can be
      * overridden with {@link Agent#createComponent(IceMediaStream, Transport,
