@@ -35,6 +35,13 @@ class HarvestConfig {
     }
     fun udpReceiveBufferSize() = udpReceiveBufferSize
 
+    val useIpv6: Boolean by config {
+        "org.ice4j.ipv6.DISABLED".from(configSource)
+            .transformedBy { !it }
+        "ice4j.harvest.use-ipv6".from(configSource)
+    }
+    fun useIpv6() = useIpv6
+
     companion object {
         @JvmField
         val config = HarvestConfig()

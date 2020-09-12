@@ -231,10 +231,6 @@ public class HostCandidateHarvester
     public static List<InetAddress> getAllAllowedAddresses()
     {
         List<InetAddress> addresses = new LinkedList<>();
-        boolean isIPv6Disabled = StackProperties.getBoolean(
-                StackProperties.DISABLE_IPv6,
-                false);
-
         try
         {
             for (NetworkInterface iface
@@ -256,7 +252,7 @@ public class HostCandidateHarvester
                     if (!isAddressAllowed(address))
                         continue;
 
-                    if (isIPv6Disabled && address instanceof Inet6Address)
+                    if (!config.useIpv6() && address instanceof Inet6Address)
                         continue;
                     if (!config.useLinkLocalAddresses() && address.isLinkLocalAddress())
                         continue;
@@ -306,17 +302,11 @@ public class HostCandidateHarvester
     {
         harvestStatistics.startHarvestTiming();
 
-        Enumeration<NetworkInterface> interfaces
-                        = NetworkInterface.getNetworkInterfaces();
-
-        boolean isIPv6Disabled = StackProperties.getBoolean(
-                StackProperties.DISABLE_IPv6,
-                false);
+        Enumeration<NetworkInterface> interfaces = NetworkInterface.getNetworkInterfaces();
 
         if(transport != Transport.UDP && transport != Transport.TCP)
         {
-            throw new IllegalArgumentException(
-                "Transport protocol not supported: " + transport);
+            throw new IllegalArgumentException("Transport protocol not supported: " + transport);
         }
 
         boolean boundAtLeastOneSocket = false;
@@ -352,15 +342,14 @@ public class HostCandidateHarvester
                 }
                 foundAtLeastOneUsableAddress = true;
 
-                if((addr instanceof Inet4Address) || !isIPv6Disabled)
+                if((addr instanceof Inet4Address) || !config.useIpv6())
                 {
                     IceSocketWrapper sock = null;
                     try
                     {
                         if(transport == Transport.UDP)
                         {
-                            sock = createDatagramSocket(
-                                addr, preferredPort, minPort, maxPort);
+                            sock = createDatagramSocket(addr, preferredPort, minPort, maxPort);
                             boundAtLeastOneSocket = true;
                         }
                         else if(transport == Transport.TCP)
@@ -395,10 +384,8 @@ public class HostCandidateHarvester
                         continue;
                     }
 
-                    HostCandidate candidate
-                        = new HostCandidate(sock, component, transport);
-                    candidate.setVirtual(
-                            NetworkUtils.isInterfaceVirtual(iface));
+                    HostCandidate candidate = new HostCandidate(sock, component, transport);
+                    candidate.setVirtual(NetworkUtils.isInterfaceVirtual(iface));
                     component.addLocalCandidate(candidate);
 
                     if (transport == Transport.TCP)
@@ -414,8 +401,7 @@ public class HostCandidateHarvester
                     // them as well while harvesting reflexive candidates.
                     createAndRegisterStunSocket(candidate);
 
-                    ComponentSocket componentSocket
-                        = component.getComponentSocket();
+                    ComponentSocket componentSocket = component.getComponentSocket();
                     if (componentSocket != null)
                     {
                         componentSocket.add(sock);
@@ -438,8 +424,7 @@ public class HostCandidateHarvester
                             + foundAtLeastOneUsableAddress);
         }
 
-        this.harvestStatistics
-            .stopHarvestTiming(component.getLocalCandidateCount());
+        this.harvestStatistics.stopHarvestTiming(component.getLocalCandidateCount());
     }
 
     /**

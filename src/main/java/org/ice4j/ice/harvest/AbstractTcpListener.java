@@ -285,10 +285,6 @@ public abstract class AbstractTcpListener
     protected void addLocalAddresses(List<TransportAddress> transportAddresses)
         throws IOException
     {
-        boolean useIPv6 = !StackProperties.getBoolean(
-                StackProperties.DISABLE_IPv6,
-                false);
-
         // White list from the configuration
         String[] allowedAddressesStr
             = StackProperties.getStringArray(StackProperties.ALLOWED_ADDRESSES,
@@ -330,7 +326,7 @@ public abstract class AbstractTcpListener
                 continue;
             }
 
-            if (!useIPv6 && (address instanceof Inet6Address))
+            if (!config.useIpv6() && (address instanceof Inet6Address))
                 continue;
 
             if (!config.useLinkLocalAddresses() && address.isLinkLocalAddress())

@@ -139,11 +139,6 @@ public class StackProperties
                                     = "org.ice4j.NOMINATION_TIMER";
 
     /**
-     * The name of the property used to disabled IPv6 support.
-     */
-    public static final String DISABLE_IPv6 = "org.ice4j.ipv6.DISABLED";
-
-    /**
      * The name of the allowed interfaces property which specifies the allowed
      * interfaces for host candidate allocations.
      */
