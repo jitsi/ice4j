@@ -17,6 +17,7 @@
 package org.ice4j.ice.harvest
 
 import org.jitsi.metaconfig.config
+import org.jitsi.metaconfig.optionalconfig
 
 import org.jitsi.config.JitsiConfig.Companion.newConfig as configSource
 
@@ -27,6 +28,12 @@ class HarvestConfig {
         "ice4j.harvest.use-link-local-addresses".from(configSource)
     }
     fun useLinkLocalAddresses() = useLinkLocalAddresses
+
+    val udpReceiveBufferSize: Int? by optionalconfig {
+        "org.ice4j.ice.harvest.AbstractUdpListener.SO_RCVBUF".from(configSource)
+        "ice4j.harvest.udp.receive-buffer-size".from(configSource)
+    }
+    fun udpReceiveBufferSize() = udpReceiveBufferSize
 
     companion object {
         @JvmField
