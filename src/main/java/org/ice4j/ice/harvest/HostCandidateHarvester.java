@@ -26,6 +26,8 @@ import org.ice4j.*;
 import org.ice4j.ice.*;
 import org.ice4j.socket.*;
 
+import static org.ice4j.ice.harvest.HarvestConfig.config;
+
 /**
  * A <tt>HostCandidateHarvester</tt> gathers host <tt>Candidate</tt>s for a
  * specified {@link org.ice4j.ice.Component}. Most <tt>CandidateHarvester</tt>s
@@ -232,9 +234,6 @@ public class HostCandidateHarvester
         boolean isIPv6Disabled = StackProperties.getBoolean(
                 StackProperties.DISABLE_IPv6,
                 false);
-        boolean isLinkLocalAddressesDisabled = StackProperties.getBoolean(
-                StackProperties.DISABLE_LINK_LOCAL_ADDRESSES,
-                false);
 
         try
         {
@@ -259,8 +258,7 @@ public class HostCandidateHarvester
 
                     if (isIPv6Disabled && address instanceof Inet6Address)
                         continue;
-                    if (isLinkLocalAddressesDisabled
-                            && address.isLinkLocalAddress())
+                    if (!config.useLinkLocalAddresses() && address.isLinkLocalAddress())
                         continue;
 
                     addresses.add(address);
@@ -315,10 +313,6 @@ public class HostCandidateHarvester
                 StackProperties.DISABLE_IPv6,
                 false);
 
-        boolean isLinkLocalAddressesDisabled = StackProperties.getBoolean(
-                StackProperties.DISABLE_LINK_LOCAL_ADDRESSES,
-                false);
-
         if(transport != Transport.UDP && transport != Transport.TCP)
         {
             throw new IllegalArgumentException(
@@ -352,8 +346,7 @@ public class HostCandidateHarvester
                     continue;
                 }
 
-                if (isLinkLocalAddressesDisabled
-                        && addr.isLinkLocalAddress())
+                if (!config.useLinkLocalAddresses() && addr.isLinkLocalAddress())
                 {
                     continue;
                 }
