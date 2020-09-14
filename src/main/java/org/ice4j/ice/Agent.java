@@ -297,12 +297,6 @@ public class Agent
     private boolean performConsentFreshness = false;
 
     /**
-     * The flag which specifies whether {@link #hostCandidateHarvester} should
-     * be used or not.
-     */
-    private Boolean useHostHarvester = null;
-
-    /**
      * The {@link Logger} used by {@link Agent} instances.
      */
     private final Logger logger;
@@ -628,7 +622,7 @@ public class Agent
         logger.info("Gathering candidates for component " +
                 component.toShortString() +".");
 
-        if (useHostHarvester())
+        if (HarvestConfig.config.useDynamicPorts())
         {
             hostCandidateHarvester.harvest(
                     component,
@@ -2586,34 +2580,6 @@ public class Agent
     public void setPerformConsentFreshness(boolean performConsentFreshness)
     {
         this.performConsentFreshness = performConsentFreshness;
-    }
-
-    /**
-     * Checks whether the dynamic host harvester should be used or not.
-     * @return <tt>true</tt> if the dynamic host harvester should be used and
-     * <tt>false</tt> otherwise.
-     */
-    public boolean useHostHarvester()
-    {
-        if (useHostHarvester == null)
-        {
-            useHostHarvester
-                = StackProperties.getBoolean(
-                       StackProperties.USE_DYNAMIC_HOST_HARVESTER,
-                       true);
-        }
-
-        return useHostHarvester;
-    }
-
-    /**
-     * Sets the flag which indicates whether the dynamic host harvester will
-     * be used or not by this <tt>Agent</tt>.
-     * @param useHostHarvester the value to set.
-     */
-    public void setUseHostHarvester(boolean useHostHarvester)
-    {
-        this.useHostHarvester = useHostHarvester;
     }
 
     /**

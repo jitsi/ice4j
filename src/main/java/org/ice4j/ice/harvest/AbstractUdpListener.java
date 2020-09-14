@@ -29,6 +29,8 @@ import java.util.concurrent.*;
 import java.util.logging.*;
 import java.util.logging.Logger;
 
+import static org.ice4j.ice.harvest.HarvestConfig.config;
+
 /**
  * A class which holds a {@link DatagramSocket} and runs a thread
  * ({@link #thread}) which perpetually reads from it.
@@ -43,14 +45,6 @@ import java.util.logging.Logger;
  */
 public abstract class AbstractUdpListener
 {
-    /**
-     * The name of the property which controls the size of the receive buffer
-     * which {@link SinglePortUdpHarvester} will request for the sockets that
-     * it creates.
-     */
-    public static final String SO_RCVBUF_PNAME
-        = AbstractUdpListener.class.getName() + ".SO_RCVBUF";
-
     /**
      * Our class logger.
      */
@@ -229,8 +223,8 @@ public abstract class AbstractUdpListener
 
         socket = new DatagramSocket( this.localAddress );
 
-        int receiveBufferSize = StackProperties.getInt(SO_RCVBUF_PNAME, -1);
-        if (receiveBufferSize > 0)
+        Integer receiveBufferSize = config.udpReceiveBufferSize();
+        if (receiveBufferSize != null)
         {
             socket.setReceiveBufferSize(receiveBufferSize);
         }
@@ -238,7 +232,7 @@ public abstract class AbstractUdpListener
         String logMessage
             = "Initialized AbstractUdpListener with address " + this.localAddress;
         logMessage += ". Receive buffer size " + socket.getReceiveBufferSize();
-        if (receiveBufferSize > 0)
+        if (receiveBufferSize != null)
         {
             logMessage += " (asked for " + receiveBufferSize + ")";
         }
@@ -253,8 +247,7 @@ public abstract class AbstractUdpListener
             }
         };
 
-        thread.setName(AbstractUdpListener.class.getName() + " thread for "
-            + this.localAddress);
+        thread.setName(AbstractUdpListener.class.getName() + " thread for " + this.localAddress);
         thread.setDaemon(true);
         thread.start();
     }

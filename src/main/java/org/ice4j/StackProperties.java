@@ -139,11 +139,6 @@ public class StackProperties
                                     = "org.ice4j.NOMINATION_TIMER";
 
     /**
-     * The name of the property used to disabled IPv6 support.
-     */
-    public static final String DISABLE_IPv6 = "org.ice4j.ipv6.DISABLED";
-
-    /**
      * The name of the allowed interfaces property which specifies the allowed
      * interfaces for host candidate allocations.
      */
@@ -168,13 +163,6 @@ public class StackProperties
             = "org.ice4j.ice.harvest.ALLOWED_ADDRESSES";
 
     /**
-     * The name of the property which, if set to true, specifies that
-     * link local addresses should not be used for candidate allocations.
-     */
-    public static final String DISABLE_LINK_LOCAL_ADDRESSES
-            = "org.ice4j.ice.harvest.DISABLE_LINK_LOCAL_ADDRESSES";
-
-    /**
      * The name of the property which specifies a ";"-separated list of IP
      * addresses that are not allowed to be used for host candidate allocations.
      *
@@ -183,19 +171,6 @@ public class StackProperties
      */
     public static final String BLOCKED_ADDRESSES
             = "org.ice4j.ice.harvest.BLOCKED_ADDRESSES";
-
-    /**
-     * The name of the property which specifies whether the dynamic port UDP
-     * host harvester should be used by <tt>Agent</tt> instances.
-     */
-    public static final String USE_DYNAMIC_HOST_HARVESTER
-            = "org.ice4j.ice.harvest.USE_DYNAMIC_HOST_HARVESTER";
-
-    /**
-     * Timeout, in seconds, of how long to wait for an individual harvest before timing out
-     */
-    public static final String HARVESTING_TIMEOUT
-            = "org.ice4j.ice.harvest.HARVESTING_TIMEOUT";
 
     /**
      * The name of the property which specifies whether the per-component

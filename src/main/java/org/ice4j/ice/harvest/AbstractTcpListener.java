@@ -29,6 +29,8 @@ import java.nio.channels.*;
 import java.util.*;
 import java.util.logging.*;
 
+import static org.ice4j.ice.harvest.HarvestConfig.config;
+
 /**
  * An abstract class that binds on a set of sockets and accepts sessions that
  * start with a STUN Binding Request (preceded by an optional fake SSL
@@ -283,13 +285,6 @@ public abstract class AbstractTcpListener
     protected void addLocalAddresses(List<TransportAddress> transportAddresses)
         throws IOException
     {
-        boolean useIPv6 = !StackProperties.getBoolean(
-                StackProperties.DISABLE_IPv6,
-                false);
-        boolean useLinkLocalAddresses = !StackProperties.getBoolean(
-                StackProperties.DISABLE_LINK_LOCAL_ADDRESSES,
-                false);
-
         // White list from the configuration
         String[] allowedAddressesStr
             = StackProperties.getStringArray(StackProperties.ALLOWED_ADDRESSES,
@@ -301,8 +296,7 @@ public abstract class AbstractTcpListener
             allowedAddresses = new InetAddress[allowedAddressesStr.length];
             for (int i = 0; i < allowedAddressesStr.length; i++)
             {
-                allowedAddresses[i]
-                    = InetAddress.getByName(allowedAddressesStr[i]);
+                allowedAddresses[i] = InetAddress.getByName(allowedAddressesStr[i]);
             }
         }
 
@@ -332,14 +326,12 @@ public abstract class AbstractTcpListener
                 continue;
             }
 
-            if (!useIPv6 && (address instanceof Inet6Address))
+            if (!config.useIpv6() && (address instanceof Inet6Address))
                 continue;
 
-            if (!useLinkLocalAddresses
-                    && address.isLinkLocalAddress())
+            if (!config.useLinkLocalAddresses() && address.isLinkLocalAddress())
             {
-                logger.info("Not using link-local address " + address +" for"
-                                    + " TCP candidates.");
+                logger.info("Not using link-local address " + address +" for TCP candidates.");
                 continue;
             }
 
