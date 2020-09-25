@@ -56,6 +56,13 @@ class HarvestConfig {
     }
     fun timeout() = timeout
 
+    val stunMappingCandidateHarvesterAddresses: List<String> by config {
+        "org.ice4j.ice.harvest.STUN_MAPPING_HARVESTER_ADDRESSES".from(configSource)
+            .convertFrom<String> { it.split(",") }
+        "ice4j.harvest.mapping.stun.addresses".from(configSource)
+    }
+   fun stunMappingCandidateHarvesterAddresses() = stunMappingCandidateHarvesterAddresses
+
     companion object {
         @JvmField
         val config = HarvestConfig()

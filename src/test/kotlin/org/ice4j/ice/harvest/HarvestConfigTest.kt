@@ -29,6 +29,7 @@ class HarvestConfigTest : ConfigTest() {
             config.useIpv6 shouldBe true
             config.useLinkLocalAddresses shouldBe true
             config.udpReceiveBufferSize shouldBe null
+            config.stunMappingCandidateHarvesterAddresses shouldBe emptyList()
         }
         context("Setting via legacy config (system properties)") {
             withLegacyConfig(legacyConfig) {
@@ -37,6 +38,7 @@ class HarvestConfigTest : ConfigTest() {
                 config.useIpv6 shouldBe false
                 config.useLinkLocalAddresses shouldBe false
                 config.udpReceiveBufferSize shouldBe 555
+                config.stunMappingCandidateHarvesterAddresses shouldBe listOf("stun1.legacy:555", "stun2.legacy")
             }
         }
         context("Setting via new config") {
@@ -46,6 +48,7 @@ class HarvestConfigTest : ConfigTest() {
                 config.useIpv6 shouldBe false
                 config.useLinkLocalAddresses shouldBe false
                 config.udpReceiveBufferSize shouldBe 666
+                config.stunMappingCandidateHarvesterAddresses shouldBe listOf("stun1.new:666", "stun2.new")
             }
         }
         context("Legacy config must take precedence") {
@@ -56,6 +59,7 @@ class HarvestConfigTest : ConfigTest() {
                     config.useIpv6 shouldBe false
                     config.useLinkLocalAddresses shouldBe false
                     config.udpReceiveBufferSize shouldBe 555
+                    config.stunMappingCandidateHarvesterAddresses shouldBe listOf("stun1.legacy:555", "stun2.legacy")
                 }
             }
         }
@@ -67,7 +71,8 @@ private val legacyConfig = mapOf(
     "org.ice4j.ice.harvest.USE_DYNAMIC_HOST_HARVESTER" to "false",
     "org.ice4j.ipv6.DISABLED" to "true",
     "org.ice4j.ice.harvest.DISABLE_LINK_LOCAL_ADDRESSES" to "true",
-    "org.ice4j.ice.harvest.AbstractUdpListener.SO_RCVBUF" to "555"
+    "org.ice4j.ice.harvest.AbstractUdpListener.SO_RCVBUF" to "555",
+    "org.ice4j.ice.harvest.STUN_MAPPING_HARVESTER_ADDRESSES" to "stun1.legacy:555,stun2.legacy"
 )
 
 // New config which overrides the default
@@ -80,6 +85,11 @@ private val newConfigNonDefault = """
         udp {
             receive-buffer-size = 666
             use-dynamic-ports = false
+        }
+        mapping {
+          stun {
+            addresses = [ "stun1.new:666", "stun2.new" ]
+          }
         }
      }
     }
@@ -95,6 +105,11 @@ private val newConfigDefault = """
         udp {
             receive-buffer-size = 666
             use-dynamic-ports = true
+        }
+        mapping {
+          stun {
+            addresses = [ "stun1.new:666", "stun2.new" ]
+          }
         }
      }
     }

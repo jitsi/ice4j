@@ -16,6 +16,7 @@
 package org.ice4j.ice.harvest;
 
 import org.ice4j.*;
+import org.jetbrains.annotations.*;
 
 import java.net.*;
 import java.util.*;
@@ -65,16 +66,6 @@ public class MappingCandidateHarvesters
      */
     public static final String FORCE_AWS_HARVESTER_PNAME
         = "org.ice4j.ice.harvest.FORCE_AWS_HARVESTER";
-
-    /**
-     * The name of the property which contains the addresses of the STUN servers
-     * to use for the STUN mapping harvester. The property should contain a
-     * comma-separated list of addresses (pairs of IP address and port,
-     * separated by a colon). Example:
-     * {@code stun1.example.com:12345,stun2.example.com:23456}
-     */
-    public static final String STUN_MAPPING_HARVESTER_ADDRESSES_PNAME
-        = "org.ice4j.ice.harvest.STUN_MAPPING_HARVESTER_ADDRESSES";
 
     /**
      * Whether {@link #harvesters} has been initialized.
@@ -162,26 +153,20 @@ public class MappingCandidateHarvesters
         }
 
         // STUN harvesters
-        String stunServers
-            = StackProperties.getString(STUN_MAPPING_HARVESTER_ADDRESSES_PNAME);
-        if (stunServers != null && !stunServers.isEmpty())
+        List<String> stunServers = HarvestConfig.config.stunMappingCandidateHarvesterAddresses();
+        if (!stunServers.isEmpty())
         {
-            // Create STUN harvesters (and wait for all of their discovery to
-            // finish).
-            List<StunMappingCandidateHarvester> stunHarvesters
-                = createStunHarvesters(stunServers.split(","));
+            // Create STUN harvesters (and wait for all of their discovery to finish).
+            List<StunMappingCandidateHarvester> stunHarvesters = createStunHarvesters(stunServers);
 
-            // We have STUN servers configured, so flag the failure if none of
-            // them were able to discover an address.
+            // We have STUN servers configured, so flag failure if none of them were able to discover an address.
             stunDiscoveryFailed = stunHarvesters.isEmpty();
 
             harvesterList.addAll(stunHarvesters);
         }
 
         harvesterList = prune(harvesterList);
-        harvesters
-            = harvesterList.toArray(
-                    new MappingCandidateHarvester[harvesterList.size()]);
+        harvesters = harvesterList.toArray(new MappingCandidateHarvester[harvesterList.size()]);
 
         for (MappingCandidateHarvester harvester : harvesters)
         {
@@ -248,16 +233,9 @@ public class MappingCandidateHarvesters
      * pairs).
      * @return  the list of those who were successful in discovering an address.
      */
-    private static List<StunMappingCandidateHarvester> createStunHarvesters(
-            String[] stunServers)
+    private static List<StunMappingCandidateHarvester> createStunHarvesters(@NotNull List<String> stunServers)
     {
         List<StunMappingCandidateHarvester> stunHarvesters = new LinkedList<>();
-
-        if (stunServers == null || stunServers.length == 0)
-        {
-            logger.severe("No STUN servers configured.");
-            return stunHarvesters;
-        }
 
         List<Callable<StunMappingCandidateHarvester>> tasks = new LinkedList<>();
 
