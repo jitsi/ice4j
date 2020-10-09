@@ -23,6 +23,8 @@ import java.util.*;
 import java.util.concurrent.*;
 import java.util.logging.*;
 
+import static org.ice4j.ice.harvest.HarvestConfig.config;
+
 /**
  * Manages a static list of {@link MappingCandidateHarvester} instances, created
  * according to configuration provided as system properties.
@@ -54,18 +56,6 @@ public class MappingCandidateHarvesters
      */
     public static final String NAT_HARVESTER_PUBLIC_ADDRESS_PNAME
         = "org.ice4j.ice.harvest.NAT_HARVESTER_PUBLIC_ADDRESS";
-
-    /**
-     * The name of the property used to disable the AWS harvester.
-     */
-    public static final String DISABLE_AWS_HARVESTER_PNAME
-        = "org.ice4j.ice.harvest.DISABLE_AWS_HARVESTER";
-
-    /**
-     * The name of the property which forces the use of the AWS harvester.
-     */
-    public static final String FORCE_AWS_HARVESTER_PNAME
-        = "org.ice4j.ice.harvest.FORCE_AWS_HARVESTER";
 
     /**
      * Whether {@link #harvesters} has been initialized.
@@ -135,25 +125,15 @@ public class MappingCandidateHarvesters
         }
 
         // AWS harvester
-        boolean disableAwsHarvester
-            = StackProperties.getBoolean(DISABLE_AWS_HARVESTER_PNAME, false);
-        boolean forceAwsHarvester
-            = StackProperties.getBoolean(FORCE_AWS_HARVESTER_PNAME, false);
-
-        if (logger.isLoggable(Level.FINE))
+        boolean enableAwsHarvester = config.enableAwsHarvester();
+        if (enableAwsHarvester && (config.forceAwsHarvester() || AwsCandidateHarvester.smellsLikeAnEC2()))
         {
-            logger.fine("AWS configuration: disable=" + disableAwsHarvester
-                        + "; force=" + forceAwsHarvester);
-        }
-
-        if (!disableAwsHarvester &&
-            (forceAwsHarvester || AwsCandidateHarvester.smellsLikeAnEC2()))
-        {
+            logger.info("Using AwsCandidateHarvester.");
             harvesterList.add(new AwsCandidateHarvester());
         }
 
         // STUN harvesters
-        List<String> stunServers = HarvestConfig.config.stunMappingCandidateHarvesterAddresses();
+        List<String> stunServers = config.stunMappingCandidateHarvesterAddresses();
         if (!stunServers.isEmpty())
         {
             // Create STUN harvesters (and wait for all of their discovery to finish).

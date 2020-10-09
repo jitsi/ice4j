@@ -61,7 +61,19 @@ class HarvestConfig {
             .convertFrom<String> { it.split(",") }
         "ice4j.harvest.mapping.stun.addresses".from(configSource)
     }
-   fun stunMappingCandidateHarvesterAddresses() = stunMappingCandidateHarvesterAddresses
+    fun stunMappingCandidateHarvesterAddresses() = stunMappingCandidateHarvesterAddresses
+
+    val enableAwsHarvester: Boolean by config {
+       "org.ice4j.ice.harvest.DISABLE_AWS_HARVESTER".from(configSource).transformedBy { !it }
+       "ice4j.harvest.mapping.aws.enabled".from(configSource)
+    }
+    fun enableAwsHarvester() = enableAwsHarvester
+
+    val forceAwsHarvester: Boolean by config {
+        "org.ice4j.ice.harvest.FORCE_AWS_HARVESTER".from(configSource).transformedBy { !it }
+        "ice4j.harvest.mapping.aws.force".from(configSource)
+    }
+    fun forceAwsHarvester() = enableAwsHarvester
 
     companion object {
         @JvmField
