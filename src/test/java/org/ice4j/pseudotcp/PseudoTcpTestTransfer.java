@@ -17,10 +17,11 @@
  */
 package org.ice4j.pseudotcp;
 
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 
 import java.io.*;
 import java.util.logging.*;
+import org.junit.jupiter.api.*;
 
 /**
  * Implements one way transfer test
@@ -35,10 +36,6 @@ public class PseudoTcpTestTransfer extends PseudoTcpTestBase
     private static final Logger logger =
         Logger.getLogger(PseudoTCPBase.class.getName());
 
-    public PseudoTcpTestTransfer()
-    {
-        super();
-    }
     /**
      * The send data
      */
@@ -58,12 +55,10 @@ public class PseudoTcpTestTransfer extends PseudoTcpTestBase
 
     /**
      * Transfers the data of <tt>size</tt> bytes
-     *
-     * @param size
      */
-    public void doTestTransfer(int size)
+    private void doTestTransfer(int size)
     {
-    	Thread.setDefaultUncaughtExceptionHandler(this);
+        Thread.setDefaultUncaughtExceptionHandler(this);
         long start, elapsed;
         int received;
         // Create some dummy data to send
@@ -78,7 +73,6 @@ public class PseudoTcpTestTransfer extends PseudoTcpTestBase
         try
         {
             connect();
-            //assertEquals(0, Connect());
         }
         catch (IOException ex)
         {
@@ -89,15 +83,14 @@ public class PseudoTcpTestTransfer extends PseudoTcpTestBase
         // Sending will start from OnTcpWriteable and complete when all data has
         // been received.
         long transferTout = maxTransferTime(sendData.length, kMinTransferRate);
-        boolean transfferInTime = assert_Disconnected_wait(transferTout);
+        boolean transferInTime = assert_Disconnected_wait(transferTout);
         elapsed = PseudoTCPBase.now() - start;
         stopClocks();
         received = recvStream.size();
-        assertEquals("Transfer timeout, transferred: " + received
+        assertTrue(transferInTime,"Transfer timeout, transferred: " + received
             + " required: " + sendData.length
             + " elapsed: "
-            + elapsed + " limit: " + transferTout,
-                     true, transfferInTime);
+            + elapsed + " limit: " + transferTout);
 
         // Ensure we closed down OK and we got the right data.
         assertEquals(size, received);
@@ -112,8 +105,6 @@ public class PseudoTcpTestTransfer extends PseudoTcpTestBase
 
     /**
      * Reads all data available at remote peer's buffer
-     *
-     * @throws IOException
      */
     void readData() throws IOException
     {
@@ -135,7 +126,6 @@ public class PseudoTcpTestTransfer extends PseudoTcpTestBase
      * Writes the data until there's space available
      *
      * @return true if there's no more data left to write
-     * @throws IOException
      */
     boolean writeData() throws IOException
     {
@@ -178,8 +168,6 @@ public class PseudoTcpTestTransfer extends PseudoTcpTestBase
     /**
      * Catches TCP readable event for remote peer and reads the data. When total
      * read count equals send data size the test is finished.
-     *
-     * @param tcp
      */
     @Override
     public void onTcpReadable(PseudoTCPBase tcp)
@@ -215,8 +203,6 @@ public class PseudoTcpTestTransfer extends PseudoTcpTestBase
     /**
      * Catches on TCP writeable event for local peer. Writes all data and closes
      * the stream
-     *
-     * @param tcp
      */
     @Override
     public void onTcpWriteable(PseudoTCPBase tcp)
@@ -245,6 +231,7 @@ public class PseudoTcpTestTransfer extends PseudoTcpTestBase
      * Basic end-to-end data transfer tests Test the normal case of sending data
      * from one side to the other.
      */
+    @Test
     public void testSend()
     {
         //logger.log(Level.INFO, "Test send");
@@ -258,6 +245,7 @@ public class PseudoTcpTestTransfer extends PseudoTcpTestBase
      * Test sending data with a 50 ms RTT. Transmission should take longer due
      * to a slower ramp-up in send rate.
      */
+    @Test
     public void testSendWithDelay()
     {
         //logger.log(Level.INFO, "Test send with delay");
@@ -272,6 +260,7 @@ public class PseudoTcpTestTransfer extends PseudoTcpTestBase
      * Test sending data with packet loss. Transmission should take much longer
      * due to send back-off when loss occurs.
      */
+    @Test
     public void testSendWithLoss()
     {
         //logger.log(Level.INFO, "Test send with loss");
@@ -287,6 +276,7 @@ public class PseudoTcpTestTransfer extends PseudoTcpTestBase
      * should take much longer due to send back-off and slower detection of
      * loss.
      */
+    @Test
     public void testSendWithDelayAndLoss()
     {
         //logger.log(Level.INFO, "Test send with delay and loss");
@@ -302,6 +292,7 @@ public class PseudoTcpTestTransfer extends PseudoTcpTestBase
      * Test sending data with 10% packet loss and Nagling disabled. Transmission
      * should take about the same time as with Nagling enabled.
      */
+    @Test
     public void testSendWithLossAndOptNaglingOff()
     {
         //logger.log(Level.INFO, "Test send with loss and OptNagling off");
@@ -317,6 +308,7 @@ public class PseudoTcpTestTransfer extends PseudoTcpTestBase
      * Test sending data with 10% packet loss and Delayed ACK disabled.
      * Transmission should be slightly faster than with it enabled.
      */
+    @Test
     public void testSendWithLossAndOptAckDelayOff()
     {
         //logger.log(Level.INFO, "Test send with loss and OptAckDelay off");
@@ -331,6 +323,7 @@ public class PseudoTcpTestTransfer extends PseudoTcpTestBase
     /**
      * Test sending data with 50ms delay and Nagling disabled.
      */
+    @Test
     public void testSendWithDelayAndOptNaglingOff()
     {
         //logger.log(Level.INFO, "Test send with delay and OptNagling off");
@@ -345,6 +338,7 @@ public class PseudoTcpTestTransfer extends PseudoTcpTestBase
     /**
      * Test sending data with 50ms delay and Delayed ACK disabled.
      */
+    @Test
     public void testSendWithDelayAndOptAckDelayOff()
     {
         //logger.log(Level.INFO, "Test send with delay and OptAckDelay off");
@@ -359,6 +353,7 @@ public class PseudoTcpTestTransfer extends PseudoTcpTestBase
     /**
      * Test a large receive buffer with a sender that doesn't support scaling.
      */
+    @Test
     public void testSendRemoteNoWindowScale()
     {
         //logger.log(Level.INFO, "Test send - remote no window scale");
@@ -374,6 +369,7 @@ public class PseudoTcpTestTransfer extends PseudoTcpTestBase
      * Test a large sender-side receive buffer with a receiver that doesn't
      * support scaling.
      */
+    @Test
     public void testSendLocalNoWindowScale()
     {
         //logger.log(Level.INFO, "Test send - local no window scale");
@@ -388,6 +384,7 @@ public class PseudoTcpTestTransfer extends PseudoTcpTestBase
     /**
      * Test when both sides use window scaling.
      */
+    @Test
     public void testSendBothUseWindowScale()
     {
         //logger.log(Level.INFO, "Test send - both use window scale");
@@ -402,6 +399,7 @@ public class PseudoTcpTestTransfer extends PseudoTcpTestBase
     /**
      * Test using a large window scale value.
      */
+    @Test
     public void testSendLargeInFlight()
     {
         //logger.log(Level.INFO, "Test send large in flight");
@@ -414,6 +412,7 @@ public class PseudoTcpTestTransfer extends PseudoTcpTestBase
         test.doTestTransfer(1000000);
     }
 
+    @Test
     public void testSendBothUseLargeWindowScale()
     {
         //logger.log(Level.INFO, "Test send both use large window scale");
@@ -428,6 +427,7 @@ public class PseudoTcpTestTransfer extends PseudoTcpTestBase
     /**
      * Test using a small receive buffer.
      */
+    @Test
     public void testSendSmallReceiveBuffer()
     {
         //logger.log(Level.INFO, "Test send small receive buffer");
@@ -442,6 +442,7 @@ public class PseudoTcpTestTransfer extends PseudoTcpTestBase
     /**
      * Test using a very small receive buffer.
      */
+    @Test
     public void testSendVerySmallReceiveBuffer()
     {
         //logger.log(Level.INFO, "Test send very small receive buffer");

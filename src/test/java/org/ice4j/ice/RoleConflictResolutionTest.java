@@ -18,13 +18,15 @@
 
 package org.ice4j.ice;
 
+import static org.junit.jupiter.api.Assertions.*;
+
 import org.ice4j.*;
-import org.junit.*;
 
 import java.io.*;
 import java.util.*;
 import java.util.concurrent.*;
 import java.util.logging.*;
+import org.junit.jupiter.api.*;
 
 /**
  * RoleConflictResolutionTest set of tests which does end-to-end test
@@ -87,12 +89,12 @@ public class RoleConflictResolutionTest
         logSelectedPairs(peer1);
         logSelectedPairs(peer2);
 
-        Assert.assertTrue("Expected connection established within time out",
-            isConnected);
-        Assert.assertTrue("peer 1 connectivity",
-            peer1.getState().isEstablished());
-        Assert.assertTrue("peer 2 connectivity",
-            peer2.getState().isEstablished());
+        assertTrue(isConnected,
+            "Expected connection established within time out");
+        assertTrue(peer1.getState().isEstablished(),
+            "peer 1 connectivity");
+        assertTrue(peer2.getState().isEstablished(),
+            "peer 2 connectivity");
 
         disposePeer(peer1);
         disposePeer(peer2);

@@ -19,18 +19,18 @@ package org.ice4j;
 
 import java.util.*;
 
-import junit.framework.*;
+import static org.junit.jupiter.api.Assertions.*;
 
 import org.ice4j.message.*;
 import org.ice4j.socket.*;
 import org.ice4j.stack.*;
-
+import org.junit.jupiter.api.*;
 /**
  * Test event dispatching for both client and server.
  *`
  * @author Emil Ivov
  */
-public class MessageEventDispatchingTest extends TestCase
+public class MessageEventDispatchingTest
 {
     /**
      * The stack that we are using for the tests.
@@ -95,10 +95,9 @@ public class MessageEventDispatchingTest extends TestCase
      *
      * @throws Exception if anything goes wrong.
      */
-    protected void setUp() throws Exception
+    @BeforeEach
+    public void setUp() throws Exception
     {
-        super.setUp();
-
         stunStack = new StunStack();
 
         clientSock = new IceUdpSocketWrapper(
@@ -126,7 +125,8 @@ public class MessageEventDispatchingTest extends TestCase
      *
      * @throws Exception if anything goes wrong.
      */
-    protected void tearDown() throws Exception
+    @AfterEach
+    public void tearDown() throws Exception
     {
         stunStack.removeSocket(clientAddress);
         stunStack.removeSocket(serverAddress);
@@ -138,8 +138,6 @@ public class MessageEventDispatchingTest extends TestCase
 
         requestCollector = null;
         responseCollector = null;
-
-        super.tearDown();
     }
 
     /**
@@ -147,6 +145,7 @@ public class MessageEventDispatchingTest extends TestCase
      *
      * @throws Exception upon a stun failure
      */
+    @Test
     public void testClientTransactionTimeouts() throws Exception
     {
         String oldRetransValue = System.getProperty(
@@ -156,13 +155,11 @@ public class MessageEventDispatchingTest extends TestCase
                         responseCollector);
         responseCollector.waitForTimeout();
 
-        assertEquals(
-            "No timeout was produced upon expiration of a client transaction",
-            responseCollector.receivedResponses.size(), 1);
+        assertEquals(1, responseCollector.receivedResponses.size(),
+            "No timeout was produced upon expiration of a client transaction");
 
-        assertEquals(
-            "No timeout was produced upon expiration of a client transaction",
-            responseCollector.receivedResponses.get(0), "timeout");
+        assertEquals("timeout", responseCollector.receivedResponses.get(0), 
+            "No timeout was produced upon expiration of a client transaction");
 
         //restore the retransmissions prop in case others are counting on
         //defaults.
@@ -178,6 +175,7 @@ public class MessageEventDispatchingTest extends TestCase
      *
      * @throws java.lang.Exception upon any failure
      */
+    @Test
     public void testEventDispatchingUponIncomingRequests() throws Exception
     {
         //prepare to listen
@@ -189,8 +187,8 @@ public class MessageEventDispatchingTest extends TestCase
         requestCollector.waitForRequest();
 
         //verify
-        assertTrue("No MessageEvents have been dispatched",
-            requestCollector.receivedRequests.size() == 1);
+        assertEquals(1, requestCollector.receivedRequests.size(),
+            "No MessageEvents have been dispatched");
     }
 
     /**
@@ -199,6 +197,7 @@ public class MessageEventDispatchingTest extends TestCase
      *
      * @throws java.lang.Exception upon any failure
      */
+    @Test
     public void testSelectiveEventDispatchingUponIncomingRequests()
         throws Exception
     {
@@ -216,19 +215,17 @@ public class MessageEventDispatchingTest extends TestCase
         requestCollector2.waitForRequest();
 
         //verify
-        assertTrue(
-            "A MessageEvent was received by a non-interested selective listener",
-            requestCollector.receivedRequests.size() == 0);
-        assertTrue(
-            "No MessageEvents have been dispatched for a selective listener",
-            requestCollector2.receivedRequests.size() == 1);
+        assertEquals(0, requestCollector.receivedRequests.size(),
+            "A MessageEvent was received by a non-interested selective listener");
+        assertEquals(1, requestCollector2.receivedRequests.size(),
+            "No MessageEvents have been dispatched for a selective listener");
     }
-
 
     /**
      * Makes sure that we receive response events.
      * @throws Exception if we screw up.
      */
+    @Test
     public void testServerResponseRetransmissions() throws Exception
     {
         //prepare to listen
@@ -249,15 +246,14 @@ public class MessageEventDispatchingTest extends TestCase
         responseCollector.waitForResponse();
 
         //verify that we got the response.
-        assertTrue(
-            "There were no retransmissions of a binding response",
-            responseCollector.receivedResponses.size() == 1 );
+        assertEquals(1, responseCollector.receivedResponses.size(),
+            "There were no retransmissions of a binding response");
     }
 
     /**
      * A utility class we use to collect incoming requests.
      */
-    private class PlainRequestCollector implements RequestListener
+    private static class PlainRequestCollector implements RequestListener
     {
         /** all requests we've received so far. */
         public final Vector<StunMessageEvent> receivedRequests = new Vector<>();

@@ -17,12 +17,12 @@
  */
 package org.ice4j.stunclient;
 
-import junit.framework.*;
+import static org.junit.jupiter.api.Assertions.*;
 
 import org.ice4j.*;
 import org.ice4j.message.*;
 import org.ice4j.stack.*;
-
+import org.junit.jupiter.api.*;
 /**
  * Makes basic stun tests for cases where local network addresses and the public
  * NAT address are using different IP versions. (e.g. Local addresses are v4
@@ -38,48 +38,41 @@ import org.ice4j.stack.*;
  * <p>Company: Net Research Team, Louis Pasteur University</p>
  * @author Emil Ivov
  */
-public class StunAddressDiscovererTest_v4v6 extends TestCase
+public class StunAddressDiscovererTest_v4v6
 {
     private NetworkConfigurationDiscoveryProcess stunAddressDiscoverer_v6
         = null;
     private NetworkConfigurationDiscoveryProcess stunAddressDiscoverer_v4
         = null;
 
-    private TransportAddress discovererAddress_v4
+    private final TransportAddress discovererAddress_v4
             = new TransportAddress("127.0.0.1", 17555, Transport.UDP);
-    private TransportAddress discovererAddress_v6
+    private final TransportAddress discovererAddress_v6
             = new TransportAddress("::1", 17555, Transport.UDP);
 
     private ResponseSequenceServer responseServer_v6 = null;
     private ResponseSequenceServer responseServer_v4 = null;
 
-    private TransportAddress responseServerAddress_v6
+    private final TransportAddress responseServerAddress_v6
         = new TransportAddress("::1", 21999, Transport.UDP);
-    private TransportAddress responseServerAddress_v4
+    private final TransportAddress responseServerAddress_v4
         = new TransportAddress("127.0.0.1", 21999, Transport.UDP);
 
-    private TransportAddress mappedClientAddress_v6 = new TransportAddress(
+    private final TransportAddress mappedClientAddress_v6 = new TransportAddress(
                     "2001:660:4701:1001:ff::1", 17612, Transport.UDP);
-    private TransportAddress mappedClientAddress_v6_Port2
+    private final TransportAddress mappedClientAddress_v6_Port2
         = new TransportAddress(
                         "2001:660:4701:1001:ff::1", 17611, Transport.UDP);
 
-    private TransportAddress mappedClientAddress_v4
+    private final TransportAddress mappedClientAddress_v4
         = new TransportAddress("130.79.99.55", 17612, Transport.UDP);
-    private TransportAddress mappedClientAddress_v4_Port2
+    private final TransportAddress mappedClientAddress_v4_Port2
         = new TransportAddress("130.79.99.55", 17611, Transport.UDP);
 
-    public StunAddressDiscovererTest_v4v6(String name)
-        throws StunException
-    {
-        super(name);
-    }
-
-    protected void setUp()
+    @BeforeEach
+    public void setUp()
         throws Exception
     {
-        super.setUp();
-
         StunStack stunStack = new StunStack();
 
         responseServer_v6
@@ -105,7 +98,8 @@ public class StunAddressDiscovererTest_v4v6 extends TestCase
         System.setProperty(StackProperties.MAX_CTRAN_RETRANSMISSIONS, "2");
     }
 
-    protected void tearDown()
+    @AfterEach
+    public void tearDown()
         throws Exception
     {
         System.clearProperty(StackProperties.MAX_CTRAN_RETRANS_TIMER);
@@ -120,8 +114,6 @@ public class StunAddressDiscovererTest_v4v6 extends TestCase
 
         //give the sockets the time to clear out
         Thread.sleep(1000);
-
-        super.tearDown();
     }
 
     /**
@@ -129,6 +121,7 @@ public class StunAddressDiscovererTest_v4v6 extends TestCase
      * it concludes it is behind a Symmetric NAT.
      * @throws Exception if anything goes wrong ( surprised? ).
      */
+    @Test
     public void testRecognizeSymmetricNat_Local_v6_Public_v4()
         throws Exception
     {
@@ -155,9 +148,8 @@ public class StunAddressDiscovererTest_v4v6 extends TestCase
 
         StunDiscoveryReport actualReturn
             = stunAddressDiscoverer_v6.determineAddress();
-        assertEquals("The StunAddressDiscoverer failed for a v4-v6 sym env.",
-                     expectedReturn, actualReturn);
-
+        assertEquals(expectedReturn, actualReturn,
+            "The StunAddressDiscoverer failed for a v4-v6 sym env.");
     }
 
     /**
@@ -165,6 +157,7 @@ public class StunAddressDiscovererTest_v4v6 extends TestCase
      * it concludes it is behind a Symmetric NAT.
      * @throws Exception if anything goes wrong ( surprised? ).
      */
+    @Test
     public void testRecognizeSymmetricNat_Local_v4_Public_v6() throws Exception
     {
         //define the server response sequence
@@ -190,11 +183,8 @@ public class StunAddressDiscovererTest_v4v6 extends TestCase
 
         StunDiscoveryReport actualReturn
             = stunAddressDiscoverer_v4.determineAddress();
-        assertEquals(
-            "The StunAddressDiscoverer failed for a no-udp environment.",
-            expectedReturn,
-            actualReturn);
-
+        assertEquals(expectedReturn, actualReturn,
+            "The StunAddressDiscoverer failed for a no-udp environment.");
     }
 
     /**
@@ -202,6 +192,7 @@ public class StunAddressDiscovererTest_v4v6 extends TestCase
      * it concludes it is behind a Full Cone.
      * @throws Exception if anything goes wrong ( surprised? ).
      */
+    @Test
     public void testRecognizeFullCone_Local_v6_Public_v4() throws Exception
     {
         //define the server response sequence
@@ -224,10 +215,8 @@ public class StunAddressDiscovererTest_v4v6 extends TestCase
 
         StunDiscoveryReport actualReturn = stunAddressDiscoverer_v6.
             determineAddress();
-        assertEquals(
-            "The StunAddressDiscoverer failed for a no-udp environment.",
-            expectedReturn, actualReturn);
-
+        assertEquals(expectedReturn, actualReturn,
+            "The StunAddressDiscoverer failed for a no-udp environment.");
     }
 
     /**
@@ -235,6 +224,7 @@ public class StunAddressDiscovererTest_v4v6 extends TestCase
      * it concludes it is behind a Full Cone.
      * @throws Exception if anything goes wrong ( surprised? ).
      */
+    @Test
     public void testRecognizeFullCone_Local_v4_Public_v6() throws Exception
     {
         //define the server response sequence
@@ -257,9 +247,7 @@ public class StunAddressDiscovererTest_v4v6 extends TestCase
 
         StunDiscoveryReport actualReturn = stunAddressDiscoverer_v4.
             determineAddress();
-        assertEquals(
-            "The StunAddressDiscoverer failed for a no-udp environment.",
-            expectedReturn, actualReturn);
-
+        assertEquals(expectedReturn, actualReturn,
+            "The StunAddressDiscoverer failed for a no-udp environment.");
     }
 }

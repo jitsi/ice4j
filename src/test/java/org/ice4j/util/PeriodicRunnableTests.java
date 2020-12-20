@@ -1,9 +1,10 @@
 package org.ice4j.util;
 
-import org.junit.*;
+import static org.junit.jupiter.api.Assertions.*;
 
 import java.time.*;
 import java.util.concurrent.*;
+import org.junit.jupiter.api.*;
 
 /**
  * Test various aspects of {@link PeriodicRunnable} implementation.
@@ -31,7 +32,7 @@ public class PeriodicRunnableTests
         // Give 20 extra milliseconds to avoid possible failures due to
         // slight timer inaccuracy
         latch.await(1020, TimeUnit.MILLISECONDS);
-        Assert.assertEquals(0, latch.getCount());
+        assertEquals(0, latch.getCount());
 
         scheduledRunnable.cancel();
         executor.shutdownNow();
@@ -55,7 +56,7 @@ public class PeriodicRunnableTests
         scheduledRunnable.schedule();
 
         latch.await(1000, TimeUnit.MILLISECONDS);
-        Assert.assertEquals(1, latch.getCount());
+        assertEquals(1, latch.getCount());
 
         scheduledRunnable.cancel();
         executor.shutdownNow();
@@ -89,7 +90,7 @@ public class PeriodicRunnableTests
         scheduledRunnable.schedule();
 
         latch.await(1000, TimeUnit.MILLISECONDS);
-        Assert.assertEquals(1, latch.getCount());
+        assertEquals(1, latch.getCount());
 
         scheduledRunnable.cancel();
         executor.shutdownNow();
@@ -114,13 +115,13 @@ public class PeriodicRunnableTests
         latch.await(520, TimeUnit.MILLISECONDS);
 
         // Check runnable executed once
-        Assert.assertEquals(1, latch.getCount());
+        assertEquals(1, latch.getCount());
 
         scheduledRunnable.cancel();
 
         latch.await(1000, TimeUnit.MILLISECONDS);
         // Check runnable was not executed after cancel.
-        Assert.assertEquals(1, latch.getCount());
+        assertEquals(1, latch.getCount());
 
         scheduledRunnable.cancel();
         executor.shutdownNow();
@@ -145,18 +146,18 @@ public class PeriodicRunnableTests
         latch.await(220, TimeUnit.MILLISECONDS);
 
         // Check runnable executed once
-        Assert.assertEquals(4, latch.getCount());
+        assertEquals(4, latch.getCount());
 
         scheduledRunnable.cancel();
 
         latch.await(1000, TimeUnit.MILLISECONDS);
         // Check runnable was not executed after cancel.
-        Assert.assertEquals(4, latch.getCount());
+        assertEquals(4, latch.getCount());
 
         // Schedule again
         scheduledRunnable.schedule();
         latch.await(1000, TimeUnit.MILLISECONDS);
-        Assert.assertEquals(0, latch.getCount());
+        assertEquals(0, latch.getCount());
 
         scheduledRunnable.cancel();
         executor.shutdownNow();

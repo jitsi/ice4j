@@ -17,28 +17,23 @@
  */
 package org.ice4j.attribute;
 
+
 import org.ice4j.*;
 
-import junit.framework.*;
+import static org.junit.jupiter.api.Assertions.*;
 
+import org.junit.jupiter.api.*;
 /**
  * We have already tested individual decode methods, so our job here
  * is to verify that that AttributeDecoder.decode distributes the right way.
  */
-public class AttributeDecoderTest extends TestCase
-{
+public class AttributeDecoderTest {
     private MsgFixture msgFixture;
     private byte[] expectedAttributeValue = null;
 
-    public AttributeDecoderTest(String name)
+    @BeforeEach
+    public void setUp() throws Exception
     {
-        super(name);
-    }
-
-    protected void setUp() throws Exception
-    {
-        super.setUp();
-
         msgFixture = new MsgFixture();
 
         //init a sample body
@@ -48,18 +43,15 @@ public class AttributeDecoderTest extends TestCase
         System.arraycopy(msgFixture.unknownOptionalAttribute, offset,
                          expectedAttributeValue, 0,
                          expectedAttributeValue.length);
-
-        msgFixture.setUp();
     }
 
-    protected void tearDown() throws Exception
+    @AfterEach
+    public void tearDown() throws Exception
     {
-        msgFixture.tearDown();
-
         msgFixture = null;
-        super.tearDown();
     }
 
+    @Test
     public void testDecodeMappedAddress()
         throws Exception
     {
@@ -79,11 +71,11 @@ public class AttributeDecoderTest extends TestCase
         Attribute actualReturn = AttributeDecoder.decode(
                         bytes, offset, length);
 
-        assertEquals(
-            "AttributeDecoder.decode() failed for a MAPPED-ADDRESS attribute",
-            expectedReturn, actualReturn);
+        assertEquals(expectedReturn, actualReturn,
+            "AttributeDecoder.decode() failed for a MAPPED-ADDRESS attribute");
     }
 
+    @Test
     public void testDecodeMappedAddress_v6()
         throws Exception
     {
@@ -104,10 +96,12 @@ public class AttributeDecoderTest extends TestCase
                         bytes, offset, length);
 
         assertEquals(
-            "AttributeDecoder.decode() failed for a MAPPED-ADDRESS attribute",
-            expectedReturn, actualReturn);
+            expectedReturn, actualReturn,
+            "AttributeDecoder.decode() failed for a MAPPED-ADDRESS attribute"
+            );
     }
 
+    @Test
     public void testDecodeChangeRequest()
         throws Exception
     {
@@ -123,12 +117,13 @@ public class AttributeDecoderTest extends TestCase
 
         Attribute actualReturn = AttributeDecoder.decode(
                         bytes, offset, length);
-        assertEquals("AttributeDecoder.decode() failed for a CHANGE-REQUEST attribute",
-                     expectedReturn, actualReturn);
-
+        assertEquals(expectedReturn, actualReturn,
+            "AttributeDecoder.decode() failed for a CHANGE-REQUEST attribute"
+        );
     }
 
-   public void testDecodeErrorCode()
+    @Test
+    public void testDecodeErrorCode()
        throws Exception
    {
        //
@@ -144,13 +139,12 @@ public class AttributeDecoderTest extends TestCase
 
        Attribute actualReturn = AttributeDecoder.decode(
                        bytes, offset, length);
-       assertEquals(
-                "AttributeDecoder.decode() failed for a ERROR-CODE attribute",
-                expectedReturn, actualReturn);
-
+       assertEquals(expectedReturn, actualReturn,
+           "AttributeDecoder.decode() failed for a ERROR-CODE attribute");
    }
 
-   public void testDecodeUnknownAttributes()
+    @Test
+    public void testDecodeUnknownAttributes()
        throws Exception
    {
        //unknown attributes
@@ -168,13 +162,12 @@ public class AttributeDecoderTest extends TestCase
        Attribute actualReturn = AttributeDecoder.decode(
                        bytes, offset, length);
 
-       assertEquals(
-              "AttributeDecoder.decode() failed for a ERROR-CODE attribute",
-                    expectedReturn, actualReturn);
-
+       assertEquals(expectedReturn, actualReturn,
+              "AttributeDecoder.decode() failed for a ERROR-CODE attribute");
    }
 
-   public void testDecodeUnknownOptionalAttribute()
+    @Test
+    public void testDecodeUnknownOptionalAttribute()
        throws Exception
    {
        //unknown attributes
@@ -190,9 +183,8 @@ public class AttributeDecoderTest extends TestCase
 
        Attribute actualReturn = AttributeDecoder.decode(
                        bytes, offset, length);
-       assertEquals(
-           "AttributeDecoder.decode() failed for a UNKNOWN_OPTIONAL attribute",
-           expectedReturn, actualReturn);
+       assertEquals(expectedReturn, actualReturn,
+           "AttributeDecoder.decode() failed for a UNKNOWN_OPTIONAL attribute");
 
    }
 }

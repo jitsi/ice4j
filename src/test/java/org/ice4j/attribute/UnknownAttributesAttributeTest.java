@@ -17,58 +17,49 @@
  */
 package org.ice4j.attribute;
 
-import junit.framework.*;
+import static org.junit.jupiter.api.Assertions.*;
 
 import java.util.*;
 
 import org.ice4j.*;
-
+import org.junit.jupiter.api.*;
 /**
  * Tests the UNKNOWN attribute class.
  *
  * @author Emil Ivov
  */
-public class UnknownAttributesAttributeTest extends TestCase
+public class UnknownAttributesAttributeTest
 {
     private UnknownAttributesAttribute unknownAttributesAttribute = null;
     private MsgFixture binMessagesFixture;
 
-    public UnknownAttributesAttributeTest(String name)
+    @BeforeEach
+    public void setUp() throws Exception
     {
-        super(name);
-    }
-
-    protected void setUp() throws Exception
-    {
-        super.setUp();
         unknownAttributesAttribute = new UnknownAttributesAttribute();
         binMessagesFixture = new MsgFixture();
-
-        binMessagesFixture.setUp();
     }
 
-    protected void tearDown() throws Exception
+    @AfterEach
+    public void tearDown() throws Exception
     {
         unknownAttributesAttribute = null;
-        binMessagesFixture.tearDown();
-
         binMessagesFixture = null;
-        super.tearDown();
     }
 //-------------------------------- TESTS ---------------------------------------
     /**
      * Verify the the constructed object has the correct (UNKNOWN-ATTRIBUTES)
      * type.
      */
+    @Test
     public void testUnknownAttributesAttribute()
     {
         unknownAttributesAttribute = new UnknownAttributesAttribute();
-
-        assertEquals("UnknownAttributesAttribute() did not properly set the "
-                   +"Attribute's type field!",
-                   (int)Attribute.UNKNOWN_ATTRIBUTES,
-                   (int)unknownAttributesAttribute.getAttributeType()
-                   );
+        assertEquals(
+            Attribute.UNKNOWN_ATTRIBUTES,
+            (int) unknownAttributesAttribute.getAttributeType(),
+            "UnknownAttributesAttribute() did not properly set the Attribute's type field!"
+        );
     }
 
     /**
@@ -76,37 +67,40 @@ public class UnknownAttributesAttributeTest extends TestCase
      * and that a second addition of the same id would not augment the attribute
      * count.
      */
+    @Test
     public void testAddAttributeID()
     {
         char attributeID = 0x22; // unknown attribute id
 
         unknownAttributesAttribute.addAttributeID(attributeID);
 
-        assertEquals("addAttributeID does not seem to properly add the attribute ID",
-                    (int)attributeID,
-                    (int)unknownAttributesAttribute.getAttribute(0)
-                    );
+        assertEquals(
+            (int) attributeID,
+            (int) unknownAttributesAttribute.getAttribute(0),
+            "addAttributeID does not seem to properly add the attribute ID"
+        );
 
-        assertEquals("addAttributeID does not seem to properly add the attribute ID",
-                     1,
-                     unknownAttributesAttribute.getAttributeCount()
-                     );
+        assertEquals(
+            1,
+            unknownAttributesAttribute.getAttributeCount(),
+            "addAttributeID does not seem to properly add the attribute ID"
+        );
 
         //add a second one
         unknownAttributesAttribute.addAttributeID(attributeID);
 
-        assertEquals("Adding a 2nd time the same attributeID should not change "
-                     +"the number of attributes",
-                     1,
-                     unknownAttributesAttribute.getAttributeCount()
-                     );
-
+        assertEquals(
+            1,
+            unknownAttributesAttribute.getAttributeCount(),
+            "Adding a 2nd time the same attributeID should not change the number of attributes"
+        );
     }
 
     /**
      * Tests whether a sample binary array is properly decoded.
      * @throws StunException if anything goes wrong.
      */
+    @Test
     public void testDecodeAttributeBody() throws StunException
     {
         //a copy of the array in the fixture:
@@ -118,37 +112,44 @@ public class UnknownAttributesAttributeTest extends TestCase
                                                - Attribute.HEADER_LENGTH));
         //is every one there?
         assertTrue(
-            "The " + (int)MsgFixture.UNKNOWN_ATTRIBUTES_1ST_ATT +" attribute id "
-            + "was not found after decoding a binary array that contained it.",
             unknownAttributesAttribute.contains(
-                                MsgFixture.UNKNOWN_ATTRIBUTES_1ST_ATT));
+                MsgFixture.UNKNOWN_ATTRIBUTES_1ST_ATT),
+            "The " + (int) MsgFixture.UNKNOWN_ATTRIBUTES_1ST_ATT
+                + " attribute id "
+                + "was not found after decoding a binary array that contained it."
+        );
 
         assertTrue(
-            "The " + (int)MsgFixture.UNKNOWN_ATTRIBUTES_2ND_ATT +" attribute id "
-            + "was not found after decoding a binary array that contained it.",
             unknownAttributesAttribute.contains(
-                                MsgFixture.UNKNOWN_ATTRIBUTES_2ND_ATT));
+                MsgFixture.UNKNOWN_ATTRIBUTES_2ND_ATT),
+            "The " + (int) MsgFixture.UNKNOWN_ATTRIBUTES_2ND_ATT
+                + " attribute id "
+                + "was not found after decoding a binary array that contained it."
+        );
         assertTrue(
-            "The " + (int)MsgFixture.UNKNOWN_ATTRIBUTES_3D_ATT +" attribute id "
-            + "was not found after decoding a binary array that contained it.",
             unknownAttributesAttribute.contains(
-                                MsgFixture.UNKNOWN_ATTRIBUTES_3D_ATT));
+                MsgFixture.UNKNOWN_ATTRIBUTES_3D_ATT),
+            "The " + (int) MsgFixture.UNKNOWN_ATTRIBUTES_3D_ATT
+                + " attribute id "
+                + "was not found after decoding a binary array that contained it."
+            );
 
-
-        assertEquals("The decoded attribute contained "
-                   + unknownAttributesAttribute.getAttributeCount()
-                   + " attribute ids when there were only "
-                   + (int)MsgFixture.UNKNOWN_ATTRIBUTES_CNT_DEC_TST
-                   + " in the original binary array.",
-                   MsgFixture.UNKNOWN_ATTRIBUTES_CNT_DEC_TST,
-                   unknownAttributesAttribute.getAttributeCount()
-                   );
+        assertEquals(
+            MsgFixture.UNKNOWN_ATTRIBUTES_CNT_DEC_TST,
+            unknownAttributesAttribute.getAttributeCount(),
+            "The decoded attribute contained "
+                + unknownAttributesAttribute.getAttributeCount()
+                + " attribute ids when there were only "
+                + (int) MsgFixture.UNKNOWN_ATTRIBUTES_CNT_DEC_TST
+                + " in the original binary array."
+        );
     }
 
     /**
      * Creates a new UnknownAttributesAttribute encodes it and assert equality
      * with binMessagesFixture.unknownAttsEncodeExpectedResult.
      */
+    @Test
     public void testEncode()
     {
         byte[] expectedReturn = binMessagesFixture.unknownAttsEncodeExpectedResult;
@@ -158,46 +159,36 @@ public class UnknownAttributesAttributeTest extends TestCase
         unknownAttributesAttribute.addAttributeID(
             MsgFixture.UNKNOWN_ATTRIBUTES_2ND_ATT);
 
-
-
         byte[] actualReturn = unknownAttributesAttribute.encode();
-        assertTrue("UnknownAttributesAttribute did not encode properly.",
-                   Arrays.equals(actualReturn, expectedReturn));
+        assertArrayEquals(actualReturn, expectedReturn);
     }
 
     /**
      * Tests the equals method against a null, a different and an identical
      * object.
      */
+    @Test
     public void testEquals()
     {
         UnknownAttributesAttribute target = new UnknownAttributesAttribute();
 
-        boolean expectedReturn = false;
-        boolean actualReturn = unknownAttributesAttribute.equals(null);
-        assertEquals("Equals failed for a null object",
-                     expectedReturn, actualReturn);
+        assertNotEquals(unknownAttributesAttribute, null);
 
         unknownAttributesAttribute.addAttributeID((char)25);
         target.addAttributeID((char)25);
 
         unknownAttributesAttribute.addAttributeID((char)26);
-        actualReturn = unknownAttributesAttribute.equals(target);
-        assertEquals("Equals failed when comparing different objects.",
-                     expectedReturn, actualReturn);
+        assertNotEquals(unknownAttributesAttribute, target);
 
         target.addAttributeID((char)26);
-        expectedReturn = true;
-        actualReturn = unknownAttributesAttribute.equals(target);
-        assertEquals("Equals failed to recognize identical objects.",
-                     expectedReturn, actualReturn);
-
+        assertEquals(unknownAttributesAttribute, target);
     }
 
     /**
      * Tests that getAttribute() return the correct attribute id, preserving
      * entry order.
      */
+    @Test
     public void testGetAttribute()
     {
         char expectedId1 = 20;
@@ -212,14 +203,15 @@ public class UnknownAttributesAttributeTest extends TestCase
         actualId1 = unknownAttributesAttribute.getAttribute(0);
         actualId2 = unknownAttributesAttribute.getAttribute(1);
 
-        assertEquals("getAttribute() return value mismatch", expectedId1, actualId1);
-        assertEquals("getAttribute() return value mismatch", expectedId2, actualId2);
+        assertEquals(expectedId1, actualId1, "getAttribute() return value mismatch");
+        assertEquals(expectedId2, actualId2, "getAttribute() return value mismatch");
     }
 
     /**
      * Add some attributes and test whether their number is properly calculated.
      * Tests duplicate id handling as well.
      */
+    @Test
     public void testGetAttributeCount()
     {
         int expectedReturn = 5;
@@ -232,14 +224,15 @@ public class UnknownAttributesAttributeTest extends TestCase
         unknownAttributesAttribute.addAttributeID((char)25);//duplicate values should be ignored
 
         int actualReturn = unknownAttributesAttribute.getAttributeCount();
-        assertEquals("getAttributeCount did not return the expected value",
-                     expectedReturn, actualReturn);
+        assertEquals(expectedReturn, actualReturn,
+            "getAttributeCount did not return the expected value");
     }
 
     /**
      * Same as testGetAttributeID, only attribute attributes are extracted
      * through the getAttributes()'s iterator.
      */
+    @Test
     public void testGetAttributes()
     {
         char expectedId1 = 20;
@@ -256,10 +249,8 @@ public class UnknownAttributesAttributeTest extends TestCase
         actualId1 = iterator.next();
         actualId2 = iterator.next();
 
-        assertEquals("getAttributes() return value mismatch", expectedId1, actualId1);
-        assertEquals("getAttributes() return value mismatch", expectedId2, actualId2);
-
-
+        assertEquals(expectedId1, actualId1, "getAttributes() return value mismatch");
+        assertEquals(expectedId2, actualId2, "getAttributes() return value mismatch");
     }
 
     /**
@@ -267,6 +258,7 @@ public class UnknownAttributesAttributeTest extends TestCase
      * Test is first performed for an odd number of attributes and then again
      * (after adding another attribute id). Both results should be the same.
      */
+    @Test
     public void testGetDataLength()
     {
         char expectedReturn = 8;
@@ -276,25 +268,23 @@ public class UnknownAttributesAttributeTest extends TestCase
         unknownAttributesAttribute.addAttributeID((char)22);
 
         char actualReturn = unknownAttributesAttribute.getDataLength();
-        assertEquals("Incorrect testGetDataLength() return value",
-                     expectedReturn, actualReturn);
+        assertEquals(expectedReturn, actualReturn,
+            "Incorrect testGetDataLength() return value");
 
         unknownAttributesAttribute.addAttributeID((char)23);
 
         actualReturn = unknownAttributesAttribute.getDataLength();
-        assertEquals("Incorrect testGetDataLength() return value",
-                     expectedReturn, actualReturn);
+        assertEquals(expectedReturn, actualReturn,
+            "Incorrect testGetDataLength() return value");
 
     }
 
     /**
      * Tests whether getName returns a relevant name.
      */
+    @Test
     public void testGetName()
     {
-        String expectedReturn = "UNKNOWN-ATTRIBUTES";
-        String actualReturn = unknownAttributesAttribute.getName();
-        assertEquals("getName() return", expectedReturn, actualReturn);
+        assertEquals("UNKNOWN-ATTRIBUTES", unknownAttributesAttribute.getName());
     }
-
 }

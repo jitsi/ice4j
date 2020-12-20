@@ -17,25 +17,22 @@
  */
 package org.ice4j.attribute;
 
-import junit.framework.*;
-
-import java.util.Arrays;
+import static org.junit.jupiter.api.Assertions.*;
 
 import org.ice4j.*;
-
+import org.junit.jupiter.api.*;
 /**
  * @author Emil Ivov
  */
-public class OptionalAttributeAttributeTest extends TestCase
+public class OptionalAttributeAttributeTest
 {
     private OptionalAttribute optionalAttribute = null;
     private MsgFixture msgFixture = null;
     byte[] expectedAttributeValue = null;
 
-    protected void setUp() throws Exception
+    @BeforeEach
+    public void setUp() throws Exception
     {
-        super.setUp();
-
         msgFixture = new MsgFixture();
         int offset = Attribute.HEADER_LENGTH;
 
@@ -51,17 +48,18 @@ public class OptionalAttributeAttributeTest extends TestCase
                                         msgFixture.optionalAttributeType);
     }
 
-    protected void tearDown() throws Exception
+    @AfterEach
+    public void tearDown() throws Exception
     {
         optionalAttribute = null;
         expectedAttributeValue = null;
-        super.tearDown();
     }
 
     /**
      * Test whether sample binary arrays are correctly decoded.
      * @throws StunException if anything goes wrong.
      */
+    @Test
     public void testDecodeAttributeBody() throws StunException {
 
         char offset = Attribute.HEADER_LENGTH;
@@ -70,60 +68,52 @@ public class OptionalAttributeAttributeTest extends TestCase
         optionalAttribute.decodeAttributeBody(msgFixture.unknownOptionalAttribute,
                                               offset, length);
 
+        assertArrayEquals(
+            expectedAttributeValue, optionalAttribute.getBody(),
+            "OptionalAttribute did not decode properly.");
 
-        assertTrue("OptionalAttribute did not decode properly.",
-                     Arrays.equals( expectedAttributeValue,
-                                    optionalAttribute.getBody()));
-
-        assertEquals("Lenght was not properly decoded", length,
-                     optionalAttribute.getDataLength());
-
+        assertEquals(length, optionalAttribute.getDataLength(),
+            "Length was not properly decoded");
     }
 
     /**
      * Test whether attributes are properly encoded
      */
+    @Test
     public void testEncode()
     {
         optionalAttribute.setBody(expectedAttributeValue, 0,
                                   expectedAttributeValue.length);
 
         byte[] actualReturn = optionalAttribute.encode();
-
-        assertTrue("encode failed",
-                  Arrays.equals( msgFixture.unknownOptionalAttribute, actualReturn) );
+        assertArrayEquals(msgFixture.unknownOptionalAttribute, actualReturn);
     }
 
     /**
      * Test whether the equals method works ok
      */
+    @Test
     public void testEquals()
     {
         //null comparison
-        Object obj = null;
-        boolean expectedReturn = false;
         optionalAttribute.setBody( expectedAttributeValue, 0,
                                    expectedAttributeValue.length);
 
-        boolean actualReturn = optionalAttribute.equals(obj);
-        assertEquals("failed null comparison", expectedReturn, actualReturn);
+        assertNotEquals(optionalAttribute, null);
 
         //wrong type comparison
-        obj = "hehe :)";
-        actualReturn = optionalAttribute.equals(obj);
-        assertEquals("failed wrong type comparison", expectedReturn,
-                     actualReturn);
+        assertNotEquals(optionalAttribute, "hehe :)");
 
         //succesful comparison
-        obj = new OptionalAttribute(msgFixture.optionalAttributeType);
+        OptionalAttribute obj =
+            new OptionalAttribute(msgFixture.optionalAttributeType);
 
-        ((OptionalAttribute)obj).setBody( expectedAttributeValue, 0,
+        obj.setBody( expectedAttributeValue, 0,
                                           expectedAttributeValue.length);
-        expectedReturn = true;
-        actualReturn = optionalAttribute.equals(obj);
-        assertEquals("failed null comparison", expectedReturn, actualReturn);
+        assertEquals(obj, optionalAttribute);
     }
 
+    @Test
     public void testGetDataLength()
     {
         char expectedReturn = (char)expectedAttributeValue.length;
@@ -132,7 +122,7 @@ public class OptionalAttributeAttributeTest extends TestCase
                                    expectedAttributeValue.length);
 
         char actualReturn = optionalAttribute.getDataLength();
-        assertEquals("return value", expectedReturn, actualReturn);
+        assertEquals(expectedReturn, actualReturn);
     }
 
 }

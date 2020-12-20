@@ -21,7 +21,10 @@ import java.io.*;
 import java.util.*;
 import java.util.logging.*;
 
+import static org.junit.jupiter.api.Assertions.*;
+
 import org.ice4j.pseudotcp.util.*;
+import org.junit.jupiter.api.*;
 
 /**
  * Fill the receiver window until it is full, drain it and then fill it with the
@@ -62,7 +65,7 @@ public class PseudoTcpTestRecvWindow extends PseudoTcpTestBase
      */
     private int testDataSize;
 
-    public void doTestTransfer(int size)
+    private void doTestTransfer(int size)
     {
         Thread.setDefaultUncaughtExceptionHandler(this);
         testDataSize = size;
@@ -94,15 +97,14 @@ public class PseudoTcpTestRecvWindow extends PseudoTcpTestBase
         scheduleWriteAction(0);
 
         long transferTout = maxTransferTime(dummy.length, kMinTransferRate);
-        boolean transfferInTime = assert_Disconnected_wait(transferTout);
+        boolean transferInTime = assert_Disconnected_wait(transferTout);
         elapsed = PseudoTCPBase.now() - start;
         stopClocks();
         int received = recv_stream.getBuffered();
-        assertEquals("Transfer timeout, transferred: " + received
+        assertTrue(transferInTime, "Transfer timeout, transferred: " + received
             + " required: " + dummy.length
             + " elapsed: "
-            + elapsed + " limit: " + transferTout,
-                     true, transfferInTime);
+            + elapsed + " limit: " + transferTout);
 
         assert 2 == send_position.size();
         assert 2 == recv_position.size();
@@ -141,7 +143,6 @@ public class PseudoTcpTestRecvWindow extends PseudoTcpTestBase
      *
 
      *
-     * @param scaleFactor
      * @return count bytes shadowed by scale actor
      */
     static int getShadowedBytes(int scaleFactor)
@@ -151,8 +152,6 @@ public class PseudoTcpTestRecvWindow extends PseudoTcpTestBase
 
     /**
      * Reads all data available at the buffer
-     *
-     * @throws IOException
      */
     void readUntilIOPending() throws IOException
     {
@@ -186,8 +185,6 @@ public class PseudoTcpTestRecvWindow extends PseudoTcpTestBase
 
     /**
      * Schedules write operation with <tt>delay</tt> given in ms
-     *
-     * @param delay
      */
     void scheduleWriteAction(long delay)
     {
@@ -212,8 +209,6 @@ public class PseudoTcpTestRecvWindow extends PseudoTcpTestBase
 
     /**
      * Writes the data
-     *
-     * @throws IOException
      */
     void writeData() throws IOException
     {
@@ -336,6 +331,7 @@ public class PseudoTcpTestRecvWindow extends PseudoTcpTestBase
         return getRemoteTcp().getM_rwnd_scale();
     }
 
+    @Test
     public void testGetShadowedBytes()
     {
         assert (PseudoTcpTestRecvWindow.getShadowedBytes(0) == 0);
@@ -350,6 +346,7 @@ public class PseudoTcpTestRecvWindow extends PseudoTcpTestBase
     /**
      * Test that receive window expands and contract correctly.
      */
+    @Test
     public void testReceiveWindow()
     {
         //logger.log(Level.INFO, "Test receive window");
@@ -364,6 +361,7 @@ public class PseudoTcpTestRecvWindow extends PseudoTcpTestBase
     /**
      * Test setting send window size to a very small value.
      */
+    @Test
     public void testSetVerySmallSendWindowSize()
     {
         //TODO: finish test
@@ -381,6 +379,7 @@ public class PseudoTcpTestRecvWindow extends PseudoTcpTestBase
     /**
      * Test setting receive window size to a value other than default.
      */
+    @Test
     public void testSetReceiveWindowSize()
     {
         //logger.log(Level.INFO, "Test set receive window size");

@@ -17,19 +17,16 @@
  */
 package org.ice4j.attribute;
 
-import junit.framework.*;
-
-import java.util.*;
+import static org.junit.jupiter.api.Assertions.*;
 
 import org.ice4j.*;
-
+import org.junit.jupiter.api.*;
 /**
  * Tests the software attribute class.
  *
  * @author Emil Ivov
  */
-public class SoftwareAttributeTest extends TestCase
-{
+public class SoftwareAttributeTest {
     private SoftwareAttribute softwareAttribute = null;
     MsgFixture msgFixture = null;
     String softwareValue = "turnserver.org";
@@ -40,30 +37,27 @@ public class SoftwareAttributeTest extends TestCase
             't', 'u', 'r', 'n', 's', 'e', 'r','v', 'e', 'r', '.', 'o', 'r', 'g',
             0x00, 0x00};
 
-    protected void setUp() throws Exception
+    @BeforeEach
+    public void setUp() throws Exception
     {
-        super.setUp();
         msgFixture = new MsgFixture();
 
         softwareAttribute = new SoftwareAttribute();
         softwareAttribute.setSoftware(softwareValue.getBytes());
-
-        msgFixture.setUp();
     }
 
-    protected void tearDown() throws Exception
+    @AfterEach
+    public void tearDown() throws Exception
     {
         softwareAttribute = null;
-        msgFixture.tearDown();
-
         msgFixture = null;
-        super.tearDown();
     }
 
     /**
      * Tests decoding of the software attribute.
      * @throws StunException upon a failure
      */
+    @Test
     public void testDecodeAttributeBody() throws StunException
     {
         char offset = 0;
@@ -72,63 +66,62 @@ public class SoftwareAttributeTest extends TestCase
         decoded.decodeAttributeBody(softwareValue.getBytes(), offset, length);
 
         //software value
-        assertEquals( "decode failed", softwareAttribute, decoded);
+        assertEquals(softwareAttribute, decoded);
     }
 
     /**
      * Tests the encode method
      */
+    @Test
     public void testEncode()
     {
-        assertTrue("encode failed",
-                   Arrays.equals(softwareAttribute.encode(),
-                                 attributeBinValue));
+        assertArrayEquals(softwareAttribute.encode(), attributeBinValue);
     }
 
     /**
      * Test Equals
      */
+    @Test
     public void testEquals()
     {
         SoftwareAttribute softwareAttribute2 = new SoftwareAttribute();
         softwareAttribute2.setSoftware(softwareValue.getBytes());
 
         //test positive equals
-        assertEquals("testequals failed", softwareAttribute, softwareAttribute2);
+        assertEquals(softwareAttribute, softwareAttribute2);
 
         //test negative equals
         softwareAttribute2 = new SoftwareAttribute();
         softwareAttribute2.setSoftware("some other software".getBytes());
 
         //test positive equals
-        assertFalse("testequals failed",
-                    softwareAttribute.equals(softwareAttribute2));
+        assertNotEquals(softwareAttribute2, softwareAttribute);
 
         //test null equals
-        assertFalse("testequals failed",
-                    softwareAttribute.equals(null));
+        assertNotEquals(softwareAttribute, null);
     }
 
     /**
      * Tests extracting data length
      */
+    @Test
     public void testGetDataLength()
     {
         char expectedReturn = (char)softwareValue.length();
         char actualReturn = softwareAttribute.getDataLength();
-        assertEquals("getDataLength - failed", expectedReturn, actualReturn);
+        assertEquals(expectedReturn, actualReturn);
     }
 
     /**
      * Tests getting the name
      */
+    @Test
     public void testGetName()
     {
-        String expectedReturn = "SOFTWARE";
-        String actualReturn = softwareAttribute.getName();
-        assertEquals("getting name failed", expectedReturn, actualReturn);
+        assertEquals("SOFTWARE", softwareAttribute.getName());
     }
 
+    @Test
     public void testSetGetSoftware()
     {
         byte[] expectedReturn = softwareValue.getBytes();
@@ -137,8 +130,7 @@ public class SoftwareAttributeTest extends TestCase
         att.setSoftware(expectedReturn);
 
         byte[] actualReturn = att.getSoftware();
-        assertTrue("software setter or getter failed",
-                     Arrays.equals( expectedReturn,
-                                    actualReturn));
+        assertArrayEquals(expectedReturn, actualReturn,
+            "software setter or getter failed");
     }
 }

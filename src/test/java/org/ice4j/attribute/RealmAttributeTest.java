@@ -17,19 +17,17 @@
  */
 package org.ice4j.attribute;
 
-import junit.framework.*;
-
-import java.util.*;
+import static org.junit.jupiter.api.Assertions.*;
 
 import org.ice4j.*;
-
+import org.junit.jupiter.api.*;
 /**
  * Tests the realm attribute class.
  *
  * @author Emil Ivov
  * @author Sebastien Vincent
  */
-public class RealmAttributeTest extends TestCase
+public class RealmAttributeTest
 {
     private RealmAttribute realmAttribute = null;
     MsgFixture msgFixture = null;
@@ -40,30 +38,27 @@ public class RealmAttributeTest extends TestCase
             0, (byte)realmValue.length(),
             'd', 'o', 'm', 'a', 'i', 'n', '.', 'o', 'r', 'g', 0x00, 0x00};
 
-    protected void setUp() throws Exception
+    @BeforeEach
+    public void setUp() throws Exception
     {
-        super.setUp();
         msgFixture = new MsgFixture();
 
         realmAttribute = new RealmAttribute();
         realmAttribute.setRealm(realmValue.getBytes());
-
-        msgFixture.setUp();
     }
 
-    protected void tearDown() throws Exception
+    @AfterEach
+    public void tearDown() throws Exception
     {
         realmAttribute = null;
-        msgFixture.tearDown();
-
         msgFixture = null;
-        super.tearDown();
     }
 
     /**
      * Tests decoding of the realm attribute.
      * @throws StunException upon a failure
      */
+    @Test
     public void testDecodeAttributeBody() throws StunException
     {
         char offset = 0;
@@ -72,63 +67,62 @@ public class RealmAttributeTest extends TestCase
         decoded.decodeAttributeBody(realmValue.getBytes(), offset, length);
 
         //realm value
-        assertEquals( "decode failed", realmAttribute, decoded);
+        assertEquals(realmAttribute, decoded);
     }
 
     /**
      * Tests the encode method
      */
+    @Test
     public void testEncode()
     {
-        assertTrue("encode failed",
-                   Arrays.equals(realmAttribute.encode(),
-                                 attributeBinValue));
+        assertArrayEquals(realmAttribute.encode(), attributeBinValue);
     }
 
     /**
      * Test Equals
      */
+    @Test
     public void testEquals()
     {
         RealmAttribute realmAttribute2 = new RealmAttribute();
         realmAttribute2.setRealm(realmValue.getBytes());
 
         //test positive equals
-        assertEquals("testequals failed", realmAttribute, realmAttribute2);
+        assertEquals(realmAttribute, realmAttribute2);
 
         //test negative equals
         realmAttribute2 = new RealmAttribute();
         realmAttribute2.setRealm("some other realm".getBytes());
 
         //test positive equals
-        assertFalse("testequals failed",
-                    realmAttribute.equals(realmAttribute2));
+        assertNotEquals(realmAttribute2, realmAttribute);
 
         //test null equals
-        assertFalse("testequals failed",
-                    realmAttribute.equals(null));
+        assertNotEquals(realmAttribute, null);
     }
 
     /**
      * Tests extracting data length
      */
+    @Test
     public void testGetDataLength()
     {
         char expectedReturn = (char)realmValue.length();
         char actualReturn = realmAttribute.getDataLength();
-        assertEquals("getDataLength - failed", expectedReturn, actualReturn);
+        assertEquals(expectedReturn, actualReturn);
     }
 
     /**
      * Tests getting the name
      */
+    @Test
     public void testGetName()
     {
-        String expectedReturn = "REALM";
-        String actualReturn = realmAttribute.getName();
-        assertEquals("getting name failed", expectedReturn, actualReturn);
+        assertEquals("REALM", realmAttribute.getName());
     }
 
+    @Test
     public void testSetGetRealm()
     {
         byte[] expectedReturn = realmValue.getBytes();
@@ -137,8 +131,7 @@ public class RealmAttributeTest extends TestCase
         att.setRealm(expectedReturn);
 
         byte[] actualReturn = att.getRealm();
-        assertTrue("realm setter or getter failed",
-                     Arrays.equals( expectedReturn,
-                                    actualReturn));
+        assertArrayEquals(expectedReturn, actualReturn,
+            "realm setter or getter failed");
     }
 }

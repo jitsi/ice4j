@@ -19,119 +19,95 @@ package org.ice4j.attribute;
 
 import org.ice4j.*;
 
-import java.util.*;
+import static org.junit.jupiter.api.Assertions.*;
 
-import junit.framework.*;
-
+import org.junit.jupiter.api.*;
 /**
  * Class to test the ConnectionIdAttribute class.
  * 
  * @author Aakash Garg
  * 
  */
-public class ConnectionIdAttributeTest
-    extends TestCase
-{
+public class ConnectionIdAttributeTest {
     private ConnectionIdAttribute connectionIdAttribute = null;
 
     private MsgFixture msgFixture;
 
-    @Override
-    protected void setUp() throws Exception
+    @BeforeEach
+    public void setUp() throws Exception
     {
-        super.setUp();
         this.connectionIdAttribute = new ConnectionIdAttribute();
         this.msgFixture = new MsgFixture();
-
-        msgFixture.setUp();
     }
 
-    @Override
-    protected void tearDown() throws Exception
+    @AfterEach
+    public void tearDown() throws Exception
     {
         this.connectionIdAttribute = null;
-        this.msgFixture.tearDown();
-
         this.msgFixture = null;
-        super.tearDown();
     }
 
     /**
      * Tests whether data length is properly calculated.
      */
+    @Test
     public void testGetDataLength()
     {
         char expectedReturn = 4;
         this.connectionIdAttribute
             .setConnectionIdValue(MsgFixture.CONNECTION_ID);
         char actualReturn = this.connectionIdAttribute.getDataLength();
-        assertEquals(
-            "Datalength is not properly calculated", expectedReturn,
-            actualReturn);
+        assertEquals(expectedReturn, actualReturn,
+            "Datalength is not properly calculated");
     }
 
     /**
      * Tests getting the name.
      */
+    @Test
     public void testGetName()
     {
-        String expectedReturn = "CONNECTION-ID";
-        String actualReturn = connectionIdAttribute.getName();
-        assertEquals(
-            "getting name failed", expectedReturn, actualReturn);
+        assertEquals("CONNECTION-ID", connectionIdAttribute.getName());
     }
 
     /**
      * Tests the equals method against a null, a different and an identical
      * object.
      */
+    @Test
     public void testEqualsObject()
     {
         // null test
-        ConnectionIdAttribute target = null;
-        boolean expectedReturn = false;
-        boolean actualReturn = connectionIdAttribute.equals(target);
-
-        assertEquals(
-            "ConnectionIdAttribute.equals() failed against a null target.",
-            expectedReturn, actualReturn);
+        assertNotEquals(connectionIdAttribute, null);
 
         // difference test
-        target = new ConnectionIdAttribute();
+        ConnectionIdAttribute target = new ConnectionIdAttribute();
 
         int connectionId = MsgFixture.CONNECTION_ID_2;
         target.setConnectionIdValue(connectionId);
 
         connectionIdAttribute.setConnectionIdValue(MsgFixture.CONNECTION_ID);
-        expectedReturn = false;
-        actualReturn = connectionIdAttribute.equals(target);
-        assertEquals(
-            "ConnectionIdAttribute.equals() failed against a different target.",
-            expectedReturn, actualReturn);
+        assertNotEquals(connectionIdAttribute, target,
+            "ConnectionIdAttribute.equals() failed against a different target.");
 
         // equality test
         target.setConnectionIdValue(MsgFixture.CONNECTION_ID);
-
-        expectedReturn = true;
-        actualReturn = connectionIdAttribute.equals(target);
-        assertEquals(
-            "ConnectionIdAttribute.equals() failed against an equal target.",
-            expectedReturn, actualReturn);
+        assertEquals(connectionIdAttribute, target,
+            "ConnectionIdAttribute.equals() failed against an equal target.");
     }
 
     /**
      * Test whether attributes are properly encoded.
      */
+    @Test
     public void testEncode()
     {
         byte[] expectedReturn = msgFixture.connectionId;
         connectionIdAttribute.setConnectionIdValue(MsgFixture.CONNECTION_ID);
         byte[] actualReturn = connectionIdAttribute.encode();
 
-        assertTrue(
-            "ConnectionIdAttribute.encode() did not "
-                + "properly encode a sample attribute", Arrays.equals(
-                expectedReturn, actualReturn));
+        assertArrayEquals(expectedReturn, actualReturn,
+            "ConnectionIdAttribute.encode() did not properly encode a sample attribute");
     }
 
     /**
@@ -140,6 +116,7 @@ public class ConnectionIdAttributeTest
      * @throws StunException if something goes wrong while decoding 
      *             Attribute Body.
      */
+    @Test
     public void testDecodeAttributeBody() throws StunException
     {
         byte[] attributeValue = msgFixture.connectionId;
@@ -150,31 +127,31 @@ public class ConnectionIdAttributeTest
             attributeValue, offset, length);
 
         assertEquals(
-            "ConnectionIdAttribute.decode() did not properly decode the "
-                + "connection id field.", MsgFixture.CONNECTION_ID,
-            connectionIdAttribute.getConnectionIdValue());
+            MsgFixture.CONNECTION_ID,
+            connectionIdAttribute.getConnectionIdValue(),
+            "ConnectionIdAttribute.decode() did not properly decode the connection id field."
+        );
     }
 
     /**
      * Tests that the connection Id is always integer.
      */
+    @Test
     public void testGetConnectionIdValue()
     {
         int expectedReturn = 0x5555;
         this.connectionIdAttribute
             .setConnectionIdValue(MsgFixture.CONNECTION_ID);
         int actualReturn = this.connectionIdAttribute.getConnectionIdValue();
-        assertEquals(
-            "ConnectionId is not properly calculated", expectedReturn,
-            actualReturn);
+        assertEquals(expectedReturn, actualReturn,
+            "ConnectionId is not properly calculated");
 
         expectedReturn = 0x2222;
         this.connectionIdAttribute
             .setConnectionIdValue(MsgFixture.CONNECTION_ID_2);
         actualReturn = this.connectionIdAttribute.getConnectionIdValue();
-        assertEquals(
-            "ConnectionId is not properly calculated", expectedReturn,
-            actualReturn);
+        assertEquals(expectedReturn, actualReturn,
+            "ConnectionId is not properly calculated");
     }
 
 }
