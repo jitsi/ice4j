@@ -24,8 +24,12 @@ import java.util.*;
 import java.util.logging.*;
 
 import org.ice4j.*;
+import org.ice4j.attribute.*;
 import org.ice4j.ice.*;
+import org.ice4j.message.*;
+import org.ice4j.security.*;
 import org.ice4j.socket.*;
+import org.ice4j.stack.*;
 
 /**
  * An implementation of {@link AbstractTcpListener} which acts as a
@@ -455,15 +459,53 @@ public class TcpHarvester
      * {@inheritDoc}
      */
     @Override
-    protected void acceptSession(Socket socket, String ufrag,
-                                 DatagramPacket pushback)
+    protected void acceptSession(Socket socket, DatagramPacket pushback)
         throws IOException, IllegalStateException
     {
-        Component component = getComponent(ufrag);
+        Message stunMessage;
+        try
+        {
+            stunMessage = Message.decode(pushback.getData(), (char) 0, (char) pushback.getLength());
+        }
+        catch (StunException e)
+        {
+            // Not a valid STUN Message
+            throw new IllegalArgumentException("Invalid STUN message");
+        }
+
+        if (stunMessage.getMessageType() != Message.BINDING_REQUEST)
+        {
+            throw new IllegalArgumentException("Not a binding request");
+        }
+
+        UsernameAttribute usernameAttribute = (UsernameAttribute) stunMessage.getAttribute(Attribute.USERNAME);
+        if (usernameAttribute == null)
+        {
+            throw new IllegalArgumentException("No USERNAME present");
+        }
+
+        String localUfrag = new String(usernameAttribute.getUsername()).split(":")[0];
+        Component component = getComponent(localUfrag);
         if (component == null)
         {
-            throw new IllegalStateException(
-                    "No component found for ufrag " + ufrag);
+            // A STUN Binding Request with an unknown USERNAME. Drop it.
+            throw new IllegalArgumentException("No associated component found");
+        }
+
+        MessageIntegrityAttribute messageIntegrityAttribute
+                = (MessageIntegrityAttribute) stunMessage.getAttribute(Attribute.MESSAGE_INTEGRITY);
+        if (!component.getParentStream().getParentAgent().getStunStack().validateMessageIntegrity(
+                messageIntegrityAttribute,
+                LongTermCredential.toString(usernameAttribute.getUsername()),
+                !stunMessage.containsAttribute(Attribute.REALM) && !stunMessage.containsAttribute(Attribute.NONCE),
+                RawMessage.build(
+                        pushback.getData(),
+                        pushback.getLength(),
+                        new TransportAddress(pushback.getAddress(), pushback.getPort(), Transport.TCP),
+                        new TransportAddress(socket.getLocalAddress(), socket.getLocalPort(), Transport.TCP))))
+        {
+            // A STUN Binding Request with an unknown USERNAME. Drop it.
+            throw new IllegalArgumentException("Message integrity verification failed.");
         }
 
         addSocketToComponent(socket, component, pushback);

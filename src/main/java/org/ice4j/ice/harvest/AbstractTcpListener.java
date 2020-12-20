@@ -460,8 +460,7 @@ public abstract class AbstractTcpListener
      * @throws IllegalStateException
      * @throws IOException
      */
-    protected abstract void acceptSession(
-            Socket socket, String ufrag, DatagramPacket pushback)
+    protected abstract void acceptSession(Socket socket, DatagramPacket pushback)
         throws IOException, IllegalStateException;
 
     /**
@@ -958,8 +957,7 @@ public abstract class AbstractTcpListener
                             // if we had read enough data
                             if(channel.length <= bytesRead.length - 2)
                             {
-                                processFirstDatagram(
-                                    preBuffered, channel, key);
+                                processFirstDatagram(preBuffered, channel, key);
                             }
                             else
                             {
@@ -1057,18 +1055,6 @@ public abstract class AbstractTcpListener
             ChannelDesc channel, SelectionKey key)
             throws IOException, IllegalStateException
         {
-            // Does this look like a STUN binding request?
-            // What's the username?
-            String ufrag
-                = AbstractUdpListener.getUfrag(bytesRead,
-                                               (char) 0,
-                                               (char) bytesRead.length);
-
-            if (ufrag == null)
-            {
-                throw new IOException("Cannot extract ufrag");
-            }
-
             // The rest of the stack will read from the socket's
             // InputStream. We cannot change the blocking mode
             // before the channel is removed from the selector (by
@@ -1078,14 +1064,13 @@ public abstract class AbstractTcpListener
 
             // Construct a DatagramPacket from the just-read packet
             // which is to be pushed back
-            DatagramPacket p
-                = new DatagramPacket(bytesRead, bytesRead.length);
+            DatagramPacket p = new DatagramPacket(bytesRead, bytesRead.length);
             Socket socket = channel.channel.socket();
 
             p.setAddress(socket.getInetAddress());
             p.setPort(socket.getPort());
 
-            acceptSession(socket, ufrag, p);
+            acceptSession(socket, p);
         }
 
         /**
