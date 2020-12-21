@@ -17,6 +17,7 @@
  */
 package org.ice4j;
 
+import java.net.*;
 import java.util.*;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -37,14 +38,12 @@ public class TransactionSupportTests
     /**
      * The client address we use for this test.
      */
-    TransportAddress clientAddress
-        = new TransportAddress("127.0.0.1", 5216, Transport.UDP);
+    TransportAddress clientAddress;
 
     /**
      * The client address we use for this test.
      */
-    TransportAddress serverAddress
-        = new TransportAddress("127.0.0.1", 5255, Transport.UDP);
+    TransportAddress serverAddress;
 
     /**
      * The socket the client uses in this test.
@@ -91,9 +90,14 @@ public class TransactionSupportTests
         throws Exception
     {
         clientSock = new IceUdpSocketWrapper(
-            new SafeCloseDatagramSocket(clientAddress));
+            new SafeCloseDatagramSocket(new InetSocketAddress("127.0.0.1", 0)));
         serverSock = new IceUdpSocketWrapper(
-            new SafeCloseDatagramSocket(serverAddress));
+            new SafeCloseDatagramSocket(new InetSocketAddress("127.0.0.1", 0)));
+
+        clientAddress
+            = new TransportAddress("127.0.0.1", clientSock.getLocalPort(), Transport.UDP);
+        serverAddress
+            = new TransportAddress("127.0.0.1", serverSock.getLocalPort(), Transport.UDP);
 
         stunStack = new StunStack();
         stunStack.addSocket(clientSock);
