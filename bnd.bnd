@@ -1,0 +1,6 @@
+Export-Package: org.ice4j.*
+Import-Package: *;version=!
+Bundle-SymbolicName: org.jitsi.ice4j
+-noextraheaders: true
+-snapshot: SNAPSHOT
+-removeheaders: Require-Capability, Bundle-SCM
