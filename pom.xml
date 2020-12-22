@@ -39,7 +39,7 @@
 
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-    <jicoco.version>1.1-53-gdc63c67</jicoco.version>
+    <jicoco.version>1.1-73-gf8e9405</jicoco.version>
     <kotlin.version>1.3.72</kotlin.version>
     <kotest.version>4.1.3</kotest.version>
     <junit.version>5.7.0</junit.version>
@@ -487,19 +487,4 @@
       <url>https://oss.sonatype.org/service/local/staging/deploy/maven2/</url>
     </repository>
   </distributionManagement>
-
-  <repositories>
-    <repository>
-      <id>jitsi-maven-repository-releases</id>
-      <layout>default</layout>
-      <name>Jitsi Maven Repository (Releases)</name>
-      <releases>
-        <enabled>true</enabled>
-      </releases>
-      <snapshots>
-        <enabled>false</enabled>
-      </snapshots>
-      <url>https://github.com/jitsi/jitsi-maven-repository/raw/master/releases/</url>
-    </repository>
-  </repositories>
 </project>
