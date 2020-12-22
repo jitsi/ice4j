@@ -1,9 +1,11 @@
 package org.ice4j.util;
 
 import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.Mockito.*;
 
 import java.time.*;
 import java.util.concurrent.*;
+import org.jitsi.test.concurrent.*;
 import org.junit.jupiter.api.*;
 
 /**
@@ -13,39 +15,52 @@ import org.junit.jupiter.api.*;
  */
 public class PeriodicRunnableTests
 {
+    private FakeScheduledExecutorService timer;
+    private ExecutorService executor;
+
+    @BeforeEach
+    void beforeEach()
+    {
+        timer = mock(
+            FakeScheduledExecutorService.class,
+            withSettings()
+                .useConstructor()
+                .defaultAnswer(CALLS_REAL_METHODS)
+        );
+        executor = mock(ExecutorService.class);
+        when(executor.submit(any(Runnable.class))).thenAnswer(a ->
+        {
+            ((Runnable)a.getArgument(0)).run();
+            return CompletableFuture.completedFuture(null);
+        });
+    }
+
     @Test
     public void scheduleExecutesSpecifiedRunnableMultipleTimes()
-        throws InterruptedException
     {
-        final ScheduledExecutorService timer
-            = Executors.newSingleThreadScheduledExecutor();
-        final ExecutorService executor = Executors.newSingleThreadExecutor();
-        final CountDownLatch latch = new CountDownLatch(10);
+        int scheduleCount = 10;
+        Duration period = Duration.ofMillis(100);
+        final CountDownLatch latch = new CountDownLatch(scheduleCount);
         final PeriodicRunnable scheduledRunnable = PeriodicRunnable.create(
             timer,
             executor,
-            Duration.ofMillis(100),
+            period,
             latch::countDown);
 
         scheduledRunnable.schedule();
 
-        // Give 20 extra milliseconds to avoid possible failures due to
-        // slight timer inaccuracy
-        latch.await(1020, TimeUnit.MILLISECONDS);
-        assertEquals(0, latch.getCount());
+        for (int i = 0; i < scheduleCount; i++)
+        {
+            timer.getClock().elapse(period.plusMillis(10));
+            timer.run();
+        }
 
-        scheduledRunnable.cancel();
-        executor.shutdownNow();
-        timer.shutdownNow();
+        assertEquals(0, latch.getCount());
     }
 
     @Test
     public void scheduleWithNegativeDelayDoesNotExecuteRunnable()
-        throws InterruptedException
     {
-        final ScheduledExecutorService timer
-            = Executors.newSingleThreadScheduledExecutor();
-        final ExecutorService executor = Executors.newSingleThreadExecutor();
         final CountDownLatch latch = new CountDownLatch(1);
         final PeriodicRunnable scheduledRunnable = PeriodicRunnable.create(
             timer,
@@ -55,22 +70,16 @@ public class PeriodicRunnableTests
 
         scheduledRunnable.schedule();
 
-        latch.await(1000, TimeUnit.MILLISECONDS);
+        timer.getClock().elapse(Duration.ofSeconds(1));
+        timer.run();
         assertEquals(1, latch.getCount());
-
-        scheduledRunnable.cancel();
-        executor.shutdownNow();
-        timer.shutdownNow();
     }
 
     @Test
     public void negativeDelayStopsFurtherExecution()
-        throws InterruptedException
     {
-        final ScheduledExecutorService timer
-            = Executors.newSingleThreadScheduledExecutor();
-        final ExecutorService executor = Executors.newSingleThreadExecutor();
-        final CountDownLatch latch = new CountDownLatch(5);
+        int scheduleCount = 5;
+        final CountDownLatch latch = new CountDownLatch(scheduleCount);
         final PeriodicRunnable scheduledRunnable =
             new PeriodicRunnable(timer, executor)
             {
@@ -89,21 +98,18 @@ public class PeriodicRunnableTests
 
         scheduledRunnable.schedule();
 
-        latch.await(1000, TimeUnit.MILLISECONDS);
-        assertEquals(1, latch.getCount());
+        for (int i = 0; i < scheduleCount; i++)
+        {
+            timer.getClock().elapse(Duration.ofMillis(100));
+            timer.run();
+        }
 
-        scheduledRunnable.cancel();
-        executor.shutdownNow();
-        timer.shutdownNow();
+        assertEquals(1, latch.getCount());
     }
 
     @Test
     public void cancelStopFurtherExecution()
-        throws InterruptedException
     {
-        final ScheduledExecutorService timer
-            = Executors.newSingleThreadScheduledExecutor();
-        final ExecutorService executor = Executors.newSingleThreadExecutor();
         final CountDownLatch latch = new CountDownLatch(2);
         final PeriodicRunnable scheduledRunnable = PeriodicRunnable.create(
             timer,
@@ -112,30 +118,24 @@ public class PeriodicRunnableTests
             latch::countDown);
 
         scheduledRunnable.schedule();
-        latch.await(520, TimeUnit.MILLISECONDS);
+        timer.getClock().elapse(Duration.ofMillis(520));
+        timer.run();
 
         // Check runnable executed once
         assertEquals(1, latch.getCount());
 
         scheduledRunnable.cancel();
 
-        latch.await(1000, TimeUnit.MILLISECONDS);
+        timer.getClock().elapse(Duration.ofSeconds(1));
+        timer.run();
         // Check runnable was not executed after cancel.
         assertEquals(1, latch.getCount());
-
-        scheduledRunnable.cancel();
-        executor.shutdownNow();
-        timer.shutdownNow();
     }
 
     @Test
     public void scheduleExecuteRunnableIfPreviouslyCancelled()
-        throws InterruptedException
     {
-        final ScheduledExecutorService timer
-            = Executors.newSingleThreadScheduledExecutor();
-        final ExecutorService executor = Executors.newSingleThreadExecutor();
-        final CountDownLatch latch = new CountDownLatch(5);
+        final CountDownLatch latch = new CountDownLatch(10);
         final PeriodicRunnable scheduledRunnable = PeriodicRunnable.create(
             timer,
             executor,
@@ -143,24 +143,26 @@ public class PeriodicRunnableTests
             latch::countDown);
 
         scheduledRunnable.schedule();
-        latch.await(220, TimeUnit.MILLISECONDS);
+        timer.getClock().elapse(Duration.ofMillis(220));
+        timer.run();
 
         // Check runnable executed once
-        assertEquals(4, latch.getCount());
+        assertEquals(9, latch.getCount());
 
         scheduledRunnable.cancel();
 
-        latch.await(1000, TimeUnit.MILLISECONDS);
+        timer.getClock().elapse(Duration.ofSeconds(1));
+        timer.run();
         // Check runnable was not executed after cancel.
-        assertEquals(4, latch.getCount());
+        assertEquals(9, latch.getCount());
 
         // Schedule again
         scheduledRunnable.schedule();
-        latch.await(1000, TimeUnit.MILLISECONDS);
-        assertEquals(0, latch.getCount());
-
-        scheduledRunnable.cancel();
-        executor.shutdownNow();
-        timer.shutdownNow();
+        for (int i = 0; i < 5; i++)
+        {
+            timer.getClock().elapse(Duration.ofMillis(200));
+            timer.run();
+        }
+        assertEquals(4, latch.getCount());
     }
 }
