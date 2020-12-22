@@ -24,7 +24,8 @@ import org.junit.jupiter.api.*;
 /**
  * @author Emil Ivov
  */
-public class XorOnlyTest {
+public class XorOnlyTest
+{
     private XorOnlyAttribute xorOnly = null;
     private MsgFixture msgFixture = null;
 

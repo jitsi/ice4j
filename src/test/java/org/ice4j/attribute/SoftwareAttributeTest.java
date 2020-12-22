@@ -26,7 +26,8 @@ import org.junit.jupiter.api.*;
  *
  * @author Emil Ivov
  */
-public class SoftwareAttributeTest {
+public class SoftwareAttributeTest
+{
     private SoftwareAttribute softwareAttribute = null;
     MsgFixture msgFixture = null;
     String softwareValue = "turnserver.org";

@@ -26,7 +26,8 @@ import org.junit.jupiter.api.*;
  *
  * @author Emil Ivov
  */
-public class ChangeRequestAttributeTest {
+public class ChangeRequestAttributeTest
+{
     private ChangeRequestAttribute changeRequestAttribute = null;
     private MsgFixture binMessagesFixture;
 

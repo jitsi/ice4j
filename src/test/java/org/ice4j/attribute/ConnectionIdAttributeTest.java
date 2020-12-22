@@ -28,7 +28,8 @@ import org.junit.jupiter.api.*;
  * @author Aakash Garg
  * 
  */
-public class ConnectionIdAttributeTest {
+public class ConnectionIdAttributeTest
+{
     private ConnectionIdAttribute connectionIdAttribute = null;
 
     private MsgFixture msgFixture;

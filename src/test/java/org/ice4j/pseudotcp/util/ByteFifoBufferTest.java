@@ -28,7 +28,8 @@ import org.junit.jupiter.api.*;
  * 
  * @author Pawel Domas
  */
-public class ByteFifoBufferTest {
+public class ByteFifoBufferTest
+{
     public ByteFifoBufferTest()
     {
     }
