@@ -193,6 +193,27 @@
         </configuration>
       </plugin>
       <plugin>
+        <groupId>com.github.gantsign.maven</groupId>
+        <artifactId>ktlint-maven-plugin</artifactId>
+        <version>1.7.0</version>
+        <configuration>
+          <sourceRoots>
+            <sourceRoot>${project.basedir}/src/main/kotlin</sourceRoot>
+          </sourceRoots>
+          <testSourceRoots>
+            <testSourceRoot>${project.basedir}/src/test/kotlin</testSourceRoot>
+          </testSourceRoots>
+        </configuration>
+        <executions>
+          <execution>
+            <id>check</id>
+            <goals>
+              <goal>check</goal>
+            </goals>
+          </execution>
+        </executions>
+      </plugin>
+      <plugin>
         <groupId>org.apache.felix</groupId>
         <artifactId>maven-bundle-plugin</artifactId>
         <version>3.0.1</version>
