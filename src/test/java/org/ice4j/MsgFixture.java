@@ -243,20 +243,4 @@ public class MsgFixture
         0x00,        0x20,        0x00,        0x21,
         0x00,        0x22,        0x00,        0x22
         };
-
-
-    public MsgFixture()
-    {
-
-    }
-
-    public void setUp()
-    {
-
-    }
-
-    public void tearDown()
-    {
-    }
-
 }

@@ -17,16 +17,13 @@
  */
 package org.ice4j.pseudotcp;
 
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 
 import java.io.*;
 import java.net.*;
 import java.util.logging.*;
+import org.junit.jupiter.api.*;
 
-/**
- * 
- * @author Pawel Domas
- */
 public class PseudoTcpStreamTest
     extends MultiThreadSupportTest
 {
@@ -36,14 +33,10 @@ public class PseudoTcpStreamTest
     private static final Logger logger = Logger
         .getLogger(PseudoTcpStreamTest.class.getName());
 
-    public PseudoTcpStreamTest()
-    {
-    }
-
     /**
      * Test one-way transfer with @link(PseudoTcpStream)
-     * @throws IOException 
      */
+    @Test
     public void testConnectTransferClose() 
         throws IOException
     {
@@ -69,7 +62,7 @@ public class PseudoTcpStreamTest
             public void run()
             {
                 try
-                {                    
+                {
                     server.setDebugName("L");
                     server.bind(serverAddress);
                     server.accept(5000);
@@ -94,7 +87,7 @@ public class PseudoTcpStreamTest
                 }
             }
         });
-        
+
         final PseudoTcpSocket client = 
             new PseudoTcpSocketFactory().createSocket();
         Thread clientThread = new Thread(new Runnable()
@@ -103,7 +96,7 @@ public class PseudoTcpStreamTest
             public void run()
             {
                 try
-                {                   
+                {
                     client.setDebugName("R");
                     client.connect(serverAddress, 5000);
                     // write single array
@@ -124,11 +117,10 @@ public class PseudoTcpStreamTest
                             partsSize[i] = sizeB / partCount;
                     }
                     int written = 0;
-                    for (int i = 0; i < partsSize.length; i++)
+                    for (int j : partsSize)
                     {
-                        client.getOutputStream().write(bufferB, written,
-                            partsSize[i]);
-                        written += partsSize[i];
+                        client.getOutputStream().write(bufferB, written, j);
+                        written += j;
                     }
                     assertEquals(sizeB, written);
                     client.getOutputStream().flush();
@@ -191,35 +183,24 @@ public class PseudoTcpStreamTest
     /**
      * Test the timeout on accept method
      */
+    @Test
     public void testAccept()
     {
-        try
+        assertThrows(IOException.class, ()->
         {
             PseudoTcpSocketImpl server = new PseudoTcpSocketImpl(0);
             server.accept(10);
-            fail("Should throw timeout exception");
-        }
-        catch (IOException ex)
-        {
-            // success
-        }
+        });
     }
-    
+
     /**
      * Interface used to pass timeout test function
-     * @author Pawel Domas
-     *
      */
     private interface TimeoutOperationTest
     {
         void testTimeout(PseudoTcpSocketImpl socket) throws IOException;
     }
-    
-    /**
-     * 
-     * @param testOperation
-     * @throws UnknownHostException 
-     */
+
     private void doTestTimeout(final TimeoutOperationTest testOperation)
         throws Exception
     {
@@ -234,7 +215,7 @@ public class PseudoTcpStreamTest
         client = new PseudoTcpSocketImpl(0);        
         //Servers thread waiting for connection
         new Thread(new Runnable()
-        {            
+        {
             @Override
             public void run()
             {
@@ -255,7 +236,7 @@ public class PseudoTcpStreamTest
                 {
                     //success
                     try
-                    {                                                
+                    {
                         server.close();
                     }
                     catch (IOException exc)
@@ -268,7 +249,6 @@ public class PseudoTcpStreamTest
         //Clients thread connects and closes socket
         new Thread(new Runnable()
         {
-            
             @Override
             public void run()
             {
@@ -281,13 +261,12 @@ public class PseudoTcpStreamTest
                 catch (Exception e)
                 {
                     throw new RuntimeException(e);
-                }                
+                }
             }
         }).start();
         //Waits for server to close socket
         boolean done = assert_wait_until(new WaitUntilDone()
         {
-            
             @Override
             public boolean isDone()
             {
@@ -299,69 +278,55 @@ public class PseudoTcpStreamTest
             fail("Test timed out");
         }
     }
-    
+
     /**
      * Tests timeout on read method
-     * @throws UnknownHostException 
      */
+    @Test
     public void testReadTimeout() throws Exception
     {
-        doTestTimeout(new TimeoutOperationTest()
+        doTestTimeout(socket ->
         {
-            
-            @Override
-            public void testTimeout(PseudoTcpSocketImpl socket) throws IOException
-            {
-                socket.setPTCPOption(Option.OPT_READ_TIMEOUT, 300);
-                socket.getInputStream().read(new byte[500]);                
-            }
+            socket.setPTCPOption(Option.OPT_READ_TIMEOUT, 300);
+            socket.getInputStream().read(new byte[500]);                
         });
     }
-    
+
     /**
      * Tests timeout on write method
-     * @throws UnknownHostException 
      */
+    @Test
     public void testWriteTimeout() throws Exception
     {
-        doTestTimeout(new TimeoutOperationTest()
-        {            
-            @Override
-            public void testTimeout(PseudoTcpSocketImpl socket) throws IOException
-            {
-                //buffer that will exceed stack's buffer size
-                byte[] bigBuffer = new byte[PseudoTCPBase.DEFAULT_SND_BUF_SIZE*2];
-                socket.setPTCPOption(Option.OPT_WRITE_TIMEOUT, 300);
-                socket.getOutputStream().write(bigBuffer);
-            }
+        doTestTimeout(socket ->
+        {
+            //buffer that will exceed stack's buffer size
+            byte[] bigBuffer = new byte[PseudoTCPBase.DEFAULT_SND_BUF_SIZE*2];
+            socket.setPTCPOption(Option.OPT_WRITE_TIMEOUT, 300);
+            socket.getOutputStream().write(bigBuffer);
         });
     }
-    
+
     /**
      * Tests timeout on flush method
-     * @throws UnknownHostException 
      */
+    @Test
     public void testFlushTimeout() throws Exception
     {
-        doTestTimeout(new TimeoutOperationTest()
-        {            
-            @Override
-            public void testTimeout(PseudoTcpSocketImpl socket) throws IOException
+        doTestTimeout(socket ->
+        {
+            //buffer that will exceed stack's buffer size
+            byte[] buffer = new byte[PseudoTCPBase.DEFAULT_SND_BUF_SIZE];
+            socket.setPTCPOption(Option.OPT_WRITE_TIMEOUT, 300);
+            try
             {
-                //buffer that will exceed stack's buffer size
-                byte[] buffer = new byte[PseudoTCPBase.DEFAULT_SND_BUF_SIZE];
-                socket.setPTCPOption(Option.OPT_WRITE_TIMEOUT, 300);
-                try
-                {
-                    socket.getOutputStream().write(buffer);
-                }
-                catch(IOException e)
-                {
-                    throw new RuntimeException("Unexpected exception: "+e);
-                }
-                socket.getOutputStream().flush();
+                socket.getOutputStream().write(buffer);
             }
+            catch(IOException e)
+            {
+                throw new RuntimeException("Unexpected exception: "+e);
+            }
+            socket.getOutputStream().flush();
         });
     }
-    
 }

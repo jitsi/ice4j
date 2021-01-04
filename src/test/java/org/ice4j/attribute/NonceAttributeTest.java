@@ -17,19 +17,17 @@
  */
 package org.ice4j.attribute;
 
-import junit.framework.*;
-
-import java.util.*;
+import static org.junit.jupiter.api.Assertions.*;
 
 import org.ice4j.*;
-
+import org.junit.jupiter.api.*;
 /**
  * Tests the nonce attribute class.
  *
  * @author Emil Ivov
  * @author Sebastien Vincent
  */
-public class NonceAttributeTest extends TestCase
+public class NonceAttributeTest
 {
     private NonceAttribute nonceAttribute = null;
     MsgFixture msgFixture = null;
@@ -40,30 +38,26 @@ public class NonceAttributeTest extends TestCase
             0, (byte)nonceValue.length(),
             '0', '1', '2', '3', '4', '5', '6','7', '8', '9', 'a', 'b', 'c', 'd', 'e', 'f'};
 
-    protected void setUp() throws Exception
+    @BeforeEach
+    public void setUp() throws Exception
     {
-        super.setUp();
         msgFixture = new MsgFixture();
-
         nonceAttribute = new NonceAttribute();
         nonceAttribute.setNonce(nonceValue.getBytes());
-
-        msgFixture.setUp();
     }
 
-    protected void tearDown() throws Exception
+    @AfterEach
+    public void tearDown() throws Exception
     {
         nonceAttribute = null;
-        msgFixture.tearDown();
-
         msgFixture = null;
-        super.tearDown();
     }
 
     /**
      * Tests decoding of the nonce attribute.
      * @throws StunException upon a failure
      */
+    @Test
     public void testDecodeAttributeBody() throws StunException
     {
         char offset = 0;
@@ -72,63 +66,63 @@ public class NonceAttributeTest extends TestCase
         decoded.decodeAttributeBody(nonceValue.getBytes(), offset, length);
 
         //nonce value
-        assertEquals( "decode failed", nonceAttribute, decoded);
+        assertEquals(nonceAttribute, decoded, "decode failed");
     }
 
     /**
      * Tests the encode method
      */
+    @Test
     public void testEncode()
     {
-        assertTrue("encode failed",
-                   Arrays.equals(nonceAttribute.encode(),
-                                 attributeBinValue));
+        assertArrayEquals(nonceAttribute.encode(), attributeBinValue,
+            "encode failed");
     }
 
     /**
      * Test Equals
      */
+    @Test
     public void testEquals()
     {
         NonceAttribute nonceAttribute2 = new NonceAttribute();
         nonceAttribute2.setNonce(nonceValue.getBytes());
 
         //test positive equals
-        assertEquals("testequals failed", nonceAttribute, nonceAttribute2);
+        assertEquals(nonceAttribute, nonceAttribute2);
 
         //test negative equals
         nonceAttribute2 = new NonceAttribute();
         nonceAttribute2.setNonce("some other nonce".getBytes());
 
         //test positive equals
-        assertFalse("testequals failed",
-                    nonceAttribute.equals(nonceAttribute2));
+        assertNotEquals(nonceAttribute2, nonceAttribute);
 
         //test null equals
-        assertFalse("testequals failed",
-                    nonceAttribute.equals(null));
+        assertNotEquals(nonceAttribute, null);
     }
 
     /**
      * Tests extracting data length
      */
+    @Test
     public void testGetDataLength()
     {
         char expectedReturn = (char)nonceValue.length();
         char actualReturn = nonceAttribute.getDataLength();
-        assertEquals("getDataLength - failed", expectedReturn, actualReturn);
+        assertEquals(expectedReturn, actualReturn);
     }
 
     /**
      * Tests getting the name
      */
+    @Test
     public void testGetName()
     {
-        String expectedReturn = "NONCE";
-        String actualReturn = nonceAttribute.getName();
-        assertEquals("getting name failed", expectedReturn, actualReturn);
+        assertEquals("NONCE", nonceAttribute.getName());
     }
 
+    @Test
     public void testSetGetNonce()
     {
         byte[] expectedReturn = nonceValue.getBytes();
@@ -137,8 +131,7 @@ public class NonceAttributeTest extends TestCase
         att.setNonce(expectedReturn);
 
         byte[] actualReturn = att.getNonce();
-        assertTrue("nonce setter or getter failed",
-                     Arrays.equals( expectedReturn,
-                                    actualReturn));
+        assertArrayEquals(expectedReturn, actualReturn,
+            "nonce setter or getter failed");
     }
 }

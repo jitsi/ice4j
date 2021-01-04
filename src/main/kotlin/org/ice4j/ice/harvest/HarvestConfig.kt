@@ -19,7 +19,6 @@ package org.ice4j.ice.harvest
 import org.jitsi.metaconfig.config
 import org.jitsi.metaconfig.optionalconfig
 import java.time.Duration
-
 import org.jitsi.config.JitsiConfig.Companion.newConfig as configSource
 
 class HarvestConfig {
@@ -64,8 +63,8 @@ class HarvestConfig {
     fun stunMappingCandidateHarvesterAddresses() = stunMappingCandidateHarvesterAddresses
 
     val enableAwsHarvester: Boolean by config {
-       "org.ice4j.ice.harvest.DISABLE_AWS_HARVESTER".from(configSource).transformedBy { !it }
-       "ice4j.harvest.mapping.aws.enabled".from(configSource)
+        "org.ice4j.ice.harvest.DISABLE_AWS_HARVESTER".from(configSource).transformedBy { !it }
+        "ice4j.harvest.mapping.aws.enabled".from(configSource)
     }
     fun enableAwsHarvester() = enableAwsHarvester
 

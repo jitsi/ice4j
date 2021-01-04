@@ -18,7 +18,6 @@ package org.ice4j.ice
 
 import org.jitsi.metaconfig.config
 import java.time.Duration
-
 import org.jitsi.config.JitsiConfig.Companion.newConfig as configSource
 
 class AgentConfig {

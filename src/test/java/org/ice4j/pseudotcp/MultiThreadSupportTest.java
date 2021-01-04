@@ -17,32 +17,26 @@
  */
 package org.ice4j.pseudotcp;
 
-import junit.framework.*;
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
- * This class enables multi thread tests where main thread waits in loop 
- * for specified condition to be met, while others perform some operations.
- * For example until the connection is established or closed. 
- * It also registers default uncaught exception handler to catch exceptions 
- * from other threads.
- * 
+ * This class enables multi thread tests where main thread waits in loop for
+ * specified condition to be met, while others perform some operations. For
+ * example until the connection is established or closed. It also registers
+ * default uncaught exception handler to catch exceptions from other threads.
+ * <p>
  * Condition checks are passed as IWaitUntilDone interface.
- * 
+ *
  * @author Pawel Domas
  */
-public class MultiThreadSupportTest 
-	extends TestCase
-	implements Thread.UncaughtExceptionHandler
+public class MultiThreadSupportTest implements Thread.UncaughtExceptionHandler
 {
     private volatile Throwable testError;
+
     private volatile Thread errorThread;
-    private final Object testLock = new Object(); 
-    
-    public MultiThreadSupportTest()
-    {
-    	
-    }
-    
+
+    private final Object testLock = new Object();
+
     @Override
     public void uncaughtException(Thread t, Throwable e)
     {
@@ -53,27 +47,30 @@ public class MultiThreadSupportTest
             testLock.notifyAll();
         }
     }
-    
-    private long assertWaitInterval = 100;
+
+    private static final long ASSERT_WAIT_INTERVAL = 100;
+
     protected interface WaitUntilDone
     {
-        public boolean isDone();
-    }    
-    
+        boolean isDone();
+    }
+
     protected boolean assert_wait_until(WaitUntilDone wait, long timeoutMs)
     {
         try
         {
             long start = System.currentTimeMillis();
-            while (!wait.isDone() && (System.currentTimeMillis() - start) < timeoutMs)
+            while (!wait.isDone()
+                && (System.currentTimeMillis() - start) < timeoutMs)
             {
                 synchronized (testLock)
                 {
-                    testLock.wait(assertWaitInterval);
+                    testLock.wait(ASSERT_WAIT_INTERVAL);
                     if (testError != null)
                     {
                         testError.printStackTrace();
-                        fail("Error in thread: " + errorThread.getName() + " : " + testError.getMessage());
+                        fail("Error in thread: " + errorThread.getName() + " : "
+                            + testError.getMessage());
                     }
                 }
             }
@@ -87,6 +84,4 @@ public class MultiThreadSupportTest
             return false;
         }
     }
-    
-    
 }

@@ -17,10 +17,12 @@
  */
 package org.ice4j.ice.harvest;
 
+import static org.junit.jupiter.api.Assertions.*;
+
 import org.ice4j.*;
-import org.junit.*;
 
 import java.net.*;
+import org.junit.jupiter.api.*;
 
 /**
  * Various tests that verify the functionality provided by {@link SinglePortUdpHarvester}.
@@ -34,8 +36,8 @@ public class SinglePortUdpHarvesterTest
      *
      * @see <a href="https://github.com/jitsi/ice4j/issues/139">https://github.com/jitsi/ice4j/issues/139</a>
      */
-    @Test( expected = java.net.BindException.class )
-    public void testRebindWithoutClose() throws Exception
+    @Test
+    public void testRebindWithoutCloseThrows() throws Exception
     {
         // Setup test fixture.
         final TransportAddress address = new TransportAddress( "127.0.0.1", 10000, Transport.UDP );
@@ -44,7 +46,7 @@ public class SinglePortUdpHarvesterTest
         {
             firstHarvester = new SinglePortUdpHarvester( address );
         }
-        catch ( java.net.BindException ex )
+        catch (BindException ex)
         {
             // This is not expected at this stage (the port is likely already in use by another process, voiding this
             // test). Rethrow as a different exception than the BindException, that is expected to be thrown later in
@@ -57,14 +59,17 @@ public class SinglePortUdpHarvesterTest
         try
         {
             secondHarvester = new SinglePortUdpHarvester( address );
+            fail("expected BindException to be thrown at this point");
         }
-        // Verification of the results is implicit - this Test expectes BindException to be thrown at this point.
-
-        // Tear down
+        catch (BindException ex)
+        {
+            //expected, do nothing
+        }
         finally
         {
+            // Tear down
             firstHarvester.close();
-            if ( secondHarvester != null )
+            if (secondHarvester != null)
             {
                 secondHarvester.close();
             }
@@ -96,7 +101,7 @@ public class SinglePortUdpHarvesterTest
         // Verify results.
         catch ( BindException ex )
         {
-            Assert.fail( "A bind exception should not have been thrown, as the original harvester was propertly closed.");
+            fail( "A bind exception should not have been thrown, as the original harvester was propertly closed.");
         }
 
         // Tear down.

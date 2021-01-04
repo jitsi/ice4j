@@ -17,19 +17,18 @@
  */
 package org.ice4j.pseudotcp.util;
 
-import static org.junit.Assert.*;
-
 import java.nio.*;
 import java.util.*;
 
-import junit.framework.*;
+import static org.junit.jupiter.api.Assertions.*;
+
+import org.junit.jupiter.api.*;
 
 /**
  * 
  * @author Pawel Domas
  */
 public class ByteFifoBufferTest
-    extends TestCase
 {
     public ByteFifoBufferTest()
     {
@@ -38,6 +37,7 @@ public class ByteFifoBufferTest
     /**
      * Test of Length method, of class ByteFifoBuffer.
      */
+    @Test
     public void testLength()
     {
         int expResult = 1000;
@@ -52,6 +52,7 @@ public class ByteFifoBufferTest
     /**
      * Test of Read method, of class ByteFifoBuffer.
      */
+    @Test
     public void testRead()
     {
         int count = 1024;
@@ -60,9 +61,8 @@ public class ByteFifoBufferTest
         instance.write(wData, count);
 
         byte[] readBuff = new byte[count];
-        int expResult = count;
         int result = instance.read(readBuff, count);
-        assertEquals(expResult, result);
+        assertEquals(count, result);
         assertArrayEquals(wData, readBuff);
 
     }
@@ -70,6 +70,7 @@ public class ByteFifoBufferTest
     /**
      * Tests reading with an offset for destination buffer
      */
+    @Test
     public void testReadWithOffset()
     {
         int count = 1024;
@@ -93,7 +94,6 @@ public class ByteFifoBufferTest
      * return some random array
      * 
      * @param count array size
-     * @return
      */
     private byte[] getWData(int count)
     {
@@ -106,6 +106,7 @@ public class ByteFifoBufferTest
     /**
      * Test of GetWriteRemaining method, of class ByteFifoBuffer.
      */
+    @Test
     public void testGetWriteRemaining()
     {
         int len = 100;
@@ -126,6 +127,7 @@ public class ByteFifoBufferTest
     /**
      * Test of GetBuffered method, of class ByteFifoBuffer.
      */
+    @Test
     public void testGetBuffered()
     {
         int len = 1000;
@@ -148,14 +150,14 @@ public class ByteFifoBufferTest
     /**
      * Test of Write method, of class ByteFifoBuffer.
      */
+    @Test
     public void testWrite()
     {
         int len = 2048;
         byte[] data = getWData(len);
         ByteFifoBuffer instance = new ByteFifoBuffer(len);
-        int expResult = len;
         int result = instance.write(data, len);
-        assertEquals(expResult, result);
+        assertEquals(len, result);
 
         byte[] read = new byte[len];
         int readCount = instance.read(read, len);
@@ -163,6 +165,7 @@ public class ByteFifoBufferTest
         assertArrayEquals(data, read);
     }
 
+    @Test
     public void testWriteWithOffset()
     {
         int len = 2048;
@@ -183,6 +186,7 @@ public class ByteFifoBufferTest
     /**
      * Test of ConsumeWriteBuffer method, of class ByteFifoBuffer.
      */
+    @Test
     public void testConsumeWriteBuffer()
     {
         int len = 100;
@@ -208,6 +212,7 @@ public class ByteFifoBufferTest
     /**
      * Test of SetCapacity method, of class ByteFifoBuffer.
      */
+    @Test
     public void testSetCapacity()
     {
         int old_size = 100;
@@ -229,6 +234,7 @@ public class ByteFifoBufferTest
     /**
      * Test of ConsumeReadData method, of class ByteFifoBuffer.
      */
+    @Test
     public void testConsumeReadData()
     {
         int lCount = 100;
@@ -250,6 +256,7 @@ public class ByteFifoBufferTest
     /**
      * Test of ReadOffset method, of class ByteFifoBuffer.
      */
+    @Test
     public void testReadOffset()
     {
         int dst_buff_offset = 0;
@@ -258,11 +265,10 @@ public class ByteFifoBufferTest
         byte[] dst_buff = new byte[len];
         int offset = 0;
         ByteFifoBuffer instance = new ByteFifoBuffer(len);
-        int expResult = len;
         instance.write(src_buff, len);
         int result =
             instance.readOffset(dst_buff, dst_buff_offset, len, offset);
-        assertEquals(expResult, result);
+        assertEquals(len, result);
         assertArrayEquals(dst_buff, src_buff);
 
     }
@@ -270,6 +276,7 @@ public class ByteFifoBufferTest
     /**
      * Test of WriteOffset method, of class ByteFifoBuffer.
      */
+    @Test
     public void testWriteOffset()
     {
         int len = 200;
@@ -301,6 +308,7 @@ public class ByteFifoBufferTest
 
     }
 
+    @Test
     public void testWriteReadWriteRead()
     {
         int len = 2000;
@@ -330,6 +338,7 @@ public class ByteFifoBufferTest
         while ((read != wrData.length) || (written != wrData.length));
     }
 
+    @Test
     public void testSomeMultiTest()
     {
         int Alen = 16;

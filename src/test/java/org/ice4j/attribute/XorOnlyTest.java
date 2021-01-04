@@ -17,32 +17,30 @@
  */
 package org.ice4j.attribute;
 
-import junit.framework.*;
-
-import java.util.*;
+import static org.junit.jupiter.api.Assertions.*;
 
 import org.ice4j.*;
-
+import org.junit.jupiter.api.*;
 /**
  * @author Emil Ivov
  */
-public class XorOnlyTest extends TestCase
+public class XorOnlyTest
 {
     private XorOnlyAttribute xorOnly = null;
     private MsgFixture msgFixture = null;
 
-    protected void setUp() throws Exception
+    @BeforeEach
+    public void setUp() throws Exception
     {
-        super.setUp();
         xorOnly = new XorOnlyAttribute();
         msgFixture = new MsgFixture();
     }
 
-    protected void tearDown() throws Exception
+    @AfterEach
+    public void tearDown() throws Exception
     {
         xorOnly = null;
         msgFixture = null;
-        super.tearDown();
     }
 
     /**
@@ -50,6 +48,7 @@ public class XorOnlyTest extends TestCase
      * decode method doesn't do anything in the XorOnly att.
      * @throws StunException if sth happens
      */
+    @Test
     public void testDecodeAttributeBody() throws StunException
     {
         byte[] attributeValue = new byte[]{};
@@ -61,52 +60,52 @@ public class XorOnlyTest extends TestCase
     /**
      * Test encoding XorOnly attributes.
      */
+    @Test
     public void testEncode()
     {
         byte[] expectedReturn = new byte[]{Attribute.XOR_ONLY>>8,
                                            Attribute.XOR_ONLY&0x00FF,
                                             0, 0};
         byte[] actualReturn = xorOnly.encode();
-        assertTrue("XorOnly failed to encode",
-                     Arrays.equals( expectedReturn, actualReturn));
+        assertArrayEquals(expectedReturn, actualReturn);
     }
 
     /**
      * Test positive and negative XorOnly.equals() returns
      * @throws Exception if decoding fails
      */
+    @Test
     public void testEquals() throws Exception
     {
         XorOnlyAttribute xor2 = new XorOnlyAttribute();
-        assertEquals("equals() failes for XorOnly", xorOnly, xor2);
+        assertEquals(xorOnly, xor2);
 
         MappedAddressAttribute maatt =  new MappedAddressAttribute();
         maatt.decodeAttributeBody( msgFixture.mappedAddress,
                                    (char) 0,
                                    (char) msgFixture.mappedAddress.length );
 
-
-        assertFalse("equals failed to see a difference", xorOnly.equals(maatt));
-        assertFalse("equals failed for null", xorOnly.equals(null));
+        assertNotEquals(maatt, xorOnly);
+        assertNotEquals(xorOnly, null);
     }
 
     /**
      * Makes sure the data langth is 0
      */
+    @Test
     public void testGetDataLength()
     {
         char expectedReturn = 0;
         char actualReturn = xorOnly.getDataLength();
-        assertEquals("data length was not 0", expectedReturn, actualReturn);
+        assertEquals(expectedReturn, actualReturn, "data length was not 0");
     }
 
     /**
      * Verifies the name (do we really need this?).
      */
+    @Test
     public void testGetName()
     {
-        String expectedReturn = "XOR-ONLY";
-        String actualReturn = xorOnly.getName();
-        assertEquals("Is name correct", expectedReturn, actualReturn);
+        assertEquals("XOR-ONLY", xorOnly.getName());
     }
 }

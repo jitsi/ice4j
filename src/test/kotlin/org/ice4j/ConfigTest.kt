@@ -38,5 +38,5 @@ abstract class ConfigTest : ShouldSpec() {
         useNewConfig("new-${this::class.simpleName}", config, true, block)
     }
 
-    fun withLegacyConfig(config: Map<String,String?>, block: () -> Unit) = withSystemProperties(config) { block }
+    fun withLegacyConfig(config: Map<String, String?>, block: () -> Unit) = withSystemProperties(config) { block }
 }

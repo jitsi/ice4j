@@ -73,7 +73,8 @@ private val legacyConfig = mapOf(
     "org.ice4j.ice.CONSENT_FRESHNESS_WAIT_INTERVAL" to "5000",
     "org.ice4j.ice.CONSENT_FRESHNESS_MAX_RETRANSMISSIONS" to "5000",
     "org.ice4j.TERMINATION_DELAY" to "5000",
-    "org.ice4j.MAX_CHECK_LIST_SIZE" to "5000")
+    "org.ice4j.MAX_CHECK_LIST_SIZE" to "5000"
+)
 
 private val newConfig = """
     ice4j.consent-freshness.interval = 6 seconds

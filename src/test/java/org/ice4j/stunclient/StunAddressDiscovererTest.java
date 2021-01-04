@@ -17,12 +17,12 @@
  */
 package org.ice4j.stunclient;
 
-import junit.framework.*;
+import static org.junit.jupiter.api.Assertions.*;
 
 import org.ice4j.*;
 import org.ice4j.message.*;
 import org.ice4j.stack.*;
-
+import org.junit.jupiter.api.*;
 /**
  * The StunAddressDiscovererTest_XXX set of tests were created to verify stun
  * operation for scenarios of some basic types of firewalls. The purpose of
@@ -34,32 +34,24 @@ import org.ice4j.stack.*;
  * @author Emil Ivov
  */
 public class StunAddressDiscovererTest
-    extends TestCase
 {
     private NetworkConfigurationDiscoveryProcess  stunAddressDiscoverer = null;
-    private TransportAddress discovererAddress
+    private final TransportAddress discovererAddress
         = new TransportAddress("127.0.0.1", 15555, Transport.UDP);
 
     private ResponseSequenceServer responseServer = null;
-    private TransportAddress responseServerAddress
+    private final TransportAddress responseServerAddress
         = new TransportAddress("127.0.0.1", 19999, Transport.UDP);
 
 
-    private TransportAddress mappedClientAddress
+    private final TransportAddress mappedClientAddress
         = new TransportAddress("212.56.4.10", 15612, Transport.UDP);
-    private TransportAddress mappedClientAddressPort2
+    private final TransportAddress mappedClientAddressPort2
         = new TransportAddress("212.56.4.10", 15611, Transport.UDP);
 
-    public StunAddressDiscovererTest(String name)
-        throws StunException
+    @BeforeEach
+    public void setUp() throws Exception
     {
-        super(name);
-    }
-
-    protected void setUp() throws Exception
-    {
-        super.setUp();
-
         System.setProperty(StackProperties.MAX_CTRAN_RETRANS_TIMER, "100");
         System.setProperty(StackProperties.MAX_CTRAN_RETRANSMISSIONS, "2");
 
@@ -76,15 +68,14 @@ public class StunAddressDiscovererTest
         responseServer.start();
     }
 
-    protected void tearDown() throws Exception
+    @AfterEach
+    public void tearDown() throws Exception
     {
         System.clearProperty(StackProperties.MAX_CTRAN_RETRANS_TIMER);
         System.clearProperty(StackProperties.MAX_CTRAN_RETRANSMISSIONS);
         responseServer.shutDown();
         stunAddressDiscoverer.shutDown();
         stunAddressDiscoverer = null;
-
-        super.tearDown();
     }
 
     /**
@@ -93,6 +84,7 @@ public class StunAddressDiscovererTest
      *
      * @throws Exception if anything goes wrong ( surprised? ).
      */
+    @Test
     public void testRecognizeBlockedUDP()
         throws Exception
     {
@@ -104,10 +96,8 @@ public class StunAddressDiscovererTest
 
         StunDiscoveryReport actualReturn = stunAddressDiscoverer
             .determineAddress();
-        assertEquals("The StunAddressDiscoverer failed for a "
-                     +"no-udp environment.",
-                     expectedReturn, actualReturn);
-
+        assertEquals(expectedReturn, actualReturn,
+            "The StunAddressDiscoverer failed for a no-udp environment.");
     }
 
 
@@ -116,6 +106,7 @@ public class StunAddressDiscovererTest
      * it concludes it is behind a Symmetric NAT.
      * @throws Exception if anything goes wrong ( surprised? ).
      */
+    @Test
     public void testRecognizeSymmetricNat() throws Exception
     {
         //define the server response sequence
@@ -139,10 +130,8 @@ public class StunAddressDiscovererTest
 
         StunDiscoveryReport actualReturn
             = stunAddressDiscoverer.determineAddress();
-        assertEquals(
-            "The StunAddressDiscoverer failed for a no-udp environment.",
-            expectedReturn,
-            actualReturn);
+        assertEquals(expectedReturn, actualReturn,
+            "The StunAddressDiscoverer failed for a no-udp environment.");
 
     }
 
@@ -151,6 +140,7 @@ public class StunAddressDiscovererTest
      * it concludes it is behind a Port Restricted Cone.
      * @throws Exception if anything goes wrong ( surprised? ).
      */
+    @Test
     public void testRecognizePortRestrictedCone()
         throws Exception
     {
@@ -175,8 +165,8 @@ public class StunAddressDiscovererTest
 
         StunDiscoveryReport actualReturn
             = stunAddressDiscoverer.determineAddress();
-        assertEquals("The StunAddressDiscoverer failed for a no-udp environment.",
-                     expectedReturn, actualReturn);
+        assertEquals(expectedReturn, actualReturn,
+            "The StunAddressDiscoverer failed for a no-udp environment.");
 
     }
 
@@ -185,6 +175,7 @@ public class StunAddressDiscovererTest
      * it concludes it is behind a Restricted Cone.
      * @throws Exception if anything goes wrong ( surprised? ).
      */
+    @Test
     public void testRecognizeRestrictedCone() throws Exception
     {
         //define the server response sequence
@@ -208,10 +199,8 @@ public class StunAddressDiscovererTest
 
         StunDiscoveryReport actualReturn = stunAddressDiscoverer
             .determineAddress();
-        assertEquals(
-            "The StunAddressDiscoverer failed for a no-udp environment.",
-            expectedReturn, actualReturn);
-
+        assertEquals(expectedReturn, actualReturn,
+            "The StunAddressDiscoverer failed for a no-udp environment.");
     }
 
     /**
@@ -219,6 +208,7 @@ public class StunAddressDiscovererTest
      * it concludes it is behind a Full Cone.
      * @throws Exception if anything goes wrong ( surprised? ).
      */
+    @Test
     public void testRecognizeFullCone()
         throws Exception
     {
@@ -238,9 +228,8 @@ public class StunAddressDiscovererTest
 
         StunDiscoveryReport actualReturn = stunAddressDiscoverer.
             determineAddress();
-        assertEquals(
-            "The StunAddressDiscoverer failed for a no-udp environment.",
-            expectedReturn, actualReturn);
+        assertEquals(expectedReturn, actualReturn,
+            "The StunAddressDiscoverer failed for a no-udp environment.");
     }
 
     /**
@@ -249,6 +238,7 @@ public class StunAddressDiscovererTest
      *
      * @throws Exception if anything goes wrong ( surprised? ).
      */
+    @Test
     public void testRecognizeUdpSymmetricFirewall()
         throws Exception
     {
@@ -267,9 +257,8 @@ public class StunAddressDiscovererTest
 
         StunDiscoveryReport actualReturn = stunAddressDiscoverer.
             determineAddress();
-        assertEquals(
-            "The StunAddressDiscoverer failed for a no-udp environment.",
-            expectedReturn, actualReturn);
+        assertEquals(expectedReturn, actualReturn,
+            "The StunAddressDiscoverer failed for a no-udp environment.");
 
     }
 
@@ -279,6 +268,7 @@ public class StunAddressDiscovererTest
      *
      * @throws Exception if anything goes wrong ( surprised? ).
      */
+    @Test
     public void testRecognizeOpenInternet()
         throws Exception
     {
@@ -298,8 +288,7 @@ public class StunAddressDiscovererTest
 
         StunDiscoveryReport actualReturn = stunAddressDiscoverer.
             determineAddress();
-        assertEquals(
-            "The StunAddressDiscoverer failed for a no-udp environment.",
-            expectedReturn, actualReturn);
+        assertEquals(expectedReturn, actualReturn,
+            "The StunAddressDiscoverer failed for a no-udp environment.");
     }
 }

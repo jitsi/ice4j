@@ -20,7 +20,10 @@ package org.ice4j.pseudotcp;
 import java.io.*;
 import java.util.logging.*;
 
+import static org.junit.jupiter.api.Assertions.*;
+
 import org.ice4j.pseudotcp.util.*;
+import org.junit.jupiter.api.*;
 
 /**
  * This class implements test for two way transfers
@@ -51,10 +54,6 @@ public class PseudoTcpTestPingPong extends PseudoTcpTestBase
      */
     private int iterationsRemaining;
 
-    public PseudoTcpTestPingPong()
-    {
-    }
-
     public void setBytesPerSend(int bytes_per_send)
     {
         this.bytesPerSend = bytes_per_send;
@@ -71,11 +70,8 @@ public class PseudoTcpTestPingPong extends PseudoTcpTestBase
     /**
      * Performs ping-pong test for <tt>iterations</tt> with packets of
      * <tt>size</tt> bytes
-     *
-     * @param size
-     * @param iterations
      */
-    public void doTestPingPong(int size, int iterations)
+    private void doTestPingPong(int size, int iterations)
     {
         Thread.setDefaultUncaughtExceptionHandler(this);
         long start;
@@ -113,13 +109,11 @@ public class PseudoTcpTestPingPong extends PseudoTcpTestBase
 
     /**
      * Catches onTcpReadable event for receiver
-     *
-     * @param tcp
      */
     @Override
     public void onTcpReadable(PseudoTCPBase tcp)
     {
-        assertEquals("Unexpected onTcpReadable", receiver, tcp);
+        assertEquals(receiver, tcp, "Unexpected onTcpReadable");
         try
         {
             // Stream bytes to the recv stream as they arrive.
@@ -163,8 +157,6 @@ public class PseudoTcpTestPingPong extends PseudoTcpTestBase
 
     /**
      * Catches the ontcpWriteable event for sender
-     *
-     * @param tcp
      */
     @Override
     public void onTcpWriteable(PseudoTCPBase tcp)
@@ -189,13 +181,11 @@ public class PseudoTcpTestPingPong extends PseudoTcpTestBase
 
     /**
      * Reads the data in loop until is something available
-     *
-     * @throws IOException
      */
     private void readData() throws IOException
     {
         byte[] block = new byte[kBlockSize];
-        int rcvd = 0;
+        int rcvd;
         do
         {
             rcvd = receiver.recv(block, block.length);
@@ -214,13 +204,11 @@ public class PseudoTcpTestPingPong extends PseudoTcpTestBase
 
     /**
      * Writes all data to the receiver
-     *
-     * @throws IOException
      */
     private void writeData() throws IOException
     {
         int tosend;
-        int sent = 0;
+        int sent;
         byte[] block = new byte[kBlockSize];
         do
         {
@@ -250,7 +238,7 @@ public class PseudoTcpTestPingPong extends PseudoTcpTestBase
         while (sent > 0);
     }
 
-    /**
+    /*
      *
      * Ping-pong (request/response) tests
      *
@@ -258,6 +246,7 @@ public class PseudoTcpTestPingPong extends PseudoTcpTestBase
     /**
      * Test sending <= 1x MTU of data in each ping/pong. Should take <10ms.
      */
+    @Test
     public void testPingPong1xMtu()
     {
         //logger.log(Level.INFO, "Test ping - pong 1xMTU");
@@ -270,6 +259,7 @@ public class PseudoTcpTestPingPong extends PseudoTcpTestBase
     /**
      * Test sending 2x-3x MTU of data in each ping/pong. Should take <10ms.
      */
+    @Test
     public void testPingPong3xMtu()
     {
         //logger.log(Level.INFO, "Test ping - pong 3xMTU");
@@ -283,6 +273,7 @@ public class PseudoTcpTestPingPong extends PseudoTcpTestBase
      * Test sending 1x-2x MTU of data in each ping/pong. Should take ~1s, due to
      * interaction between Nagling and Delayed ACK.
      */
+    @Test
     public void testPingPong2xMtu()
     {
         //logger.log(Level.INFO, "Test ping - pong 2xMTU");
@@ -296,6 +287,7 @@ public class PseudoTcpTestPingPong extends PseudoTcpTestBase
      * Test sending 1x-2x MTU of data in each ping/pong with Delayed ACK off.
      * Should take <10ms.
      */
+    @Test
     public void testPingPong2xMtuWithAckDelayOff()
     {
         //logger.log(Level.INFO, "Test ping - pong 2xMTU ack delay off");
@@ -310,6 +302,7 @@ public class PseudoTcpTestPingPong extends PseudoTcpTestBase
      * Test sending 1x-2x MTU of data in each ping/pong with Nagling off. Should
      * take <10ms.
      */
+    @Test
     public void testPingPong2xMtuWithNaglingOff()
     {
         //logger.log(Level.INFO, "Test ping - pong 2xMTU nagling off");
@@ -324,6 +317,7 @@ public class PseudoTcpTestPingPong extends PseudoTcpTestBase
      * Test sending a ping as pair of short (non-full) segments. Should take
      * ~1s, due to Delayed ACK interaction with Nagling.
      */
+    @Test
     public void testPingPongShortSegments()
     {
         //logger.log(Level.INFO, "Test ping - pong short segments");
@@ -339,6 +333,7 @@ public class PseudoTcpTestPingPong extends PseudoTcpTestBase
      * Test sending ping as a pair of short (non-full) segments, with Nagling
      * off. Should take <10ms.
      */
+    @Test
     public void testPingPongShortSegmentsWithNaglingOff()
     {
         //logger.log(Level.INFO, "Test ping - pong short segments nagling off");
@@ -354,6 +349,7 @@ public class PseudoTcpTestPingPong extends PseudoTcpTestBase
      * Test sending <= 1x MTU of data ping/pong, in two segments, no Delayed
      * ACK. Should take ~1s.
      */
+    @Test
     public void testPingPongShortSegmentsWithAckDelayOff()
     {
         //logger.log(Level.INFO, "Test ping - pong short segments nagling off");

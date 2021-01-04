@@ -18,21 +18,21 @@
  package org.ice4j.stack;
 
 import java.net.*;
-import java.util.*;
 import java.util.logging.*;
 
-import junit.framework.*;
+import static org.junit.jupiter.api.Assertions.*;
 
 import org.ice4j.*;
 import org.ice4j.message.*;
 import org.ice4j.socket.*;
+import org.junit.jupiter.api.*;
 
 /**
  * All unit stack tests should be provided later. I just don't have the time now.
  *
  * @author Emil Ivov
  */
-public class ShallowStackTest extends TestCase
+public class ShallowStackTest
 {
     /**
      * The <tt>Logger</tt> used by the <tt>ShallowStackTest<tt> class and its
@@ -57,43 +57,33 @@ public class ShallowStackTest extends TestCase
     private DatagramSocket dummyServerSocket = null;
 
     /**
-     * Creates a test instance for the method with the specified name.
-     *
-     * @param name the name of the test we'd like to create an instance for.
-     */
-    public ShallowStackTest(String name)
-    {
-        super(name);
-    }
-
-    /**
      * Initializes whatever sockets we'll be using in our tests.
      *
      * @throws Exception if something goes wrong with socket initialization.
      */
-    protected void setUp()
+    @BeforeEach
+    public void setUp()
         throws Exception
     {
-        super.setUp();
+        System.clearProperty(StackProperties.ALWAYS_SIGN);
+        System.clearProperty(StackProperties.SOFTWARE);
 
         msgFixture = new MsgFixture();
-        msgFixture.setUp();
-        //Addresses
-        dummyServerAddress = new TransportAddress(
-                    "127.0.0.1", 6004, Transport.UDP);
-        localAddress = new TransportAddress(
-                    "127.0.0.1", 5004, Transport.UDP);
 
         //init the stack
         stunStack = new StunStack();
 
         //access point
         localSock = new IceUdpSocketWrapper(
-            new SafeCloseDatagramSocket(localAddress));
+            new SafeCloseDatagramSocket(new InetSocketAddress("127.0.0.1", 0)));
+        localAddress = new TransportAddress(
+            "127.0.0.1", localSock.getLocalPort(), Transport.UDP);
         stunStack.addSocket(localSock);
 
         //init the dummy server
-        dummyServerSocket = new DatagramSocket( dummyServerAddress );
+        dummyServerSocket = new DatagramSocket(new InetSocketAddress("127.0.0.1", 0));
+        dummyServerAddress = new TransportAddress(
+            "127.0.0.1", dummyServerSocket.getLocalPort(), Transport.UDP);
     }
 
     /**
@@ -101,18 +91,18 @@ public class ShallowStackTest extends TestCase
      *
      * @throws Exception if closing the sockets fails.
      */
-    protected void tearDown()
+    @AfterEach
+    public void tearDown()
         throws Exception
     {
         stunStack.removeSocket(localAddress);
+        stunStack.shutDown();
 
         localSock.close();
 
         dummyServerSocket.close();
 
-        msgFixture.tearDown();
         msgFixture = null;
-        super.tearDown();
     }
 
 
@@ -123,6 +113,7 @@ public class ShallowStackTest extends TestCase
      *
      * @throws java.lang.Exception if we fail
      */
+    @Test
     public void testSendRequest()
         throws Exception
     {
@@ -140,17 +131,15 @@ public class ShallowStackTest extends TestCase
 
         DatagramPacket receivedPacket = dgramCollector.collectPacket();
 
-        assertTrue("The stack did not properly send a Binding Request",
-                   (receivedPacket.getLength() > 0));
+        assertTrue((receivedPacket.getLength() > 0),
+            "The stack did not properly send a Binding Request");
 
         Request receivedRequest =
                         (Request)Request.decode(receivedPacket.getData(),
                                             (char)0,
                                             (char)receivedPacket.getLength());
-        assertEquals("The received request did not match the "
-                     +"one that was sent.",
-                     bindingRequest, //expected
-                     receivedRequest); // actual
+        assertEquals(bindingRequest, receivedRequest,
+            "The received request did not match the one that was sent.");
 
         //wait for retransmissions
 
@@ -160,16 +149,15 @@ public class ShallowStackTest extends TestCase
 
         receivedPacket = dgramCollector.collectPacket();
 
-        assertTrue("The stack did not retransmit a Binding Request",
-                   (receivedPacket.getLength() > 0));
+        assertTrue((receivedPacket.getLength() > 0),
+            "The stack did not retransmit a Binding Request");
 
         receivedRequest = (Request)Request.decode(
             receivedPacket.getData(),
-            (char)0,
-            (char)receivedPacket.getLength());
-        assertEquals("The retransmitted request did not match the original.",
-                     bindingRequest, //expected
-                     receivedRequest); // actual
+            0,
+            receivedPacket.getLength());
+        assertEquals(bindingRequest, receivedRequest,
+            "The retransmitted request did not match the original.");
     }
 
     /**
@@ -178,6 +166,7 @@ public class ShallowStackTest extends TestCase
      *
      * @throws java.lang.Exception if we fail
      */
+    @Test
     public void testReceiveRequest()
         throws Exception
     {
@@ -194,12 +183,12 @@ public class ShallowStackTest extends TestCase
 
         Request collectedRequest = requestCollector.collectedRequest;
 
-        assertNotNull("No request has been received", collectedRequest);
+        assertNotNull(collectedRequest, "No request has been received");
 
-        byte expectedReturn[] = msgFixture.bindingRequest2;
-        byte actualReturn[]   = collectedRequest.encode(stunStack);
-        assertTrue("Received request was not the same as the one that was sent",
-                   Arrays.equals(expectedReturn, actualReturn));
+        byte[] expectedReturn = msgFixture.bindingRequest2;
+        byte[] actualReturn = collectedRequest.encode(stunStack);
+        assertArrayEquals(expectedReturn, actualReturn,
+            "Received request was not the same as the one that was sent");
     }
 
     /**
@@ -210,6 +199,7 @@ public class ShallowStackTest extends TestCase
      *
      * @throws java.lang.Exception if we fail
      */
+    @Test
     public void testSendResponse()
         throws Exception
     {
@@ -227,10 +217,10 @@ public class ShallowStackTest extends TestCase
 
         Request collectedRequest = requestCollector.collectedRequest;
 
-        byte expectedReturn[] = msgFixture.bindingRequest;
-        byte actualReturn[]   = collectedRequest.encode(stunStack);
-        assertTrue("Received request was not the same as the one that was sent",
-                   Arrays.equals(expectedReturn, actualReturn));
+        byte[] expectedReturn = msgFixture.bindingRequest;
+        byte[] actualReturn = collectedRequest.encode(stunStack);
+        assertArrayEquals(expectedReturn, actualReturn,
+            "Received request was not the same as the one that was sent");
 
         //---------- create the response ---------------------------------------
         Response bindingResponse = MessageFactory.create3489BindingResponse(
@@ -254,17 +244,15 @@ public class ShallowStackTest extends TestCase
 
         DatagramPacket receivedPacket = dgramCollector.collectPacket();
 
-        assertTrue("The stack did not properly send a Binding Request",
-                   (receivedPacket.getLength() > 0));
+        assertTrue((receivedPacket.getLength() > 0),
+            "The stack did not properly send a Binding Request");
 
         Response receivedResponse =
             (Response) Response.decode(receivedPacket.getData(),
-                                       (char) 0,
-                                       (char) receivedPacket.getLength());
-        assertEquals(
-            "The received request did not match the one that was sent.",
-            bindingResponse, //expected
-            receivedResponse); // actual
+                                       0,
+                                       receivedPacket.getLength());
+        assertEquals(bindingResponse, receivedResponse,
+            "The received request did not match the one that was sent.");
     }
 
     /**
@@ -272,6 +260,7 @@ public class ShallowStackTest extends TestCase
      *
      * @throws Exception if something fails somewhere.
      */
+    @Test
     public void testReceiveResponse()
         throws Exception
     {
@@ -288,7 +277,7 @@ public class ShallowStackTest extends TestCase
         collector.waitForResponse();
 
         //create the right response
-        byte response[] = new byte[msgFixture.bindingResponse.length];
+        byte[] response = new byte[msgFixture.bindingResponse.length];
         System.arraycopy(msgFixture.bindingResponse, 0, response, 0,
                          response.length);
 
@@ -310,15 +299,15 @@ public class ShallowStackTest extends TestCase
 
         Response collectedResponse = collector.collectedResponse;
 
-        byte expectedReturn[] = response;
-        byte actualReturn[]   = collectedResponse.encode(stunStack);
-        assertTrue("Received request was not the same as the one that was sent",
-                   Arrays.equals(expectedReturn, actualReturn));
+        byte[] actualReturn = collectedResponse.encode(stunStack);
+        assertArrayEquals(response, actualReturn,
+            "Received request was not the same as the one that was sent");
     }
 
     /**
      * Verify StackProperties.FIRST_CTRAN_RETRANS_AFTER can indeed update StunClientTransaction.Retransmitter
      */
+    @Test
     public void testRetransmissionOriginalWait()
         throws Exception
     {
@@ -340,39 +329,36 @@ public class ShallowStackTest extends TestCase
         dgramCollector.waitForPacket();
         DatagramPacket receivedPacket = dgramCollector.collectPacket();
 
-        assertTrue("The stack did not properly send a Binding Request",
-                (receivedPacket.getLength() > 0));
+        assertTrue((receivedPacket.getLength() > 0),
+            "The stack did not properly send a Binding Request");
 
         Request receivedRequest =
                 (Request)Request.decode(receivedPacket.getData(),
                         (char)0,
                         (char)receivedPacket.getLength());
-        assertEquals("The received request did not match the "
-                        +"one that was sent.",
-                bindingRequest, //expected
-                receivedRequest); // actual
+        assertEquals(bindingRequest, receivedRequest,
+            "The received request did not match the one that was sent.");
 
         // wait for the 1st retransmission with originalWait
         dgramCollector.startListening(dummyServerSocket);
         dgramCollector.waitForPacket();
         receivedPacket = dgramCollector.collectPacket();
 
-        assertTrue("The stack did not retransmit a Binding Request",
-                (receivedPacket.getLength() > 0));
+        assertTrue((receivedPacket.getLength() > 0),
+            "The stack did not retransmit a Binding Request");
 
-        receivedRequest = (Request)Request.decode(
-                receivedPacket.getData(),
-                (char)0,
-                (char)receivedPacket.getLength());
-        assertEquals("The retransmitted request did not match the original.",
-                bindingRequest, //expected
-                receivedRequest); // actual
+        receivedRequest = (Request) Request.decode(
+            receivedPacket.getData(),
+            0,
+            receivedPacket.getLength());
+        assertEquals(bindingRequest, receivedRequest,
+            "The retransmitted request did not match the original.");
 
         // verify the retransmission is longer than the originalWait
         long secondTime = System.currentTimeMillis();
-         assertTrue((secondTime - firstTime) >= originalWait);
+        assertTrue((secondTime - firstTime) >= originalWait);
 
-         System.clearProperty(StackProperties.FIRST_CTRAN_RETRANS_AFTER);
+        System.clearProperty(StackProperties.FIRST_CTRAN_RETRANS_AFTER);
     }
 
     //--------------------------------------- listener implementations ---------

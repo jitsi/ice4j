@@ -125,10 +125,7 @@ public abstract class AbstractUdpListener
 
         try
         {
-            Message stunMessage
-                = Message.decode(buf,
-                                 (char) off,
-                                 (char) len);
+            Message stunMessage = Message.decode(buf, off, len);
 
             if (stunMessage.getMessageType()
                 != Message.BINDING_REQUEST)

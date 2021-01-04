@@ -17,36 +17,15 @@
  */
 package org.ice4j.message;
 
-import junit.framework.*;
+import static org.junit.jupiter.api.Assertions.*;
 
 import org.ice4j.*;
 import org.ice4j.attribute.*;
+import org.junit.jupiter.api.*;
 
-public class MessageFactoryTest extends TestCase
+public class MessageFactoryTest
 {
-    private MsgFixture msgFixture;
-
-    public MessageFactoryTest(String name)
-    {
-        super(name);
-    }
-
-    protected void setUp() throws Exception
-    {
-        super.setUp();
-        msgFixture = new MsgFixture();
-
-        msgFixture.setUp();
-    }
-
-    protected void tearDown() throws Exception
-    {
-        msgFixture.tearDown();
-
-        msgFixture = null;
-        super.tearDown();
-    }
-
+    @Test
     public void testCreateBindingErrorResponse() throws StunException
     {
         char errorCode = 400;
@@ -60,10 +39,11 @@ public class MessageFactoryTest extends TestCase
 
         Message actualReturn
             = MessageFactory.createBindingErrorResponse(errorCode);
-        assertEquals("return value", expectedReturn, actualReturn);
+        assertEquals(expectedReturn, actualReturn);
     }
 
-    public void testCreateBindingErrorResponse1() throws StunException
+    @Test
+    public void testCreateBindingErrorResponse1()
     {
         char errorCode = 400;
         String reasonPhrase = "Bad Request";
@@ -77,10 +57,10 @@ public class MessageFactoryTest extends TestCase
 
         Message actualReturn = MessageFactory
             .createBindingErrorResponse(errorCode, reasonPhrase);
-        assertEquals("Failed to create an error code attribute.",
-                        expectedReturn, actualReturn);
+        assertEquals(expectedReturn, actualReturn);
     }
 
+    @Test
     public void testCreateBindingErrorResponseUnknownAttributes()
             throws StunException
     {
@@ -91,17 +71,18 @@ public class MessageFactoryTest extends TestCase
         Response expectedReturn = new Response();
         expectedReturn.setMessageType(Message.BINDING_ERROR_RESPONSE);
 
-        Attribute errorCodeAtt = AttributeFactory
+        ErrorCodeAttribute errorCodeAtt = AttributeFactory
             .createErrorCodeAttribute(errorCode);
-        ((ErrorCodeAttribute)errorCodeAtt).setReasonPhrase(
+        errorCodeAtt.setReasonPhrase(
                         ErrorCodeAttribute.getDefaultReasonPhrase(errorCode));
         expectedReturn.putAttribute(errorCodeAtt);
 
         UnknownAttributesAttribute unknownAtts =
                         AttributeFactory.createUnknownAttributesAttribute();
 
-        for (int i = 0; i < unknownAttributes.length; i++) {
-            unknownAtts.addAttributeID(unknownAttributes[i]);
+        for (char unknownAttribute : unknownAttributes)
+        {
+            unknownAtts.addAttributeID(unknownAttribute);
         }
         expectedReturn.putAttribute(unknownAtts);
 
@@ -109,9 +90,10 @@ public class MessageFactoryTest extends TestCase
         Message actualReturn = MessageFactory
             .createBindingErrorResponseUnknownAttributes(unknownAttributes);
         //compare
-        assertEquals("return value", expectedReturn, actualReturn);
+        assertEquals(expectedReturn, actualReturn);
     }
 
+    @Test
     public void testCreateBindingErrorResponseUnknownAttributes1()
             throws StunException
     {
@@ -129,22 +111,22 @@ public class MessageFactoryTest extends TestCase
         UnknownAttributesAttribute unknownAtts =
             AttributeFactory.createUnknownAttributesAttribute();
 
-        for (int i = 0; i < unknownAttributes.length; i++)
+        for (char unknownAttribute : unknownAttributes)
         {
-            unknownAtts.addAttributeID(unknownAttributes[i]);
+            unknownAtts.addAttributeID(unknownAttribute);
         }
         expectedReturn.putAttribute(unknownAtts);
 
         Message actualReturn = MessageFactory
             .createBindingErrorResponseUnknownAttributes(
                                            reasonPhrase, unknownAttributes);
-        assertEquals("return value", expectedReturn, actualReturn);
+        assertEquals(expectedReturn, actualReturn);
     }
 
-    public void testCreateBindingRequest() throws StunException
+    @Test
+    public void testCreateBindingRequest()
     {
         Request bindingRequest = new Request();
-        Request expectedReturn = bindingRequest;
         bindingRequest.setMessageType(Message.BINDING_REQUEST);
 /*
         Attribute changeRequest = AttributeFactory.createChangeRequestAttribute(
@@ -152,9 +134,10 @@ public class MessageFactoryTest extends TestCase
         bindingRequest.putAttribute(changeRequest);
 */
         Request actualReturn = MessageFactory.createBindingRequest();
-        assertEquals("return value", expectedReturn, actualReturn);
+        assertEquals(bindingRequest, actualReturn);
     }
 
+    @Test
     public void testCreateBindingResponse()
         throws Exception
     {
@@ -183,7 +166,6 @@ public class MessageFactoryTest extends TestCase
 
         bindingResponse.putAttribute(changedAddress);
 
-        Message expectedReturn = bindingResponse;
         Message actualReturn = MessageFactory.create3489BindingResponse(
             new TransportAddress( MsgFixture.ADDRESS_ATTRIBUTE_ADDRESS,
                                   MsgFixture.ADDRESS_ATTRIBUTE_PORT,
@@ -194,6 +176,6 @@ public class MessageFactoryTest extends TestCase
             new TransportAddress( MsgFixture.ADDRESS_ATTRIBUTE_ADDRESS_3,
                                   MsgFixture.ADDRESS_ATTRIBUTE_PORT_3,
                                   Transport.UDP));
-        assertEquals("return value", expectedReturn, actualReturn);
+        assertEquals(bindingResponse, actualReturn);
     }
 }

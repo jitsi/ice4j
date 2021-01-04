@@ -17,46 +17,40 @@
  */
 package org.ice4j.attribute;
 
-import java.util.*;
-
-import junit.framework.*;
+import static org.junit.jupiter.api.Assertions.*;
 
 import org.ice4j.*;
-
+import org.junit.jupiter.api.*;
 /**
  *
  * @author Emil Ivov
  */
-public class AddressAttributeTest extends TestCase {
+public class AddressAttributeTest
+{
     private AddressAttribute addressAttribute = null;
     private MsgFixture msgFixture;
 
-    public AddressAttributeTest(String name) {
-        super(name);
-    }
-
-    protected void setUp() throws Exception {
-        super.setUp();
-
+    @BeforeEach
+    public void setUp() throws Exception
+    {
         addressAttribute = new MappedAddressAttribute();
         msgFixture = new MsgFixture();
-
-        msgFixture.setUp();
     }
 
-    protected void tearDown() throws Exception {
+    @AfterEach
+    public void tearDown() throws Exception
+    {
         addressAttribute = null;
-        msgFixture.tearDown();
-
         msgFixture = null;
-        super.tearDown();
     }
 
     /**
      * Verify that AddressAttribute descendants have correctly set types and
      * names.
      */
-    public void testAddressAttributeDescendants() {
+    @Test
+    public void testAddressAttributeDescendants()
+    {
         char expectedType;
         char actualType;
         String expectedName;
@@ -71,10 +65,10 @@ public class AddressAttributeTest extends TestCase {
         expectedName = "MAPPED-ADDRESS";
         actualName = addressAttribute.getName();
 
-        assertEquals("MappedAddressAttribute does not the right type.",
-                     expectedType, actualType);
-        assertEquals("MappedAddressAttribute does not the right name.",
-                     expectedName, actualName);
+        assertEquals(expectedType, actualType,
+            "MappedAddressAttribute does not the right type.");
+        assertEquals(expectedName, actualName,
+            "MappedAddressAttribute does not the right name.");
 
 
         //SOURCE-ADDRESS
@@ -86,10 +80,10 @@ public class AddressAttributeTest extends TestCase {
         expectedName = "SOURCE-ADDRESS";
         actualName = addressAttribute.getName();
 
-        assertEquals("SourceAddressAttribute does not the right type.",
-                     expectedType, actualType);
-        assertEquals("SourceAddressAttribute does not the right name.",
-                     expectedName, actualName);
+        assertEquals(expectedType, actualType,
+            "SourceAddressAttribute does not the right type.");
+        assertEquals(expectedName, actualName,
+            "SourceAddressAttribute does not the right name.");
 
 
         //CHANGED-ADDRESS
@@ -101,10 +95,10 @@ public class AddressAttributeTest extends TestCase {
         expectedName = "CHANGED-ADDRESS";
         actualName = addressAttribute.getName();
 
-        assertEquals("ChangedAddressAttribute does not the right type.",
-                     expectedType, actualType);
-        assertEquals("ChangedAddressAttribute does not the right name.",
-                     expectedName, actualName);
+        assertEquals(expectedType, actualType,
+            "ChangedAddressAttribute does not the right type.");
+        assertEquals(expectedName, actualName,
+            "ChangedAddressAttribute does not the right name.");
 
 
         //RESPONSE-ADDRESS
@@ -116,10 +110,10 @@ public class AddressAttributeTest extends TestCase {
         expectedName = "RESPONSE-ADDRESS";
         actualName = addressAttribute.getName();
 
-        assertEquals("ResponseAddressAttribute does not the right type.",
-                     expectedType, actualType);
-        assertEquals("ResponseAddressAttribute does not the right name.",
-                     expectedName, actualName);
+        assertEquals(expectedType, actualType,
+            "ResponseAddressAttribute does not the right type.");
+        assertEquals(expectedName, actualName,
+            "ResponseAddressAttribute does not the right name.");
 
 
         //REFLECTED-FROM
@@ -131,10 +125,10 @@ public class AddressAttributeTest extends TestCase {
         expectedName = "REFLECTED-FROM";
         actualName = addressAttribute.getName();
 
-        assertEquals("ReflectedFromAttribute does not the right type.",
-                     expectedType, actualType);
-        assertEquals("ReflectedFromAttribute does not the right name.",
-                     expectedName, actualName);
+        assertEquals(expectedType, actualType,
+            "ReflectedFromAttribute does not the right type.");
+        assertEquals(expectedName, actualName,
+            "ReflectedFromAttribute does not the right name.");
 
         //REFLECTED-FROM
         addressAttribute = new ReflectedFromAttribute();
@@ -145,10 +139,10 @@ public class AddressAttributeTest extends TestCase {
         expectedName = "REFLECTED-FROM";
         actualName = addressAttribute.getName();
 
-        assertEquals("ReflectedFromAttribute does not the right type.",
-                     expectedType, actualType);
-        assertEquals("ReflectedFromAttribute does not the right name.",
-                     expectedName, actualName);
+        assertEquals(expectedType, actualType,
+            "ReflectedFromAttribute does not the right type.");
+        assertEquals(expectedName, actualName,
+            "ReflectedFromAttribute does not the right name.");
 
         //XOR-MAPPED-ADDRESS
         addressAttribute = new XorMappedAddressAttribute();
@@ -159,10 +153,10 @@ public class AddressAttributeTest extends TestCase {
         expectedName = "XOR-MAPPED-ADDRESS";
         actualName = addressAttribute.getName();
 
-        assertEquals("XorMappedAddressAttribute does not the right type.",
-                     expectedType, actualType);
-        assertEquals("XorMappedAddressAttribute does not the right name.",
-                     expectedName, actualName);
+        assertEquals(expectedType, actualType,
+            "XorMappedAddressAttribute does not the right type.");
+        assertEquals(expectedName, actualName,
+            "XorMappedAddressAttribute does not the right name.");
 
         /* ALTERNATE-SERVER */
         addressAttribute = new AlternateServerAttribute();
@@ -173,10 +167,10 @@ public class AddressAttributeTest extends TestCase {
         expectedName = "ALTERNATE-SERVER";
         actualName = addressAttribute.getName();
 
-        assertEquals("AlternateServerAttribute does not the right type.",
-                     expectedType, actualType);
-        assertEquals("AlternateAttribute does not the right name.",
-                     expectedName, actualName);
+        assertEquals(expectedType, actualType,
+            "AlternateServerAttribute does not the right type.");
+        assertEquals(expectedName, actualName,
+            "AlternateAttribute does not the right name.");
 
 
         /* XOR-PEER-ADDRESS */
@@ -188,10 +182,10 @@ public class AddressAttributeTest extends TestCase {
         expectedName = "XOR-PEER-ADDRESS";
         actualName = addressAttribute.getName();
 
-        assertEquals("XorPeerAddressAttribute does not the right type.",
-                     expectedType, actualType);
-        assertEquals("XorPeerAddressAttribute does not the right name.",
-                     expectedName, actualName);
+        assertEquals(expectedType, actualType,
+            "XorPeerAddressAttribute does not the right type.");
+        assertEquals(expectedName, actualName,
+            "XorPeerAddressAttribute does not the right name.");
 
         /* XOR-RELAYED-ADDRESS */
         addressAttribute = new XorRelayedAddressAttribute();
@@ -202,15 +196,16 @@ public class AddressAttributeTest extends TestCase {
         expectedName = "XOR-RELAYED-ADDRESS";
         actualName = addressAttribute.getName();
 
-        assertEquals("XorRelayedAddressAttribute does not the right type.",
-                     expectedType, actualType);
-        assertEquals("XorRelayedAddressAttribute does not the right name.",
-                     expectedName, actualName);
+        assertEquals(expectedType, actualType,
+            "XorRelayedAddressAttribute does not the right type.");
+        assertEquals(expectedName, actualName,
+            "XorRelayedAddressAttribute does not the right name.");
     }
 
     /**
      * Verifies that xorred address-es are properly xor-ed for IPv4 addresses.
      */
+    @Test
     public void testXorMappedAddressXoring_v4()
     {
         XorMappedAddressAttribute addressAttribute = new XorMappedAddressAttribute();
@@ -223,11 +218,12 @@ public class AddressAttributeTest extends TestCase {
         TransportAddress xorredAddr = addressAttribute.applyXor(
                 new byte[]{(byte)130,79,95,53,0,0,0,0,0,0,0,0,0,0,0,0,0});
 
-        assertTrue("Xorring the address with itself didn't return 00000...",
-            Arrays.equals(xorredAddr.getAddressBytes(), new byte[]{0,0,0,0}));
+        assertArrayEquals(
+            xorredAddr.getAddressBytes(), new byte[] { 0, 0, 0, 0 },
+            "Xorring the address with itself didn't return 00000...");
 
-        assertTrue("Port was not xorred",
-                       testAddress.getPort()  != xorredAddr.getPort());
+        assertNotEquals(xorredAddr.getPort(), testAddress.getPort(),
+            "Port was not xorred");
 
         //Test xor-ing the original with the xored - should get the xor code
         addressAttribute.setAddress(testAddress);
@@ -237,13 +233,11 @@ public class AddressAttributeTest extends TestCase {
         xorredAddr =
             addressAttribute.applyXor(xorredAddr.getAddressBytes());
 
-        assertTrue("Xorring the original with the xor-ed didn't "
-                        +"return the code..",
-                   Arrays.equals( xorredAddr.getAddressBytes(),
-                                   new byte[]{21,22,23,24}));
+        assertArrayEquals(
+            xorredAddr.getAddressBytes(), new byte[] { 21, 22, 23, 24 },
+            "Xorring the original with the xor-ed didn't return the code.");
 
-        assertTrue("Port was not xorred",
-                       testAddress.getPort()  != 0xFFFF);
+        assertNotEquals(0xFFFF, testAddress.getPort(), "Port was not xorred");
 
         //Test double xor-ing - should get the original
         addressAttribute.setAddress(testAddress);
@@ -254,13 +248,14 @@ public class AddressAttributeTest extends TestCase {
         xorredAddr = addressAttribute.applyXor(
                 new byte[]{21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36});
 
-        assertEquals("Double xorring didn't give the original ...",
-            testAddress, xorredAddr);
+        assertEquals(testAddress, xorredAddr,
+            "Double xorring didn't give the original");
     }
 
     /**
      * Verifies that xorred address-es are properly xor-ed for IPv6 addresses.
      */
+    @Test
     public void testXorMappedAddressXoring_v6()
     {
         XorMappedAddressAttribute addressAttribute
@@ -278,15 +273,15 @@ public class AddressAttributeTest extends TestCase {
                            (byte)0x02, (byte)0x02, (byte)0x8a, (byte)0xff,
                            (byte)0xfe, (byte)0xbe, (byte)0x13, (byte)0x0b});
 
-        assertTrue("Xorring the address with itself didn't return 00000...",
-            Arrays.equals(xorredAddr.getAddressBytes(),
-                          new byte[]{0,0,0,0,
-                                     0,0,0,0,
-                                     0,0,0,0,
-                                     0,0,0,0}));
+        assertArrayEquals(
+            xorredAddr.getAddressBytes(), new byte[] { 0, 0, 0, 0,
+                0, 0, 0, 0,
+                0, 0, 0, 0,
+                0, 0, 0, 0 },
+            "Xorring the address with itself didn't return 00000...");
 
-        assertTrue("Port was not xorred",
-                       testAddress.getPort()  != xorredAddr.getPort());
+        assertNotEquals(testAddress.getPort(), xorredAddr.getPort(),
+            "Port was not xorred");
 
         //Test xor-ing the original with the xored - should get the xor code
         addressAttribute.setAddress(testAddress);
@@ -295,13 +290,13 @@ public class AddressAttributeTest extends TestCase {
 
         xorredAddr = addressAttribute.applyXor(xorredAddr.getAddressBytes());
 
-        assertTrue("Xorring the original with the xor-ed didn't return the code..",
-            Arrays.equals(
-               xorredAddr.getAddressBytes(),
-               new byte[]{21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36}));
-
-        assertTrue("Port was not xorred",
-                       testAddress.getPort()  != 0xFFFF);
+        assertArrayEquals(
+            xorredAddr.getAddressBytes(),
+            new byte[] { 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34,
+                35, 36 },
+            "Xorring the original with the xor-ed didn't return the code.");
+        
+        assertNotEquals(0xFFFF, testAddress.getPort(), "Port was not xorred");
 
         //Test double xor-ing - should get the original
         addressAttribute.setAddress(testAddress);
@@ -312,8 +307,8 @@ public class AddressAttributeTest extends TestCase {
         xorredAddr = addressAttribute.applyXor(
                   new byte[]{21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36});
 
-        assertEquals("Double xorring didn't give the original ...",
-            testAddress, xorredAddr);
+        assertEquals(testAddress, xorredAddr,
+            "Double xorring didn't give the original");
     }
 
     /**
@@ -321,6 +316,7 @@ public class AddressAttributeTest extends TestCase {
      *
      * @throws StunException if something goes wrong
      */
+    @Test
     public void testDecodeAttributeBody() throws StunException {
         byte[] attributeValue = msgFixture.mappedAddress;
         char offset = Attribute.HEADER_LENGTH;
@@ -330,12 +326,12 @@ public class AddressAttributeTest extends TestCase {
 
 
         assertEquals(
-            "AddressAttribute.decode() did not properly decode the port field.",
-            MsgFixture.ADDRESS_ATTRIBUTE_PORT, addressAttribute.getPort());
-        assertTrue(
-            "AddressAttribute.decode() did not properly decode the address field.",
-            Arrays.equals( MsgFixture.ADDRESS_ATTRIBUTE_ADDRESS,
-            addressAttribute.getAddressBytes()));
+            MsgFixture.ADDRESS_ATTRIBUTE_PORT, addressAttribute.getPort(),
+            "AddressAttribute.decode() did not properly decode the port field.");
+        assertArrayEquals(
+            MsgFixture.ADDRESS_ATTRIBUTE_ADDRESS,
+            addressAttribute.getAddressBytes(),
+            "AddressAttribute.decode() did not properly decode the address field.");
 
 
     }
@@ -344,6 +340,7 @@ public class AddressAttributeTest extends TestCase {
      * Test whetner sample binary arrays are correctly decoded.
      * @throws StunException if something goes wrong
      */
+    @Test
     public void testDecodeAttributeBodyv6() throws StunException {
         byte[] attributeValue = msgFixture.mappedAddressv6;
         char offset = Attribute.HEADER_LENGTH;
@@ -352,14 +349,13 @@ public class AddressAttributeTest extends TestCase {
         addressAttribute.decodeAttributeBody(attributeValue, offset, length);
 
 
-        assertEquals("decode() failed for an IPv6 Addr's port.",
-                     MsgFixture.ADDRESS_ATTRIBUTE_PORT,
-                     addressAttribute.getPort());
-        assertTrue("AddressAttribute.decode() failed for an IPv6 address.",
-                     Arrays.equals( MsgFixture.ADDRESS_ATTRIBUTE_ADDRESS_V6,
-                     addressAttribute.getAddressBytes()));
-
-
+        assertEquals(MsgFixture.ADDRESS_ATTRIBUTE_PORT,
+                     addressAttribute.getPort(),
+            "decode() failed for an IPv6 Addr's port.");
+        assertArrayEquals(
+            MsgFixture.ADDRESS_ATTRIBUTE_ADDRESS_V6,
+            addressAttribute.getAddressBytes(),
+            "AddressAttribute.decode() failed for an IPv6 address.");
     }
 
     /**
@@ -367,6 +363,7 @@ public class AddressAttributeTest extends TestCase {
      *
      * @throws Exception java.lang.Exception if we fail
      */
+    @Test
     public void testEncode()
         throws Exception
     {
@@ -378,9 +375,8 @@ public class AddressAttributeTest extends TestCase {
                                  Transport.UDP));
 
         byte[] actualReturn = addressAttribute.encode();
-        assertTrue("AddressAttribute.encode() did not "
-                     +"properly encode a sample attribute",
-                     Arrays.equals( expectedReturn, actualReturn));
+        assertArrayEquals(expectedReturn, actualReturn,
+            "AddressAttribute.encode() did not properly encode a sample attribute");
     }
 
     /**
@@ -388,6 +384,7 @@ public class AddressAttributeTest extends TestCase {
      *
      * @throws Exception java.lang.Exception if we fail
      */
+    @Test
     public void testEncodev6()
         throws Exception
     {
@@ -398,8 +395,8 @@ public class AddressAttributeTest extends TestCase {
                         MsgFixture.ADDRESS_ATTRIBUTE_PORT, Transport.UDP));
 
         byte[] actualReturn = addressAttribute.encode();
-        assertTrue("An AddressAttribute did not properly encode an IPv6 addr.",
-                     Arrays.equals( expectedReturn, actualReturn));
+        assertArrayEquals(expectedReturn, actualReturn,
+            "An AddressAttribute did not properly encode an IPv6 addr.");
     }
 
 
@@ -409,6 +406,7 @@ public class AddressAttributeTest extends TestCase {
      *
      * @throws Exception java.lang.Exception if we fail
      */
+    @Test
     public void testEquals()
         throws Exception
     {
@@ -417,8 +415,8 @@ public class AddressAttributeTest extends TestCase {
         boolean expectedReturn = false;
         boolean actualReturn = addressAttribute.equals(target);
 
-        assertEquals("AddressAttribute.equals() failed against a null target.",
-                     expectedReturn, actualReturn);
+        assertEquals(expectedReturn, actualReturn,
+            "AddressAttribute.equals() failed against a null target.");
 
         //difference test
         target = new MappedAddressAttribute();
@@ -434,9 +432,8 @@ public class AddressAttributeTest extends TestCase {
 
         expectedReturn = false;
         actualReturn = addressAttribute.equals(target);
-        assertEquals(
-            "AddressAttribute.equals() failed against a different target.",
-            expectedReturn, actualReturn);
+        assertEquals(expectedReturn, actualReturn,
+            "AddressAttribute.equals() failed against a different target.");
 
         //equality test
         target.setAddress( new TransportAddress(
@@ -445,9 +442,8 @@ public class AddressAttributeTest extends TestCase {
 
         expectedReturn = true;
         actualReturn = addressAttribute.equals(target);
-        assertEquals(
-                "AddressAttribute.equals() failed against an equal target.",
-                expectedReturn, actualReturn);
+        assertEquals(expectedReturn, actualReturn,
+            "AddressAttribute.equals() failed against an equal target.");
 
         //ipv6 equality test
         target.setAddress(  new TransportAddress(
@@ -461,8 +457,8 @@ public class AddressAttributeTest extends TestCase {
 
         expectedReturn = true;
         actualReturn = addressAttribute.equals(target);
-        assertEquals("AddressAttribute.equals() failed for IPv6 addresses.",
-                     expectedReturn, actualReturn);
+        assertEquals(expectedReturn, actualReturn,
+            "AddressAttribute.equals() failed for IPv6 addresses.");
     }
 
     /**
@@ -470,6 +466,7 @@ public class AddressAttributeTest extends TestCase {
      *
      * @throws Exception java.lang.Exception if we fail
      */
+    @Test
     public void testGetDataLength()
         throws Exception
     {
@@ -482,8 +479,8 @@ public class AddressAttributeTest extends TestCase {
 
         char actualReturn = addressAttribute.getDataLength();
 
-        assertEquals("Datalength is not propoerly calculated",
-                     expectedReturn, actualReturn);
+        assertEquals(expectedReturn, actualReturn,
+            "Datalength is not propoerly calculated");
 
         expectedReturn = 20;//1-padding + 1-family + 2-port + 16-address
         addressAttribute.setAddress( new TransportAddress(
@@ -492,8 +489,8 @@ public class AddressAttributeTest extends TestCase {
 
         actualReturn = addressAttribute.getDataLength();
 
-        assertEquals("Datalength is not propoerly calculated",
-                     expectedReturn, actualReturn);
+        assertEquals(expectedReturn, actualReturn,
+            "Datalength is not propoerly calculated");
     }
 
     /**
@@ -501,6 +498,7 @@ public class AddressAttributeTest extends TestCase {
      *
      * @throws Exception java.lang.Exception if we fail
      */
+    @Test
     public void testGetFamily()
         throws Exception
     {
@@ -509,8 +507,8 @@ public class AddressAttributeTest extends TestCase {
             MsgFixture.ADDRESS_ATTRIBUTE_ADDRESS,
             MsgFixture.ADDRESS_ATTRIBUTE_PORT, Transport.UDP));
         byte actualReturn = addressAttribute.getFamily();
-        assertEquals("Address family was not 1 for an IPv4",
-                     expectedReturn, actualReturn);
+        assertEquals(expectedReturn, actualReturn,
+            "Address family was not 1 for an IPv4");
 
         //ipv6
         expectedReturn = 2;
@@ -518,9 +516,7 @@ public class AddressAttributeTest extends TestCase {
                        MsgFixture.ADDRESS_ATTRIBUTE_ADDRESS_V6,
                        MsgFixture.ADDRESS_ATTRIBUTE_PORT, Transport.UDP));
         actualReturn = addressAttribute.getFamily();
-        assertEquals("Address family was not 2 for an IPv6 address",
-                     expectedReturn, actualReturn);
-
+        assertEquals(expectedReturn, actualReturn,
+            "Address family was not 2 for an IPv6 address");
     }
-
 }

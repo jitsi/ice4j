@@ -4,22 +4,45 @@
   <groupId>org.jitsi</groupId>
   <artifactId>ice4j</artifactId>
   <version>3.0-SNAPSHOT</version>
-  <packaging>bundle</packaging>
 
   <name>ice4j</name>
+  <description>A Java implementation of the ICE protocol</description>
   <url>https://github.com/jitsi/ice4j</url>
+
+  <organization>
+    <name>jitsi.org</name>
+    <url>https://jitsi.org</url>
+  </organization>
+
+  <developers>
+    <developer>
+      <id>org.jitsi</id>
+      <name>Jitsi Team</name>
+      <email>dev@jitsi.org</email>
+    </developer>
+  </developers>
+
   <scm>
     <url>https://github.com/jitsi/ice4j</url>
     <connection>scm:git:https://github.com/jitsi/ice4j.git</connection>
     <developerConnection>scm:git:https://github.com/jitsi/ice4j.git</developerConnection>
-    <tag>HEAD</tag>
   </scm>
+
+  <licenses>
+    <license>
+      <name>Apache-2.0</name>
+      <url>https://github.com/jitsi/ice4j/blob/master/LICENSE</url>
+      <distribution>repo</distribution>
+    </license>
+  </licenses>
 
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-    <jicoco.version>1.1-53-gdc63c67</jicoco.version>
+    <jicoco.version>1.1-73-gf8e9405</jicoco.version>
     <kotlin.version>1.3.72</kotlin.version>
     <kotest.version>4.1.3</kotest.version>
+    <junit.version>5.7.0</junit.version>
+    <dokka.version>1.4.20</dokka.version>
   </properties>
 
   <dependencies>
@@ -36,7 +59,7 @@
     <dependency>
       <groupId>${project.groupId}</groupId>
       <artifactId>jitsi-utils</artifactId>
-      <version>1.0-59-g5dc2b5f</version>
+      <version>1.0-72-gcf6d1f8</version>
     </dependency>
     <dependency>
       <groupId>${project.groupId}</groupId>
@@ -46,16 +69,22 @@
 
     <!-- test -->
     <dependency>
-      <groupId>junit</groupId>
-      <artifactId>junit</artifactId>
-      <version>4.13.1</version>
+      <groupId>org.junit.platform</groupId>
+      <artifactId>junit-platform-launcher</artifactId>
+      <version>1.7.0</version>
       <scope>test</scope>
     </dependency>
     <dependency>
-        <groupId>io.kotest</groupId>
-        <artifactId>kotest-runner-junit5-jvm</artifactId>
-        <version>${kotest.version}</version>
-        <scope>test</scope>
+      <groupId>org.junit.jupiter</groupId>
+      <artifactId>junit-jupiter-api</artifactId>
+      <version>${junit.version}</version>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.junit.jupiter</groupId>
+      <artifactId>junit-jupiter-engine</artifactId>
+      <version>${junit.version}</version>
+      <scope>test</scope>
     </dependency>
     <dependency>
         <groupId>io.kotest</groupId>
@@ -65,7 +94,7 @@
     </dependency>
     <dependency>
         <groupId>io.kotest</groupId>
-        <artifactId>kotest-runner-console-jvm</artifactId>
+        <artifactId>kotest-runner-junit5-jvm</artifactId>
         <version>${kotest.version}</version>
         <scope>test</scope>
     </dependency>
@@ -73,6 +102,12 @@
       <groupId>org.jitsi</groupId>
       <artifactId>jicoco-test-kotlin</artifactId>
       <version>${jicoco.version}</version>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.mockito</groupId>
+      <artifactId>mockito-core</artifactId>
+      <version>3.6.28</version>
       <scope>test</scope>
     </dependency>
   </dependencies>
@@ -157,61 +192,71 @@
         </configuration>
       </plugin>
       <plugin>
-        <groupId>org.apache.felix</groupId>
-        <artifactId>maven-bundle-plugin</artifactId>
-        <version>3.0.1</version>
-        <extensions>true</extensions>
+        <groupId>com.github.gantsign.maven</groupId>
+        <artifactId>ktlint-maven-plugin</artifactId>
+        <version>1.7.0</version>
+        <configuration>
+          <sourceRoots>
+            <sourceRoot>${project.basedir}/src/main/kotlin</sourceRoot>
+          </sourceRoots>
+          <testSourceRoots>
+            <testSourceRoot>${project.basedir}/src/test/kotlin</testSourceRoot>
+          </testSourceRoots>
+        </configuration>
+        <executions>
+          <execution>
+            <id>check</id>
+            <goals>
+              <goal>check</goal>
+            </goals>
+          </execution>
+        </executions>
+      </plugin>
+      <plugin>
+        <groupId>biz.aQute.bnd</groupId>
+        <artifactId>bnd-maven-plugin</artifactId>
+        <version>5.2.0</version>
+        <executions>
+          <execution>
+            <goals>
+              <goal>bnd-process</goal>
+            </goals>
+          </execution>
+        </executions>
       </plugin>
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
-        <artifactId>maven-javadoc-plugin</artifactId>
-        <version>2.10.4</version>
+        <artifactId>maven-jar-plugin</artifactId>
+        <version>3.2.0</version>
         <configuration>
-          <show>private</show>
-          <nohelp>true</nohelp>
+          <archive>
+            <manifestFile>${project.build.outputDirectory}/META-INF/MANIFEST.MF</manifestFile>
+          </archive>
         </configuration>
       </plugin>
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-surefire-plugin</artifactId>
-        <version>2.19.1</version>
+        <version>2.22.2</version>
         <configuration>
-          <includes>
-            <include>**/*TestSuite.*</include>
-          </includes>
+          <includes>**/*</includes>
         </configuration>
       </plugin>
       <plugin>
-        <groupId>com.github.siom79.japicmp</groupId>
-        <artifactId>japicmp-maven-plugin</artifactId>
-        <version>0.14.0</version>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-deploy-plugin</artifactId>
+        <version>2.8.2</version>
+      </plugin>
+      <plugin>
+        <groupId>org.sonatype.plugins</groupId>
+        <artifactId>nexus-staging-maven-plugin</artifactId>
+        <version>1.6.8</version>
+        <extensions>true</extensions>
         <configuration>
-          <newVersion>
-            <file>
-              <path>${project.build.directory}/${project.build.finalName}.jar</path>
-            </file>
-          </newVersion>
-          <oldVersion>
-            <dependency>
-              <groupId>${project.groupId}</groupId>
-              <artifactId>${project.artifactId}</artifactId>
-              <version>1.0.0</version>
-            </dependency>
-          </oldVersion>
-          <parameter>
-            <onlyModified>true</onlyModified>
-            <breakBuildBasedOnSemanticVersioning>true</breakBuildBasedOnSemanticVersioning>
-            <reportOnlyFilename>true</reportOnlyFilename>
-          </parameter>
+          <serverId>ossrh</serverId>
+          <nexusUrl>https://oss.sonatype.org/</nexusUrl>
+          <autoReleaseAfterClose>true</autoReleaseAfterClose>
         </configuration>
-        <executions>
-          <execution>
-            <phase>verify</phase>
-            <goals>
-              <goal>cmp</goal>
-            </goals>
-          </execution>
-        </executions>
       </plugin>
     </plugins>
 
@@ -346,24 +391,104 @@
         </plugins>
       </build>
     </profile>
+
+    <profile>
+      <id>release</id>
+      <activation>
+        <property>
+          <name>release</name>
+          <value>true</value>
+        </property>
+      </activation>
+      <build>
+        <plugins>
+          <plugin>
+            <groupId>org.codehaus.mojo</groupId>
+            <artifactId>build-helper-maven-plugin</artifactId>
+            <version>3.2.0</version>
+            <executions>
+              <execution>
+                <phase>generate-sources</phase>
+                <goals>
+                  <goal>add-source</goal>
+                </goals>
+                <configuration>
+                  <sources>
+                    <source>src/main/kotlin</source>
+                  </sources>
+                </configuration>
+              </execution>
+            </executions>
+          </plugin>
+          <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-source-plugin</artifactId>
+            <version>3.2.1</version>
+            <executions>
+              <execution>
+                <id>attach-sources</id>
+                <phase>verify</phase>
+                <goals>
+                  <goal>jar-no-fork</goal>
+                </goals>
+              </execution>
+            </executions>
+          </plugin>
+          <plugin>
+            <groupId>org.jetbrains.dokka</groupId>
+            <artifactId>dokka-maven-plugin</artifactId>
+            <version>${dokka.version}</version>
+            <executions>
+              <execution>
+                <phase>package</phase>
+                <goals>
+                  <goal>javadocJar</goal>
+                </goals>
+              </execution>
+            </executions>
+          </plugin>
+          <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-gpg-plugin</artifactId>
+            <version>1.6</version>
+            <executions>
+              <execution>
+                <id>sign-artifacts</id>
+                <phase>verify</phase>
+                <goals>
+                  <goal>sign</goal>
+                </goals>
+              </execution>
+            </executions>
+            <configuration>
+              <gpgArguments>
+                <arg>--pinentry-mode</arg>
+                <arg>loopback</arg>
+              </gpgArguments>
+            </configuration>
+          </plugin>
+        </plugins>
+      </build>
+    </profile>
   </profiles>
 
-  <repositories>
+  <pluginRepositories>
+    <!-- Required for Dokka -->
+    <pluginRepository>
+      <id>jcenter</id>
+      <name>JCenter</name>
+      <url>https://jcenter.bintray.com/</url>
+    </pluginRepository>
+  </pluginRepositories>
+
+  <distributionManagement>
+    <snapshotRepository>
+      <id>ossrh</id>
+      <url>https://oss.sonatype.org/content/repositories/snapshots</url>
+    </snapshotRepository>
     <repository>
-      <id>jitsi-maven-repository-releases</id>
-      <layout>default</layout>
-      <name>Jitsi Maven Repository (Releases)</name>
-      <releases>
-        <enabled>true</enabled>
-      </releases>
-      <snapshots>
-        <enabled>false</enabled>
-      </snapshots>
-      <url>https://github.com/jitsi/jitsi-maven-repository/raw/master/releases/</url>
+      <id>ossrh</id>
+      <url>https://oss.sonatype.org/service/local/staging/deploy/maven2/</url>
     </repository>
-    <repository>
-      <id>jitpack.io</id>
-      <url>https://jitpack.io</url>
-    </repository>
-  </repositories>
+  </distributionManagement>
 </project>

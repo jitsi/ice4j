@@ -17,19 +17,17 @@
  */
 package org.ice4j.attribute;
 
-import junit.framework.*;
-
-import java.util.*;
+import static org.junit.jupiter.api.Assertions.*;
 
 import org.ice4j.*;
-
+import org.junit.jupiter.api.*;
 /**
  * Tests the username attribute class.
  *
  * @author Emil Ivov
  * @author Sebastien Vincent
  */
-public class UsernameAttributeTest extends TestCase
+public class UsernameAttributeTest
 {
     private UsernameAttribute usernameAttribute = null;
     MsgFixture msgFixture = null;
@@ -40,30 +38,27 @@ public class UsernameAttributeTest extends TestCase
             0, (byte)usernameValue.length(),
             'u', 's', 'e', 'r', 'n', 'a', 'm','e'};
 
-    protected void setUp() throws Exception
+    @BeforeEach
+    public void setUp() throws Exception
     {
-        super.setUp();
         msgFixture = new MsgFixture();
 
         usernameAttribute = new UsernameAttribute();
         usernameAttribute.setUsername(usernameValue.getBytes());
-
-        msgFixture.setUp();
     }
 
-    protected void tearDown() throws Exception
+    @AfterEach
+    public void tearDown() throws Exception
     {
         usernameAttribute = null;
-        msgFixture.tearDown();
-
         msgFixture = null;
-        super.tearDown();
     }
 
     /**
      * Tests decoding of the username attribute.
      * @throws StunException upon a failure
      */
+    @Test
     public void testDecodeAttributeBody() throws StunException
     {
         char offset = 0;
@@ -72,63 +67,62 @@ public class UsernameAttributeTest extends TestCase
         decoded.decodeAttributeBody(usernameValue.getBytes(), offset, length);
 
         //username value
-        assertEquals( "decode failed", usernameAttribute, decoded);
+        assertEquals(usernameAttribute, decoded);
     }
 
     /**
      * Tests the encode method
      */
+    @Test
     public void testEncode()
     {
-        assertTrue("encode failed",
-                   Arrays.equals(usernameAttribute.encode(),
-                                 attributeBinValue));
+        assertArrayEquals(usernameAttribute.encode(), attributeBinValue);
     }
 
     /**
      * Test Equals
      */
+    @Test
     public void testEquals()
     {
         UsernameAttribute usernameAttribute2 = new UsernameAttribute();
         usernameAttribute2.setUsername(usernameValue.getBytes());
 
         //test positive equals
-        assertEquals("testequals failed", usernameAttribute, usernameAttribute2);
+        assertEquals(usernameAttribute, usernameAttribute2);
 
         //test negative equals
         usernameAttribute2 = new UsernameAttribute();
         usernameAttribute2.setUsername("some other username".getBytes());
 
         //test positive equals
-        assertFalse("testequals failed",
-                    usernameAttribute.equals(usernameAttribute2));
+        assertNotEquals(usernameAttribute2, usernameAttribute);
 
         //test null equals
-        assertFalse("testequals failed",
-                    usernameAttribute.equals(null));
+        assertNotEquals(usernameAttribute, null);
     }
 
     /**
      * Tests extracting data length
      */
+    @Test
     public void testGetDataLength()
     {
         char expectedReturn = (char)usernameValue.length();
         char actualReturn = usernameAttribute.getDataLength();
-        assertEquals("getDataLength - failed", expectedReturn, actualReturn);
+        assertEquals(expectedReturn, actualReturn);
     }
 
     /**
      * Tests getting the name
      */
+    @Test
     public void testGetName()
     {
-        String expectedReturn = "USERNAME";
-        String actualReturn = usernameAttribute.getName();
-        assertEquals("getting name failed", expectedReturn, actualReturn);
+        assertEquals("USERNAME", usernameAttribute.getName());
     }
 
+    @Test
     public void testSetGetUsername()
     {
         byte[] expectedReturn = usernameValue.getBytes();
@@ -137,8 +131,7 @@ public class UsernameAttributeTest extends TestCase
         att.setUsername(expectedReturn);
 
         byte[] actualReturn = att.getUsername();
-        assertTrue("username setter or getter failed",
-                     Arrays.equals( expectedReturn,
-                                    actualReturn));
+        assertArrayEquals(expectedReturn, actualReturn,
+            "username setter or getter failed");
     }
 }

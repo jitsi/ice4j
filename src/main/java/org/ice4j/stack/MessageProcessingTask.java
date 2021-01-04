@@ -177,8 +177,8 @@ class MessageProcessingTask
             {
                 stunMessage
                     = Message.decode(message.getBytes(),
-                                     (char) 0,
-                                     (char) message.getMessageLength());
+                                     0,
+                                     message.getMessageLength());
             }
             catch (StunException ex)
             {

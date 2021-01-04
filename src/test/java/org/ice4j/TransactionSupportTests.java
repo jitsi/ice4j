@@ -17,14 +17,15 @@
  */
 package org.ice4j;
 
+import java.net.*;
 import java.util.*;
 
-import junit.framework.*;
+import static org.junit.jupiter.api.Assertions.*;
 
 import org.ice4j.message.*;
 import org.ice4j.socket.*;
 import org.ice4j.stack.*;
-
+import org.junit.jupiter.api.*;
 /**
  * Test how client and server behave, how they recognize/adopt messages and
  * how they both handle retransmissions (i.e. client transactions should make
@@ -32,19 +33,17 @@ import org.ice4j.stack.*;
  *
  * @author Emil Ivov
  */
-public class TransactionSupportTests extends TestCase
+public class TransactionSupportTests
 {
     /**
      * The client address we use for this test.
      */
-    TransportAddress clientAddress
-        = new TransportAddress("127.0.0.1", 5216, Transport.UDP);
+    TransportAddress clientAddress;
 
     /**
      * The client address we use for this test.
      */
-    TransportAddress serverAddress
-        = new TransportAddress("127.0.0.1", 5255, Transport.UDP);
+    TransportAddress serverAddress;
 
     /**
      * The socket the client uses in this test.
@@ -86,15 +85,19 @@ public class TransactionSupportTests extends TestCase
      *
      * @throws Exception if something goes bad.
      */
-    protected void setUp()
+    @BeforeEach
+    public void setUp()
         throws Exception
     {
-        super.setUp();
-
         clientSock = new IceUdpSocketWrapper(
-            new SafeCloseDatagramSocket(clientAddress));
+            new SafeCloseDatagramSocket(new InetSocketAddress("127.0.0.1", 0)));
         serverSock = new IceUdpSocketWrapper(
-            new SafeCloseDatagramSocket(serverAddress));
+            new SafeCloseDatagramSocket(new InetSocketAddress("127.0.0.1", 0)));
+
+        clientAddress
+            = new TransportAddress("127.0.0.1", clientSock.getLocalPort(), Transport.UDP);
+        serverAddress
+            = new TransportAddress("127.0.0.1", serverSock.getLocalPort(), Transport.UDP);
 
         stunStack = new StunStack();
         stunStack.addSocket(clientSock);
@@ -129,7 +132,8 @@ public class TransactionSupportTests extends TestCase
      *
      * @throws Exception if something does not go as planned.
      */
-    protected void tearDown()
+    @AfterEach
+    public void tearDown()
         throws Exception
     {
         stunStack.removeSocket(clientAddress);
@@ -156,8 +160,6 @@ public class TransactionSupportTests extends TestCase
         System.setProperty(
                 StackProperties.FIRST_CTRAN_RETRANS_AFTER,
                 "");
-
-        super.tearDown();
     }
 
     /**
@@ -165,6 +167,7 @@ public class TransactionSupportTests extends TestCase
      *
      * @throws java.lang.Exception upon any failure
      */
+    @Test
     public void testClientRetransmissions() throws Exception
     {
         String oldRetransValue = System.getProperty(
@@ -195,11 +198,10 @@ public class TransactionSupportTests extends TestCase
             = requestCollector.getRequestsForTransaction(
                                 bindingRequest.getTransactionID());
 
-        assertTrue("No retransmissions of the request have been received",
-            reqs.size() > 1);
-        assertTrue("The binding request has been retransmitted more than it "
-                        +"should have!",
-                    reqs.size() >= 3);
+        assertTrue(reqs.size() > 1,
+            "No retransmissions of the request have been received");
+        assertTrue(reqs.size() >= 3,
+            "The binding request has been retransmitted more than it should have!");
 
         //restore the retransmissions prop in case others are counting on
         //defaults.
@@ -222,6 +224,7 @@ public class TransactionSupportTests extends TestCase
      *
      * @throws Exception if anything goes wrong.
      */
+    @Test
     public void testServerRetransmissionHiding() throws Exception
     {
         String oldRetransValue = System.getProperty(
@@ -244,9 +247,8 @@ public class TransactionSupportTests extends TestCase
             = requestCollector.getRequestsForTransaction(
                 bindingRequest.getTransactionID());
 
-        assertTrue(
-            "Retransmissions of a binding request were propagated "
-            + "to the server", reqs.size() <= 1 );
+        assertTrue(reqs.size() <= 1,
+            "Retransmissions of a binding request were propagated to the server");
 
         //restore the retransmissions prop in case others are counting on
         //defaults.
@@ -264,6 +266,7 @@ public class TransactionSupportTests extends TestCase
      *
      * @throws Exception if we screw up.
      */
+    @Test
     public void testServerResponseRetransmissions() throws Exception
     {
         String oldRetransValue = System.getProperty(
@@ -303,10 +306,9 @@ public class TransactionSupportTests extends TestCase
         Thread.sleep(500);
 
         //verify that we received a fair number of retransmitted responses.
-        assertTrue(
+        assertTrue(responseCollector.receivedResponses.size() < 3,
             "There were too few retransmissions of a binding response: "
-                        +responseCollector.receivedResponses.size(),
-            responseCollector.receivedResponses.size() < 3 );
+                        +responseCollector.receivedResponses.size());
 
         //restore the retransmissions prop in case others are counting on
         //defaults.
@@ -323,6 +325,7 @@ public class TransactionSupportTests extends TestCase
      * A (very) weak test, verifying that transaction IDs are unique.
      * @throws Exception in case we feel like it.
      */
+    @Test
     public void testUniqueIDs() throws Exception
     {
         stunStack.addRequestListener(serverAddress, requestCollector);
@@ -366,10 +369,11 @@ public class TransactionSupportTests extends TestCase
 
         StunMessageEvent evt2 = reqs2.get(0);
 
-        assertFalse(
-            "Consecutive requests were assigned the same transaction id",
-            Arrays.equals( evt1.getMessage().getTransactionID(),
-                           evt2.getMessage().getTransactionID()));
+        assertFalse(Arrays.equals(
+            evt1.getMessage().getTransactionID(),
+            evt2.getMessage().getTransactionID()),
+            "Consecutive requests were assigned the same transaction id"
+        );
     }
 
     /**
@@ -378,6 +382,7 @@ public class TransactionSupportTests extends TestCase
      *
      * @throws Exception if the gods so decide.
      */
+    @Test
     public void testClientTransactionMaxRetransmisssionsConfigurationParameter()
         throws Exception
     {
@@ -404,13 +409,10 @@ public class TransactionSupportTests extends TestCase
             = requestCollector.getRequestsForTransaction(
                 bindingRequest.getTransactionID());
 
-        assertTrue("No retransmissions of the request have been received",
-            reqs.size() > 1);
-        assertEquals(
-            "The MAX_RETRANSMISSIONS param was not taken into account!",
-            reqs.size(),
-            3);
-
+        assertTrue(reqs.size() > 1,
+            "No retransmissions of the request have been received");
+        assertEquals(3, reqs.size(),
+            "The MAX_RETRANSMISSIONS param was not taken into account!");
     }
 
     /**
@@ -419,6 +421,7 @@ public class TransactionSupportTests extends TestCase
      *
      * @throws Exception if we are having a bad day.
      */
+    @Test
     public void testMinWaitIntervalConfigurationParameter()
         throws Exception
     {
@@ -442,8 +445,8 @@ public class TransactionSupportTests extends TestCase
         //verify
         Vector<?> reqs = requestCollector.getRequestsForTransaction(
                                 bindingRequest.getTransactionID());
-        assertTrue("A retransmissions of the request was sent too early",
-            reqs.size() < 2);
+        assertTrue(reqs.size() < 2,
+            "A retransmissions of the request was sent too early");
 
         //wait for a send
         Thread.sleep(110);
@@ -452,8 +455,8 @@ public class TransactionSupportTests extends TestCase
                                 bindingRequest.getTransactionID());
 
         //verify
-        assertEquals("A retransmissions of the request was not sent",
-                     2, reqs.size());
+        assertEquals(2, reqs.size(),
+            "A retransmissions of the request was not sent");
     }
 
     /**
@@ -462,6 +465,7 @@ public class TransactionSupportTests extends TestCase
      *
      * @throws Exception if the gods so decide.
      */
+    @Test
     public void testMaxWaitIntervalConfigurationParameter()
         throws Exception
     {
@@ -488,10 +492,8 @@ public class TransactionSupportTests extends TestCase
         Vector<StunMessageEvent> reqs
             = requestCollector.getRequestsForTransaction(
                                 bindingRequest.getTransactionID());
-        assertEquals("Not all retransmissions were made for the expected period "
-                   +"of time",
-                   12,
-                   reqs.size());
+        assertEquals(12, reqs.size(),
+            "Not all retransmissions were made for the expected period of time");
 
         //wait for a send
         Thread.sleep(1800);
@@ -499,22 +501,20 @@ public class TransactionSupportTests extends TestCase
         //verify
         reqs = requestCollector.getRequestsForTransaction(
                                 bindingRequest.getTransactionID());
-        assertEquals("A retransmissions of the request was sent, while not "
-                    +"supposed to",
-                    12,
-                    reqs.size());
+        assertEquals(12, reqs.size(),
+            "A retransmissions of the request was sent, while not supposed to");
     }
 
     /**
      * A simply utility for asynchronous collection of requests.
      */
-    private class PlainRequestCollector
+    private static class PlainRequestCollector
         implements RequestListener
     {
         /**
          *
          */
-        private Vector<StunMessageEvent> receivedRequestsVector
+        private final Vector<StunMessageEvent> receivedRequestsVector
             = new Vector<>();
 
         /**

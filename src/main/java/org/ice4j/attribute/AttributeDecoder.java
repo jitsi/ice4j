@@ -43,8 +43,8 @@ public class AttributeDecoder
      * @throws StunException if bytes is not a valid STUN attribute.
      */
     public static Attribute decode(byte[] bytes,
-                                   char   offset,
-                                   char   length)
+                                   int   offset,
+                                   int   length)
         throws StunException
     {
         if(bytes == null || bytes.length < Attribute.HEADER_LENGTH)

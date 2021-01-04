@@ -1057,11 +1057,11 @@ public abstract class Message
      * @throws StunException <tt>ILLEGAL_ARGUMENT</tt> if one or more of the
      * arguments have invalid values.
      */
-    public static Message decode(byte binMessage[], char offset, char arrayLen)
+    public static Message decode(byte[] binMessage, int offset, int arrayLen)
         throws StunException
     {
         int originalOffset = offset;
-        arrayLen = (char)Math.min(binMessage.length, arrayLen);
+        arrayLen = Math.min(binMessage.length, arrayLen);
 
         if(arrayLen - offset < Message.HEADER_LENGTH)
         {
@@ -1088,7 +1088,7 @@ public abstract class Message
                           | (binMessage[offset++]  & 0xFF));
 
         /* copy the cookie */
-        byte cookie[] = new byte[4];
+        byte[] cookie = new byte[4];
         System.arraycopy(binMessage, offset, cookie, 0, 4);
         offset += 4;
 
@@ -1106,20 +1106,20 @@ public abstract class Message
                         StunException.ILLEGAL_ARGUMENT,
                         "The given binary array does not seem to contain"
                             + " a whole StunMessage: given "
-                            + ((int) arrayLen)
+                            + arrayLen
                             + " bytes of "
                             + message.getName()
                             + " but expecting "
                             + (offset + TRANSACTION_ID_LENGTH + length));
         }
 
-        byte tranID[] = new byte[TRANSACTION_ID_LENGTH];
+        byte[] tranID = new byte[TRANSACTION_ID_LENGTH];
         System.arraycopy(binMessage, offset, tranID, 0, TRANSACTION_ID_LENGTH);
         try
         {
             if(rfc3489Compat)
             {
-                byte rfc3489TranID[] = new byte[TRANSACTION_ID_LENGTH + 4];
+                byte[] rfc3489TranID = new byte[TRANSACTION_ID_LENGTH + 4];
                 System.arraycopy(cookie, 0, rfc3489TranID, 0, 4);
                 System.arraycopy(tranID, 0, rfc3489TranID, 4,
                         TRANSACTION_ID_LENGTH);
