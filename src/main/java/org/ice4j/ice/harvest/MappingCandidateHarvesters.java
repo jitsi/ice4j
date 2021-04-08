@@ -283,7 +283,12 @@ public class MappingCandidateHarvesters
 
         // Now run discover() on all created harvesters in parallel and pick
         // the ones which succeeded.
-        ExecutorService es = Executors.newFixedThreadPool(tasks.size());
+        ExecutorService es = Executors.newFixedThreadPool(tasks.size(),
+            runnable -> {
+                Thread thread = new Thread(runnable);
+                thread.setName("ICE Harvester Executor");
+                return thread;
+            });
 
         List<Future<StunMappingCandidateHarvester>> futures;
         try
