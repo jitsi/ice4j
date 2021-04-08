@@ -17,6 +17,7 @@ package org.ice4j.ice.harvest;
 
 import org.ice4j.*;
 import org.jetbrains.annotations.*;
+import org.jitsi.utils.concurrent.*;
 
 import java.net.*;
 import java.util.*;
@@ -283,42 +284,49 @@ public class MappingCandidateHarvesters
 
         // Now run discover() on all created harvesters in parallel and pick
         // the ones which succeeded.
-        ExecutorService es = Executors.newFixedThreadPool(tasks.size());
+        ExecutorService es = ExecutorFactory.createFixedThreadPool(tasks.size(),
+            "ice4j.Harvester-executor-");
 
-        List<Future<StunMappingCandidateHarvester>> futures;
         try
         {
-            futures = es.invokeAll(tasks);
-        }
-        catch (InterruptedException ie)
-        {
-            Thread.currentThread().interrupt();
-            return stunHarvesters;
-        }
-
-        for (Future<StunMappingCandidateHarvester> future : futures)
-        {
+            List<Future<StunMappingCandidateHarvester>> futures;
             try
             {
-                StunMappingCandidateHarvester harvester = future.get();
-
-                // The STUN server replied successfully.
-                if (harvester.getMask() != null)
-                {
-                    stunHarvesters.add(harvester);
-                }
+                futures = es.invokeAll(tasks);
             }
-            catch (ExecutionException ee)
-            {
-                // The harvester failed for some reason, discard it.
-            }
-            catch(InterruptedException ie)
+            catch (InterruptedException ie)
             {
                 Thread.currentThread().interrupt();
-                throw new RuntimeException(ie);
+                return stunHarvesters;
+            }
+
+            for (Future<StunMappingCandidateHarvester> future : futures)
+            {
+                try
+                {
+                    StunMappingCandidateHarvester harvester = future.get();
+
+                    // The STUN server replied successfully.
+                    if (harvester.getMask() != null)
+                    {
+                        stunHarvesters.add(harvester);
+                    }
+                }
+                catch (ExecutionException ee)
+                {
+                    // The harvester failed for some reason, discard it.
+                }
+                catch (InterruptedException ie)
+                {
+                    Thread.currentThread().interrupt();
+                    throw new RuntimeException(ie);
+                }
             }
         }
-
+        finally
+        {
+            es.shutdown();
+        }
         return stunHarvesters;
     }
 
