@@ -19,6 +19,11 @@ package org.ice4j.pseudotcp;
 
 import static org.junit.jupiter.api.Assertions.*;
 
+import java.util.concurrent.TimeUnit;
+import java.util.function.BooleanSupplier;
+import java.util.function.Function;
+import java.util.function.Predicate;
+
 /**
  * This class enables multi thread tests where main thread waits in loop for
  * specified condition to be met, while others perform some operations. For
@@ -50,18 +55,13 @@ public class MultiThreadSupportTest implements Thread.UncaughtExceptionHandler
 
     private static final long ASSERT_WAIT_INTERVAL = 100;
 
-    protected interface WaitUntilDone
+    protected boolean assert_wait_until(BooleanSupplier wait, long timeoutMs)
     {
-        boolean isDone();
-    }
-
-    protected boolean assert_wait_until(WaitUntilDone wait, long timeoutMs)
-    {
+        long timeoutNanos = TimeUnit.MILLISECONDS.toNanos(timeoutMs);
         try
         {
-            long start = System.currentTimeMillis();
-            while (!wait.isDone()
-                && (System.currentTimeMillis() - start) < timeoutMs)
+            long start = System.nanoTime();
+            while (!wait.getAsBoolean() && (System.nanoTime() - start) < timeoutNanos)
             {
                 synchronized (testLock)
                 {
@@ -74,7 +74,7 @@ public class MultiThreadSupportTest implements Thread.UncaughtExceptionHandler
                     }
                 }
             }
-            return wait.isDone();
+            return wait.getAsBoolean();
         }
         catch (InterruptedException ex)
         {
