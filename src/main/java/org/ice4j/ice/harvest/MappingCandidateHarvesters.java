@@ -290,42 +290,46 @@ public class MappingCandidateHarvesters
                 return thread;
             });
 
-        List<Future<StunMappingCandidateHarvester>> futures;
         try
         {
-            futures = es.invokeAll(tasks);
-        }
-        catch (InterruptedException ie)
-        {
-            Thread.currentThread().interrupt();
-            return stunHarvesters;
-        }
-
-        for (Future<StunMappingCandidateHarvester> future : futures)
-        {
+            List<Future<StunMappingCandidateHarvester>> futures;
             try
             {
-                StunMappingCandidateHarvester harvester = future.get();
-
-                // The STUN server replied successfully.
-                if (harvester.getMask() != null)
-                {
-                    stunHarvesters.add(harvester);
-                }
+                futures = es.invokeAll(tasks);
             }
-            catch (ExecutionException ee)
-            {
-                // The harvester failed for some reason, discard it.
-            }
-            catch(InterruptedException ie)
+            catch (InterruptedException ie)
             {
                 Thread.currentThread().interrupt();
-                throw new RuntimeException(ie);
+                return stunHarvesters;
+            }
+
+            for (Future<StunMappingCandidateHarvester> future : futures)
+            {
+                try
+                {
+                    StunMappingCandidateHarvester harvester = future.get();
+
+                    // The STUN server replied successfully.
+                    if (harvester.getMask() != null)
+                    {
+                        stunHarvesters.add(harvester);
+                    }
+                }
+                catch (ExecutionException ee)
+                {
+                    // The harvester failed for some reason, discard it.
+                }
+                catch (InterruptedException ie)
+                {
+                    Thread.currentThread().interrupt();
+                    throw new RuntimeException(ie);
+                }
             }
         }
-
-        es.shutdown();
-
+        finally
+        {
+            es.shutdown();
+        }
         return stunHarvesters;
     }
 
