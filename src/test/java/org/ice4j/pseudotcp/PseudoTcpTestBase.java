@@ -633,14 +633,9 @@ public abstract class PseudoTcpTestBase
      */
     protected boolean assert_Connected_wait(int kConnectTimeoutMs)
     {
-        return assert_wait_until(new WaitUntilDone()
-        {
-            @Override
-            public boolean isDone()
-            {
-                return PseudoTcpTestBase.this.have_connected_;
-            }
-        }, kConnectTimeoutMs);
+        return assert_wait_until(
+            () -> PseudoTcpTestBase.this.have_connected_,
+            kConnectTimeoutMs);
     }
 
     /**
@@ -652,14 +647,9 @@ public abstract class PseudoTcpTestBase
      */
     protected boolean assert_Disconnected_wait(long kTransferTimeoutMs)
     {
-        return assert_wait_until(new WaitUntilDone()
-        {
-            @Override
-            public boolean isDone()
-            {
-                return PseudoTcpTestBase.this.have_disconnected_;
-            }
-        }, kTransferTimeoutMs);
+        return assert_wait_until(
+            () -> PseudoTcpTestBase.this.have_disconnected_,
+            kTransferTimeoutMs);
     }
 
     /**

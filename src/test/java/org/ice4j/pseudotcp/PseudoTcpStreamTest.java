@@ -137,14 +137,9 @@ public class PseudoTcpStreamTest
         clientThread.start();
         try
         {
-            boolean success = assert_wait_until(new WaitUntilDone()
-            {
-                @Override
-                public boolean isDone()
-                {
-                    return client.getState() == PseudoTcpState.TCP_CLOSED;
-                }
-            }, transferTimeout);
+            boolean success = assert_wait_until(
+                () -> client.getState() == PseudoTcpState.TCP_CLOSED,
+                transferTimeout);
             if (success)
             {
                 clientThread.join();
@@ -207,72 +202,58 @@ public class PseudoTcpStreamTest
         Thread.setDefaultUncaughtExceptionHandler(this);
         final PseudoTcpSocketImpl server;
         final PseudoTcpSocketImpl client;
-        final int server_port = 49998;
-        final InetSocketAddress serverAddress = 
-            new InetSocketAddress(InetAddress.getLocalHost(), server_port);        
-        server = 
-            new PseudoTcpSocketImpl(0,new DatagramSocket(serverAddress));            
-        client = new PseudoTcpSocketImpl(0);        
+        DatagramSocket serverSocket = new DatagramSocket(0, InetAddress.getLoopbackAddress());
+        server = new PseudoTcpSocketImpl(0, serverSocket);
+        client = new PseudoTcpSocketImpl(0);
         //Servers thread waiting for connection
-        new Thread(new Runnable()
+        new Thread(() ->
         {
-            @Override
-            public void run()
+            try
             {
+                server.accept(2000);
+            }
+            catch (IOException e)
+            {
+                throw new RuntimeException(e);
+            }
+            try
+            {
+                testOperation.testTimeout(server);
+                fail("No expected timeout occurred on operation");
+            }
+            catch (IOException e)
+            {
+                //success
                 try
                 {
-                    server.accept(2000);
+                    server.close();
                 }
-                catch (IOException e)
+                catch (IOException exc)
                 {
-                    throw new RuntimeException(e);
-                }
-                try
-                {
-                    testOperation.testTimeout(server);
-                    fail("No expected timeout occured on operation");
-                }
-                catch (IOException e)
-                {
-                    //success
-                    try
-                    {
-                        server.close();
-                    }
-                    catch (IOException exc)
-                    {
-                        throw new RuntimeException(exc);
-                    }
+                    throw new RuntimeException(exc);
                 }
             }
         }).start();
         //Clients thread connects and closes socket
-        new Thread(new Runnable()
+        new Thread(() ->
         {
-            @Override
-            public void run()
+            try
             {
-                try
-                {
-                    client.connect(serverAddress, 2000);
-                    Thread.sleep(500);
-                    client.close();
-                }
-                catch (Exception e)
-                {
-                    throw new RuntimeException(e);
-                }
+                client.connect(new InetSocketAddress(
+                    InetAddress.getLoopbackAddress(),
+                        serverSocket.getLocalPort()),
+                    2000);
+                Thread.sleep(500);
+                client.close();
+            }
+            catch (Exception e)
+            {
+                throw new RuntimeException(e);
             }
         }).start();
         //Waits for server to close socket
-        boolean done = assert_wait_until(new WaitUntilDone()
-        {
-            @Override
-            public boolean isDone()
-            {
-                return server.getState() == PseudoTcpState.TCP_CLOSED;
-            }
-        }, 3000);
+        boolean done = assert_wait_until(()
+            -> server.getState() == PseudoTcpState.TCP_CLOSED, 3000);
         if(!done)
         {
             fail("Test timed out");
