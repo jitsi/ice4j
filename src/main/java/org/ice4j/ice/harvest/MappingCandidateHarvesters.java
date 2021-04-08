@@ -319,6 +319,8 @@ public class MappingCandidateHarvesters
             }
         }
 
+        es.shutdown();
+
         return stunHarvesters;
     }
 
