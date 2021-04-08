@@ -21,6 +21,7 @@ import org.jetbrains.annotations.*;
 import java.net.*;
 import java.util.*;
 import java.util.concurrent.*;
+import java.util.concurrent.atomic.*;
 import java.util.logging.*;
 
 import static org.ice4j.ice.harvest.HarvestConfig.config;
@@ -284,11 +285,18 @@ public class MappingCandidateHarvesters
         // Now run discover() on all created harvesters in parallel and pick
         // the ones which succeeded.
         ExecutorService es = Executors.newFixedThreadPool(tasks.size(),
-            runnable -> {
-                Thread thread = new Thread(runnable);
-                thread.setName("ICE Harvester Executor");
-                return thread;
-            });
+            new ThreadFactory() {
+                private final AtomicInteger numThreads = new AtomicInteger(1);
+                @Override
+                public Thread newThread(@NotNull Runnable runnable)
+                {
+                    Thread thread = new Thread(runnable);
+                    thread.setName("ICE Harvester Executor-" + numThreads.getAndIncrement());
+                    thread.setDaemon(true);
+                    return thread;
+                }
+            }
+        );
 
         try
         {
