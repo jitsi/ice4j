@@ -41,7 +41,11 @@ jobs:
             ${{ runner.os }}-maven-
 
       - name: Build and test with Maven
-        run: mvn -B -Dgpg.skip -Drelease=true verify
+        run: mvn -B -Dgpg.skip -Drelease=true -Pcoverage verify
+
+      - name: Upload coverage report
+        if: matrix.java == env.RELEASE_JAVA_VERSION
+        uses: codecov/codecov-action@v1
 
   release:
     if: github.ref == 'refs/heads/master'
