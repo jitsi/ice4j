@@ -41,7 +41,6 @@ public class PseudoTcpStreamTest
         throws IOException
     {
         Thread.setDefaultUncaughtExceptionHandler(this);
-        final int server_port = 49999;
         int transferTimeout = 5000;
 
         // bytes that will be read as a single byte
@@ -52,84 +51,76 @@ public class PseudoTcpStreamTest
         final byte[] bufferA = PseudoTcpTestBase.createDummyData(sizeA);
         final int sizeB = 983746;
         final byte[] bufferB = PseudoTcpTestBase.createDummyData(sizeB);
-        final InetSocketAddress serverAddress = 
-            new InetSocketAddress(InetAddress.getLocalHost(), server_port);
         final PseudoTcpSocket server = 
             new PseudoTcpSocketFactory().createSocket();
-        Thread serverThread = new Thread(new Runnable()
+        server.setDebugName("L");
+        server.bind(new InetSocketAddress(InetAddress.getLoopbackAddress(), 0));
+        final InetSocketAddress serverAddress =
+            new InetSocketAddress(InetAddress.getLoopbackAddress(), server.getLocalPort());
+        Thread serverThread = new Thread(() ->
         {
-            @Override
-            public void run()
+            try
             {
-                try
-                {
-                    server.setDebugName("L");
-                    server.bind(serverAddress);
-                    server.accept(5000);
-                    byte[] rcvdSingle = new byte[singleStepCount];
-                    // read by one byte
-                    for (int i = 0; i < singleStepCount; i++)
-                        rcvdSingle[i] = (byte) server.getInputStream().read();
-                    assertArrayEquals(bufferSingle, rcvdSingle);
-                    // receive buffer A
-                    byte[] recvdBufferA =
-                        receiveBuffer(server.getInputStream(), sizeA);
-                    assertArrayEquals(bufferA, recvdBufferA);
-                    // receive buffer B
-                    byte[] recvdBufferB =
-                        receiveBuffer(server.getInputStream(), sizeB);
-                    assertArrayEquals(bufferB, recvdBufferB);
-                    // server.close();
-                }
-                catch (IOException ex)
-                {
-                    throw new RuntimeException(ex);
-                }
+                server.accept(5000);
+                byte[] rcvdSingle = new byte[singleStepCount];
+                // read by one byte
+                for (int i = 0; i < singleStepCount; i++)
+                    rcvdSingle[i] = (byte) server.getInputStream().read();
+                assertArrayEquals(bufferSingle, rcvdSingle);
+                // receive buffer A
+                byte[] recvdBufferA =
+                    receiveBuffer(server.getInputStream(), sizeA);
+                assertArrayEquals(bufferA, recvdBufferA);
+                // receive buffer B
+                byte[] recvdBufferB =
+                    receiveBuffer(server.getInputStream(), sizeB);
+                assertArrayEquals(bufferB, recvdBufferB);
+                // server.close();
+            }
+            catch (IOException ex)
+            {
+                throw new RuntimeException(ex);
             }
         });
 
         final PseudoTcpSocket client = 
             new PseudoTcpSocketFactory().createSocket();
-        Thread clientThread = new Thread(new Runnable()
+        Thread clientThread = new Thread(() ->
         {
-            @Override
-            public void run()
+            try
             {
-                try
+                client.setDebugName("R");
+                client.connect(serverAddress, 5000);
+                // write single array
+                for (int i = 0; i < singleStepCount; i++)
+                    client.getOutputStream().write(bufferSingle[i]);
+                // write whole array
+                client.getOutputStream().write(bufferA);
+                // write by parts
+                int partCount = 7;
+                boolean notExact = sizeB % partCount != 0;
+                int[] partsSize =
+                    notExact ? new int[partCount + 1] : new int[partCount];
+                for (int i = 0; i < partsSize.length; i++)
                 {
-                    client.setDebugName("R");
-                    client.connect(serverAddress, 5000);
-                    // write single array
-                    for (int i = 0; i < singleStepCount; i++)
-                        client.getOutputStream().write(bufferSingle[i]);
-                    // write whole array
-                    client.getOutputStream().write(bufferA);
-                    // write by parts
-                    int partCount = 7;
-                    boolean notExact = sizeB % partCount != 0;
-                    int[] partsSize =
-                        notExact ? new int[partCount + 1] : new int[partCount];
-                    for (int i = 0; i < partsSize.length; i++)
-                    {
-                        if (notExact && i == partCount)
-                            partsSize[i] = sizeB % partCount;
-                        else
-                            partsSize[i] = sizeB / partCount;
-                    }
-                    int written = 0;
-                    for (int j : partsSize)
-                    {
-                        client.getOutputStream().write(bufferB, written, j);
-                        written += j;
-                    }
-                    assertEquals(sizeB, written);
-                    client.getOutputStream().flush();
-                    client.close();
+                    if (notExact && i == partCount)
+                        partsSize[i] = sizeB % partCount;
+                    else
+                        partsSize[i] = sizeB / partCount;
                 }
-                catch (IOException ex)
+                int written = 0;
+                for (int j : partsSize)
                 {
-                    throw new RuntimeException(ex);
+                    client.getOutputStream().write(bufferB, written, j);
+                    written += j;
                 }
+                assertEquals(sizeB, written);
+                client.getOutputStream().flush();
+                client.close();
+            }
+            catch (IOException ex)
+            {
+                throw new RuntimeException(ex);
             }
         });
 
