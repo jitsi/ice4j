@@ -91,13 +91,12 @@ class HarvestConfig {
     }
 
     val staticMappings: Set<StaticMapping> = let {
-        if (legacyNatHarvesterLocalAddress != null && legacyNatHarvesterPublicAddress != null)
-        {
+        if (legacyNatHarvesterLocalAddress != null && legacyNatHarvesterPublicAddress != null) {
             setOf(
                 StaticMapping(legacyNatHarvesterLocalAddress!!, legacyNatHarvesterPublicAddress!!),
-                *staticMappingsFromNewConfig.toTypedArray())
-        }
-        else {
+                *staticMappingsFromNewConfig.toTypedArray()
+            )
+        } else {
             staticMappingsFromNewConfig
         }
     }
