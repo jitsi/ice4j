@@ -41,22 +41,7 @@ public class MappingCandidateHarvesters
      * The {@link Logger} used by the {@link MappingCandidateHarvesters}
      * class for logging output.
      */
-    private static final Logger logger
-        = Logger.getLogger(MappingCandidateHarvesters.class.getName());
-
-    /**
-     * The name of the property that specifies the local address, if any, for
-     * the pre-configured NAT harvester.
-     */
-    public static final String NAT_HARVESTER_LOCAL_ADDRESS_PNAME
-        = "org.ice4j.ice.harvest.NAT_HARVESTER_LOCAL_ADDRESS";
-
-    /**
-     * The name of the property that specifies the public address, if any, for
-     * the pre-configured NAT harvester.
-     */
-    public static final String NAT_HARVESTER_PUBLIC_ADDRESS_PNAME
-        = "org.ice4j.ice.harvest.NAT_HARVESTER_PUBLIC_ADDRESS";
+    private static final Logger logger = Logger.getLogger(MappingCandidateHarvesters.class.getName());
 
     /**
      * Whether {@link #harvesters} has been initialized.
@@ -106,23 +91,14 @@ public class MappingCandidateHarvesters
         long start = System.currentTimeMillis();
         List<MappingCandidateHarvester> harvesterList = new LinkedList<>();
 
-
-        // Pre-configured NAT harvester.
-        String localAddressStr
-            = StackProperties.getString(NAT_HARVESTER_LOCAL_ADDRESS_PNAME);
-        String publicAddressStr
-            = StackProperties.getString(NAT_HARVESTER_PUBLIC_ADDRESS_PNAME);
-
-        if (localAddressStr != null && publicAddressStr != null)
+        for (HarvestConfig.StaticMapping staticMapping : config.getStaticMappings())
         {
+            logger.info("Adding a static mapping: " + staticMapping);
             // the port number is unused, 9 is for "discard"
-            TransportAddress localAddress
-                = new TransportAddress(localAddressStr, 9, Transport.UDP);
-            TransportAddress publicAddress
-                = new TransportAddress(publicAddressStr, 9, Transport.UDP);
+            TransportAddress localAddress = new TransportAddress(staticMapping.getLocalAddress(), 9, Transport.UDP);
+            TransportAddress publicAddress = new TransportAddress(staticMapping.getPublicAddress(), 9, Transport.UDP);
 
-            harvesterList.add(
-                new MappingCandidateHarvester(publicAddress, localAddress));
+            harvesterList.add(new MappingCandidateHarvester(publicAddress, localAddress));
         }
 
         // AWS harvester

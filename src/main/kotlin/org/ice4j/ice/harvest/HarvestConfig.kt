@@ -16,6 +16,7 @@
 
 package org.ice4j.ice.harvest
 
+import com.typesafe.config.Config
 import org.jitsi.metaconfig.config
 import org.jitsi.metaconfig.optionalconfig
 import java.time.Duration
@@ -73,6 +74,34 @@ class HarvestConfig {
         "ice4j.harvest.mapping.aws.force".from(configSource)
     }
     fun forceAwsHarvester() = enableAwsHarvester
+
+    private val legacyNatHarvesterLocalAddress: String? by optionalconfig {
+        "org.ice4j.ice.harvest.NAT_HARVESTER_LOCAL_ADDRESS".from(configSource)
+    }
+
+    private val legacyNatHarvesterPublicAddress: String? by optionalconfig {
+        "org.ice4j.ice.harvest.NAT_HARVESTER_PUBLIC_ADDRESS".from(configSource)
+    }
+
+    private val staticMappingsFromNewConfig: Set<StaticMapping> by config {
+        "ice4j.harvest.mapping.static-mappings".from(configSource)
+            .convertFrom<List<Config>> { cfg ->
+                cfg.map { StaticMapping(it.getString("localAddress"), it.getString("publicAddress")) }.toSet()
+            }
+    }
+
+    val staticMappings: Set<StaticMapping> = let {
+        if (legacyNatHarvesterLocalAddress != null && legacyNatHarvesterPublicAddress != null) {
+            setOf(
+                StaticMapping(legacyNatHarvesterLocalAddress!!, legacyNatHarvesterPublicAddress!!),
+                *staticMappingsFromNewConfig.toTypedArray()
+            )
+        } else {
+            staticMappingsFromNewConfig
+        }
+    }
+
+    data class StaticMapping(val localAddress: String, val publicAddress: String)
 
     companion object {
         @JvmField
