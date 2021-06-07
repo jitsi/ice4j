@@ -86,7 +86,7 @@ class HarvestConfig {
     private val staticMappingsFromNewConfig: Set<StaticMapping> by config {
         "ice4j.harvest.mapping.static-mappings".from(configSource)
             .convertFrom<List<Config>> { cfg ->
-                cfg.map { StaticMapping(it.getString("localAddress"), it.getString("publicAddress")) }.toSet()
+                cfg.map { StaticMapping(it.getString("local-address"), it.getString("public-address")) }.toSet()
             }
     }
 
