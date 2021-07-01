@@ -195,7 +195,8 @@ public abstract class AbstractUdpListener
     /**
      * Initializes a new <tt>SinglePortUdpHarvester</tt> instance which is to
      * bind on the specified local address.
-     * @param localAddress the address to bind to.
+     * @param localAddress the address to bind to. If the port is 0 an ephemeral port will be chosen and the
+     *                     AbstractUdpListener.localAddress will reflect the allocated port.
      * @throws IOException if initialization fails.
      */
     protected AbstractUdpListener(TransportAddress localAddress)
