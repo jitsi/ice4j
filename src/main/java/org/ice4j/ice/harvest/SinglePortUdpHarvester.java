@@ -109,7 +109,7 @@ public class SinglePortUdpHarvester
     {
         super(localAddress);
         logger.info("Initialized SinglePortUdpHarvester with address "
-                            + localAddress);
+                            + this.localAddress);
     }
 
     /**
