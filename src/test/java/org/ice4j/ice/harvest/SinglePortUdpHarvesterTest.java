@@ -101,7 +101,7 @@ public class SinglePortUdpHarvesterTest
         // Verify results.
         catch ( BindException ex )
         {
-            fail( "A bind exception should not have been thrown, as the original harvester was propertly closed.");
+            fail( "A bind exception should not have been thrown, as the original harvester was properly closed.");
         }
 
         // Tear down.
