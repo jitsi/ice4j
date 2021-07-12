@@ -101,7 +101,8 @@ public class SinglePortUdpHarvester
     /**
      * Initializes a new <tt>SinglePortUdpHarvester</tt> instance which is to
      * bind on the specified local address.
-     * @param localAddress the address to bind to.
+     * @param localAddress the address to bind to. If the port is 0 an ephemeral port is chosen by the OS and the
+     *                     SinglePortUdpHarvester.localAddress will reflect the allocated port number.
      * @throws IOException if initialization fails.
      */
     public SinglePortUdpHarvester(TransportAddress localAddress)
