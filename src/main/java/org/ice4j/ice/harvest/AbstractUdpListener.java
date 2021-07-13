@@ -195,36 +195,46 @@ public abstract class AbstractUdpListener
     /**
      * Initializes a new <tt>SinglePortUdpHarvester</tt> instance which is to
      * bind on the specified local address.
-     * @param localAddress the address to bind to.
+     * @param localAddress the address to bind to. If the port is 0 an ephemeral port will be chosen by the OS and the
+     *                     AbstractUdpListener.localAddress will reflect the allocated port.
      * @throws IOException if initialization fails.
      */
     protected AbstractUdpListener(TransportAddress localAddress)
         throws IOException
     {
+        TransportAddress tempAddress = localAddress;
+
         boolean bindWildcard = StackProperties.getBoolean(
                 StackProperties.BIND_WILDCARD,
                 false);
 
         if (bindWildcard)
         {
-            this.localAddress = new TransportAddress(
+            tempAddress = new TransportAddress(
                                         (InetAddress) null,
                                         localAddress.getPort(),
                                         localAddress.getTransport()
                                 );
         }
-        else
-        {
-            this.localAddress = localAddress;
-        }
 
-        socket = new DatagramSocket( this.localAddress );
+        socket = new DatagramSocket( tempAddress );
 
         Integer receiveBufferSize = config.udpReceiveBufferSize();
         if (receiveBufferSize != null)
         {
             socket.setReceiveBufferSize(receiveBufferSize);
         }
+
+        /* Update the port number if needed. */
+        if (localAddress.getPort() == 0)
+        {
+            tempAddress = new TransportAddress(
+                    tempAddress.getAddress(),
+                    socket.getLocalPort(),
+                    tempAddress.getTransport()
+            );
+        }
+        this.localAddress = tempAddress;
 
         String logMessage
             = "Initialized AbstractUdpListener with address " + this.localAddress;

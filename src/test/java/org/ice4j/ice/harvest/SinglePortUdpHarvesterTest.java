@@ -101,7 +101,7 @@ public class SinglePortUdpHarvesterTest
         // Verify results.
         catch ( BindException ex )
         {
-            fail( "A bind exception should not have been thrown, as the original harvester was propertly closed.");
+            fail( "A bind exception should not have been thrown, as the original harvester was properly closed.");
         }
 
         // Tear down.
@@ -112,5 +112,30 @@ public class SinglePortUdpHarvesterTest
                 secondHarvester.close();
             }
         }
+    }
+
+    @Test
+    public void testBindWithPortZero() throws Exception
+    {
+        // Setup test fixture.
+        final TransportAddress address = new TransportAddress("127.0.0.1", 0, Transport.UDP);
+        SinglePortUdpHarvester harvester;
+        try
+        {
+            harvester = new SinglePortUdpHarvester(address);
+        }
+        catch (BindException ex)
+        {
+            // This is not expected at this stage.
+            // Rethrow as a different exception than the BindException, that is expected to be thrown later in
+            // this test.
+            throw new Exception("Test fixture is invalid.", ex);
+        }
+
+        assertFalse(harvester.localAddress.getPort() == 0,
+                "A random port number not equal to zero should have been chosen by the OS");
+
+        // Tear down
+        harvester.close();
     }
 }
