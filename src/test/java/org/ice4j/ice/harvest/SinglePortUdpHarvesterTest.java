@@ -115,13 +115,17 @@ public class SinglePortUdpHarvesterTest
     }
 
     @Test
-    public void testBindWithPortZero() throws Exception {
+    public void testBindWithPortZero() throws Exception
+    {
         // Setup test fixture.
         final TransportAddress address = new TransportAddress("127.0.0.1", 0, Transport.UDP);
         SinglePortUdpHarvester harvester;
-        try {
+        try
+        {
             harvester = new SinglePortUdpHarvester(address);
-        } catch (BindException ex) {
+        }
+        catch (BindException ex)
+        {
             // This is not expected at this stage.
             // Rethrow as a different exception than the BindException, that is expected to be thrown later in
             // this test.
