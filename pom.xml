@@ -38,9 +38,9 @@
 
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-    <jicoco.version>1.1-73-gf8e9405</jicoco.version>
-    <kotlin.version>1.3.72</kotlin.version>
-    <kotest.version>4.1.3</kotest.version>
+    <jicoco.version>1.1-90-gfa0e11e</jicoco.version>
+    <kotlin.version>1.5.20</kotlin.version>
+    <kotest.version>4.6.1</kotest.version>
     <junit.version>5.7.0</junit.version>
     <dokka.version>1.4.32</dokka.version>
   </properties>
@@ -59,7 +59,7 @@
     <dependency>
       <groupId>${project.groupId}</groupId>
       <artifactId>jitsi-utils</artifactId>
-      <version>1.0-72-gcf6d1f8</version>
+      <version>1.0-94-ge7c7a43</version>
     </dependency>
     <dependency>
       <groupId>${project.groupId}</groupId>
@@ -294,7 +294,7 @@
           <plugin>
             <groupId>org.jacoco</groupId>
             <artifactId>jacoco-maven-plugin</artifactId>
-            <version>0.8.6</version>
+            <version>0.8.7</version>
             <executions>
               <execution>
                 <goals>
