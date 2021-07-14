@@ -24,6 +24,7 @@ import org.jitsi.utils.queue.*;
 
 import java.io.*;
 import java.net.*;
+import java.time.*;
 import java.util.*;
 import java.util.concurrent.*;
 import java.util.logging.*;
@@ -460,7 +461,7 @@ public abstract class AbstractUdpListener
             this.remoteAddress = remoteAddress;
             if (logger.isLoggable(Level.FINEST))
             {
-                queueStatistics = new QueueStatistics();
+                queueStatistics = new QueueStatistics(QUEUE_SIZE, Clock.systemUTC());
             }
             else
             {
@@ -485,7 +486,7 @@ public abstract class AbstractUdpListener
                                     + remoteAddress + " ufrag=" + ufrag);
                     if (queueStatistics != null)
                     {
-                        queueStatistics.remove(System.currentTimeMillis());
+                        queueStatistics.dropped();
                     }
                     queue.poll();
                 }
@@ -493,7 +494,7 @@ public abstract class AbstractUdpListener
                 queue.offer(buf);
                 if (queueStatistics != null)
                 {
-                    queueStatistics.add(System.currentTimeMillis());
+                    queueStatistics.added();
                 }
 
                 queue.notify();
@@ -631,9 +632,9 @@ public abstract class AbstractUdpListener
                     }
 
                     buf = queue.poll();
-                    if (queueStatistics != null)
+                    if (buf != null && queueStatistics != null)
                     {
-                        queueStatistics.remove(System.currentTimeMillis());
+                        queueStatistics.removed(queue.size(), null);
                     }
                 }
             }

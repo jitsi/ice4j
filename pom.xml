@@ -59,7 +59,7 @@
     <dependency>
       <groupId>${project.groupId}</groupId>
       <artifactId>jitsi-utils</artifactId>
-      <version>1.0-72-gcf6d1f8</version>
+      <version>1.0-93-ge6aba2e</version>
     </dependency>
     <dependency>
       <groupId>${project.groupId}</groupId>
