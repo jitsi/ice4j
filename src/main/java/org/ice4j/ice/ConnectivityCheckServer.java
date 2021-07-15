@@ -255,7 +255,8 @@ class ConnectivityCheckServer
         final boolean bothControlledConflict = !selfIceControlling &&
             req.containsAttribute(Attribute.ICE_CONTROLLED);
 
-        if (!(bothControllingConflict || bothControlledConflict)) {
+        if (!(bothControllingConflict || bothControlledConflict))
+        {
             // we don't have a role conflict
             return true;
         }

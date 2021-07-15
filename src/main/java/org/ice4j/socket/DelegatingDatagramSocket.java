@@ -755,9 +755,10 @@ public class DelegatingDatagramSocket
                     p.setAddress(newAddr);
 
                     super.send(p);
-
-                } else if (ex instanceof IOException) {
-                	throw((IOException)ex);
+                }
+                else if (ex instanceof IOException)
+                {
+                    throw((IOException)ex);
                 }
            }
 

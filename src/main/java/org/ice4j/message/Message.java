@@ -469,6 +469,7 @@ public abstract class Message
     /* Old TURN attributes */
     protected static final byte DESTINATION_ADDRESS_PRESENTITY_INDEX       = 29;
 
+    // CHECKSTYLE:OFF
     protected final static byte attributePresentities[][] = new byte[][]{
     //                                            Binding   Shared   Shared   Shared  Alloc   Alloc   Rfrsh   Rfrsh   ChnlBnd  ChnlBnd Send    Data
     //                        Binding   Binding   Error     Secret   Secret   Secret  Req.    Resp.   Req.    Resp.   Req.     Resp.   Indic.  Indic.
@@ -509,6 +510,7 @@ public abstract class Message
       /*USE-CANDIDATE*/     { O,        N_A,      N_A,      N_A,     N_A,     N_A,    N_A,    N_A,    N_A,    N_A,    N_A,     N_A,    N_A,   N_A},
       /*DESTINATION-ADDRESS*/{N_A,      N_A,      N_A,      N_A,     N_A,     N_A,    N_A,    N_A,    O,      N_A,    N_A,     N_A,    M,     N_A},
     };
+    // CHECKSTYLE:ON
 
     /**
      * Creates an empty STUN Message.

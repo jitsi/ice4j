@@ -82,7 +82,8 @@ public class StunMappingCandidateHarvester
 
             /* Record bound address as face. */
             SocketAddress boundAddr = localSocket.getLocalSocketAddress();
-            if (boundAddr instanceof InetSocketAddress) {
+            if (boundAddr instanceof InetSocketAddress)
+            {
                 face = new TransportAddress((InetSocketAddress)boundAddr, face.getTransport());
             }
 

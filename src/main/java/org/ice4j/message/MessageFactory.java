@@ -54,7 +54,8 @@ public class MessageFactory
         try
         {
             bindingRequest.setMessageType(Message.BINDING_REQUEST);
-        } catch (IllegalArgumentException ex)
+        }
+        catch (IllegalArgumentException ex)
         {
             // there should be no exc here since we're the creators.
             logger.log(Level.FINE, "Failed to set message type.", ex);
@@ -122,7 +123,8 @@ public class MessageFactory
             IceControllingAttribute iceControllingAttribute = AttributeFactory
                             .createIceControllingAttribute(tieBreaker);
             bindingRequest.putAttribute(iceControllingAttribute);
-        } else
+        }
+        else
         {
             IceControlledAttribute iceControlledAttribute = AttributeFactory
                             .createIceControlledAttribute(tieBreaker);
@@ -356,7 +358,8 @@ public class MessageFactory
         try
         {
             allocateRequest.setMessageType(Message.ALLOCATE_REQUEST);
-        } catch (IllegalArgumentException ex)
+        }
+        catch (IllegalArgumentException ex)
         {
             // there should be no exc here since we're the creators.
             logger.log(Level.FINE, "Failed to set message type.", ex);
@@ -669,7 +672,8 @@ public class MessageFactory
             LifetimeAttribute lifetimeReq = AttributeFactory
                             .createLifetimeAttribute(lifetime);
             refreshRequest.putAttribute(lifetimeReq);
-        } catch (IllegalArgumentException ex)
+        }
+        catch (IllegalArgumentException ex)
         {
             logger.log(Level.FINE, "Failed to set message type.", ex);
         }
@@ -949,7 +953,8 @@ public class MessageFactory
                                 .createDataAttribute(data);
                 sendIndication.putAttribute(dataAttribute);
             }
-        } catch (IllegalArgumentException ex)
+        }
+        catch (IllegalArgumentException ex)
         {
             logger.log(Level.FINE, "Failed to set message type.", ex);
         }

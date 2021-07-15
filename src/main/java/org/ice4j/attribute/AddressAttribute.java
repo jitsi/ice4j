@@ -221,10 +221,12 @@ abstract class AddressAttribute extends Attribute
         binValue[7] = (byte)(getPort() & 0x00FF);
 
         //address
-        if(getFamily() == ADDRESS_FAMILY_IPV6){
+        if(getFamily() == ADDRESS_FAMILY_IPV6)
+        {
             System.arraycopy(getAddressBytes(), 0, binValue, 8, 16);
         }
-        else{
+        else
+        {
             System.arraycopy(getAddressBytes(), 0, binValue, 8, 4);
         }
 

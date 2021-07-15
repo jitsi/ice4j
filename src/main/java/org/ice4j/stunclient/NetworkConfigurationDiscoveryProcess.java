@@ -409,7 +409,8 @@ public class NetworkConfigurationDiscoveryProcess
     {
         Request request = MessageFactory.createBindingRequest();
 
-        /* ChangeRequestAttribute changeRequest = (ChangeRequestAttribute)request.getAttribute(Attribute.CHANGE_REQUEST); */
+        /* ChangeRequestAttribute changeRequest
+                = (ChangeRequestAttribute)request.getAttribute(Attribute.CHANGE_REQUEST); */
         /* add a change request attribute */
         ChangeRequestAttribute changeRequest = AttributeFactory.createChangeRequestAttribute();
         changeRequest.setChangeIpFlag(false);

@@ -445,7 +445,8 @@ public class PseudoTCPBase
 
             long nInFlight = m_snd_nxt - m_snd_una;
             m_ssthresh = Math.max(nInFlight / 2, 2 * m_mss);
-            //Logger.Log(LS_INFO) << "m_ssthresh: " << m_ssthresh << "  nInFlight: " << nInFlight << "  m_mss: " << m_mss;
+            //Logger.Log(LS_INFO)
+            //  << "m_ssthresh: " << m_ssthresh << "  nInFlight: " << nInFlight << "  m_mss: " << m_mss;
             m_cwnd = m_mss;
 
             // Back off retransmit timer.  Note: the limit is lower when connecting.
@@ -1252,7 +1253,8 @@ public class PseudoTCPBase
                             m_recover = m_snd_nxt;
                             long nInFlight = m_snd_nxt - m_snd_una;
                             m_ssthresh = Math.max(nInFlight / 2, 2 * m_mss);
-                            //Logger.Log(LS_INFO) << "m_ssthresh: " << m_ssthresh << "  nInFlight: " << nInFlight << "  m_mss: " << m_mss;
+                            //Logger.Log(LS_INFO)
+                            //  << "m_ssthresh: " << m_ssthresh << "  nInFlight: " << nInFlight << "  m_mss: " << m_mss;
                             m_cwnd = m_ssthresh + 3 * m_mss;
                         }
                         else

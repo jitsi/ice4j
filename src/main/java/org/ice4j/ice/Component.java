@@ -468,15 +468,18 @@ public class Component
                      *  since those candidates aren't added to the candidate list even
                      *  though the pair is added to the check list).
                      */
-                    CandidatePair existingPair = streamCheckList.findPairMatching(pair.getLocalCandidate(), pair.getRemoteCandidate());
-                    if (existingPair != null) {
+                    CandidatePair existingPair
+                        = streamCheckList.findPairMatching(pair.getLocalCandidate(), pair.getRemoteCandidate());
+                    if (existingPair != null)
+                    {
                         logger.info("existing Pair updated: " +
                             existingPair.toShortString() +
                             " to " + pair.toShortString() + ".");
                         existingPair.setRemoteCandidate(pair.getRemoteCandidate());
                         existingPair.computePriority();
                     }
-                    else {
+                    else
+                    {
                         streamCheckList.add(pair);
                         logger.info("new Pair added: " + pair.toShortString()
                             + ".");

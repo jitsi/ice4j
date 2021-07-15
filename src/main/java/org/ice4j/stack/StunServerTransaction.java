@@ -165,7 +165,8 @@ public class StunServerTransaction
                IOException,
                IllegalArgumentException
     {
-        if(!isRetransmitting){
+        if(!isRetransmitting)
+        {
             this.response = response;
             //the transaction id might already have been set, but its our job
             //to make sure of that
