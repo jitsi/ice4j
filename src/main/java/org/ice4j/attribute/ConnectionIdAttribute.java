@@ -48,7 +48,7 @@ public class ConnectionIdAttribute
      */
     protected ConnectionIdAttribute() 
     {
-	    super(CONNECTION_ID);
+        super(CONNECTION_ID);
     }
 
     /**
@@ -58,7 +58,7 @@ public class ConnectionIdAttribute
     @Override
     public char getDataLength() 
     {
-	    return DATA_LENGTH;
+        return DATA_LENGTH;
     }
 
     /**
@@ -70,7 +70,7 @@ public class ConnectionIdAttribute
     @Override
     public String getName() 
     {
-    	return NAME;
+        return NAME;
     }
 
     /**
@@ -82,7 +82,7 @@ public class ConnectionIdAttribute
     @Override
     public boolean equals(Object obj) 
     {
-	    if (! (obj instanceof ConnectionIdAttribute))
+        if (! (obj instanceof ConnectionIdAttribute))
             return false;
 
         if (obj == this)
@@ -106,7 +106,7 @@ public class ConnectionIdAttribute
     @Override
     public byte[] encode() 
     {
-	    byte binValue[] = new byte[HEADER_LENGTH + DATA_LENGTH];
+        byte binValue[] = new byte[HEADER_LENGTH + DATA_LENGTH];
 
         //Type
         binValue[0] = (byte)(getAttributeType() >> 8);
@@ -135,9 +135,9 @@ public class ConnectionIdAttribute
     */
     @Override
     void decodeAttributeBody(byte[] attributeValue, char offset, char length) 
-	    throws StunException
+        throws StunException
     {
-	    if(length != DATA_LENGTH)
+        if(length != DATA_LENGTH)
         {
             throw new StunException("length invalid: " + length);
         }
@@ -168,8 +168,8 @@ public class ConnectionIdAttribute
      * @param connectionIdValue the connection Id value.
      */
     public void setConnectionIdValue(int connectionIdValue) 
-    {	
-	    this.connectionIdValue = connectionIdValue;
+    {    
+        this.connectionIdValue = connectionIdValue;
     }
 
 }

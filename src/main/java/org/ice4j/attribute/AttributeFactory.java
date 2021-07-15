@@ -624,14 +624,14 @@ public class AttributeFactory
     public static RequestedAddressFamilyAttribute
         createRequestedAddressFamilyAttribute(char family)
     {
-		RequestedAddressFamilyAttribute attribute
+        RequestedAddressFamilyAttribute attribute
             = new RequestedAddressFamilyAttribute();
 
         boolean isSet = attribute.setFamily(family);
-		if(!isSet)
+        if(!isSet)
         {
-			attribute = null;
-		}
+            attribute = null;
+        }
 
         return attribute;
     }
@@ -644,8 +644,8 @@ public class AttributeFactory
      */
     public static ConnectionIdAttribute createConnectionIdAttribute(
         int connectionIdValue)
-	{
-		ConnectionIdAttribute attribute = new ConnectionIdAttribute();
+    {
+        ConnectionIdAttribute attribute = new ConnectionIdAttribute();
 
         attribute.setConnectionIdValue(connectionIdValue);
 

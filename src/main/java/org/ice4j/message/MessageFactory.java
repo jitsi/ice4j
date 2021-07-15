@@ -431,7 +431,7 @@ public class MessageFactory
             int lifetime )
         throws IllegalArgumentException
     {
-	    return createAllocationResponse(
+        return createAllocationResponse(
             request, mappedAddress, relayedAddress, null ,lifetime);
     }
     
@@ -476,8 +476,8 @@ public class MessageFactory
         //xor relayed address
         XorRelayedAddressAttribute xorRelayedAddressAttribute
             = AttributeFactory
-        		.createXorRelayedAddressAttribute(relayedAddress,
-        				request.getTransactionID());
+                .createXorRelayedAddressAttribute(relayedAddress,
+                        request.getTransactionID());
 
         allocationSuccessResponse.putAttribute(xorRelayedAddressAttribute);
 
@@ -492,7 +492,7 @@ public class MessageFactory
             //reservation token
             ReservationTokenAttribute reservationTokenAttribute
                 = AttributeFactory
-            		.createReservationTokenAttribute(token);
+                    .createReservationTokenAttribute(token);
 
             allocationSuccessResponse.putAttribute(reservationTokenAttribute);
         }
@@ -511,7 +511,7 @@ public class MessageFactory
      */
     public static Response createAllocationErrorResponse(char errorCode)
     {
-	    return createAllocationErrorResponse(errorCode,null);
+        return createAllocationErrorResponse(errorCode,null);
     }
        
     /**
@@ -527,7 +527,7 @@ public class MessageFactory
      * @return a allocation error response message containing an error code.
      */
     public static Response createAllocationErrorResponse(char errorCode,
-	    				String reasonPhrase)
+                        String reasonPhrase)
     {
         Response allocationErrorResponse = new Response();
 
@@ -810,7 +810,7 @@ public class MessageFactory
      */
     public static Response createChannelBindErrorResponse(char errorCode)
     {
-	    return createChannelBindErrorResponse(errorCode, null);
+        return createChannelBindErrorResponse(errorCode, null);
     }
     
     /**
@@ -1185,7 +1185,7 @@ public class MessageFactory
     public static Response createConnectErrorResponse(char errorCode)
         throws IllegalArgumentException
     {
-	    return createConnectErrorResponse(errorCode, null);
+        return createConnectErrorResponse(errorCode, null);
     }
     
     /**
@@ -1275,7 +1275,7 @@ public class MessageFactory
     public static Response createConnectionBindErrorResponse(char errorCode)
         throws IllegalArgumentException
     {
-	    return createConnectionBindErrorResponse(errorCode,null);
+        return createConnectionBindErrorResponse(errorCode,null);
     }
     
     /**

@@ -34,10 +34,10 @@ public class PseudoTcpSocket extends Socket
     
     PseudoTcpSocket(PseudoTcpSocketImpl socketImpl) 
         throws SocketException 
-	{
+    {
         super(socketImpl);
         this.socketImpl = socketImpl;
-	}
+    }
     
     /**
      * 
@@ -60,62 +60,62 @@ public class PseudoTcpSocket extends Socket
     {
         socketImpl.setConversationID(convID);
     }
-	
+    
     /**
      * Sets MTU (maximum transmission unit) value
      * @param mtu  the MTU value
      */
-	public void setMTU(int mtu)
-	{
-	    socketImpl.setMTU(mtu);
-	}
-	
-	/**
-	 * Gets MTU (maximum transmission unit) value
-	 * @return MTU value
-	 */
-	public int getMTU()
-	{
-	    return socketImpl.getMTU();
-	}
-	
-	/**
-	 * Sets an {@link Option} on this socket.
-	 * @return PseudoTCP option value
-	 * 
-	 * @param option the option to set on this socket.
-	 * @see Option
-	 */
-	public long getOption(Option option)
-	{
-	    return socketImpl.getPTCPOption(option);
-	}
-	
-	/**
-	 * 
-	 * @param option PseudoTCP option to set
-	 * @param optValue option's value
-	 * 
-	 * @see Option
-	 */
-	public void setOption(Option option, long optValue)
-	{
-	    socketImpl.setPTCPOption(option, optValue);
-	}
-	
-	/**
+    public void setMTU(int mtu)
+    {
+        socketImpl.setMTU(mtu);
+    }
+    
+    /**
+     * Gets MTU (maximum transmission unit) value
+     * @return MTU value
+     */
+    public int getMTU()
+    {
+        return socketImpl.getMTU();
+    }
+    
+    /**
+     * Sets an {@link Option} on this socket.
+     * @return PseudoTCP option value
+     * 
+     * @param option the option to set on this socket.
+     * @see Option
+     */
+    public long getOption(Option option)
+    {
+        return socketImpl.getPTCPOption(option);
+    }
+    
+    /**
+     * 
+     * @param option PseudoTCP option to set
+     * @param optValue option's value
+     * 
+     * @see Option
+     */
+    public void setOption(Option option, long optValue)
+    {
+        socketImpl.setPTCPOption(option, optValue);
+    }
+    
+    /**
      * Blocking method waits for connection.
      *
      * @param timeout for this operation in ms
      * @throws IOException If socket gets closed or timeout expires
      */
-	public void accept(int timeout) 
-	    throws IOException
-	{
-	    socketImpl.accept(timeout);
-	}
+    public void accept(int timeout) 
+        throws IOException
+    {
+        socketImpl.accept(timeout);
+    }
 
-	/**
+    /**
      * Sets debug name that will be displayed in log messages for this socket
      * @param debugName the name of this socket for debug messages
      */

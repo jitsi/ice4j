@@ -56,7 +56,7 @@ public class RequestedAddressFamilyAttribute extends Attribute
      */
     protected RequestedAddressFamilyAttribute() 
     {
-		super(REQUESTED_ADDRESS_FAMILY);
+        super(REQUESTED_ADDRESS_FAMILY);
     }
 
     /**
@@ -66,7 +66,7 @@ public class RequestedAddressFamilyAttribute extends Attribute
     @Override
     public char getDataLength() 
     {
-		return DATA_LENGTH;
+        return DATA_LENGTH;
     }
 
     /**
@@ -78,7 +78,7 @@ public class RequestedAddressFamilyAttribute extends Attribute
     @Override
     public String getName() 
     {
-	    return NAME;
+        return NAME;
     }
 
     /**
@@ -90,7 +90,7 @@ public class RequestedAddressFamilyAttribute extends Attribute
     @Override
     public boolean equals(Object obj) 
     {
-	    if (! (obj instanceof RequestedAddressFamilyAttribute))
+        if (! (obj instanceof RequestedAddressFamilyAttribute))
             return false;
 
         if (obj == this)
@@ -142,9 +142,9 @@ public class RequestedAddressFamilyAttribute extends Attribute
     */
     @Override
     void decodeAttributeBody(byte[] attributeValue, char offset, char length) 
-	    throws StunException
+        throws StunException
     {
-	    if(length != DATA_LENGTH)
+        if(length != DATA_LENGTH)
         {
             throw new StunException("length invalid: " + length);
         }
@@ -173,8 +173,8 @@ public class RequestedAddressFamilyAttribute extends Attribute
      * @return true if argument is IPv4 or IPv6 otherwise false
      */
     public boolean setFamily(char family) 
-    {	
-    	if(family == IPv4 || family == IPv6)
+    {    
+        if(family == IPv4 || family == IPv6)
         {
             this.family = family;
             return true;

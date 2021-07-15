@@ -282,18 +282,18 @@ class PseudoTcpSocketImpl
         throws SocketException
     {
         //TODO: map options to PTCP options/method calls
-		if(optID == SocketOptions.TCP_NODELAY) 
+        if(optID == SocketOptions.TCP_NODELAY) 
         {
-			Object ret = options.get(Option.OPT_NODELAY.ordinal());
-			return ret != null;
-		}
+            Object ret = options.get(Option.OPT_NODELAY.ordinal());
+            return ret != null;
+        }
 
-		Object option = options.get(optID);
-		if(option == null) 
+        Object option = options.get(optID);
+        if(option == null) 
         {
-			logger.warning("Asked for unknown optID" + optID);
-		}
-		return option;
+            logger.warning("Asked for unknown optID" + optID);
+        }
+        return option;
     }
     
     public long getPTCPOption(Option opt)
@@ -453,7 +453,7 @@ class PseudoTcpSocketImpl
      */
     private void updateClock()
     {
-		scheduleClockTask(0);
+        scheduleClockTask(0);
     }
 
     /**
@@ -560,7 +560,7 @@ class PseudoTcpSocketImpl
         runClock = false;
         this.exception = e;
         releaseAllLocks();
-		cancelClockTask(true);
+        cancelClockTask(true);
 
     }
 
@@ -709,70 +709,70 @@ class PseudoTcpSocketImpl
      */
     private void runClock()
     {
-		if(!runClock)
-		{
-			return;
-		}
+        if(!runClock)
+        {
+            return;
+        }
         long sleep;
 
-		synchronized (pseudoTcp)
-		{
-			pseudoTcp.notifyClock(PseudoTCPBase.now());
-			sleep = pseudoTcp.getNextClock(PseudoTCPBase.now());
-		}
+        synchronized (pseudoTcp)
+        {
+            pseudoTcp.notifyClock(PseudoTCPBase.now());
+            sleep = pseudoTcp.getNextClock(PseudoTCPBase.now());
+        }
 
-		//there might be negative interval even if there's no error
-		if (sleep == -1)
-		{
-			releaseAllLocks();
-			if (exception != null)
-			{
-				logger.log(Level.SEVERE,
-						   "STATE: " + pseudoTcp.getState()
-					       + " ERROR: " + exception.getMessage());
-			}
-		}
-		else
-		{
-			//logger.log(Level.FINEST, "Clock sleep for " + sleep);
-			scheduleClockTask(sleep);
-		}
+        //there might be negative interval even if there's no error
+        if (sleep == -1)
+        {
+            releaseAllLocks();
+            if (exception != null)
+            {
+                logger.log(Level.SEVERE,
+                           "STATE: " + pseudoTcp.getState()
+                           + " ERROR: " + exception.getMessage());
+            }
+        }
+        else
+        {
+            //logger.log(Level.FINEST, "Clock sleep for " + sleep);
+            scheduleClockTask(sleep);
+        }
     }
 
-	private Runnable clockTaskRunner = new Runnable()
-	{
-		@Override
-		public void run() {
-			runClock();
-		}
-	};
+    private Runnable clockTaskRunner = new Runnable()
+    {
+        @Override
+        public void run() {
+            runClock();
+        }
+    };
 
-	private void scheduleClockTask(long sleep)
-	{
-		synchronized (clockTaskRunner)
-		{
-			// Cancel any existing tasks, to make sure we don't run duplicates.
-			cancelClockTask(false);
-			if(runClock)
-			{
-				currentlyScheduledClockTask
+    private void scheduleClockTask(long sleep)
+    {
+        synchronized (clockTaskRunner)
+        {
+            // Cancel any existing tasks, to make sure we don't run duplicates.
+            cancelClockTask(false);
+            if(runClock)
+            {
+                currentlyScheduledClockTask
                     = clockExecutor.schedule(
                             clockTaskRunner, sleep, TimeUnit.MILLISECONDS);
-			}
-		}
-	}
+            }
+        }
+    }
 
-	private void cancelClockTask(boolean interruptIfRunning)
-	{
-		// Copy the reference, in case it changes.
-		ScheduledFuture<?> taskToCancel = this.currentlyScheduledClockTask;
-		if(taskToCancel != null)
-		{
-			taskToCancel.cancel(interruptIfRunning);
-		}
-	}
+    private void cancelClockTask(boolean interruptIfRunning)
+    {
+        // Copy the reference, in case it changes.
+        ScheduledFuture<?> taskToCancel = this.currentlyScheduledClockTask;
+        if(taskToCancel != null)
+        {
+            taskToCancel.cancel(interruptIfRunning);
+        }
+    }
 
-	/**
+    /**
      * Returns an output stream for this socket.
      * @return an output stream for writing to this socket.
      * @throws IOException if an I/O error occurs when creating the output stream.

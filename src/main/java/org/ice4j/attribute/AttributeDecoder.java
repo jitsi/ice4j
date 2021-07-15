@@ -130,9 +130,9 @@ public class AttributeDecoder
             case Attribute.USE_CANDIDATE:
                 decodedAttribute = new UseCandidateAttribute(); break;
             case Attribute.REQUESTED_ADDRESS_FAMILY:
-        	    decodedAttribute = new RequestedAddressFamilyAttribute(); break;
+                decodedAttribute = new RequestedAddressFamilyAttribute(); break;
             case Attribute.CONNECTION_ID:
-        	    decodedAttribute = new ConnectionIdAttribute(); break;
+                decodedAttribute = new ConnectionIdAttribute(); break;
             //According to rfc3489 we should silently ignore unknown attributes.
             default: decodedAttribute
                 = new OptionalAttribute( Attribute.UNKNOWN_OPTIONAL_ATTRIBUTE);
