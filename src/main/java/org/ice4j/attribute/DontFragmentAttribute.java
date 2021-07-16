@@ -112,7 +112,7 @@ public class DontFragmentAttribute extends Attribute
     void decodeAttributeBody(byte[] attributeValue, char offset, char length)
         throws StunException
     {
-        if(length != 0)
+        if (length != 0)
         {
             throw new StunException("length invalid");
         }

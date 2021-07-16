@@ -628,7 +628,7 @@ public class AttributeFactory
             = new RequestedAddressFamilyAttribute();
 
         boolean isSet = attribute.setFamily(family);
-        if(!isSet)
+        if (!isSet)
         {
             attribute = null;
         }

@@ -174,7 +174,7 @@ public class PriorityAttribute
         throws IllegalArgumentException
     {
         /* Priority must be between 1 and (2^31 - 1) */
-        if(priority <= 0 || priority > 0x7FFFFFFFL)
+        if (priority <= 0 || priority > 0x7FFFFFFFL)
         {
             throw new IllegalArgumentException("Priority must be " +
                     "between 0 and (2**31 - 1)");

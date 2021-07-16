@@ -547,7 +547,7 @@ public class StunCandidateHarvest
         Attribute attribute
             = response.getAttribute(Attribute.XOR_MAPPED_ADDRESS);
 
-        if(attribute instanceof XorMappedAddressAttribute)
+        if (attribute instanceof XorMappedAddressAttribute)
         {
             return
                 ((XorMappedAddressAttribute) attribute)
@@ -558,7 +558,7 @@ public class StunCandidateHarvest
         attribute
             = response.getAttribute(Attribute.MAPPED_ADDRESS);
 
-        if(attribute instanceof MappedAddressAttribute)
+        if (attribute instanceof MappedAddressAttribute)
         {
             return
                 ((MappedAddressAttribute) attribute)

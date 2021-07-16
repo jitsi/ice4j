@@ -125,14 +125,14 @@ public abstract class IceControlAttribute
      */
     public boolean equals(Object obj)
     {
-        if(!(obj instanceof IceControlAttribute))
+        if (!(obj instanceof IceControlAttribute))
             return false;
 
-        if(obj == this)
+        if (obj == this)
             return true;
 
         IceControlAttribute iceControlAtt = (IceControlAttribute)obj;
-        if(iceControlAtt.getAttributeType() != getAttributeType()
+        if (iceControlAtt.getAttributeType() != getAttributeType()
             || iceControlAtt.isControlling != isControlling
             || iceControlAtt.getDataLength() != DATA_LENGTH_ICE_CONTROL
             || getTieBreaker() != iceControlAtt.getTieBreaker())

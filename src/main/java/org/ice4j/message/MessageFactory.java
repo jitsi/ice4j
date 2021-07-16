@@ -432,7 +432,7 @@ public class MessageFactory
         throws IllegalArgumentException
     {
         return createAllocationResponse(
-            request, mappedAddress, relayedAddress, null ,lifetime);
+            request, mappedAddress, relayedAddress, null , lifetime);
     }
     
     /**
@@ -487,7 +487,7 @@ public class MessageFactory
 
         allocationSuccessResponse.putAttribute(lifetimeAttribute);
         
-        if(token != null)
+        if (token != null)
         {
             //reservation token
             ReservationTokenAttribute reservationTokenAttribute
@@ -511,7 +511,7 @@ public class MessageFactory
      */
     public static Response createAllocationErrorResponse(char errorCode)
     {
-        return createAllocationErrorResponse(errorCode,null);
+        return createAllocationErrorResponse(errorCode, null);
     }
        
     /**
@@ -830,7 +830,7 @@ public class MessageFactory
 
         ErrorCodeAttribute errorCodeAttribute
             = AttributeFactory
-                .createErrorCodeAttribute(errorCode,reasonPhrase);
+                .createErrorCodeAttribute(errorCode, reasonPhrase);
 
         channelBindErrorResponse.putAttribute(errorCodeAttribute);
 
@@ -916,7 +916,7 @@ public class MessageFactory
         ErrorCodeAttribute errorCodeAttribute
             = AttributeFactory
                 .createErrorCodeAttribute(
-                        errorCode,reasonPhrase);
+                        errorCode, reasonPhrase);
 
         createPermissionErrorResponse.putAttribute(errorCodeAttribute);
 
@@ -1275,7 +1275,7 @@ public class MessageFactory
     public static Response createConnectionBindErrorResponse(char errorCode)
         throws IllegalArgumentException
     {
-        return createConnectionBindErrorResponse(errorCode,null);
+        return createConnectionBindErrorResponse(errorCode, null);
     }
     
     /**

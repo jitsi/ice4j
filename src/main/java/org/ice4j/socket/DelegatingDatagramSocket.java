@@ -225,7 +225,7 @@ public class DelegatingDatagramSocket
 
         // Delegates the DatagramSocket functionality to the DatagramSocket
         // given in parameter.
-        if(delegate != null)
+        if (delegate != null)
         {
             this.delegate = delegate;
         }
@@ -233,7 +233,7 @@ public class DelegatingDatagramSocket
         {
             // Creates a custom DatagramSocket to replace classical "java"
             // DatagramSocket and set it as a delegate Socket
-            if(delegateFactory != null)
+            if (delegateFactory != null)
             {
                 this.delegate = delegateFactory.createUnboundDatagramSocket();
             }
@@ -741,7 +741,7 @@ public class DelegatingDatagramSocket
             catch(Exception ex)
             {
                 InetAddress tmpAddr = p.getAddress();
-                if(((ex instanceof NoRouteToHostException)
+                if (((ex instanceof NoRouteToHostException)
                             || (ex.getMessage() != null
                                 && ex.getMessage().equals("No route to host")))
                         && (tmpAddr instanceof Inet6Address)
@@ -941,7 +941,7 @@ public class DelegatingDatagramSocket
         throws SocketException
     {
         // Only change the buffer size on the real underlying DatagramSocket.
-        if(delegate == null && defaultReceiveBufferSize > 0)
+        if (delegate == null && defaultReceiveBufferSize > 0)
         {
             super.setReceiveBufferSize(defaultReceiveBufferSize);
         }

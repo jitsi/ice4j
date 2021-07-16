@@ -107,7 +107,7 @@ public class IceTcpServerSocketWrapper
         {
             isRun = false;
             serverSocket.close();
-            for(Socket s : sockets)
+            for (Socket s : sockets)
             {
                 s.close();
             }
@@ -150,7 +150,7 @@ public class IceTcpServerSocketWrapper
     @Override
     public Socket getTCPSocket()
     {
-        if(sockets.size() > 0)
+        if (sockets.size() > 0)
         {
             return sockets.get(0);
         }
@@ -182,13 +182,13 @@ public class IceTcpServerSocketWrapper
         {
             isRun = true;
 
-            while(isRun)
+            while (isRun)
             {
                 try
                 {
                     Socket tcpSocket = serverSocket.accept();
 
-                    if(tcpSocket != null)
+                    if (tcpSocket != null)
                     {
                         MultiplexingSocket multiplexingSocket =
                             new MultiplexingSocket(tcpSocket);

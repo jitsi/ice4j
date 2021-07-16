@@ -54,7 +54,7 @@ public class MuxServerSocketChannel
      * @throws IOException if an I/O error occurs
      */
     public static MuxServerSocketChannel openAndBind(
-            Map<String,Object> properties,
+            Map<String, Object> properties,
             SocketAddress endpoint,
             int backlog,
             DatagramPacketFilter filter)

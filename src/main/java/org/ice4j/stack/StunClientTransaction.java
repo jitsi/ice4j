@@ -306,7 +306,7 @@ public class StunClientTransaction
         TransactionID transactionID = getTransactionID();
 
         logger.fine("handleResponse tid " + transactionID);
-        if(!Boolean.getBoolean(StackProperties.KEEP_CRANS_AFTER_A_RESPONSE))
+        if (!Boolean.getBoolean(StackProperties.KEEP_CRANS_AFTER_A_RESPONSE))
         {
             cancel();
         }
@@ -340,7 +340,7 @@ public class StunClientTransaction
         String maxRetransmissionsStr
             = System.getProperty(StackProperties.MAX_CTRAN_RETRANSMISSIONS);
 
-        if(maxRetransmissionsStr != null
+        if (maxRetransmissionsStr != null
                 && maxRetransmissionsStr.trim().length() > 0)
         {
             try
@@ -360,7 +360,7 @@ public class StunClientTransaction
         String originalWaitIntervalStr
             = System.getProperty(StackProperties.FIRST_CTRAN_RETRANS_AFTER);
 
-        if(originalWaitIntervalStr != null
+        if (originalWaitIntervalStr != null
                 && originalWaitIntervalStr.trim().length() > 0)
         {
             try
@@ -381,7 +381,7 @@ public class StunClientTransaction
         String maxWaitIntervalStr
                 = System.getProperty(StackProperties.MAX_CTRAN_RETRANS_TIMER);
 
-        if(maxWaitIntervalStr != null
+        if (maxWaitIntervalStr != null
                 && maxWaitIntervalStr.trim().length() > 0)
         {
             try

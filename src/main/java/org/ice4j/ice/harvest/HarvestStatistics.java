@@ -75,7 +75,7 @@ public class HarvestStatistics
     protected void stopHarvestTiming(Collection<LocalCandidate> harvest)
     {
         //count total candidates
-        if(harvest != null)
+        if (harvest != null)
             stopHarvestTiming(harvest.size());
         else
             stopHarvestTiming(0);
@@ -108,13 +108,13 @@ public class HarvestStatistics
      */
     public long getHarvestDuration()
     {
-        if(this.lastStartHarvestingTime != -1)
+        if (this.lastStartHarvestingTime != -1)
         {
             long currentHarvestingTime
                 = System.currentTimeMillis() - lastStartHarvestingTime;
             // Retest here, while the harvesting may be end while computing the
             // harvesting time.
-            if(this.lastStartHarvestingTime != -1)
+            if (this.lastStartHarvestingTime != -1)
             {
                 return this.lastHarvestingTime + currentHarvestingTime;
             }

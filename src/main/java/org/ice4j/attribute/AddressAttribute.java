@@ -176,7 +176,7 @@ abstract class AddressAttribute extends Attribute
             return false;
 
         //addresses
-        if( att.getAddress() == null && getAddress() == null)
+        if ( att.getAddress() == null && getAddress() == null)
             return true;
 
         return true;
@@ -221,7 +221,7 @@ abstract class AddressAttribute extends Attribute
         binValue[7] = (byte)(getPort() & 0x00FF);
 
         //address
-        if(getFamily() == ADDRESS_FAMILY_IPV6)
+        if (getFamily() == ADDRESS_FAMILY_IPV6)
         {
             System.arraycopy(getAddressBytes(), 0, binValue, 8, 16);
         }
@@ -309,7 +309,7 @@ abstract class AddressAttribute extends Attribute
 
         //address
         byte address[] = null;
-        if(family == ADDRESS_FAMILY_IPV6)
+        if (family == ADDRESS_FAMILY_IPV6)
         {
             address = new byte[16];
         }

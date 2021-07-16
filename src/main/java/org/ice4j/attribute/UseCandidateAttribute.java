@@ -89,14 +89,14 @@ public class UseCandidateAttribute
      */
     public boolean equals(Object obj)
     {
-        if(!(obj instanceof UseCandidateAttribute))
+        if (!(obj instanceof UseCandidateAttribute))
             return false;
 
-        if(obj == this)
+        if (obj == this)
             return true;
 
         UseCandidateAttribute useCandidateAtt = (UseCandidateAttribute)obj;
-        if(useCandidateAtt.getAttributeType() != getAttributeType()
+        if (useCandidateAtt.getAttributeType() != getAttributeType()
             || useCandidateAtt.getDataLength() != getDataLength())
             return false;
 

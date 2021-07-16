@@ -159,7 +159,7 @@ public class MuxServerSocketChannelFactory
      * @throws IOException if an I/O error occurs
      */
     public static ServerSocketChannel openAndBindMuxServerSocketChannel(
-            Map<String,Object> properties,
+            Map<String, Object> properties,
             SocketAddress endpoint,
             int backlog,
             DatagramPacketFilter filter)
@@ -225,7 +225,7 @@ public class MuxServerSocketChannelFactory
      * @throws IOException if an I/O error occurs
      */
     public static ServerSocketChannel openAndBindServerSocketChannel(
-            Map<String,Object> properties,
+            Map<String, Object> properties,
             SocketAddress endpoint,
             int backlog)
         throws IOException
@@ -236,7 +236,7 @@ public class MuxServerSocketChannelFactory
 
         if (properties != null && !properties.isEmpty())
         {
-            for (Map.Entry<String,Object> property
+            for (Map.Entry<String, Object> property
                     : properties.entrySet())
             {
                 String name = property.getKey();

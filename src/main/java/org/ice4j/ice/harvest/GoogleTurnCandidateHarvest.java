@@ -105,7 +105,7 @@ public class GoogleTurnCandidateHarvest
         Attribute attribute
             = response.getAttribute(Attribute.MAPPED_ADDRESS);
 
-        if(attribute != null)
+        if (attribute != null)
         {
             TransportAddress relayedAddress
                 = ((MappedAddressAttribute) attribute).getAddress();

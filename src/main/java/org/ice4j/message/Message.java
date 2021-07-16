@@ -689,7 +689,7 @@ public abstract class Message
     public void setTransactionID(byte[] tranID)
         throws StunException
     {
-        if(tranID == null
+        if (tranID == null
            || (tranID.length != TRANSACTION_ID_LENGTH &&
                    tranID.length != RFC3489_TRANSACTION_ID_LENGTH))
             throw new StunException(StunException.ILLEGAL_ARGUMENT,
@@ -723,7 +723,7 @@ public abstract class Message
      */
     protected byte getAttributePresentity(char attributeType)
     {
-        if(!rfc3489CompatibilityMode)
+        if (!rfc3489CompatibilityMode)
             return O;
 
         byte msgIndex = -1;
@@ -874,22 +874,22 @@ public abstract class Message
     @Override
     public boolean equals(Object obj)
     {
-        if(!(obj instanceof Message))
+        if (!(obj instanceof Message))
             return false;
 
-        if(obj == this)
+        if (obj == this)
             return true;
 
         Message msg = (Message) obj;
-        if( msg.getMessageType()   != getMessageType())
+        if ( msg.getMessageType()   != getMessageType())
             return false;
-        if(msg.getDataLength() != getDataLength())
+        if (msg.getDataLength() != getDataLength())
             return false;
 
         //compare attributes
         for (Attribute localAtt : attributes.values())
         {
-            if(!localAtt.equals(msg.getAttribute(localAtt.getAttributeType())))
+            if (!localAtt.equals(msg.getAttribute(localAtt.getAttributeType())))
                 return false;
         }
 
@@ -932,7 +932,7 @@ public abstract class Message
 
         byte tranID[] = getTransactionID();
 
-        if(tranID.length == 12)
+        if (tranID.length == 12)
         {
             System.arraycopy(MAGIC_COOKIE, 0, binMsg, offset, 4);
             offset += 4;
@@ -1065,7 +1065,7 @@ public abstract class Message
         int originalOffset = offset;
         arrayLen = Math.min(binMessage.length, arrayLen);
 
-        if(arrayLen - offset < Message.HEADER_LENGTH)
+        if (arrayLen - offset < Message.HEADER_LENGTH)
         {
             throw new StunException( StunException.ILLEGAL_ARGUMENT,
                          "The given binary array is not a valid StunMessage");
@@ -1079,7 +1079,7 @@ public abstract class Message
         if (Message.isResponseType(messageType) &&
                 messageType != OLD_DATA_INDICATION)
             message = new Response();
-        else if(Message.isRequestType(messageType))
+        else if (Message.isRequestType(messageType))
             message = new Request();
         else /* indication */
             message = new Indication();
@@ -1096,12 +1096,12 @@ public abstract class Message
 
         boolean rfc3489Compat = false;
 
-        if(!Arrays.equals(MAGIC_COOKIE, cookie))
+        if (!Arrays.equals(MAGIC_COOKIE, cookie))
         {
             rfc3489Compat = true;
         }
 
-        if(arrayLen - offset - TRANSACTION_ID_LENGTH < length)
+        if (arrayLen - offset - TRANSACTION_ID_LENGTH < length)
         {
             throw
                 new StunException(
@@ -1119,7 +1119,7 @@ public abstract class Message
         System.arraycopy(binMessage, offset, tranID, 0, TRANSACTION_ID_LENGTH);
         try
         {
-            if(rfc3489Compat)
+            if (rfc3489Compat)
             {
                 byte[] rfc3489TranID = new byte[TRANSACTION_ID_LENGTH + 4];
                 System.arraycopy(cookie, 0, rfc3489TranID, 0, 4);
@@ -1141,7 +1141,7 @@ public abstract class Message
 
         offset += TRANSACTION_ID_LENGTH;
 
-        while(offset - Message.HEADER_LENGTH < length)
+        while (offset - Message.HEADER_LENGTH < length)
         {
             Attribute att = AttributeDecoder.decode(
                 binMessage, offset, (char)(length - offset));
@@ -1154,7 +1154,7 @@ public abstract class Message
 
             //now also skip any potential padding that might have come with
             //this attribute.
-            if((att.getDataLength() % 4) > 0)
+            if ((att.getDataLength() % 4) > 0)
             {
                 offset += (4 - (att.getDataLength() % 4));
             }
@@ -1251,11 +1251,11 @@ public abstract class Message
     protected void validateAttributePresentity()
         throws IllegalStateException
     {
-        if(! rfc3489CompatibilityMode )
+        if (! rfc3489CompatibilityMode )
             return;
 
-        for(char i = Attribute.MAPPED_ADDRESS; i < Attribute.REFLECTED_FROM;i++)
-            if(getAttributePresentity(i) == M && getAttribute(i) == null)
+        for (char i = Attribute.MAPPED_ADDRESS; i < Attribute.REFLECTED_FROM; i++)
+            if (getAttributePresentity(i) == M && getAttribute(i) == null)
                 throw new IllegalStateException(
                     "A mandatory attribute (type=" + (int)i + ") is missing!");
     }
@@ -1277,7 +1277,7 @@ public abstract class Message
      */
     public static boolean isSuccessResponseType(char type)
     {
-      return ((type & MESSAGE_CLASS_MASK) == STUN_SUCCESS_RESP);
+        return ((type & MESSAGE_CLASS_MASK) == STUN_SUCCESS_RESP);
     }
 
     /**
@@ -1288,8 +1288,8 @@ public abstract class Message
      */
     public static boolean isResponseType(char type)
     {
-      /* return (((type >> 8) & 1) != 0); */
-      return (isSuccessResponseType(type) || isErrorResponseType(type));
+        /* return (((type >> 8) & 1) != 0); */
+        return (isSuccessResponseType(type) || isErrorResponseType(type));
     }
 
     /**
@@ -1310,8 +1310,8 @@ public abstract class Message
      */
     public static boolean isRequestType(char type)
     {
-      /* return !isResponseType(type); */
-      return ((type & MESSAGE_CLASS_MASK) == STUN_REQUEST);
+        /* return !isResponseType(type); */
+        return ((type & MESSAGE_CLASS_MASK) == STUN_REQUEST);
     }
 
     /**

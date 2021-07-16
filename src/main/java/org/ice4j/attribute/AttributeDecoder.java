@@ -47,7 +47,7 @@ public class AttributeDecoder
                                    int   length)
         throws StunException
     {
-        if(bytes == null || bytes.length < Attribute.HEADER_LENGTH)
+        if (bytes == null || bytes.length < Attribute.HEADER_LENGTH)
         {
             throw new StunException( StunException.ILLEGAL_ARGUMENT,
                          "Could not decode the specified binary array.");
@@ -59,7 +59,7 @@ public class AttributeDecoder
         char attributeLength = (char)
             (((bytes[offset + 2] & 0xFF) << 8) | (bytes[offset + 3] & 0xFF));
 
-        if(attributeLength > bytes.length - offset )
+        if (attributeLength > bytes.length - offset )
             throw new StunException( StunException.ILLEGAL_ARGUMENT,
                             "Could not decode the specified binary array.");
 

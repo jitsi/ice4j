@@ -184,11 +184,11 @@ public class StunDatagramPacketFilter
 
         // All STUN messages MUST start with a 20-byte header followed by zero
         // or more Attributes.
-        if(length >= 20)
+        if (length >= 20)
         {
             // If the MAGIC COOKIE is present this is a STUN packet (RFC5389
             // compliant).
-            if(data[offset + 4] == Message.MAGIC_COOKIE[0]
+            if (data[offset + 4] == Message.MAGIC_COOKIE[0]
                 && data[offset + 5] == Message.MAGIC_COOKIE[1]
                 && data[offset + 6] == Message.MAGIC_COOKIE[2]
                 && data[offset + 7] == Message.MAGIC_COOKIE[3])

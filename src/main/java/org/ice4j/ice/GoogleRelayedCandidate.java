@@ -103,7 +103,7 @@ public class GoogleRelayedCandidate
             turnCandidateHarvest.hostCandidate.getParentComponent()
                 .findLocalCandidate(mappedAddress));
 
-        if(transportAddress.getTransport() == Transport.TCP)
+        if (transportAddress.getTransport() == Transport.TCP)
         {
             super.setExtendedType(
                     CandidateExtendedType.GOOGLE_TCP_TURN_RELAYED_CANDIDATE);
@@ -200,13 +200,13 @@ public class GoogleRelayedCandidate
         {
             try
             {
-                if(getTransport() == Transport.UDP)
+                if (getTransport() == Transport.UDP)
                 {
                     socket
                        = new IceUdpSocketWrapper(new MultiplexingDatagramSocket(
                             getRelayedCandidateDatagramSocket()));
                 }
-                else if(getTransport() == Transport.TCP)
+                else if (getTransport() == Transport.TCP)
                 {
                     final Socket s = getRelayedCandidateSocket();
                     socket = new IceTcpSocketWrapper(new MultiplexingSocket(s));

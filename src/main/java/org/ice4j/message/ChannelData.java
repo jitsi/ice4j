@@ -106,7 +106,7 @@ public class ChannelData
      */
     public char getDataLength()
     {
-        if(data == null)
+        if (data == null)
             return 0;
 
         return (char)data.length;
@@ -159,7 +159,7 @@ public class ChannelData
         byte binMsg[] = new byte[HEADER_LENGTH + dataLength];
         int offset = 0;
 
-        if(!validateChannelNumber(channelNumber))
+        if (!validateChannelNumber(channelNumber))
         {
             throw new StunException(StunException.ILLEGAL_ARGUMENT, "Channel number invalid");
         }
@@ -172,7 +172,7 @@ public class ChannelData
         binMsg[offset++] = (byte)((data != null) ? data.length >> 8 : 0);
         binMsg[offset++] = (byte)((data != null) ? data.length & 0xff : 0);
 
-        if(data != null)
+        if (data != null)
         {
             System.arraycopy(data, 0, binMsg, offset, data.length);
         }
@@ -210,14 +210,14 @@ public class ChannelData
         ChannelData channelData = null;
         byte data[] = null;
 
-        if((binMessage.length - offset) < HEADER_LENGTH)
+        if ((binMessage.length - offset) < HEADER_LENGTH)
         {
             throw new StunException(StunException.ILLEGAL_ARGUMENT, "Size too short");
         }
 
         channelNumber = (char)((binMessage[offset++]<<8) | (binMessage[offset++]&0xFF));
 
-        if(!validateChannelNumber(channelNumber))
+        if (!validateChannelNumber(channelNumber))
         {
             throw new StunException(StunException.ILLEGAL_ARGUMENT, "Channel number invalid");
         }

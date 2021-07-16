@@ -124,14 +124,14 @@ class ConnectivityCheckServer
         UsernameAttribute uname = (UsernameAttribute)request
             .getAttribute(Attribute.USERNAME);
 
-        if(   uname == null
-           ||  !checkLocalUserName(new String(uname.getUsername())))
+        if ( uname == null
+            || !checkLocalUserName(new String(uname.getUsername())))
         {
             return;
         }
 
         //detect role conflicts
-        if( ( parentAgent.isControlling()
+        if ( ( parentAgent.isControlling()
                     && request.containsAttribute(Attribute.ICE_CONTROLLING))
             || ( ! parentAgent.isControlling()
                         && request.containsAttribute(Attribute.ICE_CONTROLLED)))
@@ -214,7 +214,7 @@ class ConnectivityCheckServer
         //apply tie-breaking
 
         //extract priority
-        if(priorityAttr == null)
+        if (priorityAttr == null)
         {
             logger.debug(() -> "Received a connectivity check with"
                     + "no PRIORITY attribute. Discarding.");
@@ -380,7 +380,7 @@ class ConnectivityCheckServer
     public byte[] getRemoteKey(String username, String media)
     {
         IceMediaStream stream = parentAgent.getStream(media);
-        if(stream == null)
+        if (stream == null)
         {
             return null;
         }
@@ -400,7 +400,7 @@ class ConnectivityCheckServer
             //caller gave us the entire username.
             if (username.equals(parentAgent.generateLocalUserName(media)))
             {
-                if(stream.getRemotePassword() != null)
+                if (stream.getRemotePassword() != null)
                     return stream.getRemotePassword().getBytes();
             }
         }

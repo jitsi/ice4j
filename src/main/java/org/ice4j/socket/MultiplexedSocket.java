@@ -276,7 +276,7 @@ public class MultiplexedSocket
         public void reset()
             throws IOException
         {
-            if(!markSupported())
+            if (!markSupported())
             {
                 throw new IOException(
                         "InputStreamImpl does not support reset()");

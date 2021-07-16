@@ -201,7 +201,7 @@ public class NetworkConfigurationDiscoveryProcess
         StunDiscoveryReport report = new StunDiscoveryReport();
         StunMessageEvent evt = doTestI(serverAddress);
 
-        if(evt == null)
+        if (evt == null)
         {
             //UDP Blocked
             report.setNatType(StunDiscoveryReport.UDP_BLOCKING_FIREWALL);
@@ -213,7 +213,7 @@ public class NetworkConfigurationDiscoveryProcess
                 =((MappedAddressAttribute)evt.getMessage()
                   .getAttribute(Attribute.MAPPED_ADDRESS)).getAddress();
 
-            if(mappedAddress == null)
+            if (mappedAddress == null)
             {
               /* maybe we contact a STUNbis server and which do not
                * understand our request.
@@ -257,7 +257,7 @@ public class NetworkConfigurationDiscoveryProcess
                 if (evt == null)
                 {
                     evt = doTestI(backupServerAddress);
-                    if(evt == null)
+                    if (evt == null)
                     {
                         logger.info("Failed to receive a response from "
                                     +"backup stun server!");
@@ -267,10 +267,10 @@ public class NetworkConfigurationDiscoveryProcess
                         ((MappedAddressAttribute)evt.getMessage().
                             getAttribute(Attribute.MAPPED_ADDRESS))
                                 .getAddress();
-                    if(mappedAddress.equals(mappedAddress2))
+                    if (mappedAddress.equals(mappedAddress2))
                     {
                         evt = doTestIII(serverAddress);
-                        if(evt == null)
+                        if (evt == null)
                         {
                             //port restricted cone
                             report.setNatType(StunDiscoveryReport
@@ -350,7 +350,7 @@ public class NetworkConfigurationDiscoveryProcess
             return null;
         }
 
-        if(evt != null)
+        if (evt != null)
             logger.fine("TEST I res="+evt.getRemoteAddress().toString()
                                +" - "+ evt.getRemoteAddress().getHostAddress());
         else
@@ -385,7 +385,7 @@ public class NetworkConfigurationDiscoveryProcess
         StunMessageEvent evt
             = requestSender.sendRequestAndWaitForResponse(request,
                                                           serverAddress);
-        if(evt != null)
+        if (evt != null)
             logger.fine("Test II res="+evt.getRemoteAddress().toString()
                             +" - "+ evt.getRemoteAddress().getHostAddress());
         else
@@ -419,7 +419,7 @@ public class NetworkConfigurationDiscoveryProcess
 
         StunMessageEvent evt = requestSender.sendRequestAndWaitForResponse(
             request, serverAddress);
-        if(evt != null)
+        if (evt != null)
             logger.fine("Test III res="+evt.getRemoteAddress().toString()
                             +" - "+ evt.getRemoteAddress().getHostAddress());
         else
@@ -436,7 +436,7 @@ public class NetworkConfigurationDiscoveryProcess
     private void checkStarted()
         throws StunException
     {
-        if(!started)
+        if (!started)
             throw new StunException(StunException.ILLEGAL_STATE,
                                     "The Discoverer must be started before "
                                     +"launching the discovery process!");

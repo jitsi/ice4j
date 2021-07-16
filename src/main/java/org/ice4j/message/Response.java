@@ -68,7 +68,7 @@ public class Response
     public void setMessageType(char responseType)
         throws IllegalArgumentException
     {
-        if(!isResponseType(responseType))
+        if (!isResponseType(responseType))
             throw new IllegalArgumentException(
                                     Integer.toString(responseType)
                                         + " is not a valid response type.");

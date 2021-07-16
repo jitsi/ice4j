@@ -137,7 +137,7 @@ public class ConnectionIdAttribute
     void decodeAttributeBody(byte[] attributeValue, char offset, char length) 
         throws StunException
     {
-        if(length != DATA_LENGTH)
+        if (length != DATA_LENGTH)
         {
             throw new StunException("length invalid: " + length);
         }

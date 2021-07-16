@@ -796,7 +796,7 @@ public class DelegatingSocket
      */
     public void setOriginalInputStream(InputStream inputStream)
     {
-        if(this.inputStream == null && inputStream != null)
+        if (this.inputStream == null && inputStream != null)
             this.inputStream = inputStream;
     }
 

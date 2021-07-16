@@ -915,7 +915,7 @@ public class PseudoTCPBase
     public static String segToStr(Segment seg)
     {
         String data="data: ";
-        for(byte b : seg.data)
+        for (byte b : seg.data)
         {
             data += b;
         }
@@ -1065,7 +1065,7 @@ public class PseudoTCPBase
                     bConnect = true;
 
                     // TCP options are in the remainder of the payload after CTL_CONNECT.
-                    if(!parseOptions(seg.data, 1, seg.len - 1))
+                    if (!parseOptions(seg.data, 1, seg.len - 1))
                     {
                         return false;
                     }
@@ -2125,7 +2125,7 @@ public class PseudoTCPBase
 
     void setConversationID(long convID)
     {
-        if(m_state != PseudoTcpState.TCP_LISTEN)
+        if (m_state != PseudoTcpState.TCP_LISTEN)
             throw new IllegalStateException();
         this.m_conv = convID;
     }

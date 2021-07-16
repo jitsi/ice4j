@@ -135,7 +135,7 @@ public class MappingCandidateHarvester
 
             //try to add the candidate to the component and then
             //only add it to the harvest not redundant
-            if( !candidates.contains(mappedCandidate)
+            if ( !candidates.contains(mappedCandidate)
                 && component.addLocalCandidate(mappedCandidate))
             {
                 candidates.add(mappedCandidate);

@@ -435,7 +435,7 @@ class NetAccessManager
             }
         }
 
-        if(connector != null)
+        if (connector != null)
             connector.stop();
     }
 

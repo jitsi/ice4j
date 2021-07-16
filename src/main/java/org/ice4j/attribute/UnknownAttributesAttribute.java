@@ -84,7 +84,7 @@ public class UnknownAttributesAttribute extends Attribute
     {
         char len = (char)unknownAttributes.size();
 
-        if( (len % 2 ) != 0 )
+        if ( (len % 2 ) != 0 )
             len++;
 
         return (char)(len * 2);
@@ -99,7 +99,7 @@ public class UnknownAttributesAttribute extends Attribute
     {
         //some attributes may be repeated for padding
         //(packet length should be divisable by 4)
-        if(!contains(attributeID))
+        if (!contains(attributeID))
             unknownAttributes.add(attributeID);
     }
 
@@ -172,7 +172,7 @@ public class UnknownAttributesAttribute extends Attribute
        // If the number of unknown attributes is an odd number, one of the
        // attributes MUST be repeated in the list, so that the total length of
        // the list is a multiple of 4 bytes.
-       if(offset < binValue.length)
+       if (offset < binValue.length)
        {
            char att = getAttribute(0);
            binValue[offset++] = (byte) (att >> 8);
@@ -221,12 +221,12 @@ public class UnknownAttributesAttribute extends Attribute
     void decodeAttributeBody(byte[] attributeValue, char offset, char length)
     throws StunException
     {
-        if( (length % 2 ) != 0)
+        if ( (length % 2 ) != 0)
             throw new StunException("Attribute IDs are 2 bytes long and the "
                                     + "passed binary array has an odd length " +
                                             "value.");
         char originalOffset = offset;
-        for(int i = offset; i < originalOffset + length; i += 2)
+        for (int i = offset; i < originalOffset + length; i += 2)
         {
             char attributeID = (char) (((attributeValue[offset++] & 0xFF) << 8)
                 | (attributeValue[offset++] & 0xFF));

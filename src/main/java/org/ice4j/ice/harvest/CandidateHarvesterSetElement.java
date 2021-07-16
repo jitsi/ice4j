@@ -96,7 +96,7 @@ class CandidateHarvesterSetElement
         {
             setEnabled(false);
         }
-        else if(trickleCallback != null)
+        else if (trickleCallback != null)
         {
             trickleCallback.onIceCandidates(candidates);
         }
