@@ -98,7 +98,7 @@ public class MappingCandidateHarvesters
             TransportAddress localAddress = new TransportAddress(staticMapping.getLocalAddress(), 9, Transport.UDP);
             TransportAddress publicAddress = new TransportAddress(staticMapping.getPublicAddress(), 9, Transport.UDP);
 
-            harvesterList.add(new MappingCandidateHarvester(publicAddress, localAddress));
+            harvesterList.add(new StaticMappingCandidateHarvester(publicAddress, localAddress));
         }
 
         // AWS harvester

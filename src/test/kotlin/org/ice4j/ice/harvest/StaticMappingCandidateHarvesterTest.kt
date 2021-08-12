@@ -22,7 +22,7 @@ import org.ice4j.TransportAddress
 import org.ice4j.ice.Component
 import org.ice4j.ice.HostCandidate
 import org.ice4j.ice.ServerReflexiveCandidate
-import org.ice4j.ice.harvest.MappingCandidateHarvester
+import org.ice4j.ice.harvest.StaticMappingCandidateHarvester
 import org.jitsi.utils.logging2.createLogger
 
 class StaticMappingCandidateHarvesterTest : ShouldSpec() {
@@ -50,7 +50,7 @@ class StaticMappingCandidateHarvesterTest : ShouldSpec() {
 
         context("Harvesting") {
             val publicHostname = "192.168.255.255"
-            val harvester = MappingCandidateHarvester(
+            val harvester = StaticMappingCandidateHarvester(
                 ta(publicHostname, 20000),
                 ta("10.0.0.1", 10000)
             )
