@@ -1,7 +1,6 @@
 package org.ice4j.ice.harvest
 
 import org.ice4j.TransportAddress
-import org.ice4j.ice.Component
 
 /**
  * Uses a predefined static mask in order to generate [TransportAddress]es. This harvester is meant for use in
@@ -23,9 +22,8 @@ class StaticMappingCandidateHarvester @JvmOverloads constructor(
     override val mask: TransportAddress,
     /** The local address (aka face) */
     override val face: TransportAddress,
-    private val matchPort: Boolean = false
-) : MappingCandidateHarvester() {
+    name: String? = null,
+    matchPort: Boolean = false
+) : MappingCandidateHarvester(name ?: "static_mapping", matchPort) {
     override fun toString() = "${javaClass.name}(face=$face, mask=$mask)"
-
-    override fun harvest(component: Component) = harvest(component, matchPort = matchPort)
 }

@@ -27,9 +27,35 @@ import org.ice4j.ice.ServerReflexiveCandidate
 /**
  * A [CandidateHarvester] which maps existing local [HostCandidate]s to new candidates.
  */
-abstract class MappingCandidateHarvester : AbstractCandidateHarvester() {
+abstract class MappingCandidateHarvester @JvmOverloads constructor(
+    val name: String,
+    /**
+     * Whether this harvester should match the port of the public address.
+     *
+     * When [matchPort] is enabled, mapping candidates will be added only when the local host candidate's address and
+     * port match the public (mask) address, and the public (mask) address's port will be used.
+     *
+     * When [matchPort] is disabled, mapping candidates will be added whenever the local host candidate's inet address
+     * matches the public (mask) address, and the host candidate port will be preserved.
+     */
+    val matchPort: Boolean = false
+) : AbstractCandidateHarvester() {
     abstract val face: TransportAddress?
     abstract val mask: TransportAddress?
+
+    /**
+     * Checks whether the given [address] matches the public address of this harvester.
+     * only compares the inet address (since by default the port is not matched in [harvest]), but other implementations
+     * may chose to also compare the port.
+     */
+    fun publicAddressMatches(address: TransportAddress): Boolean {
+        val mask = this.mask
+        return if (mask == null) {
+            false
+        } else {
+            mask.address == address.address && (!matchPort || mask.port == address.port)
+        }
+    }
 
     /**
      * Looks for existing [HostCandidate]s in [component] which match our local address ([face]) and creates
@@ -38,9 +64,7 @@ abstract class MappingCandidateHarvester : AbstractCandidateHarvester() {
      * @param component the [Component] that we'd like to harvest candidates for.
      * @return the [LocalCandidate]s created and added to [component].
      */
-    override fun harvest(component: Component) = harvest(component, false)
-
-    protected fun harvest(component: Component, matchPort: Boolean = false): Collection<LocalCandidate> {
+    override fun harvest(component: Component): Collection<LocalCandidate> {
         val localAddress = face ?: return emptyList()
         val publicAddress = mask ?: return emptyList()
 

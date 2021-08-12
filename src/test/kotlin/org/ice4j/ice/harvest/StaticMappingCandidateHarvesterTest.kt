@@ -56,8 +56,16 @@ class StaticMappingCandidateHarvesterTest : ShouldSpec() {
         context("Harvesting without matching port") {
             val harvester = StaticMappingCandidateHarvester(
                 face = ta("10.0.0.1", 10000),
-                mask = ta(publicHostname, 20000)
+                mask = ta(publicHostname, 20000),
+                matchPort = false
             )
+
+            context("publicAddressMatches") {
+                harvester.publicAddressMatches(ta(publicHostname, 1234)) shouldBe true
+                harvester.publicAddressMatches(ta(publicHostname, 10000)) shouldBe true
+                harvester.publicAddressMatches(ta(publicHostname, 20000)) shouldBe true
+                harvester.publicAddressMatches(ta("192.168.1.1", 20000)) shouldBe false
+            }
 
             val candidatesAdded = harvester.harvest(component)
             should("Add a candidate corresponding to hostCandidate1") {
@@ -86,6 +94,14 @@ class StaticMappingCandidateHarvesterTest : ShouldSpec() {
                 mask = ta(publicHostname, publicPort),
                 matchPort = true
             )
+
+            context("publicAddressMatches") {
+                harvester.publicAddressMatches(ta(publicHostname, 1234)) shouldBe false
+                harvester.publicAddressMatches(ta(publicHostname, 10000)) shouldBe false
+                harvester.publicAddressMatches(ta(publicHostname, 20000)) shouldBe false
+                harvester.publicAddressMatches(ta(publicHostname, publicPort)) shouldBe true
+                harvester.publicAddressMatches(ta("192.168.1.1", 20000)) shouldBe false
+            }
 
             val candidatesAdded = harvester.harvest(component)
             should("Add a candidate corresponding to hostCandidate1") {

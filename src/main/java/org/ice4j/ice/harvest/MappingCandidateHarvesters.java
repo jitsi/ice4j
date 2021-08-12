@@ -73,6 +73,21 @@ public class MappingCandidateHarvesters
     }
 
     /**
+     * @return  the (first) mapping harvester which matches a given public address, or {@code null} if none match it.
+     */
+    public static MappingCandidateHarvester findHarvesterForAddress(TransportAddress publicAddress)
+    {
+        for (MappingCandidateHarvester harvester : harvesters)
+        {
+            if (harvester.publicAddressMatches(publicAddress))
+            {
+                return harvester;
+            }
+        }
+        return null;
+    }
+
+    /**
      * Initializes {@link #harvesters}.
      * First it reads the configuration and instantiates harvesters accordingly,
      * waiting for their initialization (which may include network communication
@@ -106,6 +121,7 @@ public class MappingCandidateHarvesters
             harvesterList.add(new StaticMappingCandidateHarvester(
                     publicAddress,
                     localAddress,
+                    staticMapping.getName(),
                     staticMapping.getLocalPort() != null));
         }
 

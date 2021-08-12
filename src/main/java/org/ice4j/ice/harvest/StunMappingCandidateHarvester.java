@@ -69,6 +69,7 @@ public class StunMappingCandidateHarvester
             @NotNull TransportAddress localAddress,
             TransportAddress stunServerAddress)
     {
+        super("stun");
         this.localAddress = localAddress;
         this.stunServerAddress = stunServerAddress;
     }
