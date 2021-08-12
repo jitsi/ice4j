@@ -38,7 +38,9 @@ abstract class MappingCandidateHarvester : AbstractCandidateHarvester() {
      * @param component the [Component] that we'd like to harvest candidates for.
      * @return the [LocalCandidate]s created and added to [component].
      */
-    override fun harvest(component: Component): Collection<LocalCandidate> {
+    override fun harvest(component: Component) = harvest(component, false)
+
+    protected fun harvest(component: Component, matchPort: Boolean = false): Collection<LocalCandidate> {
         val localAddress = face ?: return emptyList()
         val publicAddress = mask ?: return emptyList()
 
@@ -49,13 +51,14 @@ abstract class MappingCandidateHarvester : AbstractCandidateHarvester() {
             .filter {
                 it is HostCandidate &&
                     it.transportAddress.hostAddress == localAddress.hostAddress &&
-                    it.transport == localAddress.transport
+                    it.transport == localAddress.transport &&
+                    (!matchPort || it.transportAddress.port == localAddress.port)
             }.forEach { hostCandidate ->
                 hostCandidate as HostCandidate
 
                 val mappedAddress = TransportAddress(
                     publicAddress.hostAddress,
-                    hostCandidate.hostAddress.port,
+                    if (matchPort) publicAddress.port else hostCandidate.hostAddress.port,
                     hostCandidate.hostAddress.transport
                 )
                 val mappedCandidate = ServerReflexiveCandidate(

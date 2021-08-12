@@ -13,6 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+import io.kotest.core.spec.IsolationMode
 import io.kotest.core.spec.style.ShouldSpec
 import io.kotest.matchers.shouldBe
 import io.mockk.every
@@ -26,6 +27,8 @@ import org.ice4j.ice.harvest.StaticMappingCandidateHarvester
 import org.jitsi.utils.logging2.createLogger
 
 class StaticMappingCandidateHarvesterTest : ShouldSpec() {
+    override fun isolationMode(): IsolationMode = IsolationMode.InstancePerLeaf
+
     val component = mockk<Component>()
 
     init {
@@ -48,11 +51,12 @@ class StaticMappingCandidateHarvesterTest : ShouldSpec() {
             every { addLocalCandidate(any()) } returns true
         }
 
-        context("Harvesting") {
-            val publicHostname = "192.168.255.255"
+        val publicHostname = "192.168.255.255"
+
+        context("Harvesting without matching port") {
             val harvester = StaticMappingCandidateHarvester(
-                ta(publicHostname, 20000),
-                ta("10.0.0.1", 10000)
+                face = ta("10.0.0.1", 10000),
+                mask = ta(publicHostname, 20000)
             )
 
             val candidatesAdded = harvester.harvest(component)
@@ -73,6 +77,33 @@ class StaticMappingCandidateHarvesterTest : ShouldSpec() {
             }
             should("Not add any other candidates") {
                 candidatesAdded.size shouldBe 2
+            }
+        }
+        context("Harvesting with matching port") {
+            val publicPort = 33333
+            val harvester = StaticMappingCandidateHarvester(
+                face = ta("10.0.0.1", 10000),
+                mask = ta(publicHostname, publicPort),
+                matchPort = true
+            )
+
+            val candidatesAdded = harvester.harvest(component)
+            should("Add a candidate corresponding to hostCandidate1") {
+                val addedCandidate = candidatesAdded.find { it.base == hostCandidate1 }!!
+                addedCandidate.transportAddress shouldBe ta(publicHostname, publicPort)
+            }
+            should("Not add a candidate corresponding to hostCandidate2 (hostname does not match)") {
+                candidatesAdded.find { it.base == hostCandidate2 } shouldBe null
+            }
+            should("Not add a candidate corresponding to hostCandidate3 (port does not match)") {
+                candidatesAdded.find { it.base == hostCandidate3 } shouldBe null
+            }
+            should("Not add a candidate corresponding to any of the srflx candidateS (they are not HostCandidate)") {
+                candidatesAdded.find { it.base == srflxCandidate1 } shouldBe null
+                candidatesAdded.find { it.base == srflxCandidate2 } shouldBe null
+            }
+            should("Not add any other candidates") {
+                candidatesAdded.size shouldBe 1
             }
         }
     }
