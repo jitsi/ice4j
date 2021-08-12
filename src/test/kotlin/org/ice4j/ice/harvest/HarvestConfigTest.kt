@@ -16,6 +16,7 @@
 
 package org.ice4j.ice.harvest
 
+import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.matchers.shouldBe
 import org.ice4j.ConfigTest
 import org.ice4j.ice.harvest.HarvestConfig.Companion.config
@@ -60,6 +61,73 @@ class HarvestConfigTest : ConfigTest() {
                     config.useLinkLocalAddresses shouldBe false
                     config.udpReceiveBufferSize shouldBe 555
                     config.stunMappingCandidateHarvesterAddresses shouldBe listOf("stun1.legacy:555", "stun2.legacy")
+                }
+            }
+        }
+        context("Static mappings") {
+            context("With all fields present") {
+                withNewConfig(
+                    """
+                ice4j.harvest.mapping.static-mappings = [
+                    {
+                        local-address = "10.0.0.1"
+                        local-port = 10000
+                        public-address = "192.168.255.255"
+                        public-port = 33333
+                        name = "my-mapping"
+                    }
+                ]
+                    """.trimIndent()
+                ) {
+                    HarvestConfig().staticMappings shouldBe listOf(
+                        HarvestConfig.StaticMapping(
+                            localAddress = "10.0.0.1",
+                            localPort = 10000,
+                            publicAddress = "192.168.255.255",
+                            publicPort = 33333,
+                            name = "my-mapping"
+                        )
+                    )
+                }
+            }
+            context("With optional fields missing") {
+                withNewConfig(
+                    """
+                ice4j.harvest.mapping.static-mappings = [
+                    {
+                        local-address = "10.0.0.1"
+                        public-address = "192.168.255.255"
+                    }
+                ]
+                    """.trimIndent()
+                ) {
+                    HarvestConfig().staticMappings shouldBe listOf(
+                        HarvestConfig.StaticMapping(
+                            localAddress = "10.0.0.1",
+                            localPort = null,
+                            publicAddress = "192.168.255.255",
+                            publicPort = null,
+                            name = null
+                        )
+                    )
+                }
+            }
+            context("With inconsistent local-port and public-port") {
+                withNewConfig(
+                    """
+                ice4j.harvest.mapping.static-mappings = [
+                    {
+                        local-address = "10.0.0.1"
+                        public-address = "192.168.255.255"
+                        local-port = 10000
+                        //public-port = 33333
+                    }
+                ]
+                    """.trimIndent()
+                ) {
+                    shouldThrow<Throwable> {
+                        HarvestConfig().staticMappings
+                    }
                 }
             }
         }

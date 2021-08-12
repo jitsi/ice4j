@@ -121,4 +121,3 @@ class StaticMappingCandidateHarvesterTest : ShouldSpec() {
 
 /** Create a UDP TransportAddress */
 private fun ta(hostname: String, port: Int) = TransportAddress(hostname, port, Transport.UDP)
-
