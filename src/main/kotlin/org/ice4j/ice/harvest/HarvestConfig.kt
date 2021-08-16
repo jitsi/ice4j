@@ -17,6 +17,7 @@
 package org.ice4j.ice.harvest
 
 import com.typesafe.config.Config
+import org.jitsi.metaconfig.ConfigException
 import org.jitsi.metaconfig.config
 import org.jitsi.metaconfig.optionalconfig
 import java.time.Duration
@@ -86,7 +87,22 @@ class HarvestConfig {
     private val staticMappingsFromNewConfig: Set<StaticMapping> by config {
         "ice4j.harvest.mapping.static-mappings".from(configSource)
             .convertFrom<List<Config>> { cfg ->
-                cfg.map { StaticMapping(it.getString("local-address"), it.getString("public-address")) }.toSet()
+                cfg.map {
+                    val localPort = if (it.hasPath("local-port")) it.getInt("local-port") else null
+                    val publicPort = if (it.hasPath("public-port")) it.getInt("public-port") else null
+                    if ((localPort == null || publicPort == null) && localPort != publicPort) {
+                        throw ConfigException.UnableToRetrieve.ConditionNotMet(
+                            "Inconsistent value for local-port and public-port, both must be present or both missing."
+                        )
+                    }
+                    StaticMapping(
+                        localAddress = it.getString("local-address"),
+                        publicAddress = it.getString("public-address"),
+                        localPort = localPort,
+                        publicPort = publicPort,
+                        name = if (it.hasPath("name")) it.getString("name") else null
+                    )
+                }.toSet()
             }
     }
 
@@ -101,7 +117,13 @@ class HarvestConfig {
         }
     }
 
-    data class StaticMapping(val localAddress: String, val publicAddress: String)
+    data class StaticMapping(
+        val localAddress: String,
+        val publicAddress: String,
+        val localPort: Int? = null,
+        val publicPort: Int? = null,
+        val name: String? = null
+    )
 
     companion object {
         @JvmField
