@@ -69,6 +69,12 @@ class ConnectivityCheckClient
         = new ConcurrentLinkedQueue<>();
 
     /**
+     * Whether this {@link ConnectivityCheckClient} has been stopped.
+     * Synchronized by {@link #paceMakers}.
+     */
+    private boolean stopped = false;
+
+    /**
      * Timer that is used to let some seconds before a CheckList is considered
      * as FAILED.
      */
@@ -84,11 +90,6 @@ class ConnectivityCheckClient
      * The {@link Logger} used by {@link ConnectivityCheckClient} instances.
      */
     private Logger logger;
-
-    /**
-     * Whether this {@link ConnectivityCheckClient} has been stopped.
-     */
-    private final AtomicBoolean stopped = new AtomicBoolean(false);
 
     /**
      * Creates a new <tt>ConnectivityCheckClient</tt> setting
@@ -166,13 +167,16 @@ class ConnectivityCheckClient
      */
     public void startChecks(CheckList checkList)
     {
-        if (stopped.get())
+        synchronized (paceMakers)
         {
-            return;
+            if (stopped)
+            {
+                return;
+            }
+            PaceMaker paceMaker = new PaceMaker(checkList);
+            paceMakers.add(paceMaker);
+            paceMaker.schedule();
         }
-        PaceMaker paceMaker = new PaceMaker(checkList);
-        paceMakers.add(paceMaker);
-        paceMaker.schedule();
     }
 
     /**
@@ -979,15 +983,18 @@ class ConnectivityCheckClient
      */
     public void stop()
     {
-        stopped.set(true);
-        while (true)
+        synchronized (paceMakers)
         {
-            final PaceMaker paceMaker = paceMakers.poll();
-            if (paceMaker == null)
+            stopped = true;
+            while (true)
             {
-                break;
+                final PaceMaker paceMaker = paceMakers.poll();
+                if (paceMaker == null)
+                {
+                    break;
+                }
+                paceMaker.cancel();
             }
-            paceMaker.cancel();
         }
     }
 }
