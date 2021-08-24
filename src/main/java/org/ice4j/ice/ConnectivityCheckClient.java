@@ -21,6 +21,7 @@ import java.net.*;
 import java.time.*;
 import java.util.*;
 import java.util.concurrent.*;
+import java.util.concurrent.atomic.*;
 
 import org.ice4j.*;
 import org.ice4j.attribute.*;
@@ -83,6 +84,11 @@ class ConnectivityCheckClient
      * The {@link Logger} used by {@link ConnectivityCheckClient} instances.
      */
     private Logger logger;
+
+    /**
+     * Whether this {@link ConnectivityCheckClient} has been stopped.
+     */
+    private final AtomicBoolean stopped = new AtomicBoolean(false);
 
     /**
      * Creates a new <tt>ConnectivityCheckClient</tt> setting
@@ -160,6 +166,10 @@ class ConnectivityCheckClient
      */
     public void startChecks(CheckList checkList)
     {
+        if (stopped.get())
+        {
+            return;
+        }
         PaceMaker paceMaker = new PaceMaker(checkList);
         paceMakers.add(paceMaker);
         paceMaker.schedule();
@@ -969,6 +979,7 @@ class ConnectivityCheckClient
      */
     public void stop()
     {
+        stopped.set(true);
         while (true)
         {
             final PaceMaker paceMaker = paceMakers.poll();
