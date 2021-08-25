@@ -44,12 +44,12 @@ class HarvestConfig {
     }
     fun useIpv6() = useIpv6
 
-    private val useLoopbackInterface: Boolean by config {
-        "org.ice4j.ice.harvest.USE_LOOPBACK_INTERFACE".from(configSource)
+    private val useLoopbackInterfaces: Boolean by config {
+        "org.ice4j.ice.harvest.USE_LOOPBACK_INTERFACES".from(configSource)
             .transformedBy { !it }
-        "ice4j.harvest.use-loopback-interface".from(configSource)
+        "ice4j.harvest.use-loopback-interfaces".from(configSource)
     }
-    fun useLoopbackInterface() = useLoopbackInterface
+    fun useLoopbackInterfaces() = useLoopbackInterfaces
 
     val useDynamicPorts: Boolean by config {
         "org.ice4j.ice.harvest.USE_DYNAMIC_HOST_HARVESTER".from(configSource)

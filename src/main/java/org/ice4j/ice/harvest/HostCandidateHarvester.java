@@ -236,7 +236,7 @@ public class HostCandidateHarvester
             for (NetworkInterface iface
                     : Collections.list(NetworkInterface.getNetworkInterfaces()))
             {
-                if (NetworkUtils.isInterfaceLoopback(iface) && !config.useLoopbackInterface())
+                if (NetworkUtils.isInterfaceLoopback(iface) && !config.useLoopbackInterfaces())
                     continue;
                 if (!NetworkUtils.isInterfaceUp(iface) || !isInterfaceAllowed(iface))
                 {
@@ -316,7 +316,7 @@ public class HostCandidateHarvester
         {
             NetworkInterface iface = interfaces.nextElement();
 
-            if (NetworkUtils.isInterfaceLoopback(iface) && !config.useLoopbackInterface())
+            if (NetworkUtils.isInterfaceLoopback(iface) && !config.useLoopbackInterfaces())
                 continue;
             if (!NetworkUtils.isInterfaceUp(iface) || !isInterfaceAllowed(iface))
             {
@@ -497,7 +497,7 @@ public class HostCandidateHarvester
      */
     static boolean isAddressAllowed(InetAddress address)
     {
-        if (address.isLoopbackAddress() && !config.useLoopbackInterface())
+        if (address.isLoopbackAddress() && !config.useLoopbackInterfaces())
         {
             return false;
         }
