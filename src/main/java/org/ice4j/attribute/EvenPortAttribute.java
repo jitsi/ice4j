@@ -132,7 +132,7 @@ public class EvenPortAttribute extends Attribute
     void decodeAttributeBody(byte[] attributeValue, char offset, char length)
         throws StunException
     {
-        if(length != 4)
+        if (length != 4)
         {
             throw new StunException("length invalid");
         }

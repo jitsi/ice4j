@@ -135,7 +135,7 @@ public class CheckList
     {
         synchronized(triggeredCheckQueue)
         {
-            if(!triggeredCheckQueue.contains(pair))
+            if (!triggeredCheckQueue.contains(pair))
             {
                 triggeredCheckQueue.add(pair);
                 pair.setStateWaiting();
@@ -154,7 +154,7 @@ public class CheckList
     {
         synchronized(triggeredCheckQueue)
         {
-            if(triggeredCheckQueue.size() > 0)
+            if (triggeredCheckQueue.size() > 0)
                 return triggeredCheckQueue.remove(0);
         }
         return null;
@@ -182,7 +182,7 @@ public class CheckList
         {
             if (pair.getState() == CandidatePairState.WAITING)
             {
-                if(highestPriorityPair == null
+                if (highestPriorityPair == null
                    || pair.getPriority() > highestPriorityPair.getPriority())
                 {
                     highestPriorityPair = pair;
@@ -190,14 +190,14 @@ public class CheckList
             }
         }
 
-        if(highestPriorityPair != null)
+        if (highestPriorityPair != null)
             return highestPriorityPair;
 
         for (CandidatePair pair : this)
         {
             if (pair.getState() == CandidatePairState.FROZEN)
             {
-                if(highestPriorityPair == null
+                if (highestPriorityPair == null
                    || pair.getPriority() > highestPriorityPair.getPriority())
                 {
                     highestPriorityPair = pair;
@@ -319,14 +319,14 @@ public class CheckList
         Map<String, CandidatePair> pairsToWait = new Hashtable<>();
 
         //first, determine the pairs that we'd need to put in the waiting state.
-        for(CandidatePair pair : this)
+        for (CandidatePair pair : this)
         {
             //we need to check whether the pair is already in the wait list. if
             //so we'll compare it with this one and determine which of the two
             //needs to stay.
             CandidatePair prevPair = pairsToWait.get(pair.getFoundation());
 
-            if(prevPair == null)
+            if (prevPair == null)
             {
                 //first pair with this foundation.
                 pairsToWait.put(pair.getFoundation(), pair);
@@ -336,9 +336,9 @@ public class CheckList
             //we already have a pair with the same foundation. determine which
             //of the two has the lower component id and higher priority and
             //keep that one in the list.
-            if( prevPair.getParentComponent() == pair.getParentComponent())
+            if ( prevPair.getParentComponent() == pair.getParentComponent())
             {
-                if(pair.getPriority() > prevPair.getPriority())
+                if (pair.getPriority() > prevPair.getPriority())
                 {
                     //need to replace the pair in the list.
                     pairsToWait.put(pair.getFoundation(), pair);
@@ -346,7 +346,7 @@ public class CheckList
             }
             else
             {
-                if(pair.getParentComponent().getComponentID()
+                if (pair.getParentComponent().getComponentID()
                             < prevPair.getParentComponent().getComponentID())
                 {
                     //need to replace the pair in the list.
@@ -368,7 +368,7 @@ public class CheckList
     protected synchronized void recomputePairPriorities()
     {
         //first, determine the pairs that we'd need to put in the waiting state.
-        for(CandidatePair pair : this)
+        for (CandidatePair pair : this)
             pair.computePriority();
     }
 
@@ -398,7 +398,7 @@ public class CheckList
     {
         Component cmp = nominatedPair.getParentComponent();
 
-        if(cmp.getSelectedPair() != null)
+        if (cmp.getSelectedPair() != null)
         {
             return;
         }
@@ -410,7 +410,7 @@ public class CheckList
         cmp.setSelectedPair(nominatedPair);
 
         Iterator<CandidatePair> pairsIter = iterator();
-        while(pairsIter.hasNext())
+        while (pairsIter.hasNext())
         {
             CandidatePair pair = pairsIter.next();
             if (pair.getParentComponent() == cmp
@@ -427,7 +427,7 @@ public class CheckList
         {
             Iterator<CandidatePair> triggeredPairsIter
                 = triggeredCheckQueue.iterator();
-            while(triggeredPairsIter.hasNext())
+            while (triggeredPairsIter.hasNext())
             {
                 CandidatePair pair = triggeredPairsIter.next();
                 if (pair.getParentComponent() == cmp
@@ -493,7 +493,7 @@ public class CheckList
     {
         synchronized(stateListeners)
         {
-            if(!stateListeners.contains(l))
+            if (!stateListeners.contains(l))
                 this.stateListeners.add(l);
         }
     }
@@ -532,7 +532,7 @@ public class CheckList
         PropertyChangeEvent evt = new PropertyChangeEvent(
                         this, PROPERTY_CHECK_LIST_STATE, oldState, newState);
 
-        for(PropertyChangeListener l : listenersCopy)
+        for (PropertyChangeListener l : listenersCopy)
         {
             l.propertyChange(evt);
         }
@@ -548,7 +548,7 @@ public class CheckList
     {
         synchronized(checkListeners)
         {
-            if(!checkListeners.contains(l))
+            if (!checkListeners.contains(l))
             {
                 checkListeners.add(l);
             }
@@ -564,7 +564,7 @@ public class CheckList
     {
         synchronized(checkListeners)
         {
-            if(checkListeners.contains(l))
+            if (checkListeners.contains(l))
             {
                 checkListeners.remove(l);
             }
@@ -587,7 +587,7 @@ public class CheckList
         PropertyChangeEvent evt = new PropertyChangeEvent(
                         this, PROPERTY_CHECK_LIST_CHECKS, false, true);
 
-        for(PropertyChangeListener l : listenersCopy)
+        for (PropertyChangeListener l : listenersCopy)
         {
             l.propertyChange(evt);
         }

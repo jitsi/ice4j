@@ -304,7 +304,7 @@ public class HostCandidateHarvester
 
         Enumeration<NetworkInterface> interfaces = NetworkInterface.getNetworkInterfaces();
 
-        if(transport != Transport.UDP && transport != Transport.TCP)
+        if (transport != Transport.UDP && transport != Transport.TCP)
         {
             throw new IllegalArgumentException("Transport protocol not supported: " + transport);
         }
@@ -327,7 +327,7 @@ public class HostCandidateHarvester
 
             Enumeration<InetAddress> addresses = iface.getInetAddresses();
 
-            while(addresses.hasMoreElements())
+            while (addresses.hasMoreElements())
             {
                 InetAddress addr = addresses.nextElement();
 
@@ -342,19 +342,19 @@ public class HostCandidateHarvester
                 }
                 foundAtLeastOneUsableAddress = true;
 
-                if((addr instanceof Inet4Address) || !config.useIpv6())
+                if ((addr instanceof Inet4Address) || !config.useIpv6())
                 {
                     IceSocketWrapper sock = null;
                     try
                     {
-                        if(transport == Transport.UDP)
+                        if (transport == Transport.UDP)
                         {
                             sock = createDatagramSocket(addr, preferredPort, minPort, maxPort);
                             boundAtLeastOneSocket = true;
                         }
-                        else if(transport == Transport.TCP)
+                        else if (transport == Transport.TCP)
                         {
-                            if(addr instanceof Inet6Address)
+                            if (addr instanceof Inet6Address)
                                 continue;
                             sock = createServerSocket(
                                     addr,
@@ -564,7 +564,7 @@ public class HostCandidateHarvester
                             new DelegatingServerSocket(sock),
                             component);
 
-                if(logger.isLoggable(Level.FINEST))
+                if (logger.isLoggable(Level.FINEST))
                 {
                     logger.log(
                             Level.FINEST,
@@ -647,7 +647,7 @@ public class HostCandidateHarvester
                                 = new IceUdpSocketWrapper(new
                                     MultiplexingDatagramSocket(port, laddr));
 
-                if(logger.isLoggable(Level.FINEST))
+                if (logger.isLoggable(Level.FINEST))
                 {
                     logger.log(
                             Level.FINEST,

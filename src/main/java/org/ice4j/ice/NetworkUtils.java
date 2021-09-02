@@ -614,13 +614,13 @@ public class NetworkUtils
             return IN4_ADDR_ANY;
         }
 
-        while(ifaces.hasMoreElements())
+        while (ifaces.hasMoreElements())
         {
             Enumeration<InetAddress> addrs
                                 = ifaces.nextElement().getInetAddresses();
             while (addrs.hasMoreElements())
             {
-                if(addrs.nextElement() instanceof Inet6Address)
+                if (addrs.nextElement() instanceof Inet6Address)
                     return IN6_ADDR_ANY;
             }
         }
@@ -752,7 +752,7 @@ public class NetworkUtils
 
         //in case this was an IPv6 literal and we remove the closing bracket,
         //put it back in now.
-        if(ipv6Address.charAt(0) == '['
+        if (ipv6Address.charAt(0) == '['
             && ipv6Address.charAt(ipv6Address.length()-1) != ']')
         {
             ipv6Address += ']';

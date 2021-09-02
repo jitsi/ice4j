@@ -80,7 +80,7 @@ public class UPNPCandidate
         }
 
         IceSocketWrapper socket = getCandidateIceSocketWrapper();
-        if(socket != null)
+        if (socket != null)
         {
             socket.close();
         }

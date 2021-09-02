@@ -148,14 +148,14 @@ public class TransportAddress
     public String toString()
     {
         String hostAddress = getHostAddress();
-        if(hostAddress == null)
+        if (hostAddress == null)
         {
             hostAddress = getHostName();
         }
 
         StringBuilder bldr = new StringBuilder(hostAddress);
 
-        if(isIPv6())
+        if (isIPv6())
            bldr.insert(0, "[").append("]");
 
         bldr.append(":").append(getPort());
@@ -175,7 +175,7 @@ public class TransportAddress
         String addressStr
             = addr != null ? addr.getHostAddress() : null;
 
-        if(addr instanceof Inet6Address)
+        if (addr instanceof Inet6Address)
             addressStr = NetworkUtils.stripScopeID(addressStr);
 
         return addressStr;
@@ -258,7 +258,7 @@ public class TransportAddress
      */
     public boolean canReach(TransportAddress dst)
     {
-        if( getTransport() != dst.getTransport() )
+        if ( getTransport() != dst.getTransport() )
             return false;
 
         if (isIPv6() != dst.isIPv6())
@@ -269,7 +269,7 @@ public class TransportAddress
             Inet6Address srcAddr = (Inet6Address)getAddress();
             Inet6Address dstAddr = (Inet6Address)dst.getAddress();
 
-            if(srcAddr.isLinkLocalAddress() != dstAddr.isLinkLocalAddress())
+            if (srcAddr.isLinkLocalAddress() != dstAddr.isLinkLocalAddress())
             {
                 //this one may actually work if for example we are contacting
                 //the public address of someone in our local network. however

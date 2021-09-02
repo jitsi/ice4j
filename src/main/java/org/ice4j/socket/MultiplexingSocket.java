@@ -322,7 +322,7 @@ public class MultiplexingSocket
     @Override
     public int getSoTimeout()
     {
-    	return soTimeout;
+        return soTimeout;
     }
 
     /**
@@ -427,10 +427,10 @@ public class MultiplexingSocket
      */
     @Override
     public void setSoTimeout(int timeout)
-    	throws SocketException
+        throws SocketException
     {
-    	super.setSoTimeout(timeout);
+        super.setSoTimeout(timeout);
 
-    	soTimeout = timeout;
+        soTimeout = timeout;
     }
 }

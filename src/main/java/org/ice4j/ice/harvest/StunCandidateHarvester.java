@@ -111,9 +111,9 @@ public class StunCandidateHarvester
         this.shortTermCredentialUsername = shortTermCredentialUsername;
 
         //these should be configurable.
-        if(System.getProperty(StackProperties.MAX_CTRAN_RETRANS_TIMER) == null)
+        if (System.getProperty(StackProperties.MAX_CTRAN_RETRANS_TIMER) == null)
             System.setProperty(StackProperties.MAX_CTRAN_RETRANS_TIMER, "400");
-        if(System.getProperty(StackProperties.MAX_CTRAN_RETRANSMISSIONS) == null)
+        if (System.getProperty(StackProperties.MAX_CTRAN_RETRANSMISSIONS) == null)
             System.setProperty(StackProperties.MAX_CTRAN_RETRANSMISSIONS, "3");
     }
 
@@ -150,7 +150,7 @@ public class StunCandidateHarvester
 
         synchronized(startedHarvests)
         {
-            if(doNotify)
+            if (doNotify)
                 startedHarvests.notify();
         }
     }
@@ -290,7 +290,7 @@ public class StunCandidateHarvester
     private String listCandidates(Collection<? extends Candidate<?>> candidates)
     {
         StringBuilder retval = new StringBuilder();
-        for(Candidate<?> candidate : candidates)
+        for (Candidate<?> candidate : candidates)
         {
             retval.append(candidate.toShortString());
         }
@@ -313,7 +313,7 @@ public class StunCandidateHarvester
 
         HostCandidate cand = getHostCandidate(hostCand);
 
-        if(cand == null)
+        if (cand == null)
         {
             logger.info(
                     "server/candidate address type mismatch,"

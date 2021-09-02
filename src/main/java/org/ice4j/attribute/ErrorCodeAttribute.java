@@ -288,7 +288,7 @@ public class ErrorCodeAttribute extends Attribute
     public void setErrorClass(byte errorClass)
         throws IllegalArgumentException
     {
-        if(errorClass < 0 || errorClass > 99)
+        if (errorClass < 0 || errorClass > 99)
             throw new IllegalArgumentException(
                 errorClass + " is not a valid error number!");
         this.errorClass = errorClass;
@@ -415,7 +415,7 @@ public class ErrorCodeAttribute extends Attribute
      */
     public String getReasonPhrase()
     {
-        if(reasonPhrase == null)
+        if (reasonPhrase == null)
             return null;
 
         return new String(reasonPhrase);
@@ -472,7 +472,7 @@ public class ErrorCodeAttribute extends Attribute
         binValue[6] = getErrorClass();
         binValue[7] = getErrorNumber();
 
-        if(reasonPhrase != null)
+        if (reasonPhrase != null)
             System.arraycopy(reasonPhrase, 0, binValue, 8, reasonPhrase.length);
 
         return binValue;

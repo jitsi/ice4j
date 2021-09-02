@@ -54,7 +54,8 @@ public class MessageFactory
         try
         {
             bindingRequest.setMessageType(Message.BINDING_REQUEST);
-        } catch (IllegalArgumentException ex)
+        }
+        catch (IllegalArgumentException ex)
         {
             // there should be no exc here since we're the creators.
             logger.log(Level.FINE, "Failed to set message type.", ex);
@@ -122,7 +123,8 @@ public class MessageFactory
             IceControllingAttribute iceControllingAttribute = AttributeFactory
                             .createIceControllingAttribute(tieBreaker);
             bindingRequest.putAttribute(iceControllingAttribute);
-        } else
+        }
+        else
         {
             IceControlledAttribute iceControlledAttribute = AttributeFactory
                             .createIceControlledAttribute(tieBreaker);
@@ -356,7 +358,8 @@ public class MessageFactory
         try
         {
             allocateRequest.setMessageType(Message.ALLOCATE_REQUEST);
-        } catch (IllegalArgumentException ex)
+        }
+        catch (IllegalArgumentException ex)
         {
             // there should be no exc here since we're the creators.
             logger.log(Level.FINE, "Failed to set message type.", ex);
@@ -428,8 +431,8 @@ public class MessageFactory
             int lifetime )
         throws IllegalArgumentException
     {
-	    return createAllocationResponse(
-            request, mappedAddress, relayedAddress, null ,lifetime);
+        return createAllocationResponse(
+            request, mappedAddress, relayedAddress, null , lifetime);
     }
     
     /**
@@ -473,8 +476,8 @@ public class MessageFactory
         //xor relayed address
         XorRelayedAddressAttribute xorRelayedAddressAttribute
             = AttributeFactory
-        		.createXorRelayedAddressAttribute(relayedAddress,
-        				request.getTransactionID());
+                .createXorRelayedAddressAttribute(relayedAddress,
+                        request.getTransactionID());
 
         allocationSuccessResponse.putAttribute(xorRelayedAddressAttribute);
 
@@ -484,12 +487,12 @@ public class MessageFactory
 
         allocationSuccessResponse.putAttribute(lifetimeAttribute);
         
-        if(token != null)
+        if (token != null)
         {
             //reservation token
             ReservationTokenAttribute reservationTokenAttribute
                 = AttributeFactory
-            		.createReservationTokenAttribute(token);
+                    .createReservationTokenAttribute(token);
 
             allocationSuccessResponse.putAttribute(reservationTokenAttribute);
         }
@@ -508,7 +511,7 @@ public class MessageFactory
      */
     public static Response createAllocationErrorResponse(char errorCode)
     {
-	    return createAllocationErrorResponse(errorCode,null);
+        return createAllocationErrorResponse(errorCode, null);
     }
        
     /**
@@ -524,7 +527,7 @@ public class MessageFactory
      * @return a allocation error response message containing an error code.
      */
     public static Response createAllocationErrorResponse(char errorCode,
-	    				String reasonPhrase)
+                        String reasonPhrase)
     {
         Response allocationErrorResponse = new Response();
 
@@ -669,7 +672,8 @@ public class MessageFactory
             LifetimeAttribute lifetimeReq = AttributeFactory
                             .createLifetimeAttribute(lifetime);
             refreshRequest.putAttribute(lifetimeReq);
-        } catch (IllegalArgumentException ex)
+        }
+        catch (IllegalArgumentException ex)
         {
             logger.log(Level.FINE, "Failed to set message type.", ex);
         }
@@ -806,7 +810,7 @@ public class MessageFactory
      */
     public static Response createChannelBindErrorResponse(char errorCode)
     {
-	    return createChannelBindErrorResponse(errorCode, null);
+        return createChannelBindErrorResponse(errorCode, null);
     }
     
     /**
@@ -826,7 +830,7 @@ public class MessageFactory
 
         ErrorCodeAttribute errorCodeAttribute
             = AttributeFactory
-                .createErrorCodeAttribute(errorCode,reasonPhrase);
+                .createErrorCodeAttribute(errorCode, reasonPhrase);
 
         channelBindErrorResponse.putAttribute(errorCodeAttribute);
 
@@ -912,7 +916,7 @@ public class MessageFactory
         ErrorCodeAttribute errorCodeAttribute
             = AttributeFactory
                 .createErrorCodeAttribute(
-                        errorCode,reasonPhrase);
+                        errorCode, reasonPhrase);
 
         createPermissionErrorResponse.putAttribute(errorCodeAttribute);
 
@@ -949,7 +953,8 @@ public class MessageFactory
                                 .createDataAttribute(data);
                 sendIndication.putAttribute(dataAttribute);
             }
-        } catch (IllegalArgumentException ex)
+        }
+        catch (IllegalArgumentException ex)
         {
             logger.log(Level.FINE, "Failed to set message type.", ex);
         }
@@ -1180,7 +1185,7 @@ public class MessageFactory
     public static Response createConnectErrorResponse(char errorCode)
         throws IllegalArgumentException
     {
-	    return createConnectErrorResponse(errorCode, null);
+        return createConnectErrorResponse(errorCode, null);
     }
     
     /**
@@ -1270,7 +1275,7 @@ public class MessageFactory
     public static Response createConnectionBindErrorResponse(char errorCode)
         throws IllegalArgumentException
     {
-	    return createConnectionBindErrorResponse(errorCode,null);
+        return createConnectionBindErrorResponse(errorCode, null);
     }
     
     /**

@@ -129,10 +129,10 @@ public class StunDiscoveryReport
      */
     public boolean equals(Object obj)
     {
-        if(! (obj instanceof StunDiscoveryReport))
+        if (! (obj instanceof StunDiscoveryReport))
            return false;
 
-        if(obj == this)
+        if (obj == this)
             return true;
 
         StunDiscoveryReport target = (StunDiscoveryReport)obj;

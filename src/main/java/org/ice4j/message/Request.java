@@ -44,7 +44,7 @@ public class Request extends Message
     public void setMessageType(char requestType)
         throws IllegalArgumentException
     {
-        if(!isRequestType(requestType))
+        if (!isRequestType(requestType))
             throw new IllegalArgumentException(
                                     (int)(requestType)
                                     + " - is not a valid request type.");

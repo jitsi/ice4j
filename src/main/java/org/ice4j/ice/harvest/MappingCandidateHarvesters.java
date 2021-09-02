@@ -196,7 +196,8 @@ public class MappingCandidateHarvesters
 
         for (MappingCandidateHarvester h : harvesters)
         {
-            if (face.getAddress().equals(h.getFace().getAddress()) && mask.getAddress().equals(h.getMask().getAddress()))
+            if (face.getAddress().equals(h.getFace().getAddress())
+                && mask.getAddress().equals(h.getMask().getAddress()))
             {
                 logger.info("Discarding a mapping harvester with duplicate "
                             + "addresses: " + harvester + ". Kept: " + h);

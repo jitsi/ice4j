@@ -134,7 +134,7 @@ public class OptionalAttribute
      */
     public boolean equals(Object obj)
     {
-        if(! (obj instanceof OptionalAttribute) )
+        if (! (obj instanceof OptionalAttribute) )
             return false;
 
         return

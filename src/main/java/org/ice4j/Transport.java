@@ -99,22 +99,22 @@ public enum Transport
     public static Transport parse(String transportName)
         throws IllegalArgumentException
     {
-        if(UDP.toString().equals(transportName))
+        if (UDP.toString().equals(transportName))
             return UDP;
 
-        if(TCP.toString().equals(transportName))
+        if (TCP.toString().equals(transportName))
             return TCP;
 
-        if(TLS.toString().equals(transportName))
+        if (TLS.toString().equals(transportName))
             return TLS;
 
-        if(SCTP.toString().equals(transportName))
+        if (SCTP.toString().equals(transportName))
             return SCTP;
 
-        if(DTLS.toString().equals(transportName))
+        if (DTLS.toString().equals(transportName))
             return DTLS;
 
-        if(SSLTCP.toString().equals(transportName))
+        if (SSLTCP.toString().equals(transportName))
             return SSLTCP;
 
         throw new IllegalArgumentException(

@@ -47,7 +47,7 @@ public class AttributeDecoder
                                    int   length)
         throws StunException
     {
-        if(bytes == null || bytes.length < Attribute.HEADER_LENGTH)
+        if (bytes == null || bytes.length < Attribute.HEADER_LENGTH)
         {
             throw new StunException( StunException.ILLEGAL_ARGUMENT,
                          "Could not decode the specified binary array.");
@@ -59,7 +59,7 @@ public class AttributeDecoder
         char attributeLength = (char)
             (((bytes[offset + 2] & 0xFF) << 8) | (bytes[offset + 3] & 0xFF));
 
-        if(attributeLength > bytes.length - offset )
+        if (attributeLength > bytes.length - offset )
             throw new StunException( StunException.ILLEGAL_ARGUMENT,
                             "Could not decode the specified binary array.");
 
@@ -130,9 +130,9 @@ public class AttributeDecoder
             case Attribute.USE_CANDIDATE:
                 decodedAttribute = new UseCandidateAttribute(); break;
             case Attribute.REQUESTED_ADDRESS_FAMILY:
-        	    decodedAttribute = new RequestedAddressFamilyAttribute(); break;
+                decodedAttribute = new RequestedAddressFamilyAttribute(); break;
             case Attribute.CONNECTION_ID:
-        	    decodedAttribute = new ConnectionIdAttribute(); break;
+                decodedAttribute = new ConnectionIdAttribute(); break;
             //According to rfc3489 we should silently ignore unknown attributes.
             default: decodedAttribute
                 = new OptionalAttribute( Attribute.UNKNOWN_OPTIONAL_ATTRIBUTE);

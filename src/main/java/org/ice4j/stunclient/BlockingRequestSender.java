@@ -168,7 +168,7 @@ public class BlockingRequestSender
         }
 
         ended = false;
-        while(!ended)
+        while (!ended)
         {
             try
             {
@@ -212,11 +212,11 @@ public class BlockingRequestSender
         synchronized(sendLock)
         {
             stunStack.sendRequest(request, serverAddress, localAddress,
-                                     BlockingRequestSender.this,tranID);
+                                     BlockingRequestSender.this, tranID);
         }
 
         ended = false;
-        while(!ended)
+        while (!ended)
         {
             try
             {

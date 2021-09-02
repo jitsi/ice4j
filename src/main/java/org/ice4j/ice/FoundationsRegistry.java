@@ -83,7 +83,7 @@ public class FoundationsRegistry
 
         StringBuffer foundationStringBuff = new StringBuffer(type);
         foundationStringBuff.append(base);
-        if(server != null)
+        if (server != null)
             foundationStringBuff.append(server);
 
         foundationStringBuff.append(transport);
@@ -97,7 +97,7 @@ public class FoundationsRegistry
 
             //obtain a new foundation number if we don't have one for this kind
             //of candidates.
-            if(foundationValue == null)
+            if (foundationValue == null)
             {
                 foundationValue = Integer.toString(++lastAssignedFoundation);
                 foundations.put(foundationString, foundationValue);

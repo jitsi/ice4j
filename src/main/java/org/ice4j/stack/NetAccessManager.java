@@ -301,7 +301,8 @@ class NetAccessManager
             {
                 logger.log(Level.WARNING, "Removing connector:" + connector,
                            error);
-            } else if (logger.isLoggable(Level.FINE))
+            }
+            else if (logger.isLoggable(Level.FINE))
             {
                 logger.fine("Removing connector " + connector);
             }
@@ -434,7 +435,7 @@ class NetAccessManager
             }
         }
 
-        if(connector != null)
+        if (connector != null)
             connector.stop();
     }
 

@@ -109,7 +109,7 @@ public class EventDispatcher
     {
         synchronized(messageListeners)
         {
-            if(!messageListeners.contains(messageListener))
+            if (!messageListeners.contains(messageListener))
                 messageListeners.add(messageListener);
         }
     }
@@ -289,7 +289,7 @@ public class EventDispatcher
     {
         synchronized(messageListeners)
         {
-            if(!messageListeners.isEmpty())
+            if (!messageListeners.isEmpty())
             {
                 // there is a generic listener
                 return true;

@@ -445,7 +445,8 @@ public class PseudoTCPBase
 
             long nInFlight = m_snd_nxt - m_snd_una;
             m_ssthresh = Math.max(nInFlight / 2, 2 * m_mss);
-            //Logger.Log(LS_INFO) << "m_ssthresh: " << m_ssthresh << "  nInFlight: " << nInFlight << "  m_mss: " << m_mss;
+            //Logger.Log(LS_INFO)
+            //  << "m_ssthresh: " << m_ssthresh << "  nInFlight: " << nInFlight << "  m_mss: " << m_mss;
             m_cwnd = m_mss;
 
             // Back off retransmit timer.  Note: the limit is lower when connecting.
@@ -914,7 +915,7 @@ public class PseudoTCPBase
     public static String segToStr(Segment seg)
     {
         String data="data: ";
-        for(byte b : seg.data)
+        for (byte b : seg.data)
         {
             data += b;
         }
@@ -1064,7 +1065,7 @@ public class PseudoTCPBase
                     bConnect = true;
 
                     // TCP options are in the remainder of the payload after CTL_CONNECT.
-                    if(!parseOptions(seg.data, 1, seg.len - 1))
+                    if (!parseOptions(seg.data, 1, seg.len - 1))
                     {
                         return false;
                     }
@@ -1252,7 +1253,8 @@ public class PseudoTCPBase
                             m_recover = m_snd_nxt;
                             long nInFlight = m_snd_nxt - m_snd_una;
                             m_ssthresh = Math.max(nInFlight / 2, 2 * m_mss);
-                            //Logger.Log(LS_INFO) << "m_ssthresh: " << m_ssthresh << "  nInFlight: " << nInFlight << "  m_mss: " << m_mss;
+                            //Logger.Log(LS_INFO)
+                            //  << "m_ssthresh: " << m_ssthresh << "  nInFlight: " << nInFlight << "  m_mss: " << m_mss;
                             m_cwnd = m_ssthresh + 3 * m_mss;
                         }
                         else
@@ -1757,11 +1759,11 @@ public class PseudoTCPBase
                 else
                 {
                     m_t_ack = now();
-					if (logger.isLoggable(Level.FINER))
-					{
-                    	logger.log(
+                    if (logger.isLoggable(Level.FINER))
+                    {
+                        logger.log(
                             Level.FINER, "Delayed ack, m_t_ack: " + m_t_ack);
-					}
+                    }
                 }
                 return;
             }
@@ -2123,7 +2125,7 @@ public class PseudoTCPBase
 
     void setConversationID(long convID)
     {
-        if(m_state != PseudoTcpState.TCP_LISTEN)
+        if (m_state != PseudoTcpState.TCP_LISTEN)
             throw new IllegalStateException();
         this.m_conv = convID;
     }

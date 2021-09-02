@@ -123,23 +123,23 @@ public enum CandidateType
     public static CandidateType parse(String candidateTypeName)
         throws IllegalArgumentException
     {
-        if(PEER_REFLEXIVE_CANDIDATE.toString().equals(candidateTypeName))
+        if (PEER_REFLEXIVE_CANDIDATE.toString().equals(candidateTypeName))
             return PEER_REFLEXIVE_CANDIDATE;
 
-        if(SERVER_REFLEXIVE_CANDIDATE.toString().equals(candidateTypeName))
+        if (SERVER_REFLEXIVE_CANDIDATE.toString().equals(candidateTypeName))
             return SERVER_REFLEXIVE_CANDIDATE;
 
-        if(RELAYED_CANDIDATE.toString().equals(candidateTypeName))
+        if (RELAYED_CANDIDATE.toString().equals(candidateTypeName))
             return RELAYED_CANDIDATE;
 
-        if(HOST_CANDIDATE.toString().equals(candidateTypeName))
+        if (HOST_CANDIDATE.toString().equals(candidateTypeName))
             return HOST_CANDIDATE;
 
         // old name but returns the standard name
-        if(STUN_CANDIDATE.toString().equals(candidateTypeName))
+        if (STUN_CANDIDATE.toString().equals(candidateTypeName))
             return SERVER_REFLEXIVE_CANDIDATE;
 
-        if(LOCAL_CANDIDATE.toString().equals(candidateTypeName))
+        if (LOCAL_CANDIDATE.toString().equals(candidateTypeName))
             return HOST_CANDIDATE;
 
         throw new IllegalArgumentException(

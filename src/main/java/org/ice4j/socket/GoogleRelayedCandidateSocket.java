@@ -250,12 +250,12 @@ public class GoogleRelayedCandidateSocket
     public OutputStream getOutputStream()
         throws IOException
     {
-        if(outputStream == null)
+        if (outputStream == null)
         {
             CandidatePair pair =
                 relayedCandidate.getParentComponent().getSelectedPair();
 
-            if(pair.getLocalCandidate() == relayedCandidate)
+            if (pair.getLocalCandidate() == relayedCandidate)
             {
                 TransportAddress target = pair.getRemoteCandidate().
                     getTransportAddress();

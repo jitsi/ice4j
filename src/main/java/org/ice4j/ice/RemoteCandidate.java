@@ -96,7 +96,7 @@ public class RemoteCandidate
             String           foundation,
             long             priority,
             RemoteCandidate  relatedCandidate,
-            String			ufrag)
+            String            ufrag)
     {
         super(transportAddress, parentComponent, type, relatedCandidate);
         setFoundation(foundation);

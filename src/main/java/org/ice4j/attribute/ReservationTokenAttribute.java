@@ -75,7 +75,7 @@ public class ReservationTokenAttribute
     void decodeAttributeBody(byte[] attributeValue, char offset, char length)
         throws StunException
     {
-        if(length != 8)
+        if (length != 8)
         {
           throw new StunException("Length mismatch!");
         }
@@ -189,12 +189,12 @@ public class ReservationTokenAttribute
     private static void generateReservationTokenAttribute(
         ReservationTokenAttribute token, int nb)
     {
-        long left = System.currentTimeMillis();// the first nb/2 bytes of the
+        long left = System.currentTimeMillis(); // the first nb/2 bytes of the
                                                // token
-        long right = random.nextLong();// the last nb/2 bytes of the token
+        long right = random.nextLong(); // the last nb/2 bytes of the token
         int b = nb / 2;
 
-        for(int i = 0; i < b; i++)
+        for (int i = 0; i < b; i++)
         {
             token.reservationToken[i]   = (byte)((left  >> (i * 8)) & 0xFFL);
             token.reservationToken[i + b] = (byte)((right >> (i * 8)) & 0xFFL);

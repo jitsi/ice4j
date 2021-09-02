@@ -102,7 +102,7 @@ public class XorMappedAddressAttribute
 
         port ^= portModifier;
 
-        for(int i = 0; i < addressBytes.length; i++)
+        for (int i = 0; i < addressBytes.length; i++)
             addressBytes[i] ^= transactionID[i];
 
         TransportAddress xoredAdd;

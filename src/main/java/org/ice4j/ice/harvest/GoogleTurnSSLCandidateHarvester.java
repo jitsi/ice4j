@@ -279,7 +279,7 @@ public class GoogleTurnSSLCandidateHarvester
         outputStream = null;
         inputStream = null;
 
-        if(Arrays.equals(data, SSL_SERVER_HANDSHAKE))
+        if (Arrays.equals(data, SSL_SERVER_HANDSHAKE))
         {
             return true;
         }

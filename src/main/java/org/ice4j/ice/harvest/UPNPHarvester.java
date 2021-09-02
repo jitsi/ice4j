@@ -93,10 +93,10 @@ public class UPNPHarvester
         logger.fine("Begin UPnP harvesting");
         try
         {
-            if(device == null)
+            if (device == null)
             {
                 // do it only once
-                if(finishThreads == 0)
+                if (finishThreads == 0)
                 {
                     try
                     {
@@ -108,17 +108,17 @@ public class UPNPHarvester
 
                         synchronized(rootSync)
                         {
-                            while(finishThreads != 2)
+                            while (finishThreads != 2)
                             {
                                 rootSync.wait();
                             }
                         }
 
-                        if(wanIPThread.getDevice() != null)
+                        if (wanIPThread.getDevice() != null)
                         {
                             device = wanIPThread.getDevice();
                         }
-                        else if(wanPPPThread.getDevice() != null)
+                        else if (wanPPPThread.getDevice() != null)
                         {
                             device = wanPPPThread.getDevice();
                         }
@@ -130,7 +130,7 @@ public class UPNPHarvester
                     }
                 }
 
-                if(device == null)
+                if (device == null)
                     return candidates;
             }
 
@@ -143,12 +143,12 @@ public class UPNPHarvester
             int port = socket.getLocalPort();
             int externalPort = socket.getLocalPort();
 
-            while(retries < MAX_RETRIES)
+            while (retries < MAX_RETRIES)
             {
-                if(!device.getSpecificPortMappingEntry(port, "UDP",
+                if (!device.getSpecificPortMappingEntry(port, "UDP",
                         portMapping))
                 {
-                    if(device.addPortMapping(
+                    if (device.addPortMapping(
                             externalPort,
                             port,
                             localAddress.getHostAddress(),
@@ -165,11 +165,11 @@ public class UPNPHarvester
                         // if we don't add the base, we won't be able to add
                         // peer reflexive candidate if someone contact us on the
                         // UPNPCandidate
-                        for(LocalCandidate cand : cands)
+                        for (LocalCandidate cand : cands)
                         {
                             //try to add the candidate to the component and then
                             //only add it to the harvest not redundant
-                            if(component.addLocalCandidate(cand))
+                            if (component.addLocalCandidate(cand))
                             {
                                 candidates.add(cand);
                             }
@@ -280,7 +280,7 @@ public class UPNPHarvester
 
                 gd.discover();
 
-                if(gd.getValidGateway() != null)
+                if (gd.getValidGateway() != null)
                 {
                     device = gd.getValidGateway();
                 }
@@ -294,7 +294,7 @@ public class UPNPHarvester
                  * a method, it is important that it be rethrown so that the
                  * thread actually dies.
                  */
-                if(e instanceof ThreadDeath)
+                if (e instanceof ThreadDeath)
                     throw (ThreadDeath)e;
             }
             finally

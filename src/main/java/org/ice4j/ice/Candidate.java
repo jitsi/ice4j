@@ -438,17 +438,17 @@ public abstract class Candidate<T extends Candidate<?>>
         /* Google Talk priority is in range 0 - 1, we multiply this by 1000
          * to have a long rather than float
          */
-        if(candidateType == CandidateType.HOST_CANDIDATE)
+        if (candidateType == CandidateType.HOST_CANDIDATE)
         {
            priority += 0.95 * 1000 -
                (this.getBase().getTransport() == Transport.TCP ? 200 : 0);
         }
-        else if(candidateType == CandidateType.PEER_REFLEXIVE_CANDIDATE)
+        else if (candidateType == CandidateType.PEER_REFLEXIVE_CANDIDATE)
         {
             priority += (long)(0.9 * 1000) -
                 (this.getBase().getTransport() == Transport.TCP ? 200 : 0);
         }
-        else if(candidateType == CandidateType.SERVER_REFLEXIVE_CANDIDATE)
+        else if (candidateType == CandidateType.SERVER_REFLEXIVE_CANDIDATE)
         {
             priority += (long)(0.9 * 1000);
         }
@@ -462,9 +462,9 @@ public abstract class Candidate<T extends Candidate<?>>
         InetAddress addr = getTransportAddress().getAddress();
 
         // IPv6 has better priority than IPv4
-        if(addr instanceof Inet6Address)
+        if (addr instanceof Inet6Address)
         {
-            if(addr.isLinkLocalAddress())
+            if (addr.isLinkLocalAddress())
             {
                 priority += 40;
             }
@@ -499,15 +499,15 @@ public abstract class Candidate<T extends Candidate<?>>
     {
         int typePreference;
 
-        if(candidateType == CandidateType.HOST_CANDIDATE)
+        if (candidateType == CandidateType.HOST_CANDIDATE)
         {
             typePreference = MAX_TYPE_PREFERENCE; // 126
         }
-        else if(candidateType == CandidateType.PEER_REFLEXIVE_CANDIDATE)
+        else if (candidateType == CandidateType.PEER_REFLEXIVE_CANDIDATE)
         {
             typePreference = 110;
         }
-        else if(candidateType == CandidateType.SERVER_REFLEXIVE_CANDIDATE)
+        else if (candidateType == CandidateType.SERVER_REFLEXIVE_CANDIDATE)
         {
             typePreference = 100;
         }
@@ -540,13 +540,13 @@ public abstract class Candidate<T extends Candidate<?>>
     {
         //The ICE spec says: When there is only a single IP address, this value
         //SHOULD be set to.
-        if(getParentComponent().countLocalHostCandidates() < 2)
+        if (getParentComponent().countLocalHostCandidates() < 2)
             return MAX_LOCAL_PREFERENCE;
 
         //The ICE spec also says: Furthermore, if an agent is multi-homed and
         //has multiple IP addresses, the local preference for host candidates
         //from a VPN interface SHOULD have a priority of 0.
-        if(isVirtual())
+        if (isVirtual())
             return MIN_LOCAL_PREFERENCE;
 
         InetAddress addr = getTransportAddress().getAddress();
@@ -556,10 +556,10 @@ public abstract class Candidate<T extends Candidate<?>>
         //Johnnie seems to think.
 
         //prefer IPv6 to IPv4
-        if(addr instanceof Inet6Address)
+        if (addr instanceof Inet6Address)
         {
             //prefer link local addresses to global ones
-            if(addr.isLinkLocalAddress())
+            if (addr.isLinkLocalAddress())
                 return 30;
             else
                 return 40;
@@ -719,7 +719,7 @@ public abstract class Candidate<T extends Candidate<?>>
      */
     public TransportAddress getRelatedAddress()
     {
-        if(getRelatedCandidate() != null)
+        if (getRelatedCandidate() != null)
         {
             return getRelatedCandidate().getTransportAddress();
         }
@@ -770,7 +770,7 @@ public abstract class Candidate<T extends Candidate<?>>
 
         TransportAddress relAddr = getRelatedAddress();
 
-        if(relAddr != null)
+        if (relAddr != null)
         {
             buff.append(" raddr ").append(relAddr.getHostAddress());
             buff.append(" rport ").append(relAddr.getPort());
@@ -873,19 +873,19 @@ public abstract class Candidate<T extends Candidate<?>>
         switch (getType())
         {
             case SERVER_REFLEXIVE_CANDIDATE:
-                if(getBase() != null)
+                if (getBase() != null)
                 {
                     return getBase().getHostAddress();
                 }
                 break;
             case PEER_REFLEXIVE_CANDIDATE:
-                if(getBase() != null)
+                if (getBase() != null)
                 {
                     return getBase().getHostAddress();
                 }
                 break;
             case RELAYED_CANDIDATE:
-                if(getRelatedCandidate() != null)
+                if (getRelatedCandidate() != null)
                 {
                     return getRelatedCandidate().getHostAddress();
                 }
@@ -912,7 +912,7 @@ public abstract class Candidate<T extends Candidate<?>>
                 return getTransportAddress();
             case RELAYED_CANDIDATE:
                 // Corresponding to getMappedAddress();
-                if(getRelatedCandidate() != null)
+                if (getRelatedCandidate() != null)
                 {
                     return getRelatedCandidate().getReflexiveAddress();
                 }
@@ -965,19 +965,19 @@ public abstract class Candidate<T extends Candidate<?>>
      */
     public T getRelatedCandidate()
     {
-        if(this.relatedCandidate == null)
+        if (this.relatedCandidate == null)
         {
             TransportAddress relatedAddress = null;
             switch (getType())
             {
             case SERVER_REFLEXIVE_CANDIDATE:
-                if(getBase() != null)
+                if (getBase() != null)
                 {
                     relatedAddress = getBase().getTransportAddress();
                 }
                 break;
             case PEER_REFLEXIVE_CANDIDATE:
-                if(getBase() != null)
+                if (getBase() != null)
                 {
                     relatedAddress = getBase().getTransportAddress();
                 }

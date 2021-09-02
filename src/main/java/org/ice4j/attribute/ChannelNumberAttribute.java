@@ -137,7 +137,7 @@ public class ChannelNumberAttribute extends Attribute
     void decodeAttributeBody(byte[] attributeValue, char offset, char length)
         throws StunException
     {
-        if(length != 4)
+        if (length != 4)
         {
             throw new StunException("length invalid");
         }
@@ -172,7 +172,7 @@ public class ChannelNumberAttribute extends Attribute
      */
     public static boolean isValidRange(char channelNo)
     {
-        if(channelNo >= 0x4000)
+        if (channelNo >= 0x4000)
         {
             return true;
         }

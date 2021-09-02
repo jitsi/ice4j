@@ -250,9 +250,9 @@ class PseudoTcpSocketImpl
     public void bind(InetAddress host, int port) 
         throws IOException
     {
-        if(socket != null)
+        if (socket != null)
             socket.close();
-        InetSocketAddress newAddr = new InetSocketAddress(host.getHostAddress(),port);
+        InetSocketAddress newAddr = new InetSocketAddress(host.getHostAddress(), port);
         this.socket = new DatagramSocket(newAddr);
     }
 
@@ -282,27 +282,27 @@ class PseudoTcpSocketImpl
         throws SocketException
     {
         //TODO: map options to PTCP options/method calls
-		if(optID == SocketOptions.TCP_NODELAY) 
+        if (optID == SocketOptions.TCP_NODELAY)
         {
-			Object ret = options.get(Option.OPT_NODELAY.ordinal());
-			return ret != null;
-		}
+            Object ret = options.get(Option.OPT_NODELAY.ordinal());
+            return ret != null;
+        }
 
-		Object option = options.get(optID);
-		if(option == null) 
+        Object option = options.get(optID);
+        if (option == null)
         {
-			logger.warning("Asked for unknown optID" + optID);
-		}
-		return option;
+            logger.warning("Asked for unknown optID" + optID);
+        }
+        return option;
     }
     
     public long getPTCPOption(Option opt)
     {
-        if(Option.OPT_READ_TIMEOUT == opt)
+        if (Option.OPT_READ_TIMEOUT == opt)
         {
             return this.readTimeout;
         }
-        else if(Option.OPT_WRITE_TIMEOUT == opt)
+        else if (Option.OPT_WRITE_TIMEOUT == opt)
         {
             return this.writeTimeout;
         }
@@ -314,11 +314,11 @@ class PseudoTcpSocketImpl
     
     public void setPTCPOption(Option opt, long optValue)
     {
-        if(Option.OPT_WRITE_TIMEOUT == opt)
+        if (Option.OPT_WRITE_TIMEOUT == opt)
         {
             this.writeTimeout = optValue >= 0 ? optValue : 0;
         }
-        else if(Option.OPT_READ_TIMEOUT == opt)
+        else if (Option.OPT_READ_TIMEOUT == opt)
         {
             this.readTimeout = optValue >= 0 ? optValue : 0;
         }
@@ -453,7 +453,7 @@ class PseudoTcpSocketImpl
      */
     private void updateClock()
     {
-		scheduleClockTask(0);
+        scheduleClockTask(0);
     }
 
     /**
@@ -503,7 +503,7 @@ class PseudoTcpSocketImpl
      */
     public void onTcpReadable(PseudoTCPBase tcp)
     {
-        if(logger.isLoggable(Level.FINER))
+        if (logger.isLoggable(Level.FINER))
         {
             logger.log(
                 Level.FINER,
@@ -560,7 +560,7 @@ class PseudoTcpSocketImpl
         runClock = false;
         this.exception = e;
         releaseAllLocks();
-		cancelClockTask(true);
+        cancelClockTask(true);
 
     }
 
@@ -709,70 +709,70 @@ class PseudoTcpSocketImpl
      */
     private void runClock()
     {
-		if(!runClock)
-		{
-			return;
-		}
+        if (!runClock)
+        {
+            return;
+        }
         long sleep;
 
-		synchronized (pseudoTcp)
-		{
-			pseudoTcp.notifyClock(PseudoTCPBase.now());
-			sleep = pseudoTcp.getNextClock(PseudoTCPBase.now());
-		}
+        synchronized (pseudoTcp)
+        {
+            pseudoTcp.notifyClock(PseudoTCPBase.now());
+            sleep = pseudoTcp.getNextClock(PseudoTCPBase.now());
+        }
 
-		//there might be negative interval even if there's no error
-		if (sleep == -1)
-		{
-			releaseAllLocks();
-			if (exception != null)
-			{
-				logger.log(Level.SEVERE,
-						   "STATE: " + pseudoTcp.getState()
-					       + " ERROR: " + exception.getMessage());
-			}
-		}
-		else
-		{
-			//logger.log(Level.FINEST, "Clock sleep for " + sleep);
-			scheduleClockTask(sleep);
-		}
+        //there might be negative interval even if there's no error
+        if (sleep == -1)
+        {
+            releaseAllLocks();
+            if (exception != null)
+            {
+                logger.log(Level.SEVERE,
+                           "STATE: " + pseudoTcp.getState()
+                           + " ERROR: " + exception.getMessage());
+            }
+        }
+        else
+        {
+            //logger.log(Level.FINEST, "Clock sleep for " + sleep);
+            scheduleClockTask(sleep);
+        }
     }
 
-	private Runnable clockTaskRunner = new Runnable()
-	{
-		@Override
-		public void run() {
-			runClock();
-		}
-	};
+    private Runnable clockTaskRunner = new Runnable()
+    {
+        @Override
+        public void run() {
+            runClock();
+        }
+    };
 
-	private void scheduleClockTask(long sleep)
-	{
-		synchronized (clockTaskRunner)
-		{
-			// Cancel any existing tasks, to make sure we don't run duplicates.
-			cancelClockTask(false);
-			if(runClock)
-			{
-				currentlyScheduledClockTask
+    private void scheduleClockTask(long sleep)
+    {
+        synchronized (clockTaskRunner)
+        {
+            // Cancel any existing tasks, to make sure we don't run duplicates.
+            cancelClockTask(false);
+            if (runClock)
+            {
+                currentlyScheduledClockTask
                     = clockExecutor.schedule(
                             clockTaskRunner, sleep, TimeUnit.MILLISECONDS);
-			}
-		}
-	}
+            }
+        }
+    }
 
-	private void cancelClockTask(boolean interruptIfRunning)
-	{
-		// Copy the reference, in case it changes.
-		ScheduledFuture<?> taskToCancel = this.currentlyScheduledClockTask;
-		if(taskToCancel != null)
-		{
-			taskToCancel.cancel(interruptIfRunning);
-		}
-	}
+    private void cancelClockTask(boolean interruptIfRunning)
+    {
+        // Copy the reference, in case it changes.
+        ScheduledFuture<?> taskToCancel = this.currentlyScheduledClockTask;
+        if (taskToCancel != null)
+        {
+            taskToCancel.cancel(interruptIfRunning);
+        }
+    }
 
-	/**
+    /**
      * Returns an output stream for this socket.
      * @return an output stream for writing to this socket.
      * @throws IOException if an I/O error occurs when creating the output stream.
@@ -926,12 +926,12 @@ class PseudoTcpSocketImpl
                         return read;
                     }
                     logger.log(Level.FINER, "Read wait for data available");
-                    if(readTimeout > 0)
+                    if (readTimeout > 0)
                     {
                         //Check for timeout
                         long elapsed = System.currentTimeMillis() - start;
                         long left = readTimeout - elapsed;
-                        if(left <= 0)
+                        if (left <= 0)
                         {
                             IOException exc =
                                 new IOException("Read operation timeout");
@@ -940,7 +940,7 @@ class PseudoTcpSocketImpl
                         }
                         synchronized (read_notify)
                         {
-                            if(pseudoTcp.getAvailable() == 0)
+                            if (pseudoTcp.getAvailable() == 0)
                             {
                                 read_notify.wait(left);
                             }
@@ -950,7 +950,7 @@ class PseudoTcpSocketImpl
                     {
                         synchronized (read_notify)
                         {
-                            if(pseudoTcp.getAvailable() == 0)
+                            if (pseudoTcp.getAvailable() == 0)
                             {
                                 read_notify.wait();
                             }
@@ -1071,11 +1071,11 @@ class PseudoTcpSocketImpl
                         logger.log(Level.FINER, "Write wait for notify");                        
                         synchronized (write_notify)
                         {
-                            if(writeTimeout > 0)
+                            if (writeTimeout > 0)
                             {
                                 long elapsed = System.currentTimeMillis() - start;
                                 long left = writeTimeout - elapsed;
-                                if(left <= 0)
+                                if (left <= 0)
                                 {
                                     IOException exc = 
                                         new IOException("Write operation timeout");
@@ -1129,12 +1129,12 @@ class PseudoTcpSocketImpl
                 {   
                     try
                     {
-                        if(writeTimeout > 0)
+                        if (writeTimeout > 0)
                         {
                             //Check write timeout
                             long elapsed = System.currentTimeMillis() - start;
                             long left = writeTimeout - elapsed;                            
-                            if(left <= 0)
+                            if (left <= 0)
                             {
                                 IOException e = 
                                     new IOException("Flush operation timeout"); 

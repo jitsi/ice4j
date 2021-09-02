@@ -151,15 +151,15 @@ public class IceSdpUtils
             Component firstComponent = null;
 
             //add candidates
-            for(Component component : iceMediaStream.getComponents())
+            for (Component component : iceMediaStream.getComponents())
             {
                 //if this is the first component, remember it so that we can
                 //later use it for default candidates.
-                if(firstComponent == null)
+                if (firstComponent == null)
                     firstComponent = component;
 
                 Vector attributes = mediaDescription.getAttributes(true);
-                for(Candidate<?> candidate : component.getLocalCandidates())
+                for (Candidate<?> candidate : component.getLocalCandidates())
                 {
                     attributes.add(new CandidateAttribute(candidate));
                 }
@@ -184,12 +184,12 @@ public class IceSdpUtils
             Component rtcpComponent
                 = iceMediaStream.getComponent(Component.RTCP);
 
-            if( rtcpComponent != null )
+            if ( rtcpComponent != null )
             {
                 TransportAddress defaultRtcpCandidate = rtcpComponent
                     .getDefaultCandidate().getTransportAddress();
 
-                if(defaultRtcpCandidate.getPort() != defaultAddress.getPort()+1)
+                if (defaultRtcpCandidate.getPort() != defaultAddress.getPort()+1)
                 {
                     mediaDescription.setAttribute(
                         RTCP, Integer.toString(defaultRtcpCandidate.getPort()));
@@ -255,7 +255,7 @@ public class IceSdpUtils
             //origin
             Origin o = sDes.getOrigin();
 
-            if( o == null || "user".equals(o.getUsername()))
+            if ( o == null || "user".equals(o.getUsername()))
             {
                 //looks like there wasn't any origin set: jain-sdp creates a
                 //default origin that has "user" as the user name so we use this
@@ -277,7 +277,7 @@ public class IceSdpUtils
             List<IceMediaStream> streams = agent.getStreams();
             Vector<MediaDescription> mDescs
                 = new Vector<>(agent.getStreamCount());
-            for(IceMediaStream stream : streams)
+            for (IceMediaStream stream : streams)
             {
                MediaDescription mLine = sdpFactory.createMediaDescription(
                                stream.getName(), 0, //default port comes later
@@ -320,7 +320,7 @@ public class IceSdpUtils
     {
         List<Attribute> trickleUpdate = null;
 
-        if(localCandidates == null || localCandidates.size() == 0)
+        if (localCandidates == null || localCandidates.size() == 0)
         {
             trickleUpdate = new ArrayList<>(1);
             trickleUpdate.add(
@@ -333,7 +333,7 @@ public class IceSdpUtils
 
         String streamName = null;
 
-        for(LocalCandidate candidate : localCandidates)
+        for (LocalCandidate candidate : localCandidates)
         {
            streamName = candidate.getParentComponent()
                .getParentStream().getName();

@@ -210,7 +210,8 @@ class Connector
                 if (!running)
                     return;
 
-                if (logger.isLoggable(Level.FINEST)){
+                if (logger.isLoggable(Level.FINEST))
+                {
                     logger.finest("received datagram packet - addr: "
                             + packet.getAddress() + " port: " + packet.getPort());
                 }

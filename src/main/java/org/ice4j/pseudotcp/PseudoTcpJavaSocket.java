@@ -24,13 +24,13 @@ import java.net.*;
  * @author Pawel Domas
  */
 public class PseudoTcpJavaSocket extends Socket {
-	public PseudoTcpJavaSocket(long conv_id) throws SocketException {
-		super(new PseudoTcpSocketImpl(conv_id));
-	}
+    public PseudoTcpJavaSocket(long conv_id) throws SocketException {
+        super(new PseudoTcpSocketImpl(conv_id));
+    }
 
-	public PseudoTcpJavaSocket(long conv_id, DatagramSocket socket)
-			throws SocketException {
-		super(new PseudoTcpSocketImpl(conv_id, socket));
-	}
+    public PseudoTcpJavaSocket(long conv_id, DatagramSocket socket)
+            throws SocketException {
+        super(new PseudoTcpSocketImpl(conv_id, socket));
+    }
 
 }

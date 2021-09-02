@@ -374,7 +374,7 @@ public class IceMediaStream
      */
     protected void createCheckList(List<CandidatePair> checkList)
     {
-        for(Component cmp : getComponents())
+        for (Component cmp : getComponents())
             createCheckList(cmp, checkList);
     }
 
@@ -393,22 +393,22 @@ public class IceMediaStream
         List<RemoteCandidate> remoteCnds = component.getRemoteCandidates();
         LocalCandidate upnpBase = null;
 
-        for(LocalCandidate lc : localCnds)
+        for (LocalCandidate lc : localCnds)
         {
             // XXX do we assume a single UPNPCandidate here?
-            if(lc instanceof UPNPCandidate)
+            if (lc instanceof UPNPCandidate)
                 upnpBase = lc.getBase();
         }
 
-        for(LocalCandidate localCnd : localCnds)
+        for (LocalCandidate localCnd : localCnds)
         {
             // Don't take into consideration UPnP base candidate
-            if(localCnd == upnpBase)
+            if (localCnd == upnpBase)
                 continue;
 
-            for(RemoteCandidate remoteCnd : remoteCnds)
+            for (RemoteCandidate remoteCnd : remoteCnds)
             {
-                if(localCnd.canReach(remoteCnd)
+                if (localCnd.canReach(remoteCnd)
                         && remoteCnd.getTransportAddress().getPort() != 0)
                 {
                     CandidatePair pair
@@ -454,12 +454,12 @@ public class IceMediaStream
 
         Iterator<CandidatePair> ckListIter = checkList.iterator();
 
-        while(ckListIter.hasNext())
+        while (ckListIter.hasNext())
         {
             CandidatePair pair = ckListIter.next();
 
             //drop all pairs above MAX_CHECK_LIST_SIZE.
-            if(tmpCheckList.size() > maxCheckListSize)
+            if (tmpCheckList.size() > maxCheckListSize)
             {
                 ckListIter.remove();
                 continue;
@@ -467,14 +467,14 @@ public class IceMediaStream
 
             //replace local server reflexive candidates with their base.
             LocalCandidate localCnd = pair.getLocalCandidate();
-            if( localCnd.getType()
+            if ( localCnd.getType()
                         == CandidateType.SERVER_REFLEXIVE_CANDIDATE)
             {
                 pair.setLocalCandidate(localCnd.getBase());
 
                 //if the new pair corresponds to another one with a higher
                 //priority, then remove it.
-                if(tmpCheckList.contains(pair))
+                if (tmpCheckList.contains(pair))
                 {
                     ckListIter.remove();
                     continue;
@@ -550,11 +550,11 @@ public class IceMediaStream
      */
     public RemoteCandidate findRemoteCandidate(TransportAddress remoteAddress)
     {
-        for( Component cmp : components.values())
+        for ( Component cmp : components.values())
         {
             RemoteCandidate cnd = cmp.findRemoteCandidate(remoteAddress);
 
-            if(cnd != null)
+            if (cnd != null)
                 return cnd;
         }
 

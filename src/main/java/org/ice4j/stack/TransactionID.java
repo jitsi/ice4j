@@ -125,11 +125,11 @@ public class TransactionID
      */
     private static void generateTransactionID(TransactionID tid, int nb)
     {
-        long left  = System.currentTimeMillis();//the first nb/2 bytes of the id
-        long right = random.nextLong();//the last nb/2 bytes of the id
+        long left  = System.currentTimeMillis(); //the first nb/2 bytes of the id
+        long right = random.nextLong(); //the last nb/2 bytes of the id
         int b = nb / 2;
 
-        for(int i = 0; i < b; i++)
+        for (int i = 0; i < b; i++)
         {
             tid.transactionID[i]   = (byte)((left  >> (i * 8)) & 0xFFL);
             tid.transactionID[i + b] = (byte)((right >> (i * 8)) & 0xFFL);
@@ -166,13 +166,13 @@ public class TransactionID
         StunClientTransaction cliTran
             = stunStack.getClientTransaction(transactionID);
 
-        if(cliTran != null)
+        if (cliTran != null)
             return cliTran.getTransactionID();
 
         StunServerTransaction serTran
             = stunStack.getServerTransaction(transactionID);
 
-        if(serTran != null)
+        if (serTran != null)
             return serTran.getTransactionID();
 
         //seems that the caller really wants a new ID
@@ -219,9 +219,9 @@ public class TransactionID
      */
     public boolean equals(Object obj)
     {
-        if(this == obj)
+        if (this == obj)
             return true;
-        if(!(obj instanceof TransactionID))
+        if (!(obj instanceof TransactionID))
             return false;
 
         byte targetBytes[] = ((TransactionID)obj).transactionID;
@@ -272,10 +272,10 @@ public class TransactionID
         StringBuilder idStr = new StringBuilder();
 
         idStr.append("0x");
-        for(int i = 0; i < transactionID.length; i++)
+        for (int i = 0; i < transactionID.length; i++)
         {
 
-            if((transactionID[i] & 0xFF) <= 15)
+            if ((transactionID[i] & 0xFF) <= 15)
                 idStr.append("0");
 
             idStr.append(

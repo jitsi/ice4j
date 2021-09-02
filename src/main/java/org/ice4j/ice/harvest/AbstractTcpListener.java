@@ -91,7 +91,7 @@ public abstract class AbstractTcpListener
 
             Enumeration<InetAddress> ifaceAddresses = iface.getInetAddresses();
 
-            while(ifaceAddresses.hasMoreElements())
+            while (ifaceAddresses.hasMoreElements())
             {
                 InetAddress addr = ifaceAddresses.nextElement();
 
@@ -956,7 +956,7 @@ public abstract class AbstractTcpListener
                                     bytesRead, 2, bytesRead.length);
 
                             // if we had read enough data
-                            if(channel.length <= bytesRead.length - 2)
+                            if (channel.length <= bytesRead.length - 2)
                             {
                                 processFirstDatagram(
                                     preBuffered, channel, key);
@@ -991,7 +991,7 @@ public abstract class AbstractTcpListener
                         channel.buffer.flip();
                         channel.buffer.get(bytesRead);
 
-                        if(channel.preBuffered != null)
+                        if (channel.preBuffered != null)
                         {
                             // will store preBuffered and currently read data
                             byte[] newBytesRead = new byte[

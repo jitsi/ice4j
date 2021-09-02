@@ -123,7 +123,7 @@ public class ServerReflexiveCandidate
     {
         super.free();
 
-        if(stunHarvest != null)
+        if (stunHarvest != null)
             stunHarvest.close();
     }
 }

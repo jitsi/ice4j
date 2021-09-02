@@ -296,7 +296,7 @@ public class RelayedCandidateDatagramSocket
                      * DatagramPacket.
                      */
                     return length == pLength - padding - CHANNELDATA_LENGTH_LENGTH 
-                    	|| length == pLength - CHANNELDATA_LENGTH_LENGTH;
+                        || length == pLength - CHANNELDATA_LENGTH_LENGTH;
                 }
             }
         }
@@ -1162,7 +1162,7 @@ public class RelayedCandidateDatagramSocket
         }
     }
 
-	/**
+    /**
      * Represents a channel which relays data sent through this
      * <tt>RelayedCandidateDatagramSocket</tt> to a specific
      * <tt>TransportAddress</tt> via the TURN server associated with this

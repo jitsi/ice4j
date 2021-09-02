@@ -68,10 +68,10 @@ public class Ice4jLogFormatter
         int lineNumber = inferCaller(record);
         String loggerName = record.getLoggerName();
 
-        if(loggerName == null)
+        if (loggerName == null)
             loggerName = record.getSourceClassName();
 
-        if(loggerName.startsWith("net.java.sip.communicator."))
+        if (loggerName.startsWith("net.java.sip.communicator."))
         {
             sb.append(loggerName.substring("net.java.sip.communicator."
                                            .length()));
@@ -85,7 +85,7 @@ public class Ice4jLogFormatter
             sb.append(record.getSourceMethodName());
 
             //include the line number if we have it.
-            if(lineNumber != -1)
+            if (lineNumber != -1)
                 sb.append("().").append(Integer.toString(lineNumber));
             else
                 sb.append("()");

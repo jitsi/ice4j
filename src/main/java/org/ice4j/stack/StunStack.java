@@ -262,7 +262,7 @@ public class StunStack
         StunClientTransaction clientTransaction
             = clientTransactions.get(transactionID);
 
-        if(clientTransaction != null)
+        if (clientTransaction != null)
             clientTransaction.cancel();
     }
 
@@ -405,7 +405,7 @@ public class StunStack
      */
     public StunStack()
     {
-        this(null,null);
+        this(null, null);
     }
     
     /**
@@ -741,14 +741,14 @@ public class StunStack
             = TransactionID.createTransactionID(this, transactionID);
         StunServerTransaction sTran = getServerTransaction(tid);
 
-        if(sTran == null)
+        if (sTran == null)
         {
             throw new StunException(StunException.TRANSACTION_DOES_NOT_EXIST,
                                 "The transaction specified in the response "
                                 + "(tid="+ tid.toString() +") "
                                 + "object does not exist.");
         }
-        else if( sTran.isRetransmitting())
+        else if ( sTran.isRetransmitting())
         {
             throw new StunException(StunException.TRANSACTION_ALREADY_ANSWERED,
                                     "The transaction specified in the response "
@@ -891,7 +891,7 @@ public class StunStack
     {
         Message msg = ev.getMessage();
 
-        if(logger.isLoggable(Level.FINEST))
+        if (logger.isLoggable(Level.FINEST))
         {
             logger.finest(
                     "Received a message on " + ev.getLocalAddress()
@@ -899,14 +899,14 @@ public class StunStack
         }
 
         //request
-        if(msg instanceof Request)
+        if (msg instanceof Request)
         {
             logger.finest("parsing request");
 
             TransactionID serverTid = ev.getTransactionID();
             StunServerTransaction sTran  = getServerTransaction(serverTid);
 
-            if( sTran != null)
+            if ( sTran != null)
             {
                 //requests from this transaction have already been seen
                 //retransmit the response if there was any
@@ -925,7 +925,7 @@ public class StunStack
                                ex);
                 }
 
-                if(!Boolean.getBoolean(
+                if (!Boolean.getBoolean(
                         StackProperties.PROPAGATE_RECEIVED_RETRANSMISSIONS))
                 {
                     return;
@@ -982,7 +982,7 @@ public class StunStack
                 logger.log(Level.INFO, "Received an invalid request.", t);
                 Throwable cause = t.getCause();
 
-                if(((t instanceof StunException)
+                if (((t instanceof StunException)
                             && ((StunException) t).getID()
                                     == StunException
                                         .TRANSACTION_ALREADY_ANSWERED)
@@ -996,7 +996,7 @@ public class StunStack
                     return;
                 }
 
-                if(t instanceof IllegalArgumentException)
+                if (t instanceof IllegalArgumentException)
                 {
                     error
                         = createCorrespondingErrorResponse(
@@ -1030,12 +1030,12 @@ public class StunStack
             }
         }
         //response
-        else if(msg instanceof Response)
+        else if (msg instanceof Response)
         {
             TransactionID tid = ev.getTransactionID();
             StunClientTransaction tran = clientTransactions.remove(tid);
 
-            if(tran != null)
+            if (tran != null)
             {
                 tran.handleResponse(ev);
             }
@@ -1193,7 +1193,7 @@ public class StunStack
                     "Wrong MESSAGE-INTEGRITY value.");
             }
         }
-        else if(Boolean.getBoolean(StackProperties.REQUIRE_MESSAGE_INTEGRITY))
+        else if (Boolean.getBoolean(StackProperties.REQUIRE_MESSAGE_INTEGRITY))
         {
             // no message integrity
             Response error = createCorrespondingErrorResponse(
@@ -1211,9 +1211,9 @@ public class StunStack
         //look for unknown attributes.
         List<Attribute> allAttributes = request.getAttributes();
         StringBuffer sBuff = new StringBuffer();
-        for(Attribute attr : allAttributes)
+        for (Attribute attr : allAttributes)
         {
-            if(attr instanceof OptionalAttribute
+            if (attr instanceof OptionalAttribute
                 && attr.getAttributeType()
                     < Attribute.UNKNOWN_OPTIONAL_ATTRIBUTE)
                 sBuff.append(attr.getAttributeType());
@@ -1264,7 +1264,7 @@ public class StunStack
                 || (shortTermCredentialMechanism
                         && ((colon = username.indexOf(":")) < 1)))
         {
-            if(logger.isLoggable(Level.FINE))
+            if (logger.isLoggable(Level.FINE))
             {
                 logger.log(Level.FINE, "Received a message with an improperly "
                         +"formatted username");
@@ -1277,7 +1277,7 @@ public class StunStack
 
         byte[] key = getCredentialsManager().getLocalKey(username);
 
-        if(key == null)
+        if (key == null)
             return false;
 
         /*
@@ -1323,7 +1323,7 @@ public class StunStack
                 expectedMsgIntHmacSha1Content,
                 msgIntHmacSha1Content))
         {
-            if(logger.isLoggable(Level.FINE))
+            if (logger.isLoggable(Level.FINE))
             {
                 logger.log(
                         Level.FINE,
@@ -1391,7 +1391,7 @@ public class StunStack
 
         if ((username.length() < 1) || (colon < 1))
         {
-            if(logger.isLoggable(Level.FINE))
+            if (logger.isLoggable(Level.FINE))
             {
                 logger.log(Level.FINE, "Received a message with an improperly "
                         +"formatted username");
@@ -1444,7 +1444,7 @@ public class StunStack
      * @return corresponding Error Response object.
      */
     public Response createCorrespondingErrorResponse(char requestType,
-        char errorCode, String reasonPhrase,char... unknownAttributes)
+        char errorCode, String reasonPhrase, char... unknownAttributes)
     {
         if (requestType == Message.BINDING_REQUEST)
         {
