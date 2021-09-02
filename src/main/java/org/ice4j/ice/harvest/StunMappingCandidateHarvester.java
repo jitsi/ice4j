@@ -20,13 +20,13 @@ package org.ice4j.ice.harvest;
 import org.ice4j.*;
 import org.ice4j.socket.*;
 import org.ice4j.stunclient.*;
+import org.jetbrains.annotations.*;
 
 import java.net.*;
 import java.util.logging.*;
 
 /**
- * A {@link MappingCandidateHarvester} which uses a STUN servers to discover
- * its public IP address.
+ * A {@link MappingCandidateHarvester} which uses a STUN servers to discover its public IP address.
  *
  * @author Damian Minkov
  * @author Boris Grozev
@@ -38,13 +38,24 @@ public class StunMappingCandidateHarvester
      * The <tt>Logger</tt> used by the <tt>StunMappingCandidateHarvester</tt>
      * class and its instances for logging output.
      */
-    private static final Logger logger
-        = Logger.getLogger(StunMappingCandidateHarvester.class.getName());
+    private static final Logger logger = Logger.getLogger(StunMappingCandidateHarvester.class.getName());
 
     /**
      * The list of servers we will use to discover our public address.
      */
-    private TransportAddress stunServerAddress;
+    private final TransportAddress stunServerAddress;
+
+    /**
+     * The local address this {@link StunMappingCandidateHarvester} was initialized with, and which will be used to
+     * communicate to STUN servers.
+     */
+    @NotNull
+    private TransportAddress localAddress;
+
+    /**
+     * The public address discovered through STUN, if any.
+     */
+    private TransportAddress publicAddress = null;
 
     /**
      * Initializes a new {@link StunMappingCandidateHarvester} instance with
@@ -55,10 +66,11 @@ public class StunMappingCandidateHarvester
      * @param stunServerAddress The address of the STUN server.
      */
     public StunMappingCandidateHarvester(
-            TransportAddress localAddress,
+            @NotNull TransportAddress localAddress,
             TransportAddress stunServerAddress)
     {
-        face = localAddress;
+        super("stun");
+        this.localAddress = localAddress;
         this.stunServerAddress = stunServerAddress;
     }
 
@@ -75,30 +87,48 @@ public class StunMappingCandidateHarvester
                 = new SimpleAddressDetector(stunServerAddress);
             sad.start();
 
-            IceSocketWrapper localSocket
-                = new IceUdpSocketWrapper(new DatagramSocket(face));
+            IceSocketWrapper localSocket = new IceUdpSocketWrapper(new DatagramSocket(localAddress));
 
-            mask = sad.getMappingFor(localSocket);
+            publicAddress = sad.getMappingFor(localSocket);
 
             /* Record bound address as face. */
             SocketAddress boundAddr = localSocket.getLocalSocketAddress();
             if (boundAddr instanceof InetSocketAddress)
             {
-                face = new TransportAddress((InetSocketAddress)boundAddr, face.getTransport());
+                localAddress = new TransportAddress((InetSocketAddress)boundAddr, localAddress.getTransport());
             }
 
-            if (mask != null)
+            if (publicAddress != null)
             {
-                logger.info("Discovered public address " + mask
+                logger.info("Discovered public address " + publicAddress
                                 + " from STUN server " + stunServerAddress
-                                + " using local address " + face);
+                                + " using local address " + localSocket);
             }
         }
         catch (Exception exc)
         {
             //whatever happens, we just log
-            logger.log(Level.INFO, "We failed to obtain addresses "
-                + "for the following reason: ", exc);
+            logger.log(Level.INFO, "We failed to obtain addresses for the following reason: ", exc);
         }
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Nullable
+    @Override
+    public TransportAddress getFace()
+    {
+        return localAddress;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Nullable
+    @Override
+    public TransportAddress getMask()
+    {
+        return publicAddress;
     }
 }

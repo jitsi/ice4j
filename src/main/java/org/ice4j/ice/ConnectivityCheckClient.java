@@ -21,6 +21,7 @@ import java.net.*;
 import java.time.*;
 import java.util.*;
 import java.util.concurrent.*;
+import java.util.concurrent.atomic.*;
 
 import org.ice4j.*;
 import org.ice4j.attribute.*;
@@ -66,6 +67,12 @@ class ConnectivityCheckClient
      */
     private final Queue<PaceMaker> paceMakers
         = new ConcurrentLinkedQueue<>();
+
+    /**
+     * Whether this {@link ConnectivityCheckClient} has been stopped.
+     * Synchronized by {@link #paceMakers}.
+     */
+    private boolean stopped = false;
 
     /**
      * Timer that is used to let some seconds before a CheckList is considered
@@ -160,9 +167,16 @@ class ConnectivityCheckClient
      */
     public void startChecks(CheckList checkList)
     {
-        PaceMaker paceMaker = new PaceMaker(checkList);
-        paceMakers.add(paceMaker);
-        paceMaker.schedule();
+        synchronized (paceMakers)
+        {
+            if (stopped)
+            {
+                return;
+            }
+            PaceMaker paceMaker = new PaceMaker(checkList);
+            paceMakers.add(paceMaker);
+            paceMaker.schedule();
+        }
     }
 
     /**
@@ -969,14 +983,18 @@ class ConnectivityCheckClient
      */
     public void stop()
     {
-        while (true)
+        synchronized (paceMakers)
         {
-            final PaceMaker paceMaker = paceMakers.poll();
-            if (paceMaker == null)
+            stopped = true;
+            while (true)
             {
-                break;
+                final PaceMaker paceMaker = paceMakers.poll();
+                if (paceMaker == null)
+                {
+                    break;
+                }
+                paceMaker.cancel();
             }
-            paceMaker.cancel();
         }
     }
 }

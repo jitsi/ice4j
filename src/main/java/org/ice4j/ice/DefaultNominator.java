@@ -98,9 +98,10 @@ public class DefaultNominator
         if (ev.getSource() instanceof CandidatePair)
         {
             // STUN Usage for Consent Freshness is of no concern here.
-            if (IceMediaStream.PROPERTY_PAIR_CONSENT_FRESHNESS_CHANGED.equals(
-                    propertyName))
+            if (IceMediaStream.PROPERTY_PAIR_CONSENT_FRESHNESS_CHANGED.equals(propertyName))
+            {
                 return;
+            }
 
             CandidatePair validPair = (CandidatePair) ev.getSource();
             Component parentComponent = validPair.getParentComponent();

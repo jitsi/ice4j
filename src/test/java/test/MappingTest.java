@@ -58,13 +58,10 @@ public class MappingTest
 
         try
         {
-            localAddress
-                    = new TransportAddress(localAddressStr, 9, Transport.UDP);
-            publicAddress
-                    = new TransportAddress(publicAddressStr, 9, Transport.UDP);
+            localAddress = new TransportAddress(localAddressStr, 9, Transport.UDP);
+            publicAddress = new TransportAddress(publicAddressStr, 9, Transport.UDP);
 
-            logger.info("Will append a NAT harvester for " +
-                        localAddress + "=>" + publicAddress);
+            logger.info("Will append a NAT harvester for " + localAddress + "=>" + publicAddress);
 
         }
         catch(Exception exc)
@@ -75,28 +72,21 @@ public class MappingTest
             return;
         }
 
-        MappingCandidateHarvester natHarvester
-            = new MappingCandidateHarvester(publicAddress, localAddress);
+        MappingCandidateHarvester natHarvester = new StaticMappingCandidateHarvester(publicAddress, localAddress);
 
         List<CandidateHarvester> harvesters = new ArrayList<>();
         harvesters.add(natHarvester);
 
         Agent localAgent = createAgent(2020, false, harvesters);
-        localAgent.setNominationStrategy(
-                        NominationStrategy.NOMINATE_HIGHEST_PRIO);
+        localAgent.setNominationStrategy(NominationStrategy.NOMINATE_HIGHEST_PRIO);
 
         String localSDP = SdpUtils.createSDPDescription(localAgent);
 
         //wait a bit so that the logger can stop dumping stuff:
         Thread.sleep(500);
 
-        logger.info("=================== feed the following"
-                    +" to the remote agent ===================");
-
-
+        logger.info("=================== feed the following to the remote agent ===================");
         logger.info("\n" + localSDP);
-
-        logger.info("======================================"
-            + "========================================\n");
+        logger.info("==============================================================================\n");
     }
 }

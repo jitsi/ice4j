@@ -73,6 +73,21 @@ public class MappingCandidateHarvesters
     }
 
     /**
+     * @return  the (first) mapping harvester which matches a given public address, or {@code null} if none match it.
+     */
+    public static MappingCandidateHarvester findHarvesterForAddress(TransportAddress publicAddress)
+    {
+        for (MappingCandidateHarvester harvester : harvesters)
+        {
+            if (harvester.publicAddressMatches(publicAddress))
+            {
+                return harvester;
+            }
+        }
+        return null;
+    }
+
+    /**
      * Initializes {@link #harvesters}.
      * First it reads the configuration and instantiates harvesters accordingly,
      * waiting for their initialization (which may include network communication
@@ -94,11 +109,20 @@ public class MappingCandidateHarvesters
         for (HarvestConfig.StaticMapping staticMapping : config.getStaticMappings())
         {
             logger.info("Adding a static mapping: " + staticMapping);
-            // the port number is unused, 9 is for "discard"
-            TransportAddress localAddress = new TransportAddress(staticMapping.getLocalAddress(), 9, Transport.UDP);
-            TransportAddress publicAddress = new TransportAddress(staticMapping.getPublicAddress(), 9, Transport.UDP);
+            // If the configuration has no port, then the port value is not used in any way. We put 9 (for "discard")
+            // as a filler.
+            int localPort = staticMapping.getLocalPort() != null ? staticMapping.getLocalPort() : 9;
+            int publicPort = staticMapping.getPublicPort() != null ? staticMapping.getPublicPort() : 9;
+            TransportAddress localAddress
+                    = new TransportAddress(staticMapping.getLocalAddress(), localPort, Transport.UDP);
+            TransportAddress publicAddress
+                    = new TransportAddress(staticMapping.getPublicAddress(), publicPort, Transport.UDP);
 
-            harvesterList.add(new MappingCandidateHarvester(publicAddress, localAddress));
+            harvesterList.add(new StaticMappingCandidateHarvester(
+                    publicAddress,
+                    localAddress,
+                    staticMapping.getName(),
+                    staticMapping.getLocalPort() != null));
         }
 
         // AWS harvester
