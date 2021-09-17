@@ -379,7 +379,6 @@ public class SinglePortUdpHarvester
                 componentSocket.add(multiplexing);
             }
 
-            // XXX is this necessary?
             synchronized (candidateSockets)
             {
                 IceSocketWrapper oldSocket
@@ -405,8 +404,10 @@ public class SinglePortUdpHarvester
         protected IceSocketWrapper getCandidateIceSocketWrapper(
             SocketAddress remoteAddress)
         {
-            return candidateSockets.get(remoteAddress);
+            synchronized (candidateSockets)
+            {
+                return candidateSockets.get(remoteAddress);
+            }
         }
-
     }
 }
