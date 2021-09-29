@@ -262,6 +262,8 @@ public class MappingCandidateHarvesters
                 TransportAddress localAddress
                     = new TransportAddress(localInetAddress, 0, Transport.UDP);
 
+                logger.info("Using " + remoteAddress + " for StunMappingCandidateHarvester (localAddress="
+                        + localAddress + ").");
                 final StunMappingCandidateHarvester stunHarvester
                     = new StunMappingCandidateHarvester(
                             localAddress,
