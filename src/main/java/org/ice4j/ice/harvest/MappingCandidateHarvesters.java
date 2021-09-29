@@ -199,8 +199,7 @@ public class MappingCandidateHarvesters
             if (face.getAddress().equals(h.getFace().getAddress())
                 && mask.getAddress().equals(h.getMask().getAddress()))
             {
-                logger.info("Discarding a mapping harvester with duplicate "
-                            + "addresses: " + harvester + ". Kept: " + h);
+                logger.info("Discarding a mapping harvester with duplicate addresses: " + harvester + ". Kept: " + h);
                 return;
             }
         }
@@ -268,16 +267,10 @@ public class MappingCandidateHarvesters
                             localAddress,
                             remoteAddress);
 
-                Callable<StunMappingCandidateHarvester> task
-                    = new Callable<StunMappingCandidateHarvester>()
+                Callable<StunMappingCandidateHarvester> task = () ->
                 {
-                    @Override
-                    public StunMappingCandidateHarvester call()
-                        throws Exception
-                    {
-                        stunHarvester.discover();
-                        return stunHarvester;
-                    }
+                    stunHarvester.discover();
+                    return stunHarvester;
                 };
                 tasks.add(task);
             }
@@ -285,8 +278,7 @@ public class MappingCandidateHarvesters
 
         // Now run discover() on all created harvesters in parallel and pick
         // the ones which succeeded.
-        ExecutorService es = ExecutorFactory.createFixedThreadPool(tasks.size(),
-            "ice4j.Harvester-executor-");
+        ExecutorService es = ExecutorFactory.createFixedThreadPool(tasks.size(), "ice4j.Harvester-executor-");
 
         try
         {
