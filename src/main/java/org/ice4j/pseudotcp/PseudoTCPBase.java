@@ -387,12 +387,11 @@ public class PseudoTCPBase
     }
 
     /**
-     *
      * @return current timestamp limited to 32 bits
      */
     public static long now()
     {
-        return System.currentTimeMillis() & 0xFFFFFFFFL;
+        return (System.nanoTime() / 1000000) & 0xFFFFFFFFL;
     }
 
     /**
