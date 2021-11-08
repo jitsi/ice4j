@@ -245,6 +245,7 @@ public class PseudoTcpSocket extends Socket
     /**
      * {@inheritDoc}
      */
+    @Override
     public synchronized void close()
             throws IOException
     {
@@ -254,6 +255,12 @@ public class PseudoTcpSocket extends Socket
                 return;
             socketImpl.close();
         }
+    }
+
+    @Override
+    public OutputStream getOutputStream() throws IOException
+    {
+        return socketImpl.getOutputStream();
     }
 
     /**

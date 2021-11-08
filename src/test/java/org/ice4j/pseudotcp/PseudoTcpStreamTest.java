@@ -91,11 +91,15 @@ public class PseudoTcpStreamTest
             {
                 client.setDebugName("R");
                 client.connect(serverAddress, 5000);
+                OutputStream os = client.getOutputStream();
+
                 // write single array
                 for (int i = 0; i < singleStepCount; i++)
-                    client.getOutputStream().write(bufferSingle[i]);
+                    os.write(bufferSingle[i]);
+
                 // write whole array
-                client.getOutputStream().write(bufferA);
+                os.write(bufferA);
+
                 // write by parts
                 int partCount = 7;
                 boolean notExact = sizeB % partCount != 0;
@@ -111,11 +115,11 @@ public class PseudoTcpStreamTest
                 int written = 0;
                 for (int j : partsSize)
                 {
-                    client.getOutputStream().write(bufferB, written, j);
+                    os.write(bufferB, written, j);
                     written += j;
                 }
                 assertEquals(sizeB, written);
-                client.getOutputStream().flush();
+                os.flush();
                 client.close();
             }
             catch (IOException ex)

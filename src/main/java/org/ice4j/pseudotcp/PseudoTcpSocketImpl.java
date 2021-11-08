@@ -1160,6 +1160,7 @@ class PseudoTcpSocketImpl
         @Override
         public void close() throws IOException
         {
+            PseudoTcpSocketImpl.this.close();
         }
     }
 
