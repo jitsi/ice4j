@@ -19,7 +19,6 @@ package org.ice4j.ice.harvest;
 
 import org.ice4j.*;
 import org.ice4j.ice.*;
-import org.ice4j.message.*;
 import org.ice4j.socket.*;
 
 import java.io.*;
@@ -61,7 +60,15 @@ public abstract class AbstractTcpListener
      */
     static void closeNoExceptions(Channel channel)
     {
-        MuxServerSocketChannelFactory.closeNoExceptions(channel);
+        try
+        {
+            channel.close();
+        }
+        catch (IOException ioe)
+        {
+            // The whole idea of the method is to close a specific Channel
+            // without caring about any possible IOException.
+        }
     }
 
     /**
@@ -75,7 +82,6 @@ public abstract class AbstractTcpListener
     private static List<TransportAddress> getLocalAddresses(
             int port,
             List<NetworkInterface> interfaces)
-        throws IOException
     {
         List<TransportAddress> addresses = new LinkedList<>();
 
@@ -99,83 +105,6 @@ public abstract class AbstractTcpListener
             }
         }
         return addresses;
-    }
-
-    /**
-     * Determines whether a specific {@link DatagramPacket} is the first
-     * expected (i.e. supported) to be received from an accepted
-     * {@link SocketChannel} by this {@link AbstractTcpListener}. This is true
-     * if it is contains the hard-coded SSL client handshake (
-     * {@link GoogleTurnSSLCandidateHarvester#SSL_CLIENT_HANDSHAKE}), or
-     * a STUN Binding Request.
-     *
-     * @param p the {@code DatagramPacket} to examine
-     * @return {@code true} if {@code p} looks like the first
-     * {@code DatagramPacket} expected to be received from an accepted
-     * {@code SocketChannel} by this {@code TcpHarvester};
-     * otherwise, {@code false}
-     */
-    private static boolean isFirstDatagramPacket(DatagramPacket p)
-    {
-        int len = p.getLength();
-        boolean b = false;
-
-        if (len > 0)
-        {
-            byte[] buf = p.getData();
-            int off = p.getOffset();
-
-            // Check for Google TURN SSLTCP
-            final byte[] googleTurnSslTcp
-                = GoogleTurnSSLCandidateHarvester.SSL_CLIENT_HANDSHAKE;
-
-            if (len >= googleTurnSslTcp.length)
-            {
-                b = true;
-                for (int i = 0, iEnd = googleTurnSslTcp.length, j = off;
-                     i < iEnd;
-                     i++, j++)
-                {
-                    if (googleTurnSslTcp[i] != buf[j])
-                    {
-                        b = false;
-                        break;
-                    }
-                }
-            }
-
-            // nothing found, lets check for stun binding requests
-            if (!b)
-            {
-                // 2 bytes    uint16 length
-                // STUN Binding request:
-                //   2 bits   00
-                //   14 bits  STUN Messsage Type
-                //   2 bytes  Message Length
-                //   4 bytes  Magic Cookie
-
-                // RFC 5389: For example, a Binding request has class=0b00
-                // (request) and method=0b000000000001 (Binding) and is encoded
-                // into the first 16 bits as 0x0001.
-                if (len >= 10 && buf[off + 2] == 0 && buf[off + 3] == 1)
-                {
-                    final byte[] magicCookie = Message.MAGIC_COOKIE;
-
-                    b = true;
-                    for (int i = 0, iEnd = magicCookie.length, j = off + 6;
-                         i < iEnd;
-                         i++, j++)
-                    {
-                        if (magicCookie[i] != buf[j])
-                        {
-                            b = false;
-                            break;
-                        }
-                    }
-                }
-            }
-        }
-        return b;
     }
 
     /**
@@ -217,12 +146,6 @@ public abstract class AbstractTcpListener
      */
     private final List<ServerSocketChannel> serverSocketChannels
         = new LinkedList<>();
-
-    /**
-     * The object used to synchronize access to the collection of sessions that
-     * the implementation of this class uses.
-     */
-    protected final Object sessionsSyncRoot = new Object();
 
     /**
      * Initializes a new <tt>TcpHarvester</tt>, which is to
@@ -432,21 +355,7 @@ public abstract class AbstractTcpListener
         throws IOException
     {
         ServerSocketChannel channel = MuxServerSocketChannelFactory
-            .openAndBindMuxServerSocketChannel(
-                            /* properties */ null,
-                            address,
-                            /* backlog */ 0,
-                            new DatagramPacketFilter()
-                            {
-                                /**
-                                 * {@inheritDoc}
-                                 */
-                                @Override
-                                public boolean accept(DatagramPacket p)
-                                {
-                                    return isFirstDatagramPacket(p);
-                                }
-                            });
+            .openAndBindServerSocketChannel(null, address, 0);
 
         serverSocketChannels.add(channel);
     }
@@ -457,8 +366,6 @@ public abstract class AbstractTcpListener
      * @param ufrag the local username fragment for the session.
      * @param pushback the first "datagram" (RFC4571-framed), already read from
      * the socket's stream.
-     * @throws IllegalStateException
-     * @throws IOException
      */
     protected abstract void acceptSession(
             Socket socket, String ufrag, DatagramPacket pushback)
@@ -598,7 +505,9 @@ public abstract class AbstractTcpListener
                 selector.close();
             }
             catch (IOException ioe)
-            {}
+            {
+                // ignore
+            }
         }
     }
 
@@ -612,11 +521,6 @@ public abstract class AbstractTcpListener
          * The actual <tt>SocketChannel</tt>.
          */
         public final SocketChannel channel;
-
-        /**
-         * The time the channel was last found to be active.
-         */
-        long lastActive = System.currentTimeMillis();
 
         /**
          * The buffer which stores the data so far read from the channel.
@@ -783,11 +687,8 @@ public abstract class AbstractTcpListener
     {
         /**
          * Initializes a new <tt>ReadThread</tt>.
-         *
-         * @throws IOException if the selector to be used fails to open.
          */
         public ReadThread()
-            throws IOException
         {
             setName("TcpHarvester ReadThread");
             setDaemon(true);
@@ -818,50 +719,6 @@ public abstract class AbstractTcpListener
                     }
                 }
                 newChannels.clear();
-            }
-        }
-
-        /**
-         * Closes any inactive channels registered with {@link #readSelector}.
-         * A channel is considered inactive if it hasn't been available for
-         * reading for
-         * {@link MuxServerSocketChannelFactory#SOCKET_CHANNEL_READ_TIMEOUT}
-         * milliseconds.
-         */
-        private void cleanup()
-        {
-            long now = System.currentTimeMillis();
-
-            for (SelectionKey key : readSelector.keys())
-            {
-                // An invalid key specifies that either the channel was closed
-                // (in which case we do not have to do anything else to it) or
-                // that we no longer control the channel (i.e. we do not want to
-                // do anything else to it). 
-                if (!key.isValid())
-                    continue;
-
-                ChannelDesc channelDesc = (ChannelDesc) key.attachment();
-
-                if (channelDesc == null)
-                    continue;
-
-                long lastActive = channelDesc.lastActive;
-
-                if (lastActive != -1
-                        && now - lastActive
-                            > MuxServerSocketChannelFactory
-                                .SOCKET_CHANNEL_READ_TIMEOUT)
-                {
-                    // De-register from the Selector.
-                    key.cancel();
-
-                    SocketChannel channel = channelDesc.channel;
-
-                    logger.info("Read timeout for socket: " + channel.socket());
-
-                    closeNoExceptions(channel);
-                }
             }
         }
 
@@ -915,8 +772,6 @@ public abstract class AbstractTcpListener
 
                 if (read == -1)
                     throw new IOException("End of stream!");
-                else if (read > 0)
-                    channel.lastActive = System.currentTimeMillis();
 
                 if (!channel.buffer.hasRemaining())
                 {
@@ -1102,9 +957,6 @@ public abstract class AbstractTcpListener
                         break;
                 }
 
-                // clean up stale channels
-                cleanup();
-
                 checkForNewChannels();
 
                 for (SelectionKey key : readSelector.keys())
@@ -1164,7 +1016,9 @@ public abstract class AbstractTcpListener
                 readSelector.close();
             }
             catch (IOException ioe)
-            {}
+            {
+                // ignore
+            }
         }
     }
 }

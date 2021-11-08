@@ -1960,7 +1960,7 @@ public class PseudoTCPBase
             options_specified.add(kind);
         }
 
-        if (options_specified.indexOf(TCP_OPT_WND_SCALE) == -1)//options_specified.size() - 1)
+        if (!options_specified.contains(TCP_OPT_WND_SCALE))
         {
             logger.log(Level.WARNING, "Peer doesn't support window scaling");
             if (getM_rwnd_scale() > 0)
