@@ -64,6 +64,11 @@ public class DatagramCollector
 
     public void waitForPacket()
     {
+        waitForPacket(50);
+    }
+
+    public void waitForPacket(long timeoutMillis)
+    {
         synchronized(this)
         {
             if(packetReceived)
@@ -71,12 +76,12 @@ public class DatagramCollector
 
             try
             {
-                wait(50);
+                wait(timeoutMillis);
             }
             catch (InterruptedException e)
             {
-                // TODO Auto-generated catch block
                 e.printStackTrace();
+                Thread.currentThread().interrupt();
             }
         }
     }

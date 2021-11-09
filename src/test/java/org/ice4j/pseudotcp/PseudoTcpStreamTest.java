@@ -21,6 +21,7 @@ import static org.junit.jupiter.api.Assertions.*;
 
 import java.io.*;
 import java.net.*;
+import java.util.concurrent.atomic.*;
 import java.util.logging.*;
 import org.junit.jupiter.api.*;
 
@@ -37,6 +38,7 @@ public class PseudoTcpStreamTest
      * Test one-way transfer with @link(PseudoTcpStream)
      */
     @Test
+    @Timeout(10)
     public void testConnectTransferClose() 
         throws IOException
     {
@@ -57,6 +59,8 @@ public class PseudoTcpStreamTest
         server.bind(new InetSocketAddress(InetAddress.getLoopbackAddress(), 0));
         final InetSocketAddress serverAddress =
             new InetSocketAddress(InetAddress.getLoopbackAddress(), server.getLocalPort());
+        AtomicBoolean clientThreadEnded = new AtomicBoolean();
+        AtomicBoolean serverThreadEnded = new AtomicBoolean();
         Thread serverThread = new Thread(() ->
         {
             try
@@ -76,6 +80,7 @@ public class PseudoTcpStreamTest
                     receiveBuffer(server.getInputStream(), sizeB);
                 assertArrayEquals(bufferB, recvdBufferB);
                 // server.close();
+                serverThreadEnded.set(true);
             }
             catch (IOException ex)
             {
@@ -121,6 +126,7 @@ public class PseudoTcpStreamTest
                 assertEquals(sizeB, written);
                 os.flush();
                 client.close();
+                clientThreadEnded.set(true);
             }
             catch (IOException ex)
             {
@@ -137,8 +143,16 @@ public class PseudoTcpStreamTest
                 transferTimeout);
             if (success)
             {
-                clientThread.join();
-                serverThread.join();
+                clientThread.join(10_000);
+                if (!clientThreadEnded.get())
+                {
+                    fail("client thread did not end");
+                }
+                serverThread.join(10_000);
+                if (!serverThreadEnded.get())
+                {
+                    fail("server thread did not end");
+                }
                 server.close();
             }
             else
