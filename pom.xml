@@ -38,11 +38,10 @@
 
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-    <jicoco.version>1.1-90-gfa0e11e</jicoco.version>
-    <kotlin.version>1.5.20</kotlin.version>
-    <kotest.version>4.6.1</kotest.version>
-    <junit.version>5.7.0</junit.version>
-    <dokka.version>1.4.32</dokka.version>
+    <jicoco.version>1.1-95-gd8fd866</jicoco.version>
+    <kotlin.version>1.5.31</kotlin.version>
+    <kotest.version>4.6.3</kotest.version>
+    <junit.version>5.8.1</junit.version>
   </properties>
 
   <dependencies>
@@ -59,7 +58,7 @@
     <dependency>
       <groupId>${project.groupId}</groupId>
       <artifactId>jitsi-utils</artifactId>
-      <version>1.0-94-ge7c7a43</version>
+      <version>1.0-107-g566f8f8</version>
     </dependency>
     <dependency>
       <groupId>${project.groupId}</groupId>
@@ -71,7 +70,7 @@
     <dependency>
       <groupId>org.junit.platform</groupId>
       <artifactId>junit-platform-launcher</artifactId>
-      <version>1.7.0</version>
+      <version>1.8.1</version>
       <scope>test</scope>
     </dependency>
     <dependency>
@@ -107,7 +106,7 @@
     <dependency>
       <groupId>org.mockito</groupId>
       <artifactId>mockito-core</artifactId>
-      <version>3.6.28</version>
+      <version>4.0.0</version>
       <scope>test</scope>
     </dependency>
   </dependencies>
@@ -156,7 +155,7 @@
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-compiler-plugin</artifactId>
-        <version>3.8.0</version>
+        <version>3.8.1</version>
         <executions>
           <!-- Replacing default-compile as it is treated specially by maven -->
           <execution>
@@ -255,6 +254,9 @@
         <version>2.22.2</version>
         <configuration>
           <includes>**/*</includes>
+          <systemPropertyVariables>
+            <java.util.logging.config.file>${project.build.testSourceDirectory}/../resources/logging.properties</java.util.logging.config.file>
+          </systemPropertyVariables>
         </configuration>
       </plugin>
       <plugin>
@@ -478,7 +480,7 @@
           <plugin>
             <groupId>org.jetbrains.dokka</groupId>
             <artifactId>dokka-maven-plugin</artifactId>
-            <version>${dokka.version}</version>
+            <version>${kotlin.version}</version>
             <executions>
               <execution>
                 <phase>package</phase>

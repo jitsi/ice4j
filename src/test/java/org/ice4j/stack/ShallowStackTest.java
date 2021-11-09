@@ -18,6 +18,7 @@
  package org.ice4j.stack;
 
 import java.net.*;
+import java.util.concurrent.*;
 import java.util.logging.*;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -50,7 +51,7 @@ public class ShallowStackTest
     private TransportAddress dummyServerAddress = null;
     private TransportAddress localAddress = null;
 
-    private DatagramCollector dgramCollector = new DatagramCollector();
+    private final DatagramCollector dgramCollector = new DatagramCollector();
 
     private IceSocketWrapper   localSock = null;
 
@@ -127,7 +128,7 @@ public class ShallowStackTest
                               new SimpleResponseCollector());
 
         //wait for its arrival
-        dgramCollector.waitForPacket();
+        dgramCollector.waitForPacket(1000);
 
         DatagramPacket receivedPacket = dgramCollector.collectPacket();
 
@@ -145,7 +146,7 @@ public class ShallowStackTest
 
         dgramCollector.startListening(dummyServerSocket);
 
-        dgramCollector.waitForPacket();
+        dgramCollector.waitForPacket(1000);
 
         receivedPacket = dgramCollector.collectPacket();
 
@@ -318,7 +319,7 @@ public class ShallowStackTest
 
         dgramCollector.startListening(dummyServerSocket);
 
-        long firstTime = System.currentTimeMillis();
+        long firstTime = System.nanoTime();
 
         stunStack.sendRequest(bindingRequest,
                 dummyServerAddress,
@@ -326,7 +327,7 @@ public class ShallowStackTest
                 new SimpleResponseCollector());
 
         //wait for its arrival
-        dgramCollector.waitForPacket();
+        dgramCollector.waitForPacket(1000);
         DatagramPacket receivedPacket = dgramCollector.collectPacket();
 
         assertTrue((receivedPacket.getLength() > 0),
@@ -341,7 +342,7 @@ public class ShallowStackTest
 
         // wait for the 1st retransmission with originalWait
         dgramCollector.startListening(dummyServerSocket);
-        dgramCollector.waitForPacket();
+        dgramCollector.waitForPacket(1000);
         receivedPacket = dgramCollector.collectPacket();
 
         assertTrue((receivedPacket.getLength() > 0),
@@ -355,8 +356,7 @@ public class ShallowStackTest
             "The retransmitted request did not match the original.");
 
         // verify the retransmission is longer than the originalWait
-        long secondTime = System.currentTimeMillis();
-        assertTrue((secondTime - firstTime) >= originalWait);
+        assertTrue(System.nanoTime() - firstTime >= TimeUnit.MILLISECONDS.toNanos(originalWait));
 
         System.clearProperty(StackProperties.FIRST_CTRAN_RETRANS_AFTER);
     }

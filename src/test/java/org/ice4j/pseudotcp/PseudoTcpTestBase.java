@@ -608,9 +608,9 @@ public abstract class PseudoTcpTestBase
                 runClocks = false;
                 localClockThread.interrupt();
                 remoteClockThread.interrupt();
-                localClockThread.join();
+                localClockThread.join(5000);
                 localClockThread = null;
-                remoteClockThread.join();
+                remoteClockThread.join(5000);
                 remoteClockThread = null;
             }
             catch (InterruptedException ex)

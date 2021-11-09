@@ -485,8 +485,11 @@ public class TransactionSupportTests
                 clientAddress,
                 responseCollector);
 
-        //wait a while
-        Thread.sleep(1200);
+        //wait until a response arrives
+        synchronized (responseCollector)
+        {
+            responseCollector.wait(5000);
+        }
 
         //verify
         Vector<StunMessageEvent> reqs
@@ -496,7 +499,7 @@ public class TransactionSupportTests
             "Not all retransmissions were made for the expected period of time");
 
         //wait for a send
-        Thread.sleep(1800);
+        requestCollector.waitForRequest(1800);
 
         //verify
         reqs = requestCollector.getRequestsForTransaction(
@@ -560,14 +563,24 @@ public class TransactionSupportTests
          */
         public void waitForRequest()
         {
+            waitForRequest(50);
+        }
+
+        /**
+         * Blocks until a request arrives or the timeout passes.
+         */
+        public void waitForRequest(long timeoutMillis)
+        {
             synchronized(this)
             {
                 try
                 {
-                    wait(50);
+                    wait(timeoutMillis);
                 }
                 catch (InterruptedException e)
-                {}
+                {
+                    Thread.currentThread().interrupt();
+                }
             }
         }
     }
@@ -592,7 +605,7 @@ public class TransactionSupportTests
          * transaction and the runtime type of which specifies the failure reason
          * @see AbstractResponseCollector#processFailure(BaseStunMessageEvent)
          */
-        protected void processFailure(BaseStunMessageEvent event)
+        protected synchronized void processFailure(BaseStunMessageEvent event)
         {
             String receivedResponse;
 
@@ -603,6 +616,7 @@ public class TransactionSupportTests
             else
                 receivedResponse = "failure";
             receivedResponses.add(receivedResponse);
+            notifyAll();
         }
 
         /**
@@ -610,9 +624,10 @@ public class TransactionSupportTests
          *
          * @param response the event to log.
          */
-        public void processResponse(StunResponseEvent response)
+        public synchronized void processResponse(StunResponseEvent response)
         {
             receivedResponses.add(response);
+            notifyAll();
         }
     }
 }

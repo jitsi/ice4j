@@ -78,17 +78,10 @@ class PseudoTcpSocketImpl
      */
     private long readTimeout;
 
-    
-    /**
-     * 
-     */
     private PseudoTcpInputStream inputStream;
-    
-    /**
-     * 
-     */
+
     private PseudoTcpOutputStream outputstream;
-    
+
     /**
      *
      * @param conv_id conversation id, must be the same on both sides
@@ -196,6 +189,7 @@ class PseudoTcpSocketImpl
      * @param stream if true, create a stream socket; otherwise, create a datagram socket.
      * @throws IOException if an I/O error occurs while creating the socket.
      */
+    @Override
     protected void create(boolean stream) 
         throws IOException
     {
@@ -208,6 +202,7 @@ class PseudoTcpSocketImpl
      * @param port the port number.
      * @throws IOException 
      */
+    @Override
     protected void connect(String host, int port) 
         throws IOException
     {
@@ -220,6 +215,7 @@ class PseudoTcpSocketImpl
      * @param port the port number.
      * @throws IOException if an I/O error occurs when attempting a connection.
      */
+    @Override
     protected void connect(InetAddress address, int port) 
         throws IOException
     {
@@ -234,6 +230,7 @@ class PseudoTcpSocketImpl
      * @param timeout the timeout value, in milliseconds, or zero for no timeout.
      * @throws IOException if an I/O error occurs when attempting a connection.
      */
+    @Override
     protected void connect(SocketAddress address, int timeout) 
         throws IOException
     {
@@ -247,6 +244,7 @@ class PseudoTcpSocketImpl
      * @param port the port number.
      * @throws IOException 
      */
+    @Override
     public void bind(InetAddress host, int port) 
         throws IOException
     {
@@ -264,6 +262,7 @@ class PseudoTcpSocketImpl
      * @param backlog the maximum length of the queue.
      * @throws IOException if an I/O error occurs when creating the queue.
      */
+    @Override
     protected void listen(int backlog) 
         throws IOException
     {
@@ -271,6 +270,7 @@ class PseudoTcpSocketImpl
     }
 
     private Map<Integer, Object> options = new HashMap<>();
+    @Override
     public void setOption(int optID, Object value) 
         throws SocketException
     {
@@ -278,6 +278,7 @@ class PseudoTcpSocketImpl
         options.put(optID, value);
     }
 
+    @Override
     public Object getOption(int optID) 
         throws SocketException
     {
@@ -334,7 +335,6 @@ class PseudoTcpSocketImpl
      *
      * @param remoteAddress to which this socket connects to
      * @param timeout for this operation in ms
-     * @throws IOException
      */
     void doConnect(InetSocketAddress remoteAddress, long timeout)
         throws IOException
@@ -355,10 +355,9 @@ class PseudoTcpSocketImpl
                 while (pseudoTcp.getState() != PseudoTcpState.TCP_ESTABLISHED
                     &&  (noTimeout || (elapsed < timeout)) )
                 {
-                    long start = System.currentTimeMillis();
+                    long start = System.nanoTime();
                     state_notify.wait(timeout);
-                    long end = System.currentTimeMillis();
-                    elapsed += end - start;
+                    elapsed += TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - start);
                 }
                 if (pseudoTcp.getState() != PseudoTcpState.TCP_ESTABLISHED)
                 {
@@ -431,6 +430,7 @@ class PseudoTcpSocketImpl
      * @param s the accepted connection.
      * @throws IOException if an I/O error occurs when accepting the connection.
      */
+    @Override
     protected void accept(SocketImpl s)
                         throws IOException
     {
@@ -464,6 +464,7 @@ class PseudoTcpSocketImpl
         pseudoTcp.notifyClock(PseudoTCPBase.now());
         receiveThread = new Thread(new Runnable()
         {
+            @Override
             public void run()
             {
                 receivePackets();
@@ -483,6 +484,7 @@ class PseudoTcpSocketImpl
      * @param tcp the {@link PseudoTCPBase} that caused an event
      * @see PseudoTcpNotify#onTcpOpen(PseudoTCPBase)
      */
+    @Override
     public void onTcpOpen(PseudoTCPBase tcp)
     {
         logger.log(Level.FINE, "tcp opened");
@@ -501,6 +503,7 @@ class PseudoTcpSocketImpl
      * @param tcp the {@link PseudoTCPBase} that caused an event
      * @see PseudoTcpNotify#onTcpReadable(PseudoTCPBase)
      */
+    @Override
     public void onTcpReadable(PseudoTCPBase tcp)
     {
         if (logger.isLoggable(Level.FINER))
@@ -522,6 +525,7 @@ class PseudoTcpSocketImpl
      * @param tcp the {@link PseudoTCPBase} that caused an event
      * @see PseudoTcpNotify#onTcpWriteable(PseudoTCPBase)
      */
+    @Override
     public void onTcpWriteable(PseudoTCPBase tcp)
     {
 
@@ -545,6 +549,7 @@ class PseudoTcpSocketImpl
      * 
      * @see PseudoTcpNotify#onTcpClosed(PseudoTCPBase, IOException)
      */
+    @Override
     public void onTcpClosed(PseudoTCPBase tcp, IOException e)
     {
         if (e != null)
@@ -606,6 +611,7 @@ class PseudoTcpSocketImpl
      * 
      * @see PseudoTcpNotify#tcpWritePacket(PseudoTCPBase, byte[], int)
      */
+    @Override
     public WriteResult tcpWritePacket(PseudoTCPBase tcp, byte[] buffer, int len)
     {
         if (logger.isLoggable(Level.FINEST))
@@ -739,13 +745,7 @@ class PseudoTcpSocketImpl
         }
     }
 
-    private Runnable clockTaskRunner = new Runnable()
-    {
-        @Override
-        public void run() {
-            runClock();
-        }
-    };
+    private final Runnable clockTaskRunner = this::runClock;
 
     private void scheduleClockTask(long sleep)
     {
@@ -777,6 +777,7 @@ class PseudoTcpSocketImpl
      * @return an output stream for writing to this socket.
      * @throws IOException if an I/O error occurs when creating the output stream.
      */
+    @Override
     public OutputStream getOutputStream()
         throws IOException
     {
@@ -793,6 +794,7 @@ class PseudoTcpSocketImpl
      * @return a stream for reading from this socket.
      * @throws IOException 
      */
+    @Override
     public InputStream getInputStream()
         throws IOException
     {
@@ -808,6 +810,7 @@ class PseudoTcpSocketImpl
      * @return the number of bytes that can be read from this socket without blocking.
      * @throws IOException if an I/O error occurs when determining the number of bytes available.
      */
+    @Override
     protected int available()
         throws IOException
     {
@@ -816,16 +819,16 @@ class PseudoTcpSocketImpl
     
     /**
      * Closes this socket.
-     * @throws IOException 
      */
+    @Override
     public void close()
         throws IOException
     {
         try
         {
             pseudoTcp.close(true);
-            //System.out.println("ON CLOSE: in flight "+pseudoTcp.GetBytesInFlight());
-            //System.out.println("ON CLOSE: buff not sent "+pseudoTcp.GetBytesBufferedNotSent());
+            //System.out.println("ON CLOSE: in flight "+pseudoTcp.getBytesInFlight());
+            //System.out.println("ON CLOSE: buff not sent "+pseudoTcp.getBytesBufferedNotSent());
             onTcpClosed(pseudoTcp, null);
             socket.close();
             joinAllThreads();
@@ -851,6 +854,7 @@ class PseudoTcpSocketImpl
      * @param data The byte of data to send
      * @throws IOException if there is an error sending the data.
      */
+    @Override
     protected void sendUrgentData(int data)
         throws IOException
     {
@@ -908,7 +912,7 @@ class PseudoTcpSocketImpl
         public int read(byte[] buffer, int offset, int length)
             throws IOException
         {
-            long start = System.currentTimeMillis();
+            long start = System.nanoTime();
             int read;
             while (true)
             {
@@ -929,7 +933,7 @@ class PseudoTcpSocketImpl
                     if (readTimeout > 0)
                     {
                         //Check for timeout
-                        long elapsed = System.currentTimeMillis() - start;
+                        long elapsed = TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - start);
                         long left = readTimeout - elapsed;
                         if (left <= 0)
                         {
@@ -1033,12 +1037,6 @@ class PseudoTcpSocketImpl
             write(bytes);
         }
 
-        @Override
-        public void write(byte[] bytes) throws IOException
-        {
-            write(bytes, 0, bytes.length);
-        }
-
         /**
          * This method blocks until all data has been written.
          *
@@ -1053,7 +1051,7 @@ class PseudoTcpSocketImpl
         {
             int toSend = length;
             int sent;
-            long start = System.currentTimeMillis();
+            long start = System.nanoTime();
             while (toSend > 0)
             {
                 synchronized (pseudoTcp)
@@ -1073,7 +1071,7 @@ class PseudoTcpSocketImpl
                         {
                             if (writeTimeout > 0)
                             {
-                                long elapsed = System.currentTimeMillis() - start;
+                                long elapsed = TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - start);
                                 long left = writeTimeout - elapsed;
                                 if (left <= 0)
                                 {
@@ -1121,7 +1119,7 @@ class PseudoTcpSocketImpl
         public synchronized void flush() throws IOException
         {
             logger.log(Level.FINE, "Flushing...");
-            long start = System.currentTimeMillis();
+            long start = System.nanoTime();
             final Object ackNotify = pseudoTcp.getAckNotify();
             synchronized (ackNotify)
             {
@@ -1132,8 +1130,8 @@ class PseudoTcpSocketImpl
                         if (writeTimeout > 0)
                         {
                             //Check write timeout
-                            long elapsed = System.currentTimeMillis() - start;
-                            long left = writeTimeout - elapsed;                            
+                            long elapsed = TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - start);
+                            long left = writeTimeout - elapsed;
                             if (left <= 0)
                             {
                                 IOException e = 
@@ -1151,7 +1149,7 @@ class PseudoTcpSocketImpl
                     catch (InterruptedException ex)
                     {
                         throw new IOException("Flush stream interrupted", ex);
-                    }                    
+                    }
                 }
             }
             logger.log(Level.FINE, "Flushing completed");
@@ -1160,6 +1158,7 @@ class PseudoTcpSocketImpl
         @Override
         public void close() throws IOException
         {
+            PseudoTcpSocketImpl.this.close();
         }
     }
 
