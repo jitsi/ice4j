@@ -109,7 +109,6 @@ public class RoleConflictResolutionTest
 
         agent.createComponent(
             iceStream,
-            Transport.UDP,
             0x400, 0x400, 0xFFFF,
             KeepAliveStrategy.ALL_SUCCEEDED,
             true);

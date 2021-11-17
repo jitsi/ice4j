@@ -410,7 +410,6 @@ public class Agent
      *
      * @param stream the {@link IceMediaStream} that the new {@link Component}
      * should belong to.
-     * @param transport the transport protocol used by the component
      * @param preferredPort the port number that should be tried first when
      * binding local <tt>Candidate</tt> sockets for this <tt>Component</tt>.
      * @param minPort the port number where we should first try to bind before
@@ -430,21 +429,20 @@ public class Agent
      * <tt>minPort</tt> and <tt>maxPort</tt> before reaching the maximum allowed
      * number of retries.
      */
-    public Component createComponent(  IceMediaStream stream,
-                                       Transport      transport,
-                                       int            preferredPort,
-                                       int            minPort,
-                                       int            maxPort)
+    public Component createComponent(
+            IceMediaStream stream,
+            int preferredPort,
+            int minPort,
+            int maxPort)
         throws IllegalArgumentException,
                IOException,
                 BindException
     {
         return createComponent(
-                stream, transport,
+                stream,
                 preferredPort, minPort, maxPort,
                 KeepAliveStrategy.SELECTED_ONLY,
-                StackProperties.getBoolean(
-                    StackProperties.USE_COMPONENT_SOCKET, true));
+                StackProperties.getBoolean(StackProperties.USE_COMPONENT_SOCKET, true));
     }
 
     /**
@@ -453,7 +451,6 @@ public class Agent
      *
      * @param stream the {@link IceMediaStream} that the new {@link Component}
      * should belong to.
-     * @param transport the transport protocol used by the component
      * @param preferredPort the port number that should be tried first when
      * binding local <tt>Candidate</tt> sockets for this <tt>Component</tt>.
      * @param minPort the port number where we should first try to bind before
@@ -477,7 +474,6 @@ public class Agent
      */
     public Component createComponent(
         IceMediaStream stream,
-        Transport transport,
         int preferredPort,
         int minPort,
         int maxPort,
@@ -488,7 +484,6 @@ public class Agent
     {
         return createComponent(
             stream,
-            transport,
             preferredPort,
             minPort,
             maxPort,
@@ -502,7 +497,6 @@ public class Agent
      *
      * @param stream the {@link IceMediaStream} that the new {@link Component}
      * should belong to.
-     * @param transport the transport protocol used by the component
      * @param preferredPort the port number that should be tried first when
      * binding local <tt>Candidate</tt> sockets for this <tt>Component</tt>.
      * @param minPort the port number where we should first try to bind before
@@ -530,7 +524,6 @@ public class Agent
      */
     public Component createComponent(
         IceMediaStream stream,
-        Transport transport,
         int preferredPort,
         int minPort,
         int maxPort,
@@ -540,15 +533,7 @@ public class Agent
                IOException,
                BindException
     {
-        if (transport != Transport.UDP)
-        {
-            throw new IllegalArgumentException(
-                    "This implementation does not currently support transport: "
-                        + transport);
-        }
-
-        Component component
-            = stream.createComponent(keepAliveStrategy, useComponentSocket);
+        Component component = stream.createComponent(keepAliveStrategy, useComponentSocket);
 
         gatherCandidates(component, preferredPort, minPort, maxPort);
 
