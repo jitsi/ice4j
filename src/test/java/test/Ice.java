@@ -415,15 +415,13 @@ public class Ice
         //simultaneously with the others.
 
         //rtp
-        agent.createComponent(
-                stream, Transport.UDP, rtpPort, rtpPort, rtpPort + 100);
+        agent.createComponent(stream, rtpPort, rtpPort, rtpPort + 100);
 
         long endTime = System.currentTimeMillis();
         logger.info("RTP Component created in " + (endTime - startTime) + " ms");
         startTime = endTime;
         //rtcpComp
-        agent.createComponent(
-                stream, Transport.UDP, rtpPort + 1, rtpPort + 1, rtpPort + 101);
+        agent.createComponent(stream, rtpPort + 1, rtpPort + 1, rtpPort + 101);
 
         endTime = System.currentTimeMillis();
         logger.info("RTCP Component created in "

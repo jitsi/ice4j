@@ -107,8 +107,7 @@ public class IcePseudoTcp
             for (String hostname : hostnames)
             {
                 agent.addCandidateHarvester(new TurnCandidateHarvester(
-                    new TransportAddress(hostname, port,
-                                         Transport.UDP), longTermCredential));
+                    new TransportAddress(hostname, port, Transport.UDP), longTermCredential));
             }
         }
         //STREAM
@@ -127,8 +126,7 @@ public class IcePseudoTcp
         long startTime = System.currentTimeMillis();
 
         //udp component
-        agent.createComponent(
-            stream, Transport.UDP, pTcpPort, pTcpPort, pTcpPort + 100);
+        agent.createComponent(stream, pTcpPort, pTcpPort, pTcpPort + 100);
 
         long endTime = System.currentTimeMillis();
         logger.info("UDP Component created in " + (endTime - startTime) + " ms");
