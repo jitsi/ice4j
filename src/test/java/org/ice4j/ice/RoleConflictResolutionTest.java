@@ -131,9 +131,8 @@ public class RoleConflictResolutionTest
                 CandidatePair selectedPair = component.getSelectedPair();
                 if (selectedPair != null)
                 {
-                    logger.info( peer.toString() + ": selected pair for " +
-                        "component " + component.getName() + " :" +
-                        selectedPair.toString());
+                    logger.info(
+                            peer + ": selected pair for " + "component " + component.getName() + " :" + selectedPair);
                 }
             }
         }
