@@ -40,8 +40,7 @@ public class IcePseudoTcp
     /**
      * The logger.
      */
-    private static final Logger logger =
-        Logger.getLogger(IcePseudoTcp.class.getName());
+    private static final Logger logger = Logger.getLogger(IcePseudoTcp.class.getName());
     private static long startTime;
     /**
      * Local job thread variable
@@ -132,9 +131,7 @@ public class IcePseudoTcp
             stream, Transport.UDP, pTcpPort, pTcpPort, pTcpPort + 100);
 
         long endTime = System.currentTimeMillis();
-        logger.log(Level.INFO,
-                   "UDP Component created in " + (endTime - startTime) + " ms");
-        startTime = endTime;
+        logger.info("UDP Component created in " + (endTime - startTime) + " ms");
 
         return stream;
     }
@@ -154,18 +151,12 @@ public class IcePseudoTcp
 
             Object iceProcessingState = evt.getNewValue();
 
-            logger.log(
-                    Level.INFO,
-                    "Local agent entered the " + iceProcessingState
-                        + " state.");
+            logger.info("Local agent entered the " + iceProcessingState + " state.");
             if (iceProcessingState == IceProcessingState.COMPLETED)
             {
-                logger.log(
-                        Level.INFO,
-                        "Local - Total ICE processing time: "
-                            + (processingEndTime - startTime) + "ms");
+                logger.info("Local - Total ICE processing time: " + (processingEndTime - startTime) + "ms");
                 Agent agent = (Agent) evt.getSource();
-                logger.log(Level.INFO, "Local: Create pseudo tcp stream");
+                logger.info("Local: Create pseudo tcp stream");
                 IceMediaStream dataStream = agent.getStream("data");
                 Component udpComponent = dataStream.getComponents().get(0);
                 CandidatePair selectedPair = udpComponent.getSelectedPair();
@@ -175,25 +166,20 @@ public class IcePseudoTcp
                         = selectedPair.getLocalCandidate();
                     Candidate<?> remoteCandidate
                         = selectedPair.getRemoteCandidate();
-                    logger.log(Level.INFO, "Local: " + localCandidate);
-                    logger.log(Level.INFO, "Remote: " + remoteCandidate);
+                    logger.info("Local: " + localCandidate);
+                    logger.info("Remote: " + remoteCandidate);
                     try
                     {
-                        localJob = new LocalPseudoTcpJob(
-                            selectedPair.getDatagramSocket());
+                        localJob = new LocalPseudoTcpJob(selectedPair.getDatagramSocket());
                     }
                     catch (UnknownHostException ex)
                     {
-                        logger.log(Level.SEVERE,
-                                   "Error while trying to create"
-                            + " local pseudotcp thread " + ex);
+                        logger.severe("Error while trying to create local pseudotcp thread " + ex);
                     }
                 }
                 else
                 {
-                    logger.log(
-                            Level.INFO,
-                            "Failed to select any candidate pair");
+                    logger.info("Failed to select any candidate pair");
                 }
             }
             else
@@ -207,8 +193,7 @@ public class IcePseudoTcp
                      * garbage collection.
                      */
                     if ((localJob != null)
-                            && (iceProcessingState
-                                    == IceProcessingState.TERMINATED))
+                            && (iceProcessingState == IceProcessingState.TERMINATED))
                     {
                     	localJob.start();                        
                     }
@@ -236,18 +221,13 @@ public class IcePseudoTcp
 
             Object iceProcessingState = evt.getNewValue();
 
-            logger.log(
-                    Level.INFO,
-                    "Remote agent entered the " + iceProcessingState
-                        + " state.");
+            logger.info("Remote agent entered the " + iceProcessingState + " state.");
             if (iceProcessingState == IceProcessingState.COMPLETED)
             {
-                logger.log(Level.INFO,
-                           "Remote: Total ICE processing time: "
-                    + (processingEndTime - startTime) + " ms ");
+                logger.info("Remote: Total ICE processing time: " + (processingEndTime - startTime) + " ms ");
                 Agent agent = (Agent) evt.getSource();
 
-                logger.log(Level.INFO, "Remote: Create pseudo tcp stream");
+                logger.info("Remote: Create pseudo tcp stream");
                 IceMediaStream dataStream = agent.getStream("data");
                 Component udpComponent = dataStream.getComponents().get(0);
                 CandidatePair usedPair = udpComponent.getSelectedPair();
@@ -257,10 +237,8 @@ public class IcePseudoTcp
                         = usedPair.getLocalCandidate();
                     Candidate<?> remoteCandidate
                         = usedPair.getRemoteCandidate();
-                    logger.log(Level.INFO,
-                               "Remote: Local address " + localCandidate);
-                    logger.log(Level.INFO,
-                               "Remote: Peer address " + remoteCandidate);
+                    logger.info("Remote: Local address " + localCandidate);
+                    logger.info("Remote: Peer address " + remoteCandidate);
                     try
                     {
                         remoteJob = new RemotePseudoTcpJob(
@@ -269,15 +247,12 @@ public class IcePseudoTcp
                     }
                     catch (UnknownHostException ex)
                     {
-                        logger.log(Level.SEVERE,
-                                   "Error while trying to create"
-                            + " remote pseudotcp thread " + ex);
+                        logger.severe("Error while trying to create remote pseudotcp thread " + ex);
                     }
                 }
                 else
                 {
-                    logger.log(Level.SEVERE,
-                               "Remote: Failed to select any candidate pair");
+                    logger.severe("Remote: Failed to select any candidate pair");
                 }
             }
             else
@@ -313,15 +288,11 @@ public class IcePseudoTcp
         int remotePort = 6000;
 
         Agent localAgent = createAgent(localPort);
-        localAgent.setNominationStrategy(
-            NominationStrategy.NOMINATE_HIGHEST_PRIO);
-        Agent remotePeer =
-            createAgent(remotePort);
+        localAgent.setNominationStrategy(NominationStrategy.NOMINATE_HIGHEST_PRIO);
+        Agent remotePeer = createAgent(remotePort);
 
-        localAgent.addStateChangeListener(
-                new IcePseudoTcp.LocalIceProcessingListener());
-        remotePeer.addStateChangeListener(
-                new IcePseudoTcp.RemoteIceProcessingListener());
+        localAgent.addStateChangeListener(new IcePseudoTcp.LocalIceProcessingListener());
+        remotePeer.addStateChangeListener(new IcePseudoTcp.RemoteIceProcessingListener());
 
         //let them fight ... fights forge character.
         localAgent.setControlling(true);
@@ -344,10 +315,8 @@ public class IcePseudoTcp
             stream.setRemotePassword(localAgent.getLocalPassword());
         }
 
-        logger.log(Level.INFO, "Total candidate gathering time: {0} ms",
-                   (endTime - startTime));
-        logger.log(Level.INFO, "LocalAgent: {0}",
-                   localAgent);
+        logger.log(Level.INFO, "Total candidate gathering time: {0} ms", (endTime - startTime));
+        logger.log(Level.INFO, "LocalAgent: {0}", localAgent);
 
         localAgent.startConnectivityEstablishment();
 
@@ -359,8 +328,7 @@ public class IcePseudoTcp
 
         if (dataStream != null)
         {
-            logger.log(Level.INFO,
-                       "Local data clist:" + dataStream.getCheckList());
+            logger.info("Local data clist:" + dataStream.getCheckList());
         }
         //wait for one of the agents to complete it's job 
         synchronized (remoteAgentMonitor)
@@ -369,16 +337,16 @@ public class IcePseudoTcp
         }
         if (remoteJob != null)
         {
-            logger.log(Level.FINEST, "Remote thread join started");
+            logger.finest("Remote thread join started");
             remoteJob.join();
-            logger.log(Level.FINEST, "Remote thread joined");            
+            logger.finest("Remote thread joined");
         }
         remotePeer.free();
         if (localJob != null)
         {
-            logger.log(Level.FINEST, "Local thread join started");
+            logger.finest("Local thread join started");
             localJob.join();
-            logger.log(Level.FINEST, "Local thread joined");            
+            logger.finest("Local thread joined");
         }
         localAgent.free();
         System.exit(0);
@@ -397,15 +365,12 @@ public class IcePseudoTcp
         @Override
         public void run()
         {
-            logger.log(Level.FINEST, "Local pseudotcp worker started");
+            logger.finest("Local pseudotcp worker started");
             try
             {
-                logger.log(Level.INFO,
-                           "Local pseudotcp is using: " 
-                    + dgramSocket.getLocalSocketAddress()+dgramSocket);
+                logger.info("Local pseudotcp is using: " + dgramSocket.getLocalSocketAddress()+dgramSocket);
                 
-                PseudoTcpSocket socket = new PseudoTcpSocketFactory().
-                    createSocket(dgramSocket);
+                PseudoTcpSocket socket = new PseudoTcpSocketFactory().createSocket(dgramSocket);
                 socket.setConversationID(1073741824);
                 socket.setMTU(1500);
                 socket.setDebugName("L");
@@ -415,7 +380,7 @@ public class IcePseudoTcp
                 while (read != TEST_BYTES_COUNT)
                 {
                     read += socket.getInputStream().read(buffer);
-                    logger.log(Level.FINEST, "Local job read: " + read);
+                    logger.finest("Local job read: " + read);
                 }
                 //TODO: close when all received data is acked
                 //socket.close();
@@ -424,7 +389,7 @@ public class IcePseudoTcp
             {
                 throw new RuntimeException(e);
             }
-            logger.log(Level.FINEST, "Local pseudotcp worker finished");
+            logger.finest("Local pseudotcp worker finished");
         }
     }
 
@@ -444,13 +409,11 @@ public class IcePseudoTcp
         @Override
         public void run()
         {
-            logger.log(Level.FINEST, "Remote pseudotcp worker started");
+            logger.finest("Remote pseudotcp worker started");
             try
             {
-                logger.log(Level.INFO,
-                           "Remote pseudotcp is using: " +
-                           dgramSocket.getLocalSocketAddress()
-                           +" and will comunicate with: " + peerAddr);
+                logger.info("Remote pseudotcp is using: " + dgramSocket.getLocalSocketAddress()
+                           + " and will communicate with: " + peerAddr);
                 PseudoTcpSocket socket = new PseudoTcpSocketFactory().
                     createSocket(dgramSocket);
                 socket.setConversationID(1073741824);
@@ -465,15 +428,13 @@ public class IcePseudoTcp
                 //Socket will be closed by the iceAgent
                 //socket.close();
                 end = System.currentTimeMillis();
-                logger.log(Level.INFO,
-                           "Transferred " + TEST_BYTES_COUNT
-                    + " bytes in " + ((end - start) / 1000) + " sec");
+                logger.info("Transferred " + TEST_BYTES_COUNT + " bytes in " + ((end - start) / 1000) + " sec");
             }
             catch (IOException e)
             {
                 throw new RuntimeException(e);
             }
-            logger.log(Level.FINEST, "Remote pseudotcp worker finished");
+            logger.finest("Remote pseudotcp worker finished");
         }
     }
 }

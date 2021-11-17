@@ -419,8 +419,7 @@ public class Ice
                 stream, Transport.UDP, rtpPort, rtpPort, rtpPort + 100);
 
         long endTime = System.currentTimeMillis();
-        logger.info("RTP Component created in "
-            + (endTime - startTime) + " ms");
+        logger.info("RTP Component created in " + (endTime - startTime) + " ms");
         startTime = endTime;
         //rtcpComp
         agent.createComponent(
