@@ -912,7 +912,8 @@ class PseudoTcpSocketImpl
         public int read(byte[] buffer, int offset, int length)
             throws IOException
         {
-            if (length == 0) {  
+            if (length == 0) 
+            {  
                 return 0;
             }
 
