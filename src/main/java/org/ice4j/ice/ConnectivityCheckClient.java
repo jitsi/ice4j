@@ -369,6 +369,10 @@ class ConnectivityCheckClient
                 }
                 logger.info(msg + (ex == null ? "" : "\n" + ex.toString()));
             }
+            else
+            {
+                logger.warn("Failed to send " + request, ex);
+            }
         }
 
         return tran;
