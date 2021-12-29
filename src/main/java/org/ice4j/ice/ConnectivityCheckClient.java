@@ -854,10 +854,12 @@ class ConnectivityCheckClient
         else
         {
             int code = cl * 100 + co;
+            String reason = errorAttr.getReasonPhrase();
+            String trimmedReason = reason != null ? reason.trim() : null;
             logger.info(
                     "Error response for pair: " + pair.toShortString() +
                     ", failing.  Code = " + code +
-                    "(class=" + cl + "; number=" + co + "): " + errorAttr.getReasonPhrase().trim());
+                    "(class=" + cl + "; number=" + co + "): " + trimmedReason);
             pair.setStateFailed();
         }
     }
