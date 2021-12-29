@@ -302,6 +302,11 @@ public class Agent
     private final Logger logger;
 
     /**
+     * Whether this {@link Agent} should use dynamic ports. Can be overridden via {@link #setUseDynamicPorts(boolean)}.
+     */
+    private boolean useDynamicPorts = HarvestConfig.config.useDynamicPorts();
+
+    /**
      * Creates an empty <tt>Agent</tt> with no streams, and no address.
      */
     public Agent()
@@ -575,6 +580,14 @@ public class Agent
     }
 
     /**
+     * Sets the flag for whether this {@link Agent} instance should use dynamic ports.
+     */
+    public void setUseDynamicPorts(boolean value)
+    {
+        useDynamicPorts = value;
+    }
+
+    /**
      * Uses all <tt>CandidateHarvester</tt>s currently registered with this
      * <tt>Agent</tt> to obtain whatever addresses they can discover.
      * <p>
@@ -607,7 +620,7 @@ public class Agent
         logger.info("Gathering candidates for component " +
                 component.toShortString() +".");
 
-        if (HarvestConfig.config.useDynamicPorts())
+        if (useDynamicPorts)
         {
             hostCandidateHarvester.harvest(
                     component,
