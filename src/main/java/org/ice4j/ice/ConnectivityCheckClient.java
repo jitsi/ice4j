@@ -857,7 +857,7 @@ class ConnectivityCheckClient
             logger.info(
                     "Error response for pair: " + pair.toShortString() +
                     ", failing.  Code = " + code +
-                    "(class=" + cl + "; number=" + co + ")");
+                    "(class=" + cl + "; number=" + co + "): " + errorAttr.getReasonPhrase().trim());
             pair.setStateFailed();
         }
     }
