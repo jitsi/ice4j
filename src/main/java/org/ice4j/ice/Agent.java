@@ -500,6 +500,8 @@ public class Agent
      * Creates a new {@link Component} for the specified <tt>stream</tt> and
      * allocates potentially all local candidates that should belong to it.
      *
+     * If 0, 0, 0 are specified for preferred, min and max port, an ephemeral port will be used instead.
+     *
      * @param stream the {@link IceMediaStream} that the new {@link Component}
      * should belong to.
      * @param preferredPort the port number that should be tried first when
@@ -558,6 +560,31 @@ public class Agent
     }
 
     /**
+     * Creates a new {@link Component} for the specified {@code stream} and allocates potentially all local
+     * candidates that should belong to it.
+     *
+     * If dynamic ports are enabled, an ephemeral port will be used.
+     *
+     * @param stream the {@link IceMediaStream} that the new {@link Component} should belong to.
+     * @param keepAliveStrategy the keep-alive strategy, which dictates which
+     * candidates pairs are going to be kept alive.
+     * @param useComponentSocket whether to use the component socket mode (in
+     * which case the socket is available through the {@link Component} directly),
+     * or not (in which case the socket is available through the selected {@link CandidatePair}).
+     *
+     * @return the newly created {@link Component} and with a list containing all and only local candidates.
+     * @throws IOException if an error occurs while the underlying resolver lib is using sockets.
+     */
+    public Component createComponent(
+            IceMediaStream stream,
+            KeepAliveStrategy keepAliveStrategy,
+            boolean useComponentSocket)
+            throws IllegalArgumentException, IOException
+    {
+        return createComponent(stream, 0, 0, 0, keepAliveStrategy, useComponentSocket);
+    }
+
+    /**
      * Initializes a new {@link CandidatePair} instance from a
      * {@link LocalCandidate} and a {@link RemoteCandidate}. The method
      * represents a {@code CandidatePair} factory and is preferable to
@@ -595,6 +622,8 @@ public class Agent
      * you've registered all harvesters that you would want to use before
      * calling it.
      * </p>
+     * If 0, 0, 0 are specified for preferred, min and max port, an ephemeral port will be used instead.
+     *
      * @param component the <tt>Component</tt> that we'd like to gather
      * candidates for.
      * @param preferredPort the port number that should be tried first when
@@ -622,9 +651,7 @@ public class Agent
 
         if (useDynamicPorts)
         {
-            hostCandidateHarvester.harvest(
-                    component,
-                    preferredPort, minPort, maxPort, Transport.UDP);
+            hostCandidateHarvester.harvest(component, preferredPort, minPort, maxPort, Transport.UDP);
         }
         else
         {
