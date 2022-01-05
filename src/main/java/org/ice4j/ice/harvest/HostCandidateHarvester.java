@@ -342,7 +342,7 @@ public class HostCandidateHarvester
                 }
                 foundAtLeastOneUsableAddress = true;
 
-                if ((addr instanceof Inet4Address) || !config.useIpv6())
+                if ((addr instanceof Inet4Address) || config.useIpv6())
                 {
                     IceSocketWrapper sock = null;
                     try
