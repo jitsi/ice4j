@@ -276,6 +276,8 @@ public class HostCandidateHarvester
      * If that fails we will move through all ports between <tt>minPort</tt> and
      * <tt>maxPort</tt> and give up if still can't find a free port.
      *
+     * If 0, 0, 0 are specified for preferred, min and max port, an ephemeral port will be used instead.
+     *
      * @param component the {@link Component} that we'd like to gather candidate
      * addresses for.
      * @param preferredPort the port number that should be tried first when
@@ -439,7 +441,7 @@ public class HostCandidateHarvester
      * <tt>org.ice4j.ice.harvest.BLOCKED_INTERFACES</tt> list. It returns
      * <tt>false</tt> otherwise.
      */
-    static boolean isInterfaceAllowed(NetworkInterface iface)
+    public static boolean isInterfaceAllowed(NetworkInterface iface)
     {
         if (iface == null)
             throw new IllegalArgumentException("iface cannot be null");
@@ -519,6 +521,8 @@ public class HostCandidateHarvester
      * <tt>localAddress</tt> and a port in the range specified by the
      * <tt>minPort</tt> and <tt>maxPort</tt> parameters.
      *
+     * If 0, 0, 0 are specified for preferred, min and max port, an ephemeral port will be used instead.
+     *
      * @param laddr the address that we'd like to bind the socket on.
      * @param preferredPort the port number that we should try to bind to first.
      * @param minPort the port number where we should first try to bind before
@@ -545,7 +549,18 @@ public class HostCandidateHarvester
                BindException
     {
         // make sure port numbers are valid
-        this.checkPorts(preferredPort, minPort, maxPort);
+        boolean ephemeral = checkPorts(preferredPort, minPort, maxPort);
+        if (ephemeral)
+        {
+            ServerSocket socket = new ServerSocket();
+            socket.setReuseAddress(true);
+            socket.bind(new InetSocketAddress(laddr, 0));
+            if (logger.isLoggable(Level.FINEST))
+            {
+                logger.finest("Bound using an ephemeral port to " + socket.getLocalSocketAddress());
+            }
+            return new IceTcpServerSocketWrapper(new DelegatingServerSocket(socket), component);
+        }
 
         int bindRetries = StackProperties.getInt(
                         StackProperties.BIND_RETRIES,
@@ -589,8 +604,7 @@ public class HostCandidateHarvester
                 port = minPort;
         }
 
-        throw new BindException("Could not bind to any port between "
-                        + minPort + " and " + (port - 1));
+        throw new BindException("Could not bind to any port between " + minPort + " and " + (port - 1));
     }
 
     /**
@@ -604,6 +618,8 @@ public class HostCandidateHarvester
      * <tt>maxPort</tt> port number before the bind retries limit, we will then
      * start over again at <tt>minPort</tt> and keep going until we run out of
      * retries.
+     *
+     * If 0, 0, 0 are specified for preferred, min and max port, an ephemeral port will be used instead.
      *
      * @param laddr the address that we'd like to bind the socket on.
      * @param preferredPort the port number that we should try to bind to first.
@@ -632,7 +648,16 @@ public class HostCandidateHarvester
                BindException
     {
         // make sure port numbers are valid.
-        this.checkPorts(preferredPort, minPort, maxPort);
+        boolean ephemeral = checkPorts(preferredPort, minPort, maxPort);
+        if (ephemeral)
+        {
+            DatagramSocket socket = new MultiplexingDatagramSocket(0, laddr);
+            if (logger.isLoggable(Level.FINEST))
+            {
+                logger.finest("Bound using ephemeral port to " + socket.getLocalSocketAddress());
+            }
+            return new IceUdpSocketWrapper(socket);
+        }
 
         int bindRetries = StackProperties.getInt(
                         StackProperties.BIND_RETRIES,
@@ -694,8 +719,10 @@ public class HostCandidateHarvester
     }
 
     /**
-     * Checks if the different ports are correctly set. If not, throws an
-     * IllegalArgumentException.
+     * Checks if the different ports are correctly set. If not, throws {@link IllegalArgumentException}. The
+     * special values 0, 0, 0 for the parameters are interpreted as "use an ephemeral port".
+     *
+     * @return {@code true} if the params specify that an ephemeral port should be used, and {@code false} otherwise.
      *
      * @param preferredPort the port number that we should try to bind to first.
      * @param minPort the port number where we should first try to bind before
@@ -707,9 +734,14 @@ public class HostCandidateHarvester
      * <tt>maxPort</tt> is not a valid port number or if <tt>minPort</tt> is
      * greater than <tt>maxPort</tt>.
      */
-    private void checkPorts(int preferredPort, int minPort, int maxPort)
+    private static boolean checkPorts(int preferredPort, int minPort, int maxPort)
         throws IllegalArgumentException
     {
+        if (preferredPort == 0 && minPort == 0 && maxPort == 0)
+        {
+            return true;
+        }
+
         // make sure port numbers are valid
         if (!NetworkUtils.isValidPortNumber(minPort)
                         || !NetworkUtils.isValidPortNumber(maxPort))
@@ -734,6 +766,8 @@ public class HostCandidateHarvester
                             +") must be between minPort (" + minPort
                             + ") and maxPort (" + maxPort + ")");
         }
+
+        return false;
     }
 
     /**
