@@ -326,7 +326,15 @@ class Connector
         DatagramPacket datagramPacket
             = new DatagramPacket(message, 0, message.length, address);
 
-        sock.send(datagramPacket);
+        IceSocketWrapper sock = this.sock;
+        if (sock != null)
+        {
+            sock.send(datagramPacket);
+        }
+        else
+        {
+            logger.warning("Can not send message, Connector stopped.");
+        }
     }
 
     /**
