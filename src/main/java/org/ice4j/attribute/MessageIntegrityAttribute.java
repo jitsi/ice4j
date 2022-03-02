@@ -313,7 +313,7 @@ public class MessageIntegrityAttribute
         this.hmacSha1Content = calculateHmacSha1(content, offset, length, key);
 
         //username
-        System.arraycopy(hmacSha1Content, 0, binValue, 4, getDataLength());
+        System.arraycopy(hmacSha1Content, 0, binValue, HEADER_LENGTH, getDataLength());
 
         return binValue;
     }
