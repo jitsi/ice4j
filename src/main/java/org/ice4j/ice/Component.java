@@ -1063,8 +1063,7 @@ public class Component
                     componentID,
                     mediaStream,
                     KeepAliveStrategy.SELECTED_ONLY,
-                    StackProperties.getBoolean(
-                        StackProperties.USE_COMPONENT_SOCKET, true),
+                    AgentConfig.config.getUseComponentSocket(),
                     parentLogger
             );
     }

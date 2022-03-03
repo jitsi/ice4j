@@ -170,7 +170,7 @@ public class IceMediaStream
      * @param keepAliveStrategy the keep-alive strategy, which dictates which
      * candidates pairs are going to be kept alive.
      * @param useComponentSocket whether the "component socket" should be used
-     * or not. See {@link StackProperties#USE_COMPONENT_SOCKET}.
+     * or not. See {@link AgentConfig#getUseComponentSocket()}.
      *
      * @return the newly created stream <tt>Component</tt> after adding it to
      * the stream first.

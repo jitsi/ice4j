@@ -442,7 +442,7 @@ public class Agent
                 stream,
                 preferredPort, minPort, maxPort,
                 KeepAliveStrategy.SELECTED_ONLY,
-                StackProperties.getBoolean(StackProperties.USE_COMPONENT_SOCKET, true));
+                config.getUseComponentSocket());
     }
 
     /**
