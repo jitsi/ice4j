@@ -26,6 +26,7 @@ import static org.junit.jupiter.api.Assertions.*;
 import org.ice4j.*;
 import org.ice4j.message.*;
 import org.ice4j.socket.*;
+import org.jitsi.config.*;
 import org.junit.jupiter.api.*;
 
 /**
@@ -35,6 +36,21 @@ import org.junit.jupiter.api.*;
  */
 public class ShallowStackTest
 {
+    @BeforeAll
+    public static void setupConfig()
+    {
+        System.clearProperty(StackProperties.ALWAYS_SIGN);
+        System.setProperty("ice4j.software", "");
+        JitsiConfig.Companion.reloadNewConfig();
+    }
+
+    @AfterAll
+    public static void resetConfig()
+    {
+        System.clearProperty("ice4j.software");
+        JitsiConfig.Companion.reloadNewConfig();
+    }
+
     /**
      * The <tt>Logger</tt> used by the <tt>ShallowStackTest<tt> class and its
      * instances for logging output.
@@ -66,9 +82,6 @@ public class ShallowStackTest
     public void setUp()
         throws Exception
     {
-        System.clearProperty(StackProperties.ALWAYS_SIGN);
-        System.clearProperty(StackProperties.SOFTWARE);
-
         msgFixture = new MsgFixture();
 
         //init the stack

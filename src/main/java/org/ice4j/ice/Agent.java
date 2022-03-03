@@ -349,11 +349,6 @@ public class Agent
         //add the FINGERPRINT attribute to all messages.
         System.setProperty(StackProperties.ALWAYS_SIGN, "true");
 
-        //add the software attribute to all messages
-        if (StackProperties.getString(StackProperties.SOFTWARE) == null)
-            System.setProperty(StackProperties.SOFTWARE, "ice4j.org");
-
-
         password
             = ensureIceAttributeLength(
                     new BigInteger(128, random).toString(32),

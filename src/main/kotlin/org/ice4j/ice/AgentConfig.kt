@@ -55,6 +55,12 @@ class AgentConfig {
         "ice4j.ice.max-check-list-size".from(configSource)
     }
 
+    /** The value of the SOFTWARE attribute that ice4j should include in all outgoing messages. */
+    val software: String? by config {
+        "org.ice4j.SOFTWARE".from(configSource)
+        "ice4j.software".from(configSource)
+    }
+
     companion object {
         @JvmField
         val config = AgentConfig()

@@ -22,6 +22,7 @@ import java.util.logging.*;
 
 import org.ice4j.*;
 import org.ice4j.attribute.*;
+import org.ice4j.ice.*;
 import org.ice4j.stack.*;
 
 /**
@@ -1020,7 +1021,7 @@ public abstract class Message
 
         //add a SOFTWARE attribute if the user said so, and unless they did it
         //themselves.
-        String software = System.getProperty(StackProperties.SOFTWARE);
+        String software = AgentConfig.config.getSoftware();
 
         if (getAttribute(Attribute.SOFTWARE) == null
             && software != null && software.length() > 0)

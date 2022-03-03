@@ -87,12 +87,6 @@ public class StackProperties
                                 = "org.ice4j.MAX_RETRANSMISSIONS";
 
     /**
-     * The value of the SOFTWARE attribute that ice4j should include in all
-     * outgoing messages.
-     */
-    public static final String SOFTWARE = "org.ice4j.SOFTWARE";
-
-    /**
      * The name of the property that tells the stack whether or not it should
      * let the application see retransmissions of incoming requests.
      */
