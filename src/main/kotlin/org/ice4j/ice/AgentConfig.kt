@@ -55,6 +55,23 @@ class AgentConfig {
         "ice4j.ice.max-check-list-size".from(configSource)
     }
 
+    /** The value of the SOFTWARE attribute that ice4j should include in all outgoing messages. */
+    val software: String? by config {
+        "org.ice4j.SOFTWARE".from(configSource)
+        "ice4j.software".from(configSource)
+    }
+
+    /**
+     * Whether the per-component merging socket should be enabled by default (the default value can be
+     * overridden with the [Agent] API).
+     * If enabled, the user of the library must use the socket instance provided by [Component.getSocket]. Otherwise,
+     * the socket instance from the desired [CandidatePair] must be used.
+     */
+    val useComponentSocket: Boolean by config {
+        "org.ice4j.ice.USE_COMPONENT_SOCKET".from(configSource)
+        "ice4j.use-component-socket".from(configSource)
+    }
+
     companion object {
         @JvmField
         val config = AgentConfig()

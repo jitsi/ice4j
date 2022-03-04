@@ -87,12 +87,6 @@ public class StackProperties
                                 = "org.ice4j.MAX_RETRANSMISSIONS";
 
     /**
-     * The value of the SOFTWARE attribute that ice4j should include in all
-     * outgoing messages.
-     */
-    public static final String SOFTWARE = "org.ice4j.SOFTWARE";
-
-    /**
      * The name of the property that tells the stack whether or not it should
      * let the application see retransmissions of incoming requests.
      */
@@ -171,18 +165,6 @@ public class StackProperties
      */
     public static final String BLOCKED_ADDRESSES
             = "org.ice4j.ice.harvest.BLOCKED_ADDRESSES";
-
-    /**
-     * The name of the property which specifies whether the per-component
-     * merging socket should be enabled by default (the default value can be
-     * overridden with {@link Agent#createComponent(IceMediaStream, Transport,
-     * int, int, int, KeepAliveStrategy, boolean)}.
-     * If enabled, the user of the library must use the socket instance provided
-     * by {@link Component#getSocket()}. Otherwise, the socket instance from the
-     * desired {@link CandidatePair} must be used.
-     */
-    public static final String USE_COMPONENT_SOCKET
-        = "org.ice4j.ice.USE_COMPONENT_SOCKET";
 
     /**
      * Returns the String value of the specified property (minus all

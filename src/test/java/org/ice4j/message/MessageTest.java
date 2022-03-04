@@ -22,10 +22,27 @@ import static org.junit.jupiter.api.Assertions.*;
 import org.ice4j.*;
 import org.ice4j.attribute.*;
 import org.ice4j.stack.*;
+import org.jitsi.config.*;
 import org.junit.jupiter.api.*;
 
 public class MessageTest
 {
+
+    @BeforeAll
+    public static void setupConfig()
+    {
+        System.clearProperty(StackProperties.ALWAYS_SIGN);
+        System.setProperty("ice4j.software", "");
+        JitsiConfig.Companion.reloadNewConfig();
+    }
+
+    @AfterAll
+    public static void resetConfig()
+    {
+        System.clearProperty("ice4j.software");
+        JitsiConfig.Companion.reloadNewConfig();
+    }
+
     private Message bindingRequest       = null;
     private Message bindingResponse      = null;
 
@@ -45,8 +62,6 @@ public class MessageTest
     @BeforeEach
     public void setUp() throws Exception
     {
-        System.clearProperty(StackProperties.ALWAYS_SIGN);
-        System.clearProperty(StackProperties.SOFTWARE);
         msgFixture = new MsgFixture();
 
         stunStack = new StunStack();
