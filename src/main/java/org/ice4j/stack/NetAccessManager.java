@@ -42,7 +42,7 @@ import java.util.logging.*;
  * @author Boris Grozev
  * @author Yura Yaroshevich
  */
-class NetAccessManager
+public class NetAccessManager
     implements ErrorHandler
 {
     /**
@@ -628,10 +628,17 @@ class NetAccessManager
         Connector ap = getConnector(srcAddr, remoteAddr);
         if (ap == null)
         {
-            throw new IllegalArgumentException(
-                    "No socket found for " + srcAddr + "->" + remoteAddr);
+            throw new IllegalArgumentException("No socket found for " + srcAddr + "->" + remoteAddr);
         }
 
         ap.sendMessage(bytes, remoteAddr);
+    }
+
+    public class SocketNotFoundException extends IllegalArgumentException
+    {
+        private SocketNotFoundException(String message)
+        {
+            super(message);
+        }
     }
 }

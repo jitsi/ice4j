@@ -21,7 +21,6 @@ import java.net.*;
 import java.time.*;
 import java.util.*;
 import java.util.concurrent.*;
-import java.util.concurrent.atomic.*;
 
 import org.ice4j.*;
 import org.ice4j.attribute.*;
@@ -29,7 +28,6 @@ import org.ice4j.message.*;
 import org.ice4j.socket.*;
 import org.ice4j.stack.*;
 import org.ice4j.util.*;
-import org.jitsi.utils.logging2.*;
 import org.jitsi.utils.logging2.Logger;
 
 /**
@@ -344,9 +342,12 @@ class ConnectivityCheckClient
                         maxRetransmissions);
             if (logger.isTraceEnabled())
             {
-                logger.trace(
-                        "checking pair " + candidatePair + " tid " + tran);
+                logger.trace("checking pair " + candidatePair + " tid " + tran);
             }
+        }
+        catch (NetAccessManager.SocketNotFoundException e)
+        {
+            logger.info("Could not start connectivity check: " + e.getMessage());
         }
         catch (Exception ex)
         {
