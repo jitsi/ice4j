@@ -59,6 +59,32 @@
       <groupId>${project.groupId}</groupId>
       <artifactId>jitsi-utils</artifactId>
       <version>1.0-107-g566f8f8</version>
+      <exclusions>
+        <exclusion>
+          <groupId>net.java.dev.jna</groupId>
+          <artifactId>jna</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>com.google.errorprone</groupId>
+          <artifactId>error_prone_annotations</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>org.jetbrains.kotlin</groupId>
+          <artifactId>kotlin-stdlib-common</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>com.google.j2objc</groupId>
+          <artifactId>j2objc-annotations</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>com.google.code.findbugs</groupId>
+          <artifactId>jsr305</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>com.google.guava</groupId>
+          <artifactId>listenablefuture</artifactId>
+        </exclusion>
+      </exclusions>
     </dependency>
     <dependency>
       <groupId>${project.groupId}</groupId>
@@ -72,36 +98,80 @@
       <artifactId>junit-platform-launcher</artifactId>
       <version>1.8.1</version>
       <scope>test</scope>
+      <exclusions>
+        <exclusion>
+            <groupId>org.apiguardian</groupId>
+            <artifactId>apiguardian-api</artifactId>
+        </exclusion>
+      </exclusions>
     </dependency>
     <dependency>
       <groupId>org.junit.jupiter</groupId>
       <artifactId>junit-jupiter-api</artifactId>
       <version>${junit.version}</version>
       <scope>test</scope>
+      <exclusions>
+        <exclusion>
+            <groupId>org.apiguardian</groupId>
+            <artifactId>apiguardian-api</artifactId>
+        </exclusion>
+      </exclusions>
     </dependency>
     <dependency>
       <groupId>org.junit.jupiter</groupId>
       <artifactId>junit-jupiter-engine</artifactId>
       <version>${junit.version}</version>
       <scope>test</scope>
+      <exclusions>
+        <exclusion>
+            <groupId>org.apiguardian</groupId>
+            <artifactId>apiguardian-api</artifactId>
+        </exclusion>
+      </exclusions>
     </dependency>
     <dependency>
         <groupId>io.kotest</groupId>
         <artifactId>kotest-assertions-core-jvm</artifactId>
         <version>${kotest.version}</version>
         <scope>test</scope>
+        <exclusions>
+            <exclusion>
+                <groupId>org.jetbrains.kotlin</groupId>
+                <artifactId>kotlin-stdlib-common</artifactId>
+            </exclusion>
+        </exclusions>
     </dependency>
     <dependency>
         <groupId>io.kotest</groupId>
         <artifactId>kotest-runner-junit5-jvm</artifactId>
         <version>${kotest.version}</version>
         <scope>test</scope>
+        <exclusions>
+            <exclusion>
+                <groupId>org.junit.platform</groupId>
+                <artifactId>junit-platform-suite-api</artifactId>
+            </exclusion>
+            <exclusion>
+                <groupId>org.apiguardian</groupId>
+                <artifactId>apiguardian-api</artifactId>
+            </exclusion>
+        </exclusions>
     </dependency>
     <dependency>
       <groupId>org.jitsi</groupId>
       <artifactId>jicoco-test-kotlin</artifactId>
       <version>${jicoco.version}</version>
       <scope>test</scope>
+      <exclusions>
+        <exclusion>
+            <groupId>io.mockk</groupId>
+            <artifactId>mockk-common</artifactId>
+        </exclusion>
+        <exclusion>
+            <groupId>io.mockk</groupId>
+            <artifactId>mockk-dsl</artifactId>
+        </exclusion>
+      </exclusions>
     </dependency>
     <dependency>
       <groupId>org.mockito</groupId>
