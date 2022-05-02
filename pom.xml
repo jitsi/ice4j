@@ -58,7 +58,7 @@
     <dependency>
       <groupId>${project.groupId}</groupId>
       <artifactId>jitsi-utils</artifactId>
-      <version>1.0-107-g566f8f8</version>
+      <version>1.0-114-g43815ed</version>
     </dependency>
     <dependency>
       <groupId>${project.groupId}</groupId>
