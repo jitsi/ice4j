@@ -18,14 +18,12 @@
 package org.ice4j.ice;
 
 import java.beans.*;
-import java.io.*;
 import java.net.*;
 import java.util.*;
 import java.util.concurrent.*;
 
 import org.ice4j.*;
 import org.ice4j.socket.*;
-import org.jitsi.utils.collections.*;
 import org.jitsi.utils.logging2.*;
 
 /**
@@ -194,7 +192,7 @@ public class Component
             = Objects.requireNonNull(keepAliveStrategy, "keepAliveStrategy");
         this.logger = parentLogger.createChildLogger(
                 this.getClass().getName(),
-                JMap.of("componentId", Integer.toString(componentID))
+                Collections.singletonMap("componentId", Integer.toString(componentID))
         );
 
         if (useComponentSocket)

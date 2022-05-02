@@ -155,7 +155,9 @@ public class IceMediaStream
      */
     protected IceMediaStream(Agent parentAgent, String name)
     {
-        logger = parentAgent.getLogger().createChildLogger(IceMediaStream.class.getName(), JMap.of("name", name));
+        logger = parentAgent.getLogger().createChildLogger(
+                IceMediaStream.class.getName(),
+                Collections.singletonMap("name", name));
         this.name = name;
         this.parentAgent = parentAgent;
         checkList = new CheckList(this);
