@@ -628,7 +628,7 @@ public class NetAccessManager
         Connector ap = getConnector(srcAddr, remoteAddr);
         if (ap == null)
         {
-            throw new IllegalArgumentException("No socket found for " + srcAddr + "->" + remoteAddr);
+            throw new SocketNotFoundException("No socket found for " + srcAddr + "->" + remoteAddr);
         }
 
         ap.sendMessage(bytes, remoteAddr);
