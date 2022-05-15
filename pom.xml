@@ -38,10 +38,10 @@
 
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-    <jicoco.version>1.1-95-gd8fd866</jicoco.version>
+    <jicoco.version>1.1-104-g20c4353</jicoco.version>
     <kotlin.version>1.5.31</kotlin.version>
-    <kotest.version>4.6.3</kotest.version>
-    <junit.version>5.8.1</junit.version>
+    <kotest.version>5.3.0</kotest.version>
+    <junit.version>5.8.2</junit.version>
   </properties>
 
   <dependencies>
@@ -70,7 +70,7 @@
     <dependency>
       <groupId>org.junit.platform</groupId>
       <artifactId>junit-platform-launcher</artifactId>
-      <version>1.8.1</version>
+      <version>1.8.2</version>
       <scope>test</scope>
     </dependency>
     <dependency>
@@ -106,7 +106,7 @@
     <dependency>
       <groupId>org.mockito</groupId>
       <artifactId>mockito-core</artifactId>
-      <version>4.0.0</version>
+      <version>4.5.1</version>
       <scope>test</scope>
     </dependency>
   </dependencies>
@@ -146,7 +146,7 @@
           </execution>
         </executions>
         <configuration>
-          <jvmTarget>1.8</jvmTarget>
+          <jvmTarget>11</jvmTarget>
           <args>
             <arg>-Xallow-result-return-type</arg>
           </args>
@@ -155,7 +155,7 @@
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-compiler-plugin</artifactId>
-        <version>3.8.1</version>
+        <version>3.10.1</version>
         <executions>
           <!-- Replacing default-compile as it is treated specially by maven -->
           <execution>
@@ -183,8 +183,7 @@
           </execution>
         </executions>
         <configuration>
-          <source>1.8</source>
-          <target>1.8</target>
+          <release>11</release>
           <compilerArgs>
             <arg>-Xlint:all</arg>
           </compilerArgs>
@@ -193,10 +192,17 @@
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-checkstyle-plugin</artifactId>
-        <version>3.1.1</version>
+        <version>3.1.2</version>
         <configuration>
           <configLocation>checkstyle.xml</configLocation>
         </configuration>
+        <dependencies>
+          <dependency>
+            <groupId>com.puppycrawl.tools</groupId>
+            <artifactId>checkstyle</artifactId>
+            <version>10.1</version>
+          </dependency>
+        </dependencies>
         <executions>
           <execution>
             <goals>
@@ -208,7 +214,7 @@
       <plugin>
         <groupId>com.github.gantsign.maven</groupId>
         <artifactId>ktlint-maven-plugin</artifactId>
-        <version>1.7.0</version>
+        <version>1.13.1</version>
         <configuration>
           <sourceRoots>
             <sourceRoot>${project.basedir}/src/main/kotlin</sourceRoot>
@@ -229,7 +235,7 @@
       <plugin>
         <groupId>biz.aQute.bnd</groupId>
         <artifactId>bnd-maven-plugin</artifactId>
-        <version>5.2.0</version>
+        <version>6.2.0</version>
         <executions>
           <execution>
             <goals>
@@ -241,7 +247,7 @@
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-jar-plugin</artifactId>
-        <version>3.2.0</version>
+        <version>3.2.2</version>
         <configuration>
           <archive>
             <manifestFile>${project.build.outputDirectory}/META-INF/MANIFEST.MF</manifestFile>
@@ -251,7 +257,7 @@
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-surefire-plugin</artifactId>
-        <version>2.22.2</version>
+        <version>3.0.0-M6</version>
         <configuration>
           <includes>**/*</includes>
           <systemPropertyVariables>
@@ -262,12 +268,12 @@
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-deploy-plugin</artifactId>
-        <version>2.8.2</version>
+        <version>3.0.0-M2</version>
       </plugin>
       <plugin>
         <groupId>org.sonatype.plugins</groupId>
         <artifactId>nexus-staging-maven-plugin</artifactId>
-        <version>1.6.8</version>
+        <version>1.6.13</version>
         <extensions>true</extensions>
         <configuration>
           <serverId>ossrh</serverId>
@@ -282,6 +288,7 @@
         <plugin>
           <groupId>org.codehaus.mojo</groupId>
           <artifactId>exec-maven-plugin</artifactId>
+          <version>3.0.0</version>
           <executions>
             <execution>
               <goals>
@@ -311,7 +318,7 @@
           <plugin>
             <groupId>org.jacoco</groupId>
             <artifactId>jacoco-maven-plugin</artifactId>
-            <version>0.8.7</version>
+            <version>0.8.8</version>
             <executions>
               <execution>
                 <goals>
@@ -448,7 +455,7 @@
           <plugin>
             <groupId>org.codehaus.mojo</groupId>
             <artifactId>build-helper-maven-plugin</artifactId>
-            <version>3.2.0</version>
+            <version>3.3.0</version>
             <executions>
               <execution>
                 <phase>generate-sources</phase>
@@ -493,7 +500,7 @@
           <plugin>
             <groupId>org.apache.maven.plugins</groupId>
             <artifactId>maven-gpg-plugin</artifactId>
-            <version>1.6</version>
+            <version>3.0.1</version>
             <executions>
               <execution>
                 <id>sign-artifacts</id>

@@ -20,7 +20,7 @@ import io.kotest.core.spec.IsolationMode
 import io.kotest.core.spec.Spec
 import io.kotest.core.spec.style.ShouldSpec
 import io.kotest.extensions.system.withSystemProperties
-import org.jitsi.config.useNewConfig
+import org.jitsi.config.withNewConfig
 import org.jitsi.metaconfig.MetaconfigSettings
 
 /**
@@ -29,13 +29,13 @@ import org.jitsi.metaconfig.MetaconfigSettings
 abstract class ConfigTest : ShouldSpec() {
     override fun isolationMode(): IsolationMode? = IsolationMode.InstancePerLeaf
 
-    override fun beforeSpec(spec: Spec) {
+    override suspend fun beforeSpec(spec: Spec) {
         super.beforeSpec(spec)
         MetaconfigSettings.cacheEnabled = false
     }
 
     inline fun withNewConfig(config: String, block: () -> Unit) {
-        useNewConfig("new-${this::class.simpleName}", config, true, block)
+        withNewConfig(config, "new-${this::class.simpleName}", true, block)
     }
 
     fun withLegacyConfig(config: Map<String, String?>, block: () -> Unit) = withSystemProperties(config) { block }
