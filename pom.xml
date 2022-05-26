@@ -39,7 +39,7 @@
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <jicoco.version>1.1-104-g20c4353</jicoco.version>
-    <kotlin.version>1.5.31</kotlin.version>
+    <kotlin.version>1.6.21</kotlin.version>
     <kotest.version>5.3.0</kotest.version>
     <junit.version>5.8.2</junit.version>
   </properties>
