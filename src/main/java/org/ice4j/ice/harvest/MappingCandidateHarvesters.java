@@ -220,17 +220,14 @@ public class MappingCandidateHarvesters
 
         List<Callable<StunMappingCandidateHarvester>> tasks = new LinkedList<>();
 
-        // Create a StunMappingCandidateHarvester for each local:remote address
-        // pair.
-        List<InetAddress> localAddresses
-            = HostCandidateHarvester.getAllAllowedAddresses();
+        // Create a StunMappingCandidateHarvester for each local:remote address pair.
+        List<InetAddress> localAddresses = HostCandidateHarvester.getAllAllowedAddresses();
         for (String stunServer : stunServers)
         {
             String[] addressAndPort = stunServer.split(":");
             if (addressAndPort.length < 2)
             {
-                logger.severe("Failed to parse STUN server address: "
-                                  + stunServer);
+                logger.severe("Failed to parse STUN server address: " + stunServer);
                 continue;
             }
             int port;
@@ -259,15 +256,12 @@ public class MappingCandidateHarvesters
                     continue;
                 }
 
-                TransportAddress localAddress
-                    = new TransportAddress(localInetAddress, 0, Transport.UDP);
+                TransportAddress localAddress = new TransportAddress(localInetAddress, 0, Transport.UDP);
 
                 logger.info("Using " + remoteAddress + " for StunMappingCandidateHarvester (localAddress="
                         + localAddress + ").");
                 final StunMappingCandidateHarvester stunHarvester
-                    = new StunMappingCandidateHarvester(
-                            localAddress,
-                            remoteAddress);
+                    = new StunMappingCandidateHarvester(localAddress, remoteAddress);
 
                 Callable<StunMappingCandidateHarvester> task = () ->
                 {
@@ -278,8 +272,14 @@ public class MappingCandidateHarvesters
             }
         }
 
-        // Now run discover() on all created harvesters in parallel and pick
-        // the ones which succeeded.
+        if (tasks.isEmpty())
+        {
+            logger.warning("STUN mapping harvesters are configured, but no allowed local addresses were found." +
+                    " Not using STUN.");
+            return stunHarvesters;
+        }
+
+        // Now run discover() on all created harvesters in parallel and pick the ones which succeeded.
         ExecutorService es = ExecutorFactory.createFixedThreadPool(tasks.size(), "ice4j.Harvester-executor-");
 
         try
