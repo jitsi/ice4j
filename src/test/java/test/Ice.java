@@ -339,29 +339,9 @@ public class Ice
         {
             // STUN
             StunCandidateHarvester stunHarv = new StunCandidateHarvester(
-                new TransportAddress("stun.jitsi.net", 3478, Transport.UDP));
-            StunCandidateHarvester stun6Harv = new StunCandidateHarvester(
-                new TransportAddress("stun6.jitsi.net", 3478, Transport.UDP));
+                new TransportAddress("meet-jit-si-turnrelay.jitsi.net", 3478, Transport.UDP));
 
             agent.addCandidateHarvester(stunHarv);
-            agent.addCandidateHarvester(stun6Harv);
-
-            // TURN
-            String[] hostnames = new String[]
-                                 {
-                                    "stun.jitsi.net",
-                                    "stun6.jitsi.net"
-                                 };
-            int port = 3478;
-            LongTermCredential longTermCredential
-                = new LongTermCredential("guest", "anonymouspower!!");
-
-            for (String hostname : hostnames)
-                agent.addCandidateHarvester(
-                        new TurnCandidateHarvester(
-                                new TransportAddress(
-                                    hostname, port, Transport.UDP),
-                                longTermCredential));
 
             //UPnP: adding an UPnP harvester because they are generally slow
             //which makes it more convenient to test things like trickle.
