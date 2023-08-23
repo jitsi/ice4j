@@ -27,6 +27,10 @@ class AgentConfig {
         "ice4j.consent-freshness.interval".from(configSource)
     }
 
+    val randomizeConsentFreshnessInterval: Boolean by config {
+        "ice4j.consent-freshness.randomize".from(configSource)
+    }
+
     val consentFreshnessOriginalWaitInterval: Duration by config {
         "org.ice4j.ice.CONSENT_FRESHNESS_WAIT_INTERVAL".from(configSource)
             .convertFrom<Long> { Duration.ofMillis(it) }

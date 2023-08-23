@@ -2656,7 +2656,19 @@ public class Agent
         {
             if (shouldRunStunKeepAlive())
             {
-                return Duration.ofMillis(keepAliveSent == 0 ? 0 : consentFreshnessInterval);
+                if (keepAliveSent == 0)
+                {
+                    return Duration.ZERO;
+                }
+                else
+                {
+                    double r = 1;
+                    if (config.getRandomizeConsentFreshnessInterval())
+                    {
+                        r = 0.8d + ThreadLocalRandom.current().nextDouble() * 0.4;
+                    }
+                    return Duration.ofMillis((long) (consentFreshnessInterval * r));
+                }
             }
             return Duration.ofMillis(-1);
         }
