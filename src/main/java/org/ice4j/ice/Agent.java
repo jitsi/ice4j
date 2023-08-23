@@ -129,8 +129,6 @@ public class Agent
     private final Map<String, IceMediaStream> mediaStreams
         = new LinkedHashMap<>();
 
-    SecureRandom random = new SecureRandom();
-
     /**
      * The candidate harvester that we use to gather candidate on the local
      * machine.
@@ -328,6 +326,7 @@ public class Agent
      */
     public Agent(String ufragPrefix, Logger parentLogger)
     {
+        SecureRandom random = new SecureRandom();
 
         String ufrag = ufragPrefix == null ? "" : ufragPrefix;
         ufrag += new BigInteger(24, random).toString(32);
@@ -2666,7 +2665,7 @@ public class Agent
                     double r = 1;
                     if (config.getRandomizeConsentFreshnessInterval())
                     {
-                        r = 0.8d + random.nextDouble() * 0.4;
+                        r = 0.8d + ThreadLocalRandom.current().nextDouble() * 0.4;
                     }
                     return Duration.ofMillis((long) (consentFreshnessInterval * r));
                 }
