@@ -7,3 +7,10 @@ charset = utf-8
 indent_size = 2
 indent_style = space
 max_line_length = 120
+
+[*.{kt,kts}]
+max_line_length = 120
+
+# I find trailing commas annoying
+ktlint_standard_trailing-comma-on-call-site = disabled
+ktlint_standard_trailing-comma-on-declaration-site = disabled
