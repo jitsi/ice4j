@@ -38,10 +38,10 @@
 
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-    <jicoco.version>1.1-104-g20c4353</jicoco.version>
-    <kotlin.version>1.6.21</kotlin.version>
-    <kotest.version>5.3.0</kotest.version>
-    <junit.version>5.8.2</junit.version>
+    <jicoco.version>1.1-126-g1f776be</jicoco.version>
+    <kotlin.version>1.9.10</kotlin.version>
+    <kotest.version>5.7.2</kotest.version>
+    <junit.version>5.10.0</junit.version>
   </properties>
 
   <dependencies>
@@ -58,7 +58,7 @@
     <dependency>
       <groupId>${project.groupId}</groupId>
       <artifactId>jitsi-utils</artifactId>
-      <version>1.0-114-g43815ed</version>
+      <version>1.0-127-g6c65524</version>
     </dependency>
     <dependency>
       <groupId>${project.groupId}</groupId>
@@ -70,7 +70,7 @@
     <dependency>
       <groupId>org.junit.platform</groupId>
       <artifactId>junit-platform-launcher</artifactId>
-      <version>1.8.2</version>
+      <version>1.10.0</version>
       <scope>test</scope>
     </dependency>
     <dependency>

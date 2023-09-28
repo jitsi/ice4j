@@ -5,7 +5,7 @@ import static org.mockito.Mockito.*;
 
 import java.time.*;
 import java.util.concurrent.*;
-import org.jitsi.test.concurrent.*;
+import org.jitsi.utils.concurrent.*;
 import org.junit.jupiter.api.*;
 
 /**
@@ -21,12 +21,7 @@ public class PeriodicRunnableTests
     @BeforeEach
     void beforeEach()
     {
-        timer = mock(
-            FakeScheduledExecutorService.class,
-            withSettings()
-                .useConstructor()
-                .defaultAnswer(CALLS_REAL_METHODS)
-        );
+        timer = new FakeScheduledExecutorService();
         executor = mock(ExecutorService.class);
         when(executor.submit(any(Runnable.class))).thenAnswer(a ->
         {
