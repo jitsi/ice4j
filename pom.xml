@@ -38,10 +38,11 @@
 
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-    <jicoco.version>1.1-104-g20c4353</jicoco.version>
-    <kotlin.version>1.6.21</kotlin.version>
-    <kotest.version>5.3.0</kotest.version>
-    <junit.version>5.8.2</junit.version>
+    <jicoco.version>1.1-127-gf49982f</jicoco.version>
+    <kotlin.version>1.9.10</kotlin.version>
+    <dokka.version>1.9.0</dokka.version>
+    <kotest.version>5.7.2</kotest.version>
+    <junit.version>5.10.0</junit.version>
   </properties>
 
   <dependencies>
@@ -58,7 +59,7 @@
     <dependency>
       <groupId>${project.groupId}</groupId>
       <artifactId>jitsi-utils</artifactId>
-      <version>1.0-114-g43815ed</version>
+      <version>1.0-127-g6c65524</version>
     </dependency>
     <dependency>
       <groupId>${project.groupId}</groupId>
@@ -70,7 +71,7 @@
     <dependency>
       <groupId>org.junit.platform</groupId>
       <artifactId>junit-platform-launcher</artifactId>
-      <version>1.8.2</version>
+      <version>1.10.0</version>
       <scope>test</scope>
     </dependency>
     <dependency>
@@ -107,6 +108,12 @@
       <groupId>org.mockito</groupId>
       <artifactId>mockito-core</artifactId>
       <version>4.5.1</version>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>io.mockk</groupId>
+      <artifactId>mockk-jvm</artifactId>
+      <version>1.13.8</version>
       <scope>test</scope>
     </dependency>
   </dependencies>
@@ -214,7 +221,7 @@
       <plugin>
         <groupId>com.github.gantsign.maven</groupId>
         <artifactId>ktlint-maven-plugin</artifactId>
-        <version>1.13.1</version>
+        <version>2.0.0</version>
         <configuration>
           <sourceRoots>
             <sourceRoot>${project.basedir}/src/main/kotlin</sourceRoot>
@@ -487,7 +494,7 @@
           <plugin>
             <groupId>org.jetbrains.dokka</groupId>
             <artifactId>dokka-maven-plugin</artifactId>
-            <version>${kotlin.version}</version>
+            <version>${dokka.version}</version>
             <executions>
               <execution>
                 <phase>package</phase>
