@@ -21,7 +21,6 @@ import org.ice4j.*;
 import org.ice4j.ice.harvest.*;
 import org.ice4j.stack.*;
 import org.ice4j.util.PeriodicRunnable;
-import org.jitsi.utils.collections.*;
 import org.jitsi.utils.concurrent.*;
 import org.jitsi.utils.logging2.Logger;
 import org.jitsi.utils.logging2.*;
@@ -69,15 +68,6 @@ public class Agent
      */
     private static final PropertyChangeListener[] NO_STATE_CHANGE_LISTENERS
         = new PropertyChangeListener[0];
-
-    /**
-     * The {@link Logger} used by the {@link Agent} class for logging output.
-     * Note that this shouldn't be used directly by instances of {@link Agent},
-     * because it doesn't take into account the per-instance log level.
-     * Instances should use {@link #logger} instead.
-     */
-    private static final java.util.logging.Logger classLogger
-        = java.util.logging.Logger.getLogger(Agent.class.getName());
 
     /**
      * The name of the {@link PropertyChangeEvent} that we use to deliver

@@ -1,5 +1,7 @@
 package org.ice4j.util;
 
+import org.jitsi.utils.logging2.*;
+
 import java.time.*;
 import java.util.concurrent.*;
 
@@ -11,6 +13,11 @@ import java.util.concurrent.*;
  */
 public abstract class PeriodicRunnable
 {
+    /**
+     * The {@link Logger} used by the {@link PeriodicRunnable} class for logging output.
+     */
+    private final static Logger logger = new LoggerImpl(PeriodicRunnable.class.getName());
+
     /**
      * A timer to perform periodic scheduling of {@link #run()} execution
      * on {@link #executor}'s thread.
@@ -204,6 +211,10 @@ public abstract class PeriodicRunnable
         try
         {
             this.run();
+        }
+        catch (Exception e)
+        {
+            logger.warn("Exception in run(), will retry.", e);
         }
         finally
         {
