@@ -258,6 +258,12 @@ public class PseudoTcpSocket extends Socket
     }
 
     @Override
+    public InputStream getInputStream() throws IOException
+    {
+        return socketImpl.getInputStream();
+    }
+
+    @Override
     public OutputStream getOutputStream() throws IOException
     {
         return socketImpl.getOutputStream();
