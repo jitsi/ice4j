@@ -912,6 +912,11 @@ class PseudoTcpSocketImpl
         public int read(byte[] buffer, int offset, int length)
             throws IOException
         {
+            if (length == 0) 
+            {  
+                return 0;
+            }
+
             long start = System.nanoTime();
             int read;
             while (true)
