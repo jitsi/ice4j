@@ -260,6 +260,11 @@ public abstract class AbstractUdpListener
         thread.start();
     }
 
+    public TransportAddress getLocalAddress()
+    {
+        return localAddress;
+    }
+
     /**
      * Triggers the termination of the threads of this instance.
      */
