@@ -87,8 +87,9 @@ public abstract class AbstractTcpListener
 
         for (NetworkInterface iface : interfaces)
         {
-            if (NetworkUtils.isInterfaceLoopback(iface)
-                    || !NetworkUtils.isInterfaceUp(iface)
+            if (NetworkUtils.isInterfaceLoopback(iface) && !config.useLoopbackInterfaces())
+                continue;
+            if (!NetworkUtils.isInterfaceUp(iface)
                     || !HostCandidateHarvester.isInterfaceAllowed(iface))
             {
                 //this one is obviously not going to do

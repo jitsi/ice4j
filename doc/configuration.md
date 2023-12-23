@@ -17,6 +17,12 @@ Default: no interfaces are blocked.
 This property can be used to specify a ";"-separated list of interfaces which are
 not allowed to be used for candidate allocations. 
 
+### ```org.ice4j.ice.harvest.USE_LOOPBACK_INTERFACES```
+Default: false
+
+Use (NAT-ed) loopback interfaces for ICE candidate selection.
+FreeBSD jails often require this when NAT-ed on the internal lo0 interface with an IPv4 address.
+
 ### ```org.ice4j.ice.harvest.ALLOWED_ADDRESSES```
 Default: all addresses are allowed.
 
