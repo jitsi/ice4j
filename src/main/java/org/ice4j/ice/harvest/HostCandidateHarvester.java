@@ -53,16 +53,14 @@ public class HostCandidateHarvester
     private HarvestStatistics harvestStatistics = new HarvestStatistics();
 
     /**
-     * Holds the list of allowed interfaces. It's either a non-empty array or
-     * null.
+     * Holds the list of allowed interfaces. It's either a non-empty array or null.
      */
-    private static String[] allowedInterfaces;
+    private static List<String> allowedInterfaces;
 
     /**
-     * Holds the list of blocked interfaces. It's either a non-empty array or
-     * null.
+     * Holds the list of blocked interfaces. It's either a non-empty array or null.
      */
-    private static String[] blockedInterfaces;
+    private static List<String> blockedInterfaces;
 
     /**
      * The list of allowed addresses.
@@ -91,7 +89,8 @@ public class HostCandidateHarvester
      *
      * @return the non-empty String array of allowed interfaces or null.
      */
-    public static String[] getAllowedInterfaces(){
+    public static List<String> getAllowedInterfaces()
+    {
         if (!interfaceFiltersInitialized)
         {
             try
@@ -113,7 +112,8 @@ public class HostCandidateHarvester
      *
      * @return the non-empty String array of blocked interfaces or null.
      */
-    public static String[] getBlockedInterfaces() {
+    public static List<String> getBlockedInterfaces()
+    {
         if (!interfaceFiltersInitialized)
         {
             try
@@ -450,27 +450,25 @@ public class HostCandidateHarvester
                 ? iface.getDisplayName()
                 : iface.getName();
 
-        String[] allowedInterfaces = getAllowedInterfaces();
+        List<String> allowedInterfaces = getAllowedInterfaces();
 
         // NOTE The blocked interfaces list is taken into account only if the
         // allowed interfaces list is not defined.
 
-        // getAllowedInterfaces returns null if the array is empty.
-        if (allowedInterfaces != null)
+        if (!allowedInterfaces.isEmpty())
         {
             // A list of allowed interfaces exists.
-            return Arrays.asList(allowedInterfaces).contains(ifName);
+            return allowedInterfaces.contains(ifName);
         }
         else
         {
             // A list of allowed interfaces does not exist.
-            String[] blockedInterfaces = getBlockedInterfaces();
+            List<String> blockedInterfaces = getBlockedInterfaces();
 
-            // getBlockedInterfaces returns null if the array is empty.
-            if (blockedInterfaces != null)
+            if (!blockedInterfaces.isEmpty())
             {
                 // but a list of blocked interfaces exists.
-                return !Arrays.asList(blockedInterfaces).contains(ifName);
+                return !blockedInterfaces.contains(ifName);
             }
         }
 
@@ -795,11 +793,10 @@ public class HostCandidateHarvester
         interfaceFiltersInitialized = true;
 
         // Initialize the allowed interfaces array.
-        allowedInterfaces = StackProperties.getStringArray(
-                StackProperties.ALLOWED_INTERFACES, ";");
+        allowedInterfaces = config.getAllowedInterfaces();
 
         // getStringArray returns null if the array is empty.
-        if (allowedInterfaces != null)
+        if (!allowedInterfaces.isEmpty())
         {
             // Validate the allowed interfaces array.
 
@@ -812,8 +809,7 @@ public class HostCandidateHarvester
                 }
                 catch (SocketException e)
                 {
-                    throw new IllegalStateException("there is no network " +
-                            "interface with the name " + iface, e);
+                    throw new IllegalStateException("there is no network interface with the name " + iface, e);
                 }
 
             // the allowedInterfaces array is not empty and its items represent
@@ -827,27 +823,26 @@ public class HostCandidateHarvester
             // defined.
 
             // Initialize the blocked interfaces array.
-            blockedInterfaces = StackProperties.getStringArray(
-                    StackProperties.BLOCKED_INTERFACES, ";");
+            blockedInterfaces = config.getBlockedInterfaces();
 
             // getStringArray returns null if the array is empty.
-            if (blockedInterfaces != null)
+            if (!blockedInterfaces.isEmpty())
             {
                 // Validate the blocked interfaces array.
 
                 // 1. Make sure the blockedInterfaces list contains interfaces
                 // that exist on the system.
                 for (String iface : blockedInterfaces)
+                {
                     try
                     {
                         NetworkInterface.getByName(iface);
                     }
                     catch (SocketException e)
                     {
-                        throw new IllegalStateException("there is no " +
-                                "network interface with the name " + iface,
-                                e);
+                        throw new IllegalStateException("there is no network interface with the name " + iface, e);
                     }
+                }
 
                 // 2. Make sure there's at least one allowed interface.
                 Enumeration<NetworkInterface> allInterfaces;
@@ -857,8 +852,7 @@ public class HostCandidateHarvester
                 }
                 catch (SocketException e)
                 {
-                    throw new IllegalStateException("could not get the " +
-                            "list of the available network interfaces", e);
+                    throw new IllegalStateException("could not get the list of the available network interfaces", e);
                 }
 
                 int count = 0;
@@ -868,9 +862,10 @@ public class HostCandidateHarvester
                     count++;
                 }
 
-                if (blockedInterfaces.length >= count)
-                    throw new IllegalStateException("all network " +
-                            "interfaces are blocked");
+                if (blockedInterfaces.size() >= count)
+                {
+                    throw new IllegalStateException("all network interfaces are blocked");
+                }
             }
         }
     }

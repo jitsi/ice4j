@@ -121,32 +121,6 @@ public class StackProperties
     public static final String NO_KEEP_ALIVES = "org.ice4j.NO_KEEP_ALIVES";
 
     /**
-     * THIS PROPERTY IS CURRENTLY UNUSED. IF YOU WANT TO SPEED UP NOMINATIONS
-     * THEN CONSIDER SPEEDING UP TRANSACTION FAILURE FOR THE TIME BEING.
-     * The maximum number of milliseconds that we should wait for a check list
-     * to complete before nominating one of its valid pairs (unless there are
-     * none in which case we may have to wait until one appears or the whole
-     * list fails). Default value is <tt>-1</tt> which causes the nominator
-     * to wait until the check list completes or fails.
-     */
-    public static final String NOMINATION_TIMER
-                                    = "org.ice4j.NOMINATION_TIMER";
-
-    /**
-     * The name of the allowed interfaces property which specifies the allowed
-     * interfaces for host candidate allocations.
-     */
-    public static final String ALLOWED_INTERFACES
-            = "org.ice4j.ice.harvest.ALLOWED_INTERFACES";
-
-    /**
-     * The name of the allowed interfaces property which specifies the blocked
-     * interfaces for host candidate allocations.
-     */
-    public static final String BLOCKED_INTERFACES
-            = "org.ice4j.ice.harvest.BLOCKED_INTERFACES";
-
-    /**
      * Returns the String value of the specified property (minus all
      * encompassing whitespaces)and null in case no property value was mapped
      * against the specified propertyName, or in case the returned property

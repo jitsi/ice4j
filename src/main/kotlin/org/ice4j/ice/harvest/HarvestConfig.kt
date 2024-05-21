@@ -128,6 +128,28 @@ class HarvestConfig {
         "ice4j.harvest.blocked-addresses".from(configSource)
     }
 
+    /**
+     * The allowed interfaces for host candidate allocations. If none are specified all interfaces are allowed unless
+     * blocked.
+     */
+    val allowedInterfaces: List<String> by config {
+        "org.ice4j.ice.harvest.ALLOWED_INTERFACES".from(configSource).convertFrom<String> { l ->
+            l.split(";").filter { it.isNotEmpty() }
+        }
+        "ice4j.harvest.allowed-interfaces".from(configSource)
+    }
+
+    /**
+     * The blocked interfaces for host candidate allocations. Note that this can not be used in conjunction with
+     * [allowedInterfaces]. If [allowedInterfaces] are defined then [blockedInterfaces] is not used.
+     */
+    val blockedInterfaces: List<String> by config {
+        "org.ice4j.ice.harvest.BLOCKED_INTERFACES".from(configSource).convertFrom<String> { l ->
+            l.split(";").filter { it.isNotEmpty() }
+        }
+        "ice4j.harvest.blocked-interfaces".from(configSource)
+    }
+
     val staticMappings: Set<StaticMapping> = let {
         if (legacyNatHarvesterLocalAddress != null && legacyNatHarvesterPublicAddress != null) {
             setOf(
