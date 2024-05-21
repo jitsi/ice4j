@@ -25,6 +25,7 @@ import java.util.logging.*;
 import org.ice4j.*;
 import org.ice4j.ice.*;
 import org.ice4j.socket.*;
+import org.jetbrains.annotations.*;
 
 import static org.ice4j.ice.harvest.HarvestConfig.config;
 
@@ -55,22 +56,26 @@ public class HostCandidateHarvester
     /**
      * Holds the list of allowed interfaces. It's either a non-empty array or null.
      */
-    private static List<String> allowedInterfaces;
+    @NotNull
+    private static List<String> allowedInterfaces = new ArrayList<>();
 
     /**
      * Holds the list of blocked interfaces. It's either a non-empty array or null.
      */
-    private static List<String> blockedInterfaces;
+    @NotNull
+    private static List<String> blockedInterfaces = new ArrayList<>();
 
     /**
      * The list of allowed addresses.
      */
-    private static List<InetAddress> allowedAddresses;
+    @NotNull
+    private static List<InetAddress> allowedAddresses = new ArrayList<>();
 
     /**
      * The list of blocked addresses.
      */
-    private static List<InetAddress> blockedAddresses;
+    @NotNull
+    private static List<InetAddress> blockedAddresses = new ArrayList<>();
 
     /**
      * A boolean value that indicates whether the host candidate interface
@@ -89,6 +94,7 @@ public class HostCandidateHarvester
      *
      * @return the non-empty String array of allowed interfaces or null.
      */
+    @NotNull
     public static List<String> getAllowedInterfaces()
     {
         if (!interfaceFiltersInitialized)
@@ -112,6 +118,7 @@ public class HostCandidateHarvester
      *
      * @return the non-empty String array of blocked interfaces or null.
      */
+    @NotNull
     public static List<String> getBlockedInterfaces()
     {
         if (!interfaceFiltersInitialized)
@@ -136,6 +143,7 @@ public class HostCandidateHarvester
      * use {@link #getAllAllowedAddresses()}.
      * @return the list of explicitly allowed addresses.
      */
+    @NotNull
     public static synchronized List<InetAddress> getAllowedAddresses()
     {
         if (!addressFiltersInitialized)
@@ -150,6 +158,7 @@ public class HostCandidateHarvester
      * Gets the list of blocked addresses.
      * @return the list of blocked addresses.
      */
+    @NotNull
     public static synchronized  List<InetAddress> getBlockedAddresses()
     {
         if (!addressFiltersInitialized)
