@@ -147,16 +147,6 @@ public class StackProperties
             = "org.ice4j.ice.harvest.BLOCKED_INTERFACES";
 
     /**
-     * The name of the property which specifies a ";"-separated list of IP
-     * addresses that are not allowed to be used for host candidate allocations.
-     *
-     * NOTE: this is currently only supported by
-     * {@link org.ice4j.ice.harvest.TcpHarvester}.
-     */
-    public static final String BLOCKED_ADDRESSES
-            = "org.ice4j.ice.harvest.BLOCKED_ADDRESSES";
-
-    /**
      * Returns the String value of the specified property (minus all
      * encompassing whitespaces)and null in case no property value was mapped
      * against the specified propertyName, or in case the returned property

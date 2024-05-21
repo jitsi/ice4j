@@ -117,6 +117,17 @@ class HarvestConfig {
         "ice4j.harvest.allowed-addresses".from(configSource)
     }
 
+    /**
+     * The list of IP addresses that are not allowed to be used for host candidate allocations. If no addresses are
+     * specified, any address is allowed.
+     */
+    val blockedAddresses: List<String> by config {
+        "org.ice4j.ice.harvest.BLOCKED_ADDRESSES".from(configSource).convertFrom<String> { l ->
+            l.split(";").filter { it.isNotEmpty() }
+        }
+        "ice4j.harvest.blocked-addresses".from(configSource)
+    }
+
     val staticMappings: Set<StaticMapping> = let {
         if (legacyNatHarvesterLocalAddress != null && legacyNatHarvesterPublicAddress != null) {
             setOf(

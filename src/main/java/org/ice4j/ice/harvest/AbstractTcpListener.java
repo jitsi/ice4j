@@ -154,7 +154,7 @@ public abstract class AbstractTcpListener
      *
      * @param port the port to listen on.
      * @throws IOException when {@link HarvestConfig#getAllowedAddresses()} or
-     * {@link StackProperties#BLOCKED_ADDRESSES} contains invalid values, or
+     * {@link HarvestConfig#getBlockedAddresses()} contains invalid values, or
      * if an I/O error occurs.
      */
     public AbstractTcpListener(int port)
@@ -171,7 +171,7 @@ public abstract class AbstractTcpListener
      * @param port the port to listen on.
      * @param interfaces the interfaces to listen on.
      * @throws IOException when {@link HarvestConfig#getAllowedAddresses()} or
-     * {@link StackProperties#BLOCKED_ADDRESSES} contains invalid values, or
+     * {@link HarvestConfig#getBlockedAddresses()} contains invalid values, or
      * if an I/O error occurs.
      */
     public AbstractTcpListener(int port, List<NetworkInterface> interfaces)
@@ -186,7 +186,7 @@ public abstract class AbstractTcpListener
      *
      * @param transportAddresses the transport addresses to listen on.
      * @throws IOException when {@link HarvestConfig#getAllowedAddresses()} or
-     * {@link StackProperties#BLOCKED_ADDRESSES} contains invalid values, or
+     * {@link HarvestConfig#getBlockedAddresses()} contains invalid values, or
      * if an I/O error occurs.
      */
     public AbstractTcpListener(List<TransportAddress> transportAddresses)
@@ -203,7 +203,7 @@ public abstract class AbstractTcpListener
      *
      * @param transportAddresses the list of addresses to add.
      * @throws IOException when {@link HarvestConfig#getAllowedAddresses()} or
-     * {@link StackProperties#BLOCKED_ADDRESSES} contains invalid values.
+     * {@link HarvestConfig#getBlockedAddresses()} contains invalid values.
      */
     protected void addLocalAddresses(List<TransportAddress> transportAddresses)
         throws IOException
@@ -222,16 +222,15 @@ public abstract class AbstractTcpListener
         }
 
         // Black list from the configuration
-        String[] blockedAddressesStr = StackProperties.getStringArray(StackProperties.BLOCKED_ADDRESSES,
-                                             ";");
+        List<String> blockedAddressesConfig = config.getBlockedAddresses();
         InetAddress[] blockedAddresses = null;
 
-        if (blockedAddressesStr != null)
+        if (!blockedAddressesConfig.isEmpty())
         {
-            blockedAddresses = new InetAddress[blockedAddressesStr.length];
-            for (int i = 0; i < blockedAddressesStr.length; i++)
+            blockedAddresses = new InetAddress[blockedAddressesConfig.size()];
+            for (int i = 0; i < blockedAddressesConfig.size(); i++)
             {
-                blockedAddresses[i] = InetAddress.getByName(blockedAddressesStr[i]);
+                blockedAddresses[i] = InetAddress.getByName(blockedAddressesConfig.get(i));
             }
         }
 

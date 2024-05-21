@@ -195,12 +195,10 @@ public class HostCandidateHarvester
             }
         }
 
-        String[] blockedAddressesStr
-            = StackProperties.getStringArray(
-                    StackProperties.BLOCKED_ADDRESSES, ";");
-        if (blockedAddressesStr != null)
+        List<String> blockedAddressesConfig = config.getBlockedAddresses();
+        if (!blockedAddressesConfig.isEmpty())
         {
-            for (String addressStr : blockedAddressesStr)
+            for (String addressStr : blockedAddressesConfig)
             {
                 InetAddress address;
                 try
@@ -209,13 +207,14 @@ public class HostCandidateHarvester
                 }
                 catch (Exception e)
                 {
-                    logger.warning("Failed to add a blocked address: "
-                                           + addressStr);
+                    logger.warning("Failed to add a blocked address: " + addressStr);
                     continue;
                 }
 
                 if (blockedAddresses == null)
+                {
                     blockedAddresses = new ArrayList<>();
+                }
 
                 blockedAddresses.add(address);
             }
