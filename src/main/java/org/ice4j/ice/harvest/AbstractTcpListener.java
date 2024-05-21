@@ -153,7 +153,7 @@ public abstract class AbstractTcpListener
      * interfaces.
      *
      * @param port the port to listen on.
-     * @throws IOException when {@link StackProperties#ALLOWED_ADDRESSES} or
+     * @throws IOException when {@link HarvestConfig#getAllowedAddresses()} or
      * {@link StackProperties#BLOCKED_ADDRESSES} contains invalid values, or
      * if an I/O error occurs.
      */
@@ -170,7 +170,7 @@ public abstract class AbstractTcpListener
      *
      * @param port the port to listen on.
      * @param interfaces the interfaces to listen on.
-     * @throws IOException when {@link StackProperties#ALLOWED_ADDRESSES} or
+     * @throws IOException when {@link HarvestConfig#getAllowedAddresses()} or
      * {@link StackProperties#BLOCKED_ADDRESSES} contains invalid values, or
      * if an I/O error occurs.
      */
@@ -185,7 +185,7 @@ public abstract class AbstractTcpListener
      * specified list of <tt>TransportAddress</tt>es.
      *
      * @param transportAddresses the transport addresses to listen on.
-     * @throws IOException when {@link StackProperties#ALLOWED_ADDRESSES} or
+     * @throws IOException when {@link HarvestConfig#getAllowedAddresses()} or
      * {@link StackProperties#BLOCKED_ADDRESSES} contains invalid values, or
      * if an I/O error occurs.
      */
@@ -202,30 +202,27 @@ public abstract class AbstractTcpListener
      * allocation.
      *
      * @param transportAddresses the list of addresses to add.
-     * @throws IOException when {@link StackProperties#ALLOWED_ADDRESSES} or
+     * @throws IOException when {@link HarvestConfig#getAllowedAddresses()} or
      * {@link StackProperties#BLOCKED_ADDRESSES} contains invalid values.
      */
     protected void addLocalAddresses(List<TransportAddress> transportAddresses)
         throws IOException
     {
         // White list from the configuration
-        String[] allowedAddressesStr
-            = StackProperties.getStringArray(StackProperties.ALLOWED_ADDRESSES,
-                                             ";");
+        List<String> allowedAddressesConfig = config.getAllowedAddresses();
         InetAddress[] allowedAddresses = null;
 
-        if (allowedAddressesStr != null)
+        if (!allowedAddressesConfig.isEmpty())
         {
-            allowedAddresses = new InetAddress[allowedAddressesStr.length];
-            for (int i = 0; i < allowedAddressesStr.length; i++)
+            allowedAddresses = new InetAddress[allowedAddressesConfig.size()];
+            for (int i = 0; i < allowedAddressesConfig.size(); i++)
             {
-                allowedAddresses[i] = InetAddress.getByName(allowedAddressesStr[i]);
+                allowedAddresses[i] = InetAddress.getByName(allowedAddressesConfig.get(i));
             }
         }
 
         // Black list from the configuration
-        String[] blockedAddressesStr
-            = StackProperties.getStringArray(StackProperties.BLOCKED_ADDRESSES,
+        String[] blockedAddressesStr = StackProperties.getStringArray(StackProperties.BLOCKED_ADDRESSES,
                                              ";");
         InetAddress[] blockedAddresses = null;
 
@@ -234,8 +231,7 @@ public abstract class AbstractTcpListener
             blockedAddresses = new InetAddress[blockedAddressesStr.length];
             for (int i = 0; i < blockedAddressesStr.length; i++)
             {
-                blockedAddresses[i]
-                    = InetAddress.getByName(blockedAddressesStr[i]);
+                blockedAddresses[i] = InetAddress.getByName(blockedAddressesStr[i]);
             }
         }
 

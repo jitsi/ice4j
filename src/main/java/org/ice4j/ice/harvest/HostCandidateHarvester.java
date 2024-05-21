@@ -170,13 +170,10 @@ public class HostCandidateHarvester
             return;
         addressFiltersInitialized = true;
 
-        String[] allowedAddressesStr
-            = StackProperties.getStringArray(
-                    StackProperties.ALLOWED_ADDRESSES, ";");
-
-        if (allowedAddressesStr != null)
+        List<String> allowedAddressesConfig = config.getAllowedAddresses();
+        if (!allowedAddressesConfig.isEmpty())
         {
-            for (String addressStr : allowedAddressesStr)
+            for (String addressStr : allowedAddressesConfig)
             {
                 InetAddress address;
                 try
@@ -185,13 +182,14 @@ public class HostCandidateHarvester
                 }
                 catch (Exception e)
                 {
-                    logger.warning("Failed to add an allowed address: "
-                        + addressStr);
+                    logger.warning("Failed to add an allowed address: " + addressStr);
                     continue;
                 }
 
                 if (allowedAddresses == null)
+                {
                     allowedAddresses = new ArrayList<>();
+                }
 
                 allowedAddresses.add(address);
             }

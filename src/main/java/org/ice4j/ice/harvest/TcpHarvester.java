@@ -98,7 +98,7 @@ public class TcpHarvester
      * interfaces.
      *
      * @param port the port to listen on.
-     * @throws IOException when {@link StackProperties#ALLOWED_ADDRESSES} or
+     * @throws IOException when {@link HarvestConfig#getAllowedAddresses()} or
      * {@link StackProperties#BLOCKED_ADDRESSES} contains invalid values, or
      * if an I/O error occurs.
      */
@@ -117,7 +117,7 @@ public class TcpHarvester
      *
      * @param port the port to listen on.
      * @param ssltcp <tt>true</tt> to use ssltcp; otherwise, <tt>false</tt>
-     * @throws IOException when {@link StackProperties#ALLOWED_ADDRESSES} or
+     * @throws IOException when {@link HarvestConfig#getAllowedAddresses()} or
      * {@link StackProperties#BLOCKED_ADDRESSES} contains invalid values, or
      * if an I/O error occurs.
      */
@@ -137,7 +137,7 @@ public class TcpHarvester
      * @param port the port to listen on.
      * @param interfaces the interfaces to listen on.
      * @param ssltcp <tt>true</tt> to use ssltcp; otherwise, <tt>false</tt>
-     * @throws IOException when {@link StackProperties#ALLOWED_ADDRESSES} or
+     * @throws IOException when {@link HarvestConfig#getAllowedAddresses()} or
      * {@link StackProperties#BLOCKED_ADDRESSES} contains invalid values, or
      * if an I/O error occurs.
      */
@@ -157,7 +157,7 @@ public class TcpHarvester
      * listen on the specified list of <tt>TransportAddress</tt>es.
      *
      * @param transportAddresses the transport addresses to listen on.
-     * @throws IOException when {@link StackProperties#ALLOWED_ADDRESSES} or
+     * @throws IOException when {@link HarvestConfig#getAllowedAddresses()} or
      * {@link StackProperties#BLOCKED_ADDRESSES} contains invalid values, or
      * if an I/O error occurs.
      */
@@ -175,7 +175,7 @@ public class TcpHarvester
      *
      * @param transportAddresses the transport addresses to listen on.
      * @param ssltcp <tt>true</tt> to use ssltcp; otherwise, <tt>false</tt>
-     * @throws IOException when {@link StackProperties#ALLOWED_ADDRESSES} or
+     * @throws IOException when {@link HarvestConfig#getAllowedAddresses()} or
      * {@link StackProperties#BLOCKED_ADDRESSES} contains invalid values, or
      * if an I/O error occurs.
      */
