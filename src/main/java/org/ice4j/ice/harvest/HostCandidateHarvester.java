@@ -26,7 +26,6 @@ import java.util.stream.*;
 import org.ice4j.*;
 import org.ice4j.ice.*;
 import org.ice4j.socket.*;
-import org.jetbrains.annotations.*;
 
 import static org.ice4j.ice.harvest.HarvestConfig.config;
 
@@ -55,117 +54,6 @@ public class HostCandidateHarvester
     private HarvestStatistics harvestStatistics = new HarvestStatistics();
 
     /**
-     * The list of allowed addresses.
-     */
-    @NotNull
-    private static List<InetAddress> allowedAddresses = new ArrayList<>();
-
-    /**
-     * The list of blocked addresses.
-     */
-    @NotNull
-    private static List<InetAddress> blockedAddresses = new ArrayList<>();
-
-    /**
-     * A boolean value that indicates whether the host candidate address
-     * filters have been initialized or not.
-     */
-    private static boolean addressFiltersInitialized = false;
-
-    /**
-     * Gets the list of addresses which have been explicitly allowed via
-     * configuration properties. To get the list of all allowed addresses,
-     * use {@link #getAllAllowedAddresses()}.
-     * @return the list of explicitly allowed addresses.
-     */
-    @NotNull
-    public static synchronized List<InetAddress> getAllowedAddresses()
-    {
-        if (!addressFiltersInitialized)
-        {
-            initializeAddressFilters();
-        }
-
-        return allowedAddresses;
-    }
-
-    /**
-     * Gets the list of blocked addresses.
-     * @return the list of blocked addresses.
-     */
-    @NotNull
-    public static synchronized  List<InetAddress> getBlockedAddresses()
-    {
-        if (!addressFiltersInitialized)
-        {
-            initializeAddressFilters();
-        }
-
-        return blockedAddresses;
-    }
-
-    /**
-     * Initializes the lists of allowed and blocked addresses according to the
-     * configuration properties.
-     */
-    private static synchronized void initializeAddressFilters()
-    {
-        if (addressFiltersInitialized)
-            return;
-        addressFiltersInitialized = true;
-
-        List<String> allowedAddressesConfig = config.getAllowedAddresses();
-        if (!allowedAddressesConfig.isEmpty())
-        {
-            for (String addressStr : allowedAddressesConfig)
-            {
-                InetAddress address;
-                try
-                {
-                    address = InetAddress.getByName(addressStr);
-                }
-                catch (Exception e)
-                {
-                    logger.warning("Failed to add an allowed address: " + addressStr);
-                    continue;
-                }
-
-                if (allowedAddresses == null)
-                {
-                    allowedAddresses = new ArrayList<>();
-                }
-
-                allowedAddresses.add(address);
-            }
-        }
-
-        List<String> blockedAddressesConfig = config.getBlockedAddresses();
-        if (!blockedAddressesConfig.isEmpty())
-        {
-            for (String addressStr : blockedAddressesConfig)
-            {
-                InetAddress address;
-                try
-                {
-                    address = InetAddress.getByName(addressStr);
-                }
-                catch (Exception e)
-                {
-                    logger.warning("Failed to add a blocked address: " + addressStr);
-                    continue;
-                }
-
-                if (blockedAddresses == null)
-                {
-                    blockedAddresses = new ArrayList<>();
-                }
-
-                blockedAddresses.add(address);
-            }
-        }
-    }
-
-    /**
      * @return the list of all local IP addresses from all allowed network
      * interfaces, which are allowed addresses.
      */
@@ -178,22 +66,10 @@ public class HostCandidateHarvester
             while (ifaceAddresses.hasMoreElements())
             {
                 InetAddress address = ifaceAddresses.nextElement();
-
-                if (!isAddressAllowed(address))
+                if (isAddressAllowed(address))
                 {
-                    continue;
+                    addresses.add(address);
                 }
-
-                if (!config.useIpv6() && address instanceof Inet6Address)
-                {
-                    continue;
-                }
-                if (!config.useLinkLocalAddresses() && address.isLinkLocalAddress())
-                {
-                    continue;
-                }
-
-                addresses.add(address);
             }
         }
 
@@ -258,76 +134,71 @@ public class HostCandidateHarvester
                     continue;
                 }
 
-                if (!config.useLinkLocalAddresses() && addr.isLinkLocalAddress())
-                {
-                    continue;
-                }
                 foundAtLeastOneUsableAddress = true;
 
-                if ((addr instanceof Inet4Address) || config.useIpv6())
+                IceSocketWrapper sock = null;
+                try
                 {
-                    IceSocketWrapper sock = null;
-                    try
+                    if (transport == Transport.UDP)
                     {
-                        if (transport == Transport.UDP)
+                        sock = createDatagramSocket(addr, preferredPort, minPort, maxPort);
+                        boundAtLeastOneSocket = true;
+                    }
+                    else if (transport == Transport.TCP)
+                    {
+                        if (addr instanceof Inet6Address)
                         {
-                            sock = createDatagramSocket(addr, preferredPort, minPort, maxPort);
-                            boundAtLeastOneSocket = true;
+                            continue;
                         }
-                        else if (transport == Transport.TCP)
-                        {
-                            if (addr instanceof Inet6Address)
-                                continue;
-                            sock = createServerSocket(
-                                    addr,
-                                    preferredPort,
-                                    minPort,
-                                    maxPort,
-                                    component);
-                            boundAtLeastOneSocket = true;
-                        }
+                        sock = createServerSocket(
+                                addr,
+                                preferredPort,
+                                minPort,
+                                maxPort,
+                                component);
+                        boundAtLeastOneSocket = true;
                     }
-                    catch(IOException exc)
+                }
+                catch (IOException exc)
+                {
+                    // There seems to be a problem with this particular
+                    // address let's just move on for now and hope we will
+                    // find better
+                    if (logger.isLoggable(Level.WARNING))
                     {
-                        // There seems to be a problem with this particular
-                        // address let's just move on for now and hope we will
-                        // find better
-                        if (logger.isLoggable(Level.WARNING))
-                        {
-                            logger.warning(
-                                    "Failed to create a socket for:"
-                                        +"\naddr:" + addr
-                                        +"\npreferredPort:" + preferredPort
-                                        +"\nminPort:" + minPort
-                                        +"\nmaxPort:" + maxPort
-                                        +"\nprotocol:" + transport
-                                        +"\nContinuing with next address");
-                        }
-                        continue;
+                        logger.warning(
+                                "Failed to create a socket for:"
+                                        + "\naddr:" + addr
+                                        + "\npreferredPort:" + preferredPort
+                                        + "\nminPort:" + minPort
+                                        + "\nmaxPort:" + maxPort
+                                        + "\nprotocol:" + transport
+                                        + "\nContinuing with next address");
                     }
+                    continue;
+                }
 
-                    HostCandidate candidate = new HostCandidate(sock, component, transport);
-                    candidate.setVirtual(NetworkUtils.isInterfaceVirtual(iface));
-                    component.addLocalCandidate(candidate);
+                HostCandidate candidate = new HostCandidate(sock, component, transport);
+                candidate.setVirtual(NetworkUtils.isInterfaceVirtual(iface));
+                component.addLocalCandidate(candidate);
 
-                    if (transport == Transport.TCP)
-                    {
-                        // have to wait a client connection to add a STUN socket
-                        // to the StunStack
-                        continue;
-                    }
+                if (transport == Transport.TCP)
+                {
+                    // have to wait a client connection to add a STUN socket
+                    // to the StunStack
+                    continue;
+                }
 
-                    // We are most certainly going to use all local host
-                    // candidates for sending and receiving STUN connectivity
-                    // checks. In case we have enabled STUN, we are going to use
-                    // them as well while harvesting reflexive candidates.
-                    createAndRegisterStunSocket(candidate);
+                // We are most certainly going to use all local host
+                // candidates for sending and receiving STUN connectivity
+                // checks. In case we have enabled STUN, we are going to use
+                // them as well while harvesting reflexive candidates.
+                createAndRegisterStunSocket(candidate);
 
-                    ComponentSocket componentSocket = component.getComponentSocket();
-                    if (componentSocket != null)
-                    {
-                        componentSocket.add(sock);
-                    }
+                ComponentSocket componentSocket = component.getComponentSocket();
+                if (componentSocket != null)
+                {
+                    componentSocket.add(sock);
                 }
             }
         }
@@ -403,21 +274,19 @@ public class HostCandidateHarvester
     }
 
     /**
-     * Returns <tt>true</tt> if <tt>address</tt> is allowed to be used by this
-     * <tt>HostCandidateHarvester</tt> for the purposes of candidate allocation,
-     * and <tt>false</tt> otherwise.
-     *
-     * An address is considered allowed, if
+     * Returns <tt>true</tt> if <tt>address</tt> is allowed to be used for the purposes of candidate allocation, and
+     * <tt>false</tt> otherwise.
+     * <p/>
+     * An address is considered allowed, if:
      * 1. It is not a loopback address.
-     * 2. Either no addresses have explicitly been configured allowed (via the
-     * <tt>StackProperties.ALLOWED_ADDRESSES</tt> property), or <tt>address</tt>
-     * is explicitly configured allowed.
-     * 3. <tt>address</tt> is not explicitly configured blocked (via the
-     * <tt>StackProperties.BLOCKED_ADDRESSES</tt> property).
+     * 2. Link-local addresses are allowed or the address is not link-local.
+     * 3. IPv6 addresses are allowed or the address is not IPv6
+     * 4. It is allowed by configuration, that is, it either:
+     *      -- Is present in the allowlist
+     *      -- No allowlist is configured and it isn't present in the block list.
      *
      * @param address the address to check
-     * @return <tt>true</tt> if <tt>address</tt> is allowed to be used by this
-     * <tt>HostCandidateHarvester</tt>.
+     * @return <tt>true</tt> if <tt>address</tt> is allowed to be used by this <tt>HostCandidateHarvester</tt>.
      */
     static boolean isAddressAllowed(InetAddress address)
     {
@@ -425,17 +294,20 @@ public class HostCandidateHarvester
         {
             return false;
         }
+        if (!config.useLinkLocalAddresses() && address.isLinkLocalAddress())
+        {
+            return false;
+        }
+        if (!config.useIpv6() && address instanceof Inet6Address)
+        {
+            return false;
+        }
 
-        boolean ret = true;
-        List<InetAddress> allowed = getAllowedAddresses();
-        List<InetAddress> blocked = getBlockedAddresses();
-
-        if (allowed != null)
-            ret = allowed.contains(address);
-        if (blocked != null)
-            ret = ret && !blocked.contains(address);
-
-        return ret;
+        if (!config.getAllowedAddresses().isEmpty())
+        {
+            return config.getAllowedAddresses().contains(address);
+        }
+        return !config.getBlockedAddresses().contains(address);
     }
 
     /**

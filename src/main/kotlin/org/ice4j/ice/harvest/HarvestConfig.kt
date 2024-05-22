@@ -20,10 +20,14 @@ import com.typesafe.config.Config
 import org.jitsi.metaconfig.ConfigException
 import org.jitsi.metaconfig.config
 import org.jitsi.metaconfig.optionalconfig
+import org.jitsi.utils.logging2.createLogger
+import java.net.InetAddress
 import java.time.Duration
 import org.jitsi.config.JitsiConfig.Companion.newConfig as configSource
 
 class HarvestConfig {
+    val logger = createLogger()
+
     val useLinkLocalAddresses: Boolean by config {
         "org.ice4j.ice.harvest.DISABLE_LINK_LOCAL_ADDRESSES".from(configSource)
             .transformedBy { !it }
@@ -110,22 +114,26 @@ class HarvestConfig {
      * The list of IP addresses that are allowed to be used for host candidate allocations. If no addresses are
      * specified, any address is allowed.
      */
-    val allowedAddresses: List<String> by config {
+    val allowedAddresses: List<InetAddress> by config {
         "org.ice4j.ice.harvest.ALLOWED_ADDRESSES".from(configSource).convertFrom<String> { l ->
-            l.split(";").filter { it.isNotEmpty() }
+            l.split(";").filter { it.isNotEmpty() }.mapNotNull { it.toInetAddress() }
         }
-        "ice4j.harvest.allowed-addresses".from(configSource)
+        "ice4j.harvest.allowed-addresses".from(configSource).convertFrom<List<String>> { l ->
+            l.mapNotNull { it.toInetAddress() }
+        }
     }
 
     /**
      * The list of IP addresses that are not allowed to be used for host candidate allocations. If no addresses are
      * specified, any address is allowed.
      */
-    val blockedAddresses: List<String> by config {
+    val blockedAddresses: List<InetAddress> by config {
         "org.ice4j.ice.harvest.BLOCKED_ADDRESSES".from(configSource).convertFrom<String> { l ->
-            l.split(";").filter { it.isNotEmpty() }
+            l.split(";").filter { it.isNotEmpty() }.mapNotNull { it.toInetAddress() }
         }
-        "ice4j.harvest.blocked-addresses".from(configSource)
+        "ice4j.harvest.blocked-addresses".from(configSource).convertFrom<List<String>> { l ->
+            l.mapNotNull { it.toInetAddress() }
+        }
     }
 
     /**
@@ -159,6 +167,13 @@ class HarvestConfig {
         } else {
             staticMappingsFromNewConfig
         }
+    }
+
+    private fun String.toInetAddress(): InetAddress? = try {
+        InetAddress.getByName(this)
+    } catch (e: Exception) {
+        logger.warn("Invalid address, will not use it as allowed/blocked: $this")
+        null
     }
 
     data class StaticMapping(

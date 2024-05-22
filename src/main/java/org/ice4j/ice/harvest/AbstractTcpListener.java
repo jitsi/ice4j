@@ -204,93 +204,12 @@ public abstract class AbstractTcpListener
     protected void addLocalAddresses(List<TransportAddress> transportAddresses)
         throws IOException
     {
-        // White list from the configuration
-        List<String> allowedAddressesConfig = config.getAllowedAddresses();
-        InetAddress[] allowedAddresses = null;
-
-        if (!allowedAddressesConfig.isEmpty())
-        {
-            allowedAddresses = new InetAddress[allowedAddressesConfig.size()];
-            for (int i = 0; i < allowedAddressesConfig.size(); i++)
-            {
-                allowedAddresses[i] = InetAddress.getByName(allowedAddressesConfig.get(i));
-            }
-        }
-
-        // Black list from the configuration
-        List<String> blockedAddressesConfig = config.getBlockedAddresses();
-        InetAddress[] blockedAddresses = null;
-
-        if (!blockedAddressesConfig.isEmpty())
-        {
-            blockedAddresses = new InetAddress[blockedAddressesConfig.size()];
-            for (int i = 0; i < blockedAddressesConfig.size(); i++)
-            {
-                blockedAddresses[i] = InetAddress.getByName(blockedAddressesConfig.get(i));
-            }
-        }
-
         for (TransportAddress transportAddress : transportAddresses)
         {
-            InetAddress address = transportAddress.getAddress();
-
-            if (address.isLoopbackAddress())
+            if (HostCandidateHarvester.isAddressAllowed(transportAddress.getAddress()))
             {
-                //loopback again
-                continue;
+                localAddresses.add(transportAddress);
             }
-
-            if (!config.useIpv6() && (address instanceof Inet6Address))
-                continue;
-
-            if (!config.useLinkLocalAddresses() && address.isLinkLocalAddress())
-            {
-                logger.info("Not using link-local address " + address +" for TCP candidates.");
-                continue;
-            }
-
-            if (allowedAddresses != null)
-            {
-                boolean found = false;
-
-                for (InetAddress allowedAddress : allowedAddresses)
-                {
-                    if (allowedAddress.equals(address))
-                    {
-                        found = true;
-                        break;
-                    }
-                }
-                if (!found)
-                {
-                    logger.info("Not using " + address +" for TCP candidates, "
-                                + "because it is not in the allowed list.");
-                    continue;
-                }
-            }
-
-            if (blockedAddresses != null)
-            {
-                boolean found = false;
-
-                for (InetAddress blockedAddress : blockedAddresses)
-                {
-                    if (blockedAddress.equals(address))
-                    {
-                        found = true;
-                        break;
-                    }
-                }
-                if (found)
-                {
-                    logger.info("Not using " + address + " for TCP candidates, "
-                                + "because it is in the blocked list.");
-                    continue;
-                }
-            }
-
-            // Passed all checks
-            localAddresses.add(transportAddress);
         }
     }
 
