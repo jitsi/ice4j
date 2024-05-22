@@ -18,7 +18,6 @@
 package org.ice4j.ice.harvest;
 
 import org.ice4j.*;
-import org.ice4j.ice.*;
 import org.ice4j.socket.*;
 
 import java.io.*;
@@ -87,11 +86,8 @@ public abstract class AbstractTcpListener
 
         for (NetworkInterface iface : interfaces)
         {
-            if (NetworkUtils.isInterfaceLoopback(iface)
-                    || !NetworkUtils.isInterfaceUp(iface)
-                    || !HostCandidateHarvester.isInterfaceAllowed(iface))
+            if (!HostCandidateHarvester.isInterfaceAllowed(iface))
             {
-                //this one is obviously not going to do
                 continue;
             }
 
@@ -153,8 +149,8 @@ public abstract class AbstractTcpListener
      * interfaces.
      *
      * @param port the port to listen on.
-     * @throws IOException when {@link StackProperties#ALLOWED_ADDRESSES} or
-     * {@link StackProperties#BLOCKED_ADDRESSES} contains invalid values, or
+     * @throws IOException when {@link HarvestConfig#getAllowedAddresses()} or
+     * {@link HarvestConfig#getBlockedAddresses()} contains invalid values, or
      * if an I/O error occurs.
      */
     public AbstractTcpListener(int port)
@@ -170,8 +166,8 @@ public abstract class AbstractTcpListener
      *
      * @param port the port to listen on.
      * @param interfaces the interfaces to listen on.
-     * @throws IOException when {@link StackProperties#ALLOWED_ADDRESSES} or
-     * {@link StackProperties#BLOCKED_ADDRESSES} contains invalid values, or
+     * @throws IOException when {@link HarvestConfig#getAllowedAddresses()} or
+     * {@link HarvestConfig#getBlockedAddresses()} contains invalid values, or
      * if an I/O error occurs.
      */
     public AbstractTcpListener(int port, List<NetworkInterface> interfaces)
@@ -185,8 +181,8 @@ public abstract class AbstractTcpListener
      * specified list of <tt>TransportAddress</tt>es.
      *
      * @param transportAddresses the transport addresses to listen on.
-     * @throws IOException when {@link StackProperties#ALLOWED_ADDRESSES} or
-     * {@link StackProperties#BLOCKED_ADDRESSES} contains invalid values, or
+     * @throws IOException when {@link HarvestConfig#getAllowedAddresses()} or
+     * {@link HarvestConfig#getBlockedAddresses()} contains invalid values, or
      * if an I/O error occurs.
      */
     public AbstractTcpListener(List<TransportAddress> transportAddresses)
@@ -202,104 +198,18 @@ public abstract class AbstractTcpListener
      * allocation.
      *
      * @param transportAddresses the list of addresses to add.
-     * @throws IOException when {@link StackProperties#ALLOWED_ADDRESSES} or
-     * {@link StackProperties#BLOCKED_ADDRESSES} contains invalid values.
+     * @throws IOException when {@link HarvestConfig#getAllowedAddresses()} or
+     * {@link HarvestConfig#getBlockedAddresses()} contains invalid values.
      */
     protected void addLocalAddresses(List<TransportAddress> transportAddresses)
         throws IOException
     {
-        // White list from the configuration
-        String[] allowedAddressesStr
-            = StackProperties.getStringArray(StackProperties.ALLOWED_ADDRESSES,
-                                             ";");
-        InetAddress[] allowedAddresses = null;
-
-        if (allowedAddressesStr != null)
-        {
-            allowedAddresses = new InetAddress[allowedAddressesStr.length];
-            for (int i = 0; i < allowedAddressesStr.length; i++)
-            {
-                allowedAddresses[i] = InetAddress.getByName(allowedAddressesStr[i]);
-            }
-        }
-
-        // Black list from the configuration
-        String[] blockedAddressesStr
-            = StackProperties.getStringArray(StackProperties.BLOCKED_ADDRESSES,
-                                             ";");
-        InetAddress[] blockedAddresses = null;
-
-        if (blockedAddressesStr != null)
-        {
-            blockedAddresses = new InetAddress[blockedAddressesStr.length];
-            for (int i = 0; i < blockedAddressesStr.length; i++)
-            {
-                blockedAddresses[i]
-                    = InetAddress.getByName(blockedAddressesStr[i]);
-            }
-        }
-
         for (TransportAddress transportAddress : transportAddresses)
         {
-            InetAddress address = transportAddress.getAddress();
-
-            if (address.isLoopbackAddress())
+            if (HostCandidateHarvester.isAddressAllowed(transportAddress.getAddress()))
             {
-                //loopback again
-                continue;
+                localAddresses.add(transportAddress);
             }
-
-            if (!config.useIpv6() && (address instanceof Inet6Address))
-                continue;
-
-            if (!config.useLinkLocalAddresses() && address.isLinkLocalAddress())
-            {
-                logger.info("Not using link-local address " + address +" for TCP candidates.");
-                continue;
-            }
-
-            if (allowedAddresses != null)
-            {
-                boolean found = false;
-
-                for (InetAddress allowedAddress : allowedAddresses)
-                {
-                    if (allowedAddress.equals(address))
-                    {
-                        found = true;
-                        break;
-                    }
-                }
-                if (!found)
-                {
-                    logger.info("Not using " + address +" for TCP candidates, "
-                                + "because it is not in the allowed list.");
-                    continue;
-                }
-            }
-
-            if (blockedAddresses != null)
-            {
-                boolean found = false;
-
-                for (InetAddress blockedAddress : blockedAddresses)
-                {
-                    if (blockedAddress.equals(address))
-                    {
-                        found = true;
-                        break;
-                    }
-                }
-                if (found)
-                {
-                    logger.info("Not using " + address + " for TCP candidates, "
-                                + "because it is in the blocked list.");
-                    continue;
-                }
-            }
-
-            // Passed all checks
-            localAddresses.add(transportAddress);
         }
     }
 

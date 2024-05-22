@@ -77,8 +77,7 @@ public abstract class AbstractUdpListener
     public static List<TransportAddress> getAllowedAddresses(int port)
     {
         List<TransportAddress> addresses = new LinkedList<>();
-        for (InetAddress address
-                : HostCandidateHarvester.getAllAllowedAddresses())
+        for (InetAddress address : HostCandidateHarvester.getAllAllowedAddresses())
         {
             addresses.add(new TransportAddress(address, port, Transport.UDP));
         }

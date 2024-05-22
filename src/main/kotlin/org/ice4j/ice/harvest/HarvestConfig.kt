@@ -20,10 +20,14 @@ import com.typesafe.config.Config
 import org.jitsi.metaconfig.ConfigException
 import org.jitsi.metaconfig.config
 import org.jitsi.metaconfig.optionalconfig
+import org.jitsi.utils.logging2.createLogger
+import java.net.InetAddress
 import java.time.Duration
 import org.jitsi.config.JitsiConfig.Companion.newConfig as configSource
 
 class HarvestConfig {
+    val logger = createLogger()
+
     val useLinkLocalAddresses: Boolean by config {
         "org.ice4j.ice.harvest.DISABLE_LINK_LOCAL_ADDRESSES".from(configSource)
             .transformedBy { !it }
@@ -106,6 +110,54 @@ class HarvestConfig {
             }
     }
 
+    /**
+     * The list of IP addresses that are allowed to be used for host candidate allocations. If no addresses are
+     * specified, any address is allowed.
+     */
+    val allowedAddresses: List<InetAddress> by config {
+        "org.ice4j.ice.harvest.ALLOWED_ADDRESSES".from(configSource).convertFrom<String> { l ->
+            l.split(";").filter { it.isNotEmpty() }.mapNotNull { it.toInetAddress() }
+        }
+        "ice4j.harvest.allowed-addresses".from(configSource).convertFrom<List<String>> { l ->
+            l.mapNotNull { it.toInetAddress() }
+        }
+    }
+
+    /**
+     * The list of IP addresses that are not allowed to be used for host candidate allocations. If no addresses are
+     * specified, any address is allowed.
+     */
+    val blockedAddresses: List<InetAddress> by config {
+        "org.ice4j.ice.harvest.BLOCKED_ADDRESSES".from(configSource).convertFrom<String> { l ->
+            l.split(";").filter { it.isNotEmpty() }.mapNotNull { it.toInetAddress() }
+        }
+        "ice4j.harvest.blocked-addresses".from(configSource).convertFrom<List<String>> { l ->
+            l.mapNotNull { it.toInetAddress() }
+        }
+    }
+
+    /**
+     * The allowed interfaces for host candidate allocations. If none are specified all interfaces are allowed unless
+     * blocked.
+     */
+    val allowedInterfaces: List<String> by config {
+        "org.ice4j.ice.harvest.ALLOWED_INTERFACES".from(configSource).convertFrom<String> { l ->
+            l.split(";").filter { it.isNotEmpty() }
+        }
+        "ice4j.harvest.allowed-interfaces".from(configSource)
+    }
+
+    /**
+     * The blocked interfaces for host candidate allocations. Note that this can not be used in conjunction with
+     * [allowedInterfaces]. If [allowedInterfaces] are defined then [blockedInterfaces] is not used.
+     */
+    val blockedInterfaces: List<String> by config {
+        "org.ice4j.ice.harvest.BLOCKED_INTERFACES".from(configSource).convertFrom<String> { l ->
+            l.split(";").filter { it.isNotEmpty() }
+        }
+        "ice4j.harvest.blocked-interfaces".from(configSource)
+    }
+
     val staticMappings: Set<StaticMapping> = let {
         if (legacyNatHarvesterLocalAddress != null && legacyNatHarvesterPublicAddress != null) {
             setOf(
@@ -115,6 +167,13 @@ class HarvestConfig {
         } else {
             staticMappingsFromNewConfig
         }
+    }
+
+    private fun String.toInetAddress(): InetAddress? = try {
+        InetAddress.getByName(this)
+    } catch (e: Exception) {
+        logger.warn("Invalid address, will not use it as allowed/blocked: $this")
+        null
     }
 
     data class StaticMapping(
