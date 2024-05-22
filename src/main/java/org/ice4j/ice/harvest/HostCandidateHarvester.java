@@ -21,6 +21,7 @@ import java.io.*;
 import java.net.*;
 import java.util.*;
 import java.util.logging.*;
+import java.util.stream.*;
 
 import org.ice4j.*;
 import org.ice4j.ice.*;
@@ -54,18 +55,6 @@ public class HostCandidateHarvester
     private HarvestStatistics harvestStatistics = new HarvestStatistics();
 
     /**
-     * Holds the list of allowed interfaces. It's either a non-empty array or null.
-     */
-    @NotNull
-    private static List<String> allowedInterfaces = new ArrayList<>();
-
-    /**
-     * Holds the list of blocked interfaces. It's either a non-empty array or null.
-     */
-    @NotNull
-    private static List<String> blockedInterfaces = new ArrayList<>();
-
-    /**
      * The list of allowed addresses.
      */
     @NotNull
@@ -78,64 +67,10 @@ public class HostCandidateHarvester
     private static List<InetAddress> blockedAddresses = new ArrayList<>();
 
     /**
-     * A boolean value that indicates whether the host candidate interface
-     * filters have been initialized or not.
-     */
-    private static boolean interfaceFiltersInitialized = false;
-
-    /**
      * A boolean value that indicates whether the host candidate address
      * filters have been initialized or not.
      */
     private static boolean addressFiltersInitialized = false;
-
-    /**
-     * Gets the array of allowed interfaces.
-     *
-     * @return the non-empty String array of allowed interfaces or null.
-     */
-    @NotNull
-    public static List<String> getAllowedInterfaces()
-    {
-        if (!interfaceFiltersInitialized)
-        {
-            try
-            {
-                initializeInterfaceFilters();
-            }
-            catch (Exception e)
-            {
-                logger.log(Level.WARNING, "There were errors during host " +
-                        "candidate interface filters initialization.", e);
-            }
-        }
-
-        return allowedInterfaces;
-    }
-
-    /**
-     * Gets the array of blocked interfaces.
-     *
-     * @return the non-empty String array of blocked interfaces or null.
-     */
-    @NotNull
-    public static List<String> getBlockedInterfaces()
-    {
-        if (!interfaceFiltersInitialized)
-        {
-            try
-            {
-                initializeInterfaceFilters();
-            }
-            catch (Exception e)
-            {
-                logger.log(Level.WARNING, "There were errors during host " +
-                        "candidate interface filters initialization.", e);
-            }
-        }
-
-        return blockedInterfaces;
-    }
 
     /**
      * Gets the list of addresses which have been explicitly allowed via
@@ -237,39 +172,29 @@ public class HostCandidateHarvester
     public static List<InetAddress> getAllAllowedAddresses()
     {
         List<InetAddress> addresses = new LinkedList<>();
-        try
+        for (NetworkInterface iface : getAllowedInterfaces())
         {
-            for (NetworkInterface iface
-                    : Collections.list(NetworkInterface.getNetworkInterfaces()))
+            Enumeration<InetAddress> ifaceAddresses = iface.getInetAddresses();
+            while (ifaceAddresses.hasMoreElements())
             {
-                if (NetworkUtils.isInterfaceLoopback(iface)
-                        || !NetworkUtils.isInterfaceUp(iface)
-                        || !isInterfaceAllowed(iface))
+                InetAddress address = ifaceAddresses.nextElement();
+
+                if (!isAddressAllowed(address))
                 {
                     continue;
                 }
 
-                Enumeration<InetAddress> ifaceAddresses
-                        = iface.getInetAddresses();
-                while (ifaceAddresses.hasMoreElements())
+                if (!config.useIpv6() && address instanceof Inet6Address)
                 {
-                    InetAddress address = ifaceAddresses.nextElement();
-
-                    if (!isAddressAllowed(address))
-                        continue;
-
-                    if (!config.useIpv6() && address instanceof Inet6Address)
-                        continue;
-                    if (!config.useLinkLocalAddresses() && address.isLinkLocalAddress())
-                        continue;
-
-                    addresses.add(address);
+                    continue;
                 }
+                if (!config.useLinkLocalAddresses() && address.isLinkLocalAddress())
+                {
+                    continue;
+                }
+
+                addresses.add(address);
             }
-        }
-        catch (SocketException se)
-        {
-            logger.info("Failed to get network interfaces: " + se);
         }
 
         return addresses;
@@ -310,8 +235,6 @@ public class HostCandidateHarvester
     {
         harvestStatistics.startHarvestTiming();
 
-        Enumeration<NetworkInterface> interfaces = NetworkInterface.getNetworkInterfaces();
-
         if (transport != Transport.UDP && transport != Transport.TCP)
         {
             throw new IllegalArgumentException("Transport protocol not supported: " + transport);
@@ -320,17 +243,8 @@ public class HostCandidateHarvester
         boolean boundAtLeastOneSocket = false;
         boolean foundAtLeastOneUsableInterface = false;
         boolean foundAtLeastOneUsableAddress = false;
-        while (interfaces.hasMoreElements())
+        for (NetworkInterface iface: getAllowedInterfaces())
         {
-            NetworkInterface iface = interfaces.nextElement();
-
-            if (NetworkUtils.isInterfaceLoopback(iface)
-                || !NetworkUtils.isInterfaceUp(iface)
-                || !isInterfaceAllowed(iface))
-            {
-                //this one is obviously not going to do
-                continue;
-            }
             foundAtLeastOneUsableInterface = true;
 
             Enumeration<InetAddress> addresses = iface.getInetAddresses();
@@ -436,21 +350,20 @@ public class HostCandidateHarvester
     }
 
     /**
-     * Returns a boolean value indicating whether ice4j should allocate a host
-     * candidate for the specified interface.
+     * Returns a boolean value indicating whether ice4j should allocate a host candidate for the specified interface.
+     * <p/>
+     * Returns <code>false</code> if the interface is loopback, is not currently up, or is not allowed by the
+     * configuration.
      *
      * @param iface The {@link NetworkInterface}.
-     *
-     * @return <tt>true</tt> if the {@link NetworkInterface} is listed in the
-     * <tt>org.ice4j.ice.harvest.ALLOWED_INTERFACES</tt> list. If that list
-     * isn't defined, returns <tt>true</tt> if it's not listed in the
-     * <tt>org.ice4j.ice.harvest.BLOCKED_INTERFACES</tt> list. It returns
-     * <tt>false</tt> otherwise.
      */
     public static boolean isInterfaceAllowed(NetworkInterface iface)
     {
-        if (iface == null)
-            throw new IllegalArgumentException("iface cannot be null");
+        Objects.requireNonNull(iface);
+        if (NetworkUtils.isInterfaceLoopback(iface) || !NetworkUtils.isInterfaceUp(iface))
+        {
+            return false;
+        }
 
         // gp: use getDisplayName() on Windows and getName() on Linux. Also
         // see NetworkAddressManagementServiceImpl in Jitsi.
@@ -459,29 +372,34 @@ public class HostCandidateHarvester
                 ? iface.getDisplayName()
                 : iface.getName();
 
-        List<String> allowedInterfaces = getAllowedInterfaces();
-
-        // NOTE The blocked interfaces list is taken into account only if the
-        // allowed interfaces list is not defined.
-
-        if (!allowedInterfaces.isEmpty())
+        if (!config.getAllowedInterfaces().isEmpty())
         {
-            // A list of allowed interfaces exists.
-            return allowedInterfaces.contains(ifName);
+            // If an allowlist is configured, just check against it.
+            return config.getAllowedInterfaces().contains(ifName);
         }
         else
         {
-            // A list of allowed interfaces does not exist.
-            List<String> blockedInterfaces = getBlockedInterfaces();
-
-            if (!blockedInterfaces.isEmpty())
-            {
-                // but a list of blocked interfaces exists.
-                return !blockedInterfaces.contains(ifName);
-            }
+            // Otherwise, check against the blocked list.
+            return !config.getBlockedInterfaces().contains(ifName);
         }
+    }
 
-        return true;
+    /**
+     * Get the list of network interfaces suitable for host candidate harvesting, that is they are up, non-loopback
+     * and are allowed by configuration.
+     */
+    public static List<NetworkInterface> getAllowedInterfaces()
+    {
+        try
+        {
+            return NetworkInterface.networkInterfaces()
+                    .filter(HostCandidateHarvester::isInterfaceAllowed).collect(Collectors.toList());
+        }
+        catch (IOException ioe)
+        {
+            logger.warning("Failed to get network interfaces: " + ioe.getMessage());
+            return Collections.emptyList();
+        }
     }
 
     /**
@@ -784,98 +702,5 @@ public class HostCandidateHarvester
     public HarvestStatistics getHarvestStatistics()
     {
         return harvestStatistics;
-    }
-
-    /**
-     * Initializes the host candidate interface filters stored in the
-     * <tt>org.ice4j.ice.harvest.ALLOWED_INTERFACES</tt> and
-     * <tt>org.ice4j.ice.harvest.BLOCKED_INTERFACES</tt> properties.
-     *
-     * @throws java.lang.IllegalStateException if there were errors during host
-     * candidate interface filters initialization.
-     */
-    public static synchronized void initializeInterfaceFilters()
-    {
-        // We want this method to run only once.
-        if (interfaceFiltersInitialized)
-            return;
-        interfaceFiltersInitialized = true;
-
-        // Initialize the allowed interfaces array.
-        allowedInterfaces = config.getAllowedInterfaces();
-
-        // getStringArray returns null if the array is empty.
-        if (!allowedInterfaces.isEmpty())
-        {
-            // Validate the allowed interfaces array.
-
-            // 1. Make sure the allowedInterfaces list contains interfaces that
-            // exist on the system.
-            for (String iface : allowedInterfaces)
-                try
-                {
-                    NetworkInterface.getByName(iface);
-                }
-                catch (SocketException e)
-                {
-                    throw new IllegalStateException("there is no network interface with the name " + iface, e);
-                }
-
-            // the allowedInterfaces array is not empty and its items represent
-            // valid interfaces => there's at least one listening interface.
-        }
-        else
-        {
-            // NOTE The blocked interfaces list is taken into account only if
-            // the allowed interfaces list is not defined => initialize the
-            // blocked interfaces only if the allowed interfaces list is not
-            // defined.
-
-            // Initialize the blocked interfaces array.
-            blockedInterfaces = config.getBlockedInterfaces();
-
-            // getStringArray returns null if the array is empty.
-            if (!blockedInterfaces.isEmpty())
-            {
-                // Validate the blocked interfaces array.
-
-                // 1. Make sure the blockedInterfaces list contains interfaces
-                // that exist on the system.
-                for (String iface : blockedInterfaces)
-                {
-                    try
-                    {
-                        NetworkInterface.getByName(iface);
-                    }
-                    catch (SocketException e)
-                    {
-                        throw new IllegalStateException("there is no network interface with the name " + iface, e);
-                    }
-                }
-
-                // 2. Make sure there's at least one allowed interface.
-                Enumeration<NetworkInterface> allInterfaces;
-                try
-                {
-                    allInterfaces = NetworkInterface.getNetworkInterfaces();
-                }
-                catch (SocketException e)
-                {
-                    throw new IllegalStateException("could not get the list of the available network interfaces", e);
-                }
-
-                int count = 0;
-                while (allInterfaces.hasMoreElements())
-                {
-                    allInterfaces.nextElement();
-                    count++;
-                }
-
-                if (blockedInterfaces.size() >= count)
-                {
-                    throw new IllegalStateException("all network interfaces are blocked");
-                }
-            }
-        }
     }
 }
