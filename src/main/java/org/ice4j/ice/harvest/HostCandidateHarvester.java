@@ -179,7 +179,7 @@ public class HostCandidateHarvester
                 }
 
                 HostCandidate candidate = new HostCandidate(sock, component, transport);
-                candidate.setVirtual(NetworkUtils.isInterfaceVirtual(iface));
+                candidate.setVirtual(iface.isVirtual());
                 component.addLocalCandidate(candidate);
 
                 if (transport == Transport.TCP)
@@ -231,8 +231,16 @@ public class HostCandidateHarvester
     public static boolean isInterfaceAllowed(NetworkInterface iface)
     {
         Objects.requireNonNull(iface);
-        if (NetworkUtils.isInterfaceLoopback(iface) || !NetworkUtils.isInterfaceUp(iface))
+        try
         {
+            if (iface.isLoopback() || !iface.isUp())
+            {
+                return false;
+            }
+        }
+        catch (SocketException se)
+        {
+            logger.warning("Failed to check state of interface: " + se);
             return false;
         }
 
