@@ -344,6 +344,8 @@ class ConnectivityCheckClient
             {
                 logger.trace("checking pair " + candidatePair + " tid " + tran);
             }
+
+            return tran;
         }
         catch (NetAccessManager.SocketNotFoundException e)
         {
@@ -351,8 +353,6 @@ class ConnectivityCheckClient
         }
         catch (Exception ex)
         {
-            tran = null;
-
             IceSocketWrapper stunSocket = localCandidate.getStunSocket(null);
 
             if (stunSocket != null)
@@ -376,7 +376,7 @@ class ConnectivityCheckClient
             }
         }
 
-        return tran;
+        return null;
     }
 
     /**
@@ -944,6 +944,7 @@ class ConnectivityCheckClient
                             "Pair failed: "
                                 + pairToCheck.toShortString());
                         pairToCheck.setStateFailed();
+                        updateCheckListAndTimerStates(pairToCheck);
                     }
                     else
                     {
