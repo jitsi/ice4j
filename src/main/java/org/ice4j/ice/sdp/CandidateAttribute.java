@@ -115,29 +115,7 @@ public class CandidateAttribute extends AttributeField
      */
     public String getValue()
     {
-        StringBuffer buff = new StringBuffer();
-
-        buff.append(candidate.getFoundation());
-        buff.append(" ").append(
-            candidate.getParentComponent().getComponentID());
-        buff.append(" ").append(candidate.getTransport());
-        buff.append(" ").append(candidate.getPriority());
-        buff.append(" ").append(
-            candidate.getTransportAddress().getHostAddress());
-        buff.append(" ").append(
-            candidate.getTransportAddress().getPort());
-        buff.append(" typ ").append(
-            candidate.getType());
-
-        TransportAddress relAddr = candidate.getRelatedAddress();
-
-        if (relAddr != null)
-        {
-            buff.append(" raddr ").append(relAddr.getHostAddress());
-            buff.append(" rport ").append(relAddr.getPort());
-        }
-
-        return buff.toString();
+        return candidate.toAttributeValue();
     }
 
     /**
