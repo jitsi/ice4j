@@ -112,7 +112,7 @@ public class DefaultNominator
             if (parentStream.validListContainsNomineeForComponent(parentComponent))
             {
                 logger.debug(() ->
-                        "Keep-alive for pair: " + validPair.toShortString());
+                        "Keep-alive for pair: " + validPair.toRedactedShortString());
                 return;
             }
         }
@@ -140,7 +140,7 @@ public class DefaultNominator
         {
             CandidatePair validPair = (CandidatePair)evt.getSource();
 
-            logger.info("Nominate (first valid): " + validPair.toShortString()
+            logger.info("Nominate (first valid): " + validPair.toRedactedShortString()
                 + ".");
             parentAgent.nominate(validPair);
         }
@@ -178,7 +178,7 @@ public class DefaultNominator
                 {
                     logger.info(
                             "Nominate (highest priority): "
-                                + validPair.toShortString());
+                                + validPair.toRedactedShortString());
                     parentAgent.nominate(pair);
                 }
             }
@@ -267,7 +267,7 @@ public class DefaultNominator
 
                     logger.info(
                             "Nominate (first highest valid): "
-                                + validPair.toShortString());
+                                + validPair.toRedactedShortString());
                     nominate = true;
                 }
             }
@@ -354,7 +354,7 @@ public class DefaultNominator
 
                 logger.info(
                         "Nominate (first highest valid): "
-                            + pair.toShortString());
+                            + pair.toRedactedShortString());
                 parentAgent.nominate(pair);
             }
         }
@@ -393,7 +393,7 @@ public class DefaultNominator
                 return;
 
             logger.info(
-                    "Nominate (first highest valid): " + pair.toShortString());
+                    "Nominate (first highest valid): " + pair.toRedactedShortString());
 
             // task has not been cancelled after WAIT_TIME milliseconds so
             // nominate the pair

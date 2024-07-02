@@ -756,7 +756,23 @@ public abstract class Candidate<T extends Candidate<?>>
      * @return a <tt>String</tt> representation of this <tt>Candidate</tt>.
      */
     @Override
-    public String toString()
+    public String toString() {
+        return toString(false);
+    }
+
+    /**
+     * Returns a <tt>String</tt> representation of this <tt>Candidate</tt>
+     * containing its <tt>TransportAddress</tt>, base, foundation, priority and
+     * whatever other properties may be relevant, but with its IP address redacted if
+     * redaction is enabled.
+     *
+     * @return a redacted <tt>String</tt> representation of this <tt>Candidate</tt>.
+     */
+    public String toRedactedString() {
+        return toString(true);
+    }
+
+    private String toString(boolean redacted)
     {
         StringBuilder buff = new StringBuilder("candidate:");
 
@@ -764,7 +780,14 @@ public abstract class Candidate<T extends Candidate<?>>
         buff.append(" ").append(getParentComponent().getComponentID());
         buff.append(" ").append(getTransport());
         buff.append(" ").append(getPriority());
-        buff.append(" ").append(getTransportAddress().getHostAddress());
+        if (redacted)
+        {
+            buff.append(" ").append(getTransportAddress().getRedactedAddress());
+        }
+        else
+        {
+            buff.append(" ").append(getTransportAddress().getHostAddress());
+        }
         buff.append(" ").append(getTransportAddress().getPort());
         buff.append(" typ ").append(getType());
 
@@ -786,6 +809,11 @@ public abstract class Candidate<T extends Candidate<?>>
     public String toShortString()
     {
         return getTransportAddress() + "/" + getType();
+    }
+
+    public String toRedactedShortString()
+    {
+        return getTransportAddress().toRedactedString() + "/" + getType();
     }
 
     /**

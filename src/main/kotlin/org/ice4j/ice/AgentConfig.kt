@@ -65,6 +65,12 @@ class AgentConfig {
         "ice4j.software".from(configSource)
     }
 
+    /** Whether remote IP addresses should be redacted in logs */
+    val redactRemoteAddresses: Boolean by config {
+        "org.ice4j.REDACT_REMOTE_ADDRESSES".from(configSource)
+        "ice4j.redact-remote-addresses".from(configSource)
+    }
+
     /**
      * Whether the per-component merging socket should be enabled by default (the default value can be
      * overridden with the [Agent] API).

@@ -147,10 +147,28 @@ public class TransportAddress
      */
     public String toString()
     {
-        String hostAddress = getHostAddress();
-        if (hostAddress == null)
+        return toString(false);
+    }
+
+    public String toRedactedString()
+    {
+        return toString(true);
+    }
+
+    private String toString(boolean redact)
+    {
+        String hostAddress;
+        if (redact)
         {
-            hostAddress = getHostName();
+            hostAddress = getRedactedAddress();
+        }
+        else
+        {
+            hostAddress = getHostAddress();
+            if (hostAddress == null)
+            {
+                hostAddress = getHostName();
+            }
         }
 
         StringBuilder bldr = new StringBuilder(hostAddress);
@@ -179,6 +197,19 @@ public class TransportAddress
             addressStr = NetworkUtils.stripScopeID(addressStr);
 
         return addressStr;
+    }
+
+    /* Return the host address, redacted if address redaction is enabled. */
+    public String getRedactedAddress()
+    {
+        if (AgentConfig.config.getRedactRemoteAddresses())
+        {
+            return toRedactedString(getAddress());
+        }
+        else
+        {
+            return getHostAddress();
+        }
     }
 
     /**
@@ -287,5 +318,71 @@ public class TransportAddress
         //may add more unreachability conditions here in the future;
 
         return true;
+    }
+
+    public static String redact(InetAddress addr)
+    {
+        if (AgentConfig.config.getRedactRemoteAddresses())
+        {
+            return toRedactedString(addr);
+        }
+        else
+        {
+            return addr.getHostAddress();
+        }
+    }
+
+    public static String redact(SocketAddress addr)
+    {
+        if (addr instanceof InetSocketAddress && AgentConfig.config.getRedactRemoteAddresses())
+        {
+            InetSocketAddress iaddr = (InetSocketAddress)addr;
+            return toRedactedString(iaddr.getAddress()) + ":" + iaddr.getPort();
+        }
+        else if (addr == null)
+        {
+            return null;
+        }
+        else
+        {
+            return addr.toString();
+        }
+    }
+
+    /**
+     * Return a redacted form of an InetAddress, in a form preserving its IP address family
+     * and (for IPv6) its highest-level bytes.
+     */
+    public static String toRedactedString(InetAddress addr)
+    {
+        if (addr == null)
+        {
+            return null;
+        }
+        if (addr.isLoopbackAddress())
+        {
+            return addr.getHostAddress();
+        }
+        if (addr instanceof Inet6Address)
+        {
+            StringBuilder sb = new StringBuilder();
+            /* Include the first two bytes; all those tell is the type of address. */
+            byte[] addrBytes = addr.getAddress();
+            if (addrBytes[0] != 0 && addrBytes[1] != 0)
+            {
+                sb.append(Integer.toHexString(((addrBytes[0]<<8) & 0xff00)
+                        | (addrBytes[1] & 0xff)));
+            }
+            sb.append("::xxx");
+            return sb.toString();
+        }
+        else if (addr instanceof Inet4Address)
+        {
+            return "xx.xx.xx.xx";
+        }
+        else
+        {
+            return addr.getHostAddress();
+        }
     }
 }

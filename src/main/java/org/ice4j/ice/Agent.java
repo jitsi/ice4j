@@ -1613,7 +1613,7 @@ public class Agent
             = createCandidatePair(localCandidate, remoteCandidate);
 
         logger.debug(() -> "set use-candidate " + useCandidate + " for pair " +
-            triggeredPair.toShortString());
+            triggeredPair.toRedactedShortString());
         if (useCandidate)
         {
             triggeredPair.setUseCandidateReceived();
@@ -1635,7 +1635,7 @@ public class Agent
             else //Running, Connected or Terminated.
             {
                 logger.debug(() -> "Received check from "
-                    + triggeredPair.toShortString() + " triggered a check.");
+                    + triggeredPair.toRedactedShortString() + " triggered a check.");
 
                 // We have been started, and have not failed (yet). If this is
                 // a new pair, handle it (even if we have already completed).
@@ -1725,7 +1725,7 @@ public class Agent
             //
             if (triggerPair.getParentComponent().getSelectedPair() == null)
                 logger.info("Add peer CandidatePair with new reflexive " +
-                        "address to checkList: " + triggerPair);
+                        "address to checkList: " + triggerPair.toRedactedString());
             parentStream.addToCheckList(triggerPair);
         }
 
