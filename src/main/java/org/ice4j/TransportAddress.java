@@ -366,10 +366,18 @@ public class TransportAddress
         if (addr instanceof Inet6Address)
         {
             StringBuilder sb = new StringBuilder();
-            /* Include the first two bytes; all those tell is the type of address. */
             byte[] addrBytes = addr.getAddress();
-            if (addrBytes[0] != 0 && addrBytes[1] != 0)
+            if ((addrBytes[0] & 0xe0) == 0x20) {
+                /* Globally-routable IPv6 address; the second nybble can indicate the
+                 * RIR that allocated the address, so don't print it.
+                 */
+                sb.append("2xxx");
+            }
+            else if (addrBytes[0] != 0 || addrBytes[1] != 0)
             {
+                /* Other IPv6 address; most common will be fc00:: unique-local and fe80:: link-local address where the
+                 * first 16 bits don't leak anything but the type; all others indicate something unexpected.
+                 */
                 sb.append(Integer.toHexString(((addrBytes[0]<<8) & 0xff00)
                         | (addrBytes[1] & 0xff)));
             }
