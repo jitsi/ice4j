@@ -603,11 +603,11 @@ public class Component
             buff.append("\ndefault remote candidate: ");
             if (defaultRemoteCandidate != null)
             {
-                buff.append(getDefaultRemoteCandidate().toRedactedString());
+                buff.append(defaultRemoteCandidate.toRedactedString());
             }
             else
             {
-                buff.append((String)null);
+                buff.append("null");
             }
 
             synchronized(remoteCandidates)

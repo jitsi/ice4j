@@ -161,6 +161,15 @@ public class TransportAddress
         if (redact)
         {
             hostAddress = getRedactedAddress();
+            if (hostAddress == null)
+            {
+                String hostName = getHostName();
+                if (hostName != null)
+                {
+                    /* The transport address is an unresolved hostname.  Redact the hostname. */
+                    hostAddress = "xxxx.xxx";
+                }
+            }
         }
         else
         {
@@ -169,6 +178,11 @@ public class TransportAddress
             {
                 hostAddress = getHostName();
             }
+        }
+        if (hostAddress == null)
+        {
+            // The address has neither a hostName nor a hostAddress.  Shouldn't happen, but don't NPE if it does. */
+            hostAddress = "null";
         }
 
         StringBuilder bldr = new StringBuilder(hostAddress);
@@ -204,7 +218,15 @@ public class TransportAddress
     {
         if (AgentConfig.config.getRedactRemoteAddresses())
         {
-            return toRedactedString(getAddress());
+            InetAddress addr = getAddress();
+            if (addr != null)
+            {
+                return toRedactedString(addr);
+            }
+            else
+            {
+                return null;
+            }
         }
         else
         {
@@ -359,7 +381,7 @@ public class TransportAddress
         {
             return null;
         }
-        if (addr.isLoopbackAddress())
+        if (addr.isAnyLocalAddress() || addr.isLoopbackAddress())
         {
             return addr.getHostAddress();
         }
@@ -367,7 +389,8 @@ public class TransportAddress
         {
             StringBuilder sb = new StringBuilder();
             byte[] addrBytes = addr.getAddress();
-            if ((addrBytes[0] & 0xe0) == 0x20) {
+            if ((addrBytes[0] & 0xe0) == 0x20)
+            {
                 /* Globally-routable IPv6 address; the second nybble can indicate the
                  * RIR that allocated the address, so don't print it.
                  */
