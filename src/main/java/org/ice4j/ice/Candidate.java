@@ -780,7 +780,7 @@ public abstract class Candidate<T extends Candidate<?>>
         buff.append(" ").append(getParentComponent().getComponentID());
         buff.append(" ").append(getTransport());
         buff.append(" ").append(getPriority());
-        if (redacted)
+        if (redacted && getType() != CandidateType.RELAYED_CANDIDATE)
         {
             buff.append(" ").append(getTransportAddress().getRedactedAddress());
         }
@@ -795,7 +795,15 @@ public abstract class Candidate<T extends Candidate<?>>
 
         if (relAddr != null)
         {
-            buff.append(" raddr ").append(relAddr.getHostAddress());
+            buff.append(" raddr ");
+            if (redacted)
+            {
+                buff.append(relAddr.getRedactedAddress());
+            }
+            else
+            {
+                buff.append(relAddr.getHostAddress());
+            }
             buff.append(" rport ").append(relAddr.getPort());
         }
 
@@ -813,6 +821,10 @@ public abstract class Candidate<T extends Candidate<?>>
 
     public String toRedactedShortString()
     {
+        if (getType() == CandidateType.RELAYED_CANDIDATE)
+        {
+            return toShortString();
+        }
         return getTransportAddress().toRedactedString() + "/" + getType();
     }
 
