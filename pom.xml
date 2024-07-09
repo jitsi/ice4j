@@ -40,7 +40,7 @@
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <jicoco.version>1.1-127-gf49982f</jicoco.version>
     <kotlin.version>1.9.10</kotlin.version>
-    <dokka.version>1.9.0</dokka.version>
+    <dokka.version>1.9.10</dokka.version>
     <kotest.version>5.7.2</kotest.version>
     <junit.version>5.10.0</junit.version>
   </properties>
