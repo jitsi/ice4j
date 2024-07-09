@@ -525,7 +525,7 @@ public class MergingDatagramSocket
                         {
                             logger.info("Discarded " + numDiscardedPackets
                                     + " packets. Last remote address:"
-                                    + p.getSocketAddress());
+                                    + TransportAddress.redact(p.getSocketAddress()));
                         }
 
                         // Go on and receive the next packet in p.
@@ -583,7 +583,7 @@ public class MergingDatagramSocket
         if (logger.isDebugEnabled())
         {
             logger.debug("Initializing the active container, socket=" + socket
-                    + "; remote address=" + remoteAddress);
+                    + "; remote address=" + TransportAddress.redact(remoteAddress));
         }
 
         synchronized (socketContainersSyncRoot)
@@ -725,11 +725,11 @@ public class MergingDatagramSocket
             thread.setDaemon(true);
             thread.setName("MergingDatagramSocket reader thread for: "
                                + getLocalSocketAddress() + " -> "
-                               + getRemoteSocketAddress());
+                               + TransportAddress.redact(getRemoteSocketAddress()));
 
             logger.debug(() -> "Starting the thread for socket "
                             + getLocalSocketAddress() + " -> "
-                            + getRemoteSocketAddress());
+                            + TransportAddress.redact(getRemoteSocketAddress()));
             thread.start();
         }
 
@@ -950,12 +950,12 @@ public class MergingDatagramSocket
             if (datagramSocket != null)
             {
                 return datagramSocket.getLocalSocketAddress()
-                    + " -> " + remoteAddress;
+                    + " -> " + TransportAddress.redact(remoteAddress);
             }
             else
             {
                 return delegatingSocket.getLocalSocketAddress()
-                    + " -> " + remoteAddress;
+                    + " -> " + TransportAddress.redact(remoteAddress);
             }
         }
 

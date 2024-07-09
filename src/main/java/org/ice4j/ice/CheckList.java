@@ -405,7 +405,7 @@ public class CheckList
 
         logger.info(
                 "Selected pair for stream " + cmp.toShortString() + ": "
-                    + nominatedPair.toShortString());
+                    + nominatedPair.toRedactedShortString());
 
         cmp.setSelectedPair(nominatedPair);
 

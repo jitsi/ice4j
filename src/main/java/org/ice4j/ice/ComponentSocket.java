@@ -96,7 +96,7 @@ public class ComponentSocket
                 return;
             }
 
-            logger.info("Adding allowed address: " + address);
+            logger.info("Adding allowed address: " + TransportAddress.redact(address));
 
             Set<SocketAddress> newSet = new HashSet<>();
             newSet.addAll(authorizedAddresses);

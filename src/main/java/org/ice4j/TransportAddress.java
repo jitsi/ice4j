@@ -147,10 +147,42 @@ public class TransportAddress
      */
     public String toString()
     {
-        String hostAddress = getHostAddress();
+        return toString(false);
+    }
+
+    public String toRedactedString()
+    {
+        return toString(true);
+    }
+
+    private String toString(boolean redact)
+    {
+        String hostAddress;
+        if (redact)
+        {
+            hostAddress = getRedactedAddress();
+            if (hostAddress == null)
+            {
+                String hostName = getHostName();
+                if (hostName != null)
+                {
+                    /* The transport address is an unresolved hostname.  Redact the hostname. */
+                    hostAddress = "xxxx.xxx";
+                }
+            }
+        }
+        else
+        {
+            hostAddress = getHostAddress();
+            if (hostAddress == null)
+            {
+                hostAddress = getHostName();
+            }
+        }
         if (hostAddress == null)
         {
-            hostAddress = getHostName();
+            // The address has neither a hostName nor a hostAddress.  Shouldn't happen, but don't NPE if it does. */
+            hostAddress = "null";
         }
 
         StringBuilder bldr = new StringBuilder(hostAddress);
@@ -179,6 +211,27 @@ public class TransportAddress
             addressStr = NetworkUtils.stripScopeID(addressStr);
 
         return addressStr;
+    }
+
+    /* Return the host address, redacted if address redaction is enabled. */
+    public String getRedactedAddress()
+    {
+        if (AgentConfig.config.getRedactRemoteAddresses())
+        {
+            InetAddress addr = getAddress();
+            if (addr != null)
+            {
+                return toRedactedString(addr);
+            }
+            else
+            {
+                return null;
+            }
+        }
+        else
+        {
+            return getHostAddress();
+        }
     }
 
     /**
@@ -287,5 +340,80 @@ public class TransportAddress
         //may add more unreachability conditions here in the future;
 
         return true;
+    }
+
+    public static String redact(InetAddress addr)
+    {
+        if (AgentConfig.config.getRedactRemoteAddresses())
+        {
+            return toRedactedString(addr);
+        }
+        else
+        {
+            return addr.getHostAddress();
+        }
+    }
+
+    public static String redact(SocketAddress addr)
+    {
+        if (addr instanceof InetSocketAddress && AgentConfig.config.getRedactRemoteAddresses())
+        {
+            InetSocketAddress iaddr = (InetSocketAddress)addr;
+            return toRedactedString(iaddr.getAddress()) + ":" + iaddr.getPort();
+        }
+        else if (addr == null)
+        {
+            return null;
+        }
+        else
+        {
+            return addr.toString();
+        }
+    }
+
+    /**
+     * Return a redacted form of an InetAddress, in a form preserving its IP address family
+     * and (for IPv6) its highest-level bytes.
+     */
+    public static String toRedactedString(InetAddress addr)
+    {
+        if (addr == null)
+        {
+            return null;
+        }
+        if (addr.isAnyLocalAddress() || addr.isLoopbackAddress())
+        {
+            return addr.getHostAddress();
+        }
+        if (addr instanceof Inet6Address)
+        {
+            StringBuilder sb = new StringBuilder();
+            byte[] addrBytes = addr.getAddress();
+            if ((addrBytes[0] & 0xe0) == 0x20)
+            {
+                /* Globally-routable IPv6 address; the second nybble can indicate the
+                 * RIR that allocated the address, so don't print it.
+                 */
+                sb.append("2xxx");
+            }
+            else if (addrBytes[0] != 0 || addrBytes[1] != 0)
+            {
+                /* Other IPv6 address; most common will be fc00:: unique-local and fe80:: link-local address where the
+                 * first 16 bits don't leak anything but the type; all others indicate something unexpected.
+                 */
+                sb.append(Integer.toHexString(((addrBytes[0]<<8) & 0xff00)
+                        | (addrBytes[1] & 0xff)));
+            }
+            sb.append("::xxx");
+            return sb.toString();
+        }
+        else if (addr instanceof Inet4Address)
+        {
+            return "xx.xx.xx.xx";
+        }
+        else
+        {
+            return addr.getHostAddress();
+        }
     }
 }

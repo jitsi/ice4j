@@ -326,7 +326,7 @@ public class Component
     public void addRemoteCandidate(RemoteCandidate candidate)
     {
         logger.info("Add remote candidate for " + toShortString()
-                            + ": " + candidate.toShortString());
+                            + ": " + candidate.toRedactedShortString());
 
         synchronized(remoteCandidates)
         {
@@ -471,15 +471,15 @@ public class Component
                     if (existingPair != null)
                     {
                         logger.info("existing Pair updated: " +
-                            existingPair.toShortString() +
-                            " to " + pair.toShortString() + ".");
+                            existingPair.toRedactedShortString() +
+                            " to " + pair.toRedactedShortString() + ".");
                         existingPair.setRemoteCandidate(pair.getRemoteCandidate());
                         existingPair.computePriority();
                     }
                     else
                     {
                         streamCheckList.add(pair);
-                        logger.info("new Pair added: " + pair.toShortString()
+                        logger.info("new Pair added: " + pair.toRedactedShortString()
                             + ".");
                     }
                 }
@@ -599,13 +599,22 @@ public class Component
             buff.append("\n")
                 .append(remoteCandidatesCount)
                 .append(" Remote candidates:");
-            buff.append("\ndefault remote candidate: ")
-                .append(getDefaultRemoteCandidate());
+            Candidate<?> defaultRemoteCandidate = getDefaultRemoteCandidate();
+            buff.append("\ndefault remote candidate: ");
+            if (defaultRemoteCandidate != null)
+            {
+                buff.append(defaultRemoteCandidate.toRedactedString());
+            }
+            else
+            {
+                buff.append("null");
+            }
+
             synchronized(remoteCandidates)
             {
                 for (RemoteCandidate cand : remoteCandidates)
                 {
-                    buff.append("\n").append(cand);
+                    buff.append("\n").append(cand.toRedactedString());
                 }
             }
         }

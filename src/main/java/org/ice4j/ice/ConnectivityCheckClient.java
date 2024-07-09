@@ -279,7 +279,7 @@ class ConnectivityCheckClient
             {
                 logger.debug(() ->
                         "Add USE-CANDIDATE in check for: "
-                            + candidatePair.toShortString());
+                            + candidatePair.toRedactedShortString());
                 request.putAttribute(
                         AttributeFactory.createUseCandidateAttribute());
             }
@@ -324,7 +324,7 @@ class ConnectivityCheckClient
         if (logger.isDebugEnabled())
         {
             logger.debug(
-                    "start check for " + candidatePair.toShortString() + " tid "
+                    "start check for " + candidatePair.toRedactedShortString() + " tid "
                             + tran);
         }
         try
@@ -342,7 +342,7 @@ class ConnectivityCheckClient
                         maxRetransmissions);
             if (logger.isTraceEnabled())
             {
-                logger.trace("checking pair " + candidatePair + " tid " + tran);
+                logger.trace("checking pair " + candidatePair.toRedactedString() + " tid " + tran);
             }
         }
         catch (NetAccessManager.SocketNotFoundException e)
@@ -399,7 +399,7 @@ class ConnectivityCheckClient
         if (!checkSymmetricAddresses(ev))
         {
             logger.info("Received a non-symmetric response for pair: "
-                                + checkedPair.toShortString() + ". Failing.");
+                                + checkedPair.toRedactedShortString() + ". Failing.");
             checkedPair.setStateFailed();
         }
         else
@@ -536,7 +536,7 @@ class ConnectivityCheckClient
             logger.debug(() -> "Received a success response with no "
                     + "XOR_MAPPED_ADDRESS attribute.");
             logger.info("Pair failed (no XOR-MAPPED-ADDRESS): "
-                    + checkedPair.toShortString() + ".");
+                    + checkedPair.toRedactedShortString() + ".");
             checkedPair.setStateFailed();
             return; //malformed error response
         }
@@ -608,7 +608,7 @@ class ConnectivityCheckClient
             if (checkedPair.getParentComponent().getSelectedPair() == null)
             {
                 logger.info("Receive a peer-reflexive candidate: "
-                    + peerReflexiveCandidate.getTransportAddress()
+                    + peerReflexiveCandidate.getTransportAddress().toRedactedString()
                     + ".");
             }
         }
@@ -646,7 +646,7 @@ class ConnectivityCheckClient
             //different than the valid pair constructed above
             if (checkedPair.getParentComponent().getSelectedPair() == null)
             {
-                logger.info("Pair succeeded: " + checkedPair.toShortString()
+                logger.info("Pair succeeded: " + checkedPair.toRedactedShortString()
                                 + ".");
             }
             checkedPair.setStateSucceeded();
@@ -655,7 +655,7 @@ class ConnectivityCheckClient
         if (!validPair.isValid())
         {
             if (validPair.getParentComponent().getSelectedPair() == null)
-                logger.info("Pair validated: " + validPair.toShortString()
+                logger.info("Pair validated: " + validPair.toRedactedShortString()
                     + ".");
             parentAgent.validatePair(validPair);
         }
@@ -740,14 +740,14 @@ class ConnectivityCheckClient
             if (validPair.getParentComponent().getSelectedPair() == null)
             {
                 logger.info("Nomination confirmed for pair: "
-                    + validPair.toShortString()
+                    + validPair.toRedactedShortString()
                     + ".");
                 parentAgent.nominationConfirmed( validPair );
             }
             else
             {
                 logger.debug(() ->
-                        "Keep alive for pair: " + validPair.toShortString());
+                        "Keep alive for pair: " + validPair.toRedactedShortString());
             }
         }
         //If the agent is the controlled agent, the response may be the result
@@ -763,13 +763,13 @@ class ConnectivityCheckClient
             {
                 logger.info(
                         "Nomination confirmed for pair: "
-                            + validPair.toShortString());
+                            + validPair.toRedactedShortString());
                 parentAgent.nominationConfirmed(checkedPair);
             }
             else
             {
                 logger.debug(() ->
-                        "Keep alive for pair: " + validPair.toShortString());
+                        "Keep alive for pair: " + validPair.toRedactedShortString());
             }
         }
 
@@ -858,7 +858,7 @@ class ConnectivityCheckClient
             String reason = errorAttr.getReasonPhrase();
             String trimmedReason = reason != null ? reason.trim() : null;
             logger.info(
-                    "Error response for pair: " + pair.toShortString() +
+                    "Error response for pair: " + pair.toRedactedShortString() +
                     ", failing.  Code = " + code +
                     "(class=" + cl + "; number=" + co + "): " + trimmedReason);
             pair.setStateFailed();
@@ -878,7 +878,7 @@ class ConnectivityCheckClient
         CandidatePair pair
             = (CandidatePair) ev.getTransactionID() .getApplicationData();
 
-        logger.info("timeout for pair: " + pair.toShortString() + ", failing.");
+        logger.info("timeout for pair: " + pair.toRedactedShortString() + ", failing.");
         pair.setStateFailed();
         updateCheckListAndTimerStates(pair);
     }
@@ -942,7 +942,7 @@ class ConnectivityCheckClient
                     {
                         logger.info(
                             "Pair failed: "
-                                + pairToCheck.toShortString());
+                                + pairToCheck.toRedactedShortString());
                         pairToCheck.setStateFailed();
                     }
                     else

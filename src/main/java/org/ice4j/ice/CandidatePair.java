@@ -485,6 +485,20 @@ public class CandidatePair
     }
 
     /**
+     * Returns a String representation of this <tt>CandidatePair</tt>, with the remote
+     * candidate IP address redacted if redaction is enabled.
+     *
+     * @return a String representation of the object.
+     */
+    public String toRedactedString()
+    {
+        return
+                "CandidatePair (State=" + getState() + " Priority=" + getPriority()
+                        + "):\n\tLocalCandidate=" + getLocalCandidate()
+                        + "\n\tRemoteCandidate=" + getRemoteCandidate().toRedactedString();
+    }
+
+    /**
      * Returns a short String representation of this <tt>CandidatePair</tt>.
      *
      * @return a short String representation of the object.
@@ -493,6 +507,19 @@ public class CandidatePair
     {
         return getLocalCandidate().toShortString()
                 + " -> " + getRemoteCandidate().toShortString()
+                + " (" + getParentComponent().toShortString() + ")";
+    }
+
+    /**
+     * Returns a short String representation of this <tt>CandidatePair</tt>,
+     * with the remote candidate IP address redacted if redaction is enabled.
+     *
+     * @return a redacted short String representation of the object.
+     */
+    public String toRedactedShortString()
+    {
+        return getLocalCandidate().toShortString()
+                + " -> " + getRemoteCandidate().toRedactedShortString()
                 + " (" + getParentComponent().toShortString() + ")";
     }
 
