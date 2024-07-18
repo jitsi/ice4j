@@ -20,6 +20,7 @@ package org.ice4j.ice.harvest;
 import org.ice4j.*;
 import org.ice4j.attribute.*;
 import org.ice4j.message.*;
+import org.ice4j.util.*;
 import org.jitsi.utils.queue.*;
 
 import java.io.*;
@@ -162,15 +163,13 @@ public abstract class AbstractUdpListener
      * {@link #thread} is the only thread which adds new entries, while
      * other threads remove entries when candidates are freed.
      */
-    private final Map<SocketAddress, MySocket> sockets
-            = new ConcurrentHashMap<>();
+    private final Map<SocketAddress, MySocket> sockets = new ConcurrentHashMap<>();
 
     /**
      * A pool of <tt>Buffer</tt> instances used to avoid creating of new java
      * objects.
      */
-    private final ArrayBlockingQueue<Buffer> pool
-        = new ArrayBlockingQueue<>(POOL_SIZE);
+    private final ArrayBlockingQueue<Buffer> pool = new ArrayBlockingQueue<>(POOL_SIZE);
 
     /**
      * The local address that this harvester is bound to.
@@ -298,9 +297,9 @@ public abstract class AbstractUdpListener
             buf = getFreeBuffer();
 
             if (pkt == null)
-                pkt = new DatagramPacket(buf.buffer, 0, buf.buffer.length);
+                pkt = new DatagramPacket(buf.getBuffer(), 0, buf.getBuffer().length);
             else
-                pkt.setData(buf.buffer, 0, buf.buffer.length);
+                pkt.setData(buf.getBuffer(), 0, buf.getBuffer().length);
 
             try
             {
@@ -314,7 +313,8 @@ public abstract class AbstractUdpListener
                 }
                 break;
             }
-            buf.len = pkt.getLength();
+            buf.setOffset(pkt.getOffset());
+            buf.setLength(pkt.getLength());
 
 
             remoteAddress = (InetSocketAddress) pkt.getSocketAddress();
@@ -327,7 +327,7 @@ public abstract class AbstractUdpListener
             else
             {
                 // Packet from an unknown source. Is it a STUN Binding Request?
-                String ufrag = getUfrag(buf.buffer, 0, buf.len);
+                String ufrag = getUfrag(buf.getBuffer(), buf.getOffset(), buf.getLength());
                 if (ufrag == null)
                 {
                     // Not a STUN Binding Request or doesn't have a valid
@@ -381,7 +381,7 @@ public abstract class AbstractUdpListener
         Buffer buf = pool.poll();
         if (buf == null)
         {
-            buf = new Buffer(new byte[BUFFER_SIZE], 0);
+            buf = new Buffer(new byte[BUFFER_SIZE], 0, 0);
         }
 
         return buf;
@@ -426,8 +426,7 @@ public abstract class AbstractUdpListener
         /**
          * The FIFO which acts as a buffer for this socket.
          */
-        private final ArrayBlockingQueue<Buffer> queue
-            = new ArrayBlockingQueue<>(QUEUE_SIZE);
+        private final ArrayBlockingQueue<Buffer> queue = new ArrayBlockingQueue<>(QUEUE_SIZE);
 
         /**
          * The {@link QueueStatistics} instance optionally used to collect and
@@ -645,14 +644,13 @@ public abstract class AbstractUdpListener
 
             byte[] pData = p.getData();
 
-            // XXX Should we use p.setData() here with a buffer of our own?
-            if (pData == null || pData.length < buf.len)
+            if (pData == null || pData.length < buf.getLength())
             {
                 throw new IOException("packet buffer not available");
             }
 
-            System.arraycopy(buf.buffer, 0, pData, 0, buf.len);
-            p.setLength(buf.len);
+            System.arraycopy(buf.getBuffer(), buf.getOffset(), pData, 0, buf.getLength());
+            p.setLength(buf.getLength());
             p.setSocketAddress(remoteAddress);
 
             pool.offer(buf);
@@ -668,35 +666,6 @@ public abstract class AbstractUdpListener
             throws IOException
         {
             socket.send(p);
-        }
-    }
-
-    /**
-     * Represents a buffer for the purposes of <tt>SinglePortUdpHarvester</tt>.
-     * Wraps a byte[] and adds a length field specifying the number of elements
-     * actually used.
-     */
-    protected class Buffer
-    {
-        /**
-         * The actual data.
-         */
-        byte[] buffer;
-
-        /**
-         * The number of elements of {@link #buffer} actually used.
-         */
-        int len;
-
-        /**
-         * Initializes a new <tt>Buffer</tt> instance.
-         * @param buffer the data.
-         * @param len the length.
-         */
-        private Buffer(byte[] buffer, int len)
-        {
-            this.buffer = buffer;
-            this.len = len;
         }
     }
 }

@@ -21,6 +21,7 @@ import org.ice4j.*;
 import org.ice4j.ice.*;
 import org.ice4j.socket.*;
 import org.ice4j.stack.*;
+import org.ice4j.util.*;
 
 import java.io.*;
 import java.net.*;
@@ -30,8 +31,7 @@ import java.util.logging.*;
 
 /**
  * A harvester implementation which binds to a single <tt>DatagramSocket</tt>
- * and provides local candidates of type "host". It runs a thread
- * ({@link #thread}) which perpetually reads from the socket.
+ * and provides local candidates of type "host". It runs a thread which perpetually reads from the socket.
  *
  * When {@link #harvest(org.ice4j.ice.Component)} is called, this harvester
  * creates and adds to the component a
