@@ -177,47 +177,41 @@ public class StunDatagramPacketFilter
      */
     public static boolean isStunPacket(DatagramPacket p)
     {
-        boolean isStunPacket = false;
         byte[] data = p.getData();
         int offset = p.getOffset();
         int length = p.getLength();
 
-        // All STUN messages MUST start with a 20-byte header followed by zero
-        // or more Attributes.
-        if (length >= 20)
+        // All STUN messages MUST start with a 20-byte header followed by zero or more Attributes.
+        if (length < 20)
         {
-            // If the MAGIC COOKIE is present this is a STUN packet (RFC5389
-            // compliant).
-            if (data[offset + 4] == Message.MAGIC_COOKIE[0]
-                && data[offset + 5] == Message.MAGIC_COOKIE[1]
-                && data[offset + 6] == Message.MAGIC_COOKIE[2]
-                && data[offset + 7] == Message.MAGIC_COOKIE[3])
-            {
-                isStunPacket = true;
-            }
-            // Else, this packet may be a STUN packet (RFC3489 compliant). To
-            // determine this, we must continue the checks.
-            else
-            {
-                // The most significant 2 bits of every STUN message MUST be
-                // zeroes.  This can be used to differentiate STUN packets from
-                // other protocols when STUN is multiplexed with other protocols
-                // on the same port.
-                byte b0 = data[offset];
-                boolean areFirstTwoBitsValid = ((b0 & 0xC0) == 0);
-
-                // Checks if the length of the data correspond to the length
-                // field of the STUN header. The message length field of the
-                // STUN header does not include the 20-byte of the STUN header.
-                int total_header_length
-                    = ((((int)data[2]) & 0xff) << 8)
-                    + (((int) data[3]) & 0xff)
-                    + 20;
-                boolean isHeaderLengthValid = (length == total_header_length);
-
-                isStunPacket = areFirstTwoBitsValid && isHeaderLengthValid;
-            }
+            return false;
         }
-        return isStunPacket;
+
+        // The most significant 2 bits of every STUN message MUST be zeroes. This can be used to differentiate STUN
+        // packets from other protocols when STUN is multiplexed with other protocols on the same port.
+        if ((data[offset] & 0xC0) != 0)
+        {
+            return false;
+        }
+
+        // If the MAGIC COOKIE is present this is a STUN packet (RFC5389 compliant).
+        if (data[offset + 4] == Message.MAGIC_COOKIE[0]
+            && data[offset + 5] == Message.MAGIC_COOKIE[1]
+            && data[offset + 6] == Message.MAGIC_COOKIE[2]
+            && data[offset + 7] == Message.MAGIC_COOKIE[3])
+        {
+            return true;
+        }
+        // Else, this packet may be a STUN packet (RFC3489 compliant). To determine this, we must continue the checks.
+        else
+        {
+            // Checks if the length of the data correspond to the length field of the STUN header. The message length
+            // field of the STUN header does not include the 20-byte of the STUN header.
+            int total_header_length
+                = ((((int)data[2]) & 0xff) << 8)
+                + (((int) data[3]) & 0xff)
+                + 20;
+            return (length == total_header_length);
+        }
     }
 }
