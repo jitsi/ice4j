@@ -18,12 +18,15 @@
 package org.ice4j.ice;
 
 import java.beans.*;
+import java.io.*;
 import java.net.*;
 import java.util.*;
 import java.util.concurrent.*;
 
 import org.ice4j.*;
 import org.ice4j.socket.*;
+import org.ice4j.util.*;
+import org.jetbrains.annotations.*;
 import org.jitsi.utils.logging2.*;
 
 /**
@@ -39,7 +42,7 @@ import org.jitsi.utils.logging2.*;
  * @author Boris Grozev
  */
 public class Component
-    implements PropertyChangeListener
+    implements PropertyChangeListener, BufferHandler
 {
     /**
      * The component ID to use with RTP streams.
@@ -149,9 +152,22 @@ public class Component
     /**
      * The set of pairs which this component wants to keep alive.
      */
-    private final Set<CandidatePair> keepAlivePairs
-        = Collections.newSetFromMap(
-                new ConcurrentHashMap<CandidatePair, Boolean>());
+    private final Set<CandidatePair> keepAlivePairs = Collections.newSetFromMap(new ConcurrentHashMap<>());
+
+    /**
+     * External callback for the push API. Called with every packet received via {@link #handleBuffer(Buffer)}.
+     */
+    private BufferHandler bufferCallback = null;
+
+    /**
+     * The local socket address of the last packet received via {@link #handleBuffer(Buffer)}.
+     */
+    private SocketAddress lastLocalAddress = null;
+
+    /**
+     * The remote socket address of the last packet received via {@link #handleBuffer(Buffer)}.
+     */
+    private SocketAddress lastRemoteAddress = null;
 
     /**
      * Creates a new <tt>Component</tt> with the specified <tt>componentID</tt>
@@ -1187,5 +1203,101 @@ public class Component
     public Logger getLogger()
     {
         return logger;
+    }
+
+    /**
+     * Send a packet to the remote side. Uses the last used candidate pair to find the right socket and remote address.
+     */
+    public void send(byte[] buffer, int offset, int length)
+            throws IOException
+    {
+        IceSocketWrapper socket;
+        SocketAddress remoteAddress;
+        if (lastRemoteAddress != null && lastLocalAddress != null)
+        {
+            LocalCandidate localCandidate = null;
+            synchronized (localCandidates)
+            {
+                for (LocalCandidate l : localCandidates)
+                {
+                    if (lastLocalAddress.equals(l.getHostAddress()))
+                    {
+                        localCandidate = l;
+                    }
+                }
+            }
+            if (localCandidate == null)
+            {
+                throw new IOException("No local candidate found");
+            }
+
+            if (localCandidate.getBase() != null)
+            {
+                localCandidate = localCandidate.getBase();
+            }
+
+            socket = localCandidate.getCandidateIceSocketWrapper(lastRemoteAddress);
+            remoteAddress = lastRemoteAddress;
+        }
+        else
+        {
+            CandidatePair selectedPair = getSelectedPair();
+            LocalCandidate localCandidate = selectedPair == null ? null : selectedPair.getLocalCandidate();
+            remoteAddress = selectedPair == null ? null : selectedPair.getRemoteCandidate().getTransportAddress();
+            socket = localCandidate == null ? null : localCandidate.getCandidateIceSocketWrapper(remoteAddress);
+            if (localCandidate != null)
+            {
+                lastLocalAddress = localCandidate.getTransportAddress();
+                lastRemoteAddress = remoteAddress;
+            }
+        }
+
+        if (socket == null)
+        {
+            throw new IOException("No socket found to send on.");
+        }
+
+        DatagramPacket p = new DatagramPacket(buffer, offset, length);
+        p.setSocketAddress(remoteAddress);
+        socket.send(p);
+    }
+
+    /**
+     * Handle a buffer that was received from one of the sockets and should be forwarded to the application.
+     */
+    @Override
+    public void handleBuffer(@NotNull Buffer buffer)
+    {
+        BufferHandler bufferCallback = this.bufferCallback;
+        this.lastLocalAddress = buffer.getLocalAddress();
+        this.lastRemoteAddress = buffer.getRemoteAddress();
+
+        if (bufferCallback == null)
+        {
+            logger.warn(
+                    "The push API is used while no buffer callback has been set, dropping a packet (use-push-api="
+                            + AgentConfig.config.getUsePushApi() + ").");
+            BufferPool.returnBuffer.invoke(buffer);
+            return;
+        }
+
+        try
+        {
+            bufferCallback.handleBuffer(buffer);
+        }
+        catch (Exception e)
+        {
+            logger.warn("Buffer handling failed", e);
+            BufferPool.returnBuffer.invoke(buffer);
+        }
+    }
+
+    /**
+     * Set the external callback to be used for the push API.
+     * @param bufferCallback the external callback
+     */
+    public void setBufferCallback(BufferHandler bufferCallback)
+    {
+        this.bufferCallback = bufferCallback;
     }
 }
