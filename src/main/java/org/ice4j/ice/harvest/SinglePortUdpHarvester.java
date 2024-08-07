@@ -128,7 +128,7 @@ public class SinglePortUdpHarvester
      * local ufrag of {@code ufrag}, and if one is found it accepts the new
      * socket and adds it to the candidate.
      */
-    protected void maybeAcceptNewSession(Buffer buf,
+    protected MySocket maybeAcceptNewSession(Buffer buf,
                                          InetSocketAddress remoteAddress,
                                          String ufrag)
     {
@@ -136,7 +136,7 @@ public class SinglePortUdpHarvester
         if (candidate == null)
         {
             // A STUN Binding Request with an unknown USERNAME. Drop it.
-            return;
+            return null;
         }
 
         // This is a STUN Binding Request destined for this
@@ -144,24 +144,27 @@ public class SinglePortUdpHarvester
         try
         {
             // 1. Create a socket for this remote address
-            // 2. Set-up de-multiplexing for future datagrams
-            // with this address to this socket.
-            MySocket newSocket = addSocket(remoteAddress, ufrag);
+            // 2. Set-up de-multiplexing for future datagrams with this address to this socket.
+            MySocket newSocket = addSocket(
+                    remoteAddress,
+                    ufrag,
+                    candidate.getParentComponent());
 
             // 3. Let the candidate and its STUN stack no about the
             // new socket.
             candidate.addSocket(newSocket, remoteAddress);
 
-            // 4. Add the original datagram to the new socket.
-            newSocket.addBuffer(buf);
+            return newSocket;
         }
         catch (SocketException se)
         {
             logger.info("Could not create a socket: " + se);
+            return null;
         }
         catch (IOException ioe)
         {
             logger.info("Failed to handle new socket: " + ioe);
+            return null;
         }
     }
 

@@ -19,8 +19,11 @@ package org.ice4j.ice.harvest;
 
 import org.ice4j.*;
 import org.ice4j.attribute.*;
+import org.ice4j.ice.*;
 import org.ice4j.message.*;
+import org.ice4j.socket.*;
 import org.ice4j.util.*;
+import org.jetbrains.annotations.*;
 import org.jitsi.utils.queue.*;
 
 import java.io.*;
@@ -67,6 +70,16 @@ public abstract class AbstractUdpListener
      * The number of <tt>Buffer</tt> instances to keep in {@link #pool}.
      */
     private static final int POOL_SIZE = 256;
+
+    /**
+     * Number of extra bytes to leave at the start of a buffer (only when the push API is used).
+     */
+    public static int BYTES_TO_LEAVE_AT_START_OF_PACKET = 0;
+
+    /**
+     * Number of extra bytes to leave at the end of a buffer (only when the push API is used).
+     */
+    public static int BYTES_TO_LEAVE_AT_END_OF_PACKET = 0;
 
     /**
      * Returns the list of {@link TransportAddress}es, one for each allowed IP
@@ -244,14 +257,17 @@ public abstract class AbstractUdpListener
         }
         logger.info(logMessage);
 
-        thread = new Thread()
+        thread = new Thread(() ->
         {
-            @Override
-            public void run()
+            if (AgentConfig.config.getUsePushApi())
+            {
+                AbstractUdpListener.this.runInHarvesterThreadPush();
+            }
+            else
             {
                 AbstractUdpListener.this.runInHarvesterThread();
             }
-        };
+        });
 
         thread.setName(AbstractUdpListener.class.getName() + " thread for " + this.localAddress);
         thread.setDaemon(true);
@@ -335,8 +351,15 @@ public abstract class AbstractUdpListener
                     continue;
                 }
 
-                maybeAcceptNewSession(buf, remoteAddress, ufrag);
-                // Maybe add to #sockets here in the base class?
+                MySocket newSocket = maybeAcceptNewSession(buf, remoteAddress, ufrag);
+                if (newSocket == null)
+                {
+                    pool.offer(buf);
+                }
+                else
+                {
+                    newSocket.addBuffer(buf);
+                }
             }
         }
         while (true);
@@ -347,6 +370,112 @@ public abstract class AbstractUdpListener
             candidateSocket.close();
         }
         socket.close();
+    }
+
+    /**
+     * Read packets from the socket and forward them via the push API. Note that the memory model here is different
+     * than the other case. Specifically, we:
+     * 1. Receive from {@link #socket} into a fixed buffer
+     * 2. Obtain a buffer of the required size using {@link BufferPool#getBuffer}
+     * 3. Copy the data into the buffer and either
+     * 3.1 Call the associated {@link BufferHandler} if the packet is payload
+     * 3.2 Make the packet available to the STUN socket if it's STUN
+     *
+     * The only difference in the STUN case is that we take responsibility to return the buffer using
+     * {@link BufferPool#returnBuffer} afterwards.
+     */
+    private void runInHarvesterThreadPush()
+    {
+        DatagramPacket pkt = new DatagramPacket(new byte[1500], 0, 1500);
+        MySocket destinationSocket;
+        InetSocketAddress remoteAddress;
+        Clock clock = Clock.systemUTC();
+        Instant receivedTime;
+
+        do
+        {
+            if (close)
+            {
+                break;
+            }
+
+            pkt.setData(pkt.getData(), 0, pkt.getData().length);
+
+            try
+            {
+                socket.receive(pkt);
+                receivedTime = clock.instant();
+            }
+            catch (IOException ioe)
+            {
+                if (!close)
+                {
+                    logger.severe("Failed to receive from socket: " + ioe);
+                }
+                break;
+            }
+
+            remoteAddress = (InetSocketAddress) pkt.getSocketAddress();
+            destinationSocket = sockets.get(remoteAddress);
+            if (destinationSocket == null)
+            {
+                // Packet from an unknown source. Is it a STUN Binding Request?
+                String ufrag = getUfrag(pkt.getData(), pkt.getOffset(), pkt.getLength());
+                if (ufrag == null)
+                {
+                    // Not a STUN Binding Request or doesn't have a valid USERNAME attribute. Drop it.
+                    continue;
+                }
+
+                Buffer buffer = bufferFromPacket(pkt, receivedTime);
+                MySocket newSocket = maybeAcceptNewSession(buffer, remoteAddress, ufrag);
+                if (newSocket == null)
+                {
+                    BufferPool.returnBuffer.invoke(buffer);
+                }
+                else
+                {
+                    newSocket.addBuffer(buffer);
+                }
+            }
+            else
+            {
+                Buffer buf = bufferFromPacket(pkt, receivedTime);
+                if (StunDatagramPacketFilter.isStunPacket(pkt))
+                {
+                    // STUN packets are made available to the DatagramSocket-based API used by ice4j internally.
+                    destinationSocket.addBuffer(buf);
+                }
+                else
+                {
+                    // Payload goes through the push API.
+                    destinationSocket.bufferHandler.handleBuffer(buf);
+                }
+            }
+        }
+        while (true);
+
+        // now clean up and exit
+        for (MySocket candidateSocket : new ArrayList<>(sockets.values()))
+        {
+            candidateSocket.close();
+        }
+        socket.close();
+    }
+
+    private Buffer bufferFromPacket(DatagramPacket p, Instant receivedTime)
+    {
+        int off = BYTES_TO_LEAVE_AT_START_OF_PACKET;
+        Buffer buffer = BufferPool.getBuffer.invoke(off + p.getLength() + BYTES_TO_LEAVE_AT_END_OF_PACKET);
+
+        System.arraycopy(p.getData(), p.getOffset(), buffer.getBuffer(), off, p.getLength());
+        buffer.setOffset(off);
+        buffer.setLength(p.getLength());
+        buffer.setLocalAddress(socket.getLocalSocketAddress());
+        buffer.setRemoteAddress(p.getSocketAddress());
+        buffer.setReceivedTime(receivedTime);
+
+        return buffer;
     }
 
     /**
@@ -367,7 +496,7 @@ public abstract class AbstractUdpListener
      * @param ufrag the local ICE username fragment of the received STUN Binding
      * Request.
      */
-    protected abstract void maybeAcceptNewSession(
+    protected abstract MySocket maybeAcceptNewSession(
             Buffer buf,
             InetSocketAddress remoteAddress,
             String ufrag);
@@ -397,12 +526,13 @@ public abstract class AbstractUdpListener
      * @param remoteAddress the remote address with which to associate the new
      * socket instance.
      * @param ufrag The username fragment associated with the socket.
+     * @param bufferHandler The handler to call when the push API is used.
      * @return the created socket instance.
      */
-    protected MySocket addSocket(InetSocketAddress remoteAddress, String ufrag)
+    protected MySocket addSocket(InetSocketAddress remoteAddress, String ufrag, @NotNull BufferHandler bufferHandler)
         throws SocketException
     {
-        MySocket newSocket = new MySocket(remoteAddress, ufrag);
+        MySocket newSocket = new MySocket(remoteAddress, ufrag, bufferHandler);
         sockets.put(remoteAddress, newSocket);
         return newSocket;
     }
@@ -447,6 +577,9 @@ public abstract class AbstractUdpListener
 
         private final String ufrag;
 
+        @NotNull
+        private final BufferHandler bufferHandler;
+
         /**
          * Initializes a new <tt>MySocket</tt> instance with the given
          * remote address.
@@ -454,13 +587,14 @@ public abstract class AbstractUdpListener
          * new instance.
          * @throws SocketException
          */
-        MySocket(InetSocketAddress remoteAddress, String ufrag)
+        MySocket(InetSocketAddress remoteAddress, String ufrag, @NotNull BufferHandler bufferHandler)
             throws SocketException
         {
             // unbound
             super((SocketAddress)null);
 
             this.ufrag = ufrag;
+            this.bufferHandler = bufferHandler;
             this.remoteAddress = remoteAddress;
             if (logger.isLoggable(Level.FINEST))
             {
@@ -653,7 +787,15 @@ public abstract class AbstractUdpListener
             p.setLength(buf.getLength());
             p.setSocketAddress(remoteAddress);
 
-            pool.offer(buf);
+            // We use a different memory model with the push API.
+            if (AgentConfig.config.getUsePushApi())
+            {
+                BufferPool.returnBuffer.invoke(buf);
+            }
+            else
+            {
+                pool.offer(buf);
+            }
         }
 
         /**
@@ -665,6 +807,7 @@ public abstract class AbstractUdpListener
         public void send(DatagramPacket p)
             throws IOException
         {
+            p.setSocketAddress(remoteAddress);
             socket.send(p);
         }
     }
