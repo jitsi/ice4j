@@ -24,6 +24,7 @@ import java.util.*;
 import org.ice4j.*;
 import org.ice4j.ice.*;
 import org.ice4j.socket.*;
+import org.jitsi.utils.logging2.Logger;
 
 /**
  * Implements a <tt>CandidateHarvester</tt> which gathers Google TURN SSLTCP
@@ -175,14 +176,15 @@ public class GoogleTurnSSLCandidateHarvester
      * to be performed by the new <tt>TurnCandidateHarvest</tt> instance
      * @return a new <tt>GoogleTurnSSLCandidateHarvest</tt> instance which is to
      * perform TURN harvesting of the specified <tt>hostCandidate</tt>
-     * @see StunCandidateHarvester#createHarvest(HostCandidate)
+     * @see StunCandidateHarvester#createHarvest(HostCandidate, Logger)
      */
     @Override
     protected GoogleTurnCandidateHarvest createHarvest(
-            HostCandidate hostCandidate)
+            HostCandidate hostCandidate,
+            Logger logger)
     {
         return
-            new GoogleTurnCandidateHarvest(this, hostCandidate, getPassword());
+            new GoogleTurnCandidateHarvest(this, hostCandidate, getPassword(), logger);
     }
 
     /**
@@ -197,7 +199,7 @@ public class GoogleTurnSSLCandidateHarvester
      * @return HostCandidate
      */
     @Override
-    protected HostCandidate getHostCandidate(HostCandidate hostCand)
+    protected HostCandidate getHostCandidate(HostCandidate hostCand, Logger logger)
     {
         HostCandidate cand = null;
         Socket sock = null;

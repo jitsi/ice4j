@@ -19,6 +19,7 @@ package org.ice4j.ice.harvest;
 
 import org.ice4j.*;
 import org.ice4j.ice.*;
+import org.jitsi.utils.logging2.Logger;
 
 /**
  * Implements a <tt>CandidateHarvester</tt> which gathers Google TURN dialect
@@ -76,14 +77,15 @@ public class GoogleTurnCandidateHarvester
      * to be performed by the new <tt>TurnCandidateHarvest</tt> instance
      * @return a new <tt>GoogleTurnCandidateHarvest</tt> instance which is to
      * perform TURN harvesting of the specified <tt>hostCandidate</tt>
-     * @see StunCandidateHarvester#createHarvest(HostCandidate)
+     * @see StunCandidateHarvester#createHarvest(HostCandidate, Logger)
      */
     @Override
     protected GoogleTurnCandidateHarvest createHarvest(
-            HostCandidate hostCandidate)
+            HostCandidate hostCandidate,
+            Logger logger)
     {
         return
-            new GoogleTurnCandidateHarvest(this, hostCandidate, getPassword());
+            new GoogleTurnCandidateHarvest(this, hostCandidate, getPassword(), logger);
     }
 
     /**

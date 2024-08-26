@@ -20,6 +20,7 @@ package org.ice4j.ice.harvest;
 import org.ice4j.*;
 import org.ice4j.ice.*;
 import org.ice4j.security.*;
+import org.jitsi.utils.logging2.Logger;
 
 /**
  * Implements a <tt>CandidateHarvester</tt> which gathers TURN
@@ -100,12 +101,12 @@ public class TurnCandidateHarvester
      * to be performed by the new <tt>TurnCandidateHarvest</tt> instance
      * @return a new <tt>TurnCandidateHarvest</tt> instance which is to perform
      * TURN harvesting of the specified <tt>hostCandidate</tt>
-     * @see StunCandidateHarvester#createHarvest(HostCandidate)
+     * @see StunCandidateHarvester#createHarvest(HostCandidate, Logger)
      */
     @Override
-    protected TurnCandidateHarvest createHarvest(HostCandidate hostCandidate)
+    protected TurnCandidateHarvest createHarvest(HostCandidate hostCandidate, Logger logger)
     {
-        return new TurnCandidateHarvest(this, hostCandidate);
+        return new TurnCandidateHarvest(this, hostCandidate, logger);
     }
 
     /**

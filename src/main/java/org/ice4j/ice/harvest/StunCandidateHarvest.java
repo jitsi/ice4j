@@ -20,7 +20,6 @@ package org.ice4j.ice.harvest;
 import java.io.*;
 import java.lang.ref.*;
 import java.util.*;
-import java.util.logging.*;
 
 import org.ice4j.*;
 import org.ice4j.attribute.*;
@@ -28,6 +27,7 @@ import org.ice4j.ice.*;
 import org.ice4j.message.*;
 import org.ice4j.security.*;
 import org.ice4j.stack.*;
+import org.jitsi.utils.logging2.Logger;
 
 /**
  * Represents the harvesting of STUN <tt>Candidates</tt> for a specific
@@ -44,8 +44,7 @@ public class StunCandidateHarvest
      * The <tt>Logger</tt> used by the <tt>StunCandidateHarvest</tt> class and
      * its instances for logging output.
      */
-    private static final Logger logger
-        = Logger.getLogger(StunCandidateHarvest.class.getName());
+    private final Logger logger;
 
     /**
      * The constant which defines an empty array with <tt>LocalCandidate</tt>
@@ -150,10 +149,12 @@ public class StunCandidateHarvest
      */
     public StunCandidateHarvest(
             StunCandidateHarvester harvester,
-            HostCandidate hostCandidate)
+            HostCandidate hostCandidate,
+            Logger logger)
     {
         this.harvester = harvester;
         this.hostCandidate = hostCandidate;
+        this.logger = logger.createChildLogger(StunCandidateHarvest.class.getName());
     }
 
     /**
@@ -442,14 +443,13 @@ public class StunCandidateHarvest
                         }
                         catch (Exception ex)
                         {
-                            if (logger.isLoggable(Level.FINE))
+                            if (logger.isTraceEnabled())
                             {
-                                logger.log(
-                                        Level.FINE,
+                                logger.trace(
                                         "Failed to free"
                                             + " ServerReflexiveCandidate: "
-                                            + srvrRflxCand,
-                                        ex);
+                                            + srvrRflxCand);
+                                logger.trace(ex);
                             }
                         }
                     }
@@ -822,8 +822,8 @@ public class StunCandidateHarvest
     {
         TransactionID transactionID = event.getTransactionID();
 
-        logger.finest("A transaction expired: tranid=" + transactionID);
-        logger.finest("localAddr=" + hostCandidate);
+        logger.trace("A transaction expired: tranid=" + transactionID);
+        logger.trace("localAddr=" + hostCandidate);
 
         /*
          * Clean up for the purposes of the workaround which determines the STUN
@@ -869,8 +869,8 @@ public class StunCandidateHarvest
     {
         TransactionID transactionID = event.getTransactionID();
 
-        logger.finest("Received a message: tranid= " + transactionID);
-        logger.finest("localCand= " + hostCandidate);
+        logger.trace("Received a message: tranid= " + transactionID);
+        logger.trace("localCand= " + hostCandidate);
 
         /*
          * Clean up for the purposes of the workaround which determines the STUN
@@ -1180,10 +1180,8 @@ public class StunCandidateHarvest
         }
         catch (StunException sex)
         {
-            logger.log(
-                    Level.INFO,
-                    "Failed to send STUN keep-alive message.",
-                    sex);
+            logger.info("Failed to send STUN keep-alive message.");
+            logger.info(sex);
         }
         return true;
     }
@@ -1306,15 +1304,14 @@ public class StunCandidateHarvest
             }
             catch (IllegalArgumentException iaex)
             {
-                if (logger.isLoggable(Level.INFO))
+                if (logger.isInfoEnabled())
                 {
-                    logger.log(
-                            Level.INFO,
+                    logger.info(
                             "Failed to send "
                                 + request
                                 + " through " + hostCandidateTransportAddress
-                                + " to " + stunServer,
-                            iaex);
+                                + " to " + stunServer);
+                    logger.info(iaex);
                 }
                 throw new StunException(
                         StunException.ILLEGAL_ARGUMENT,
@@ -1323,15 +1320,14 @@ public class StunCandidateHarvest
             }
             catch (IOException ioex)
             {
-                if (logger.isLoggable(Level.INFO))
+                if (logger.isInfoEnabled())
                 {
-                    logger.log(
-                            Level.INFO,
+                    logger.info(
                             "Failed to send "
                                 + request
                                 + " through " + hostCandidateTransportAddress
-                                + " to " + stunServer,
-                            ioex);
+                                + " to " + stunServer);
+                    logger.info(ioex);
                 }
                 throw new StunException(
                         StunException.NETWORK_ERROR,

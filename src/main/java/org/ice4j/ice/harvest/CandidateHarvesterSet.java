@@ -19,10 +19,9 @@ package org.ice4j.ice.harvest;
 
 import java.util.*;
 import java.util.concurrent.*;
-import java.util.logging.*;
 
-import org.ice4j.*;
 import org.ice4j.ice.*;
+import org.jitsi.utils.logging2.Logger;
 
 /**
  * Implements {@link Set} of <tt>CandidateHarvester</tt>s which runs the
@@ -37,8 +36,7 @@ public class CandidateHarvesterSet
      * The <tt>Logger</tt> used by the <tt>Agent</tt> class and its instances
      * for logging output.
      */
-    private static final Logger logger
-        = Logger.getLogger(CandidateHarvesterSet.class.getName());
+    private final Logger logger;
 
     /**
      * The <tt>CandidateHarvester</tt>s which are the elements of this
@@ -55,8 +53,9 @@ public class CandidateHarvesterSet
     /**
      * Initializes a new <tt>CandidateHarvesterSet</tt> instance.
      */
-    public CandidateHarvesterSet()
+    public CandidateHarvesterSet(Logger logger)
     {
+        this.logger = logger.createChildLogger(CandidateHarvesterSet.class.getName());
     }
 
     /**
@@ -208,7 +207,7 @@ public class CandidateHarvesterSet
                     {
                         harvester.setEnabled(false);
                     }
-                    logger.warning("timed out while harvesting from " + harvester);
+                    logger.warn("timed out while harvesting from " + harvester);
                     break;
                 }
                 catch (CancellationException ce)

@@ -137,8 +137,7 @@ public class Agent
      * The set of harvesters (i.e. STUN, TURN, and others) that the agent should
      * use when gathering candidates for components.
      */
-    private final CandidateHarvesterSet harvesters
-        = new CandidateHarvesterSet();
+    private final CandidateHarvesterSet harvesters;
 
     /**
      * Manages statistics about harvesting time.
@@ -334,6 +333,8 @@ public class Agent
         {
             logger = new LoggerImpl(Agent.class.getName(), new LogContext("ufrag", this.ufrag));
         }
+
+        harvesters = new CandidateHarvesterSet(logger);
 
         connCheckServer = new ConnectivityCheckServer(this);
         connCheckClient = new ConnectivityCheckClient(
@@ -2615,7 +2616,7 @@ public class Agent
     /**
      * @return this {@link Agent}'s {@link Logger}.
      */
-    protected Logger getLogger()
+    public Logger getLogger()
     {
         return logger;
     }

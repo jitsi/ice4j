@@ -17,14 +17,13 @@
  */
 package org.ice4j.ice.harvest;
 
-import java.util.logging.*;
-
 import org.ice4j.*;
 import org.ice4j.attribute.*;
 import org.ice4j.ice.*;
 import org.ice4j.message.*;
 import org.ice4j.socket.*;
 import org.ice4j.stack.*;
+import org.jitsi.utils.logging2.Logger;
 
 /**
  * Represents the harvesting of Google TURN <tt>Candidates</tt> for a specific
@@ -41,8 +40,7 @@ public class GoogleTurnCandidateHarvest
      * The <tt>Logger</tt> used by the <tt>TurnCandidateHarvest</tt> class and
      * its instances for logging output.
      */
-    private static final Logger logger
-        = Logger.getLogger(GoogleTurnCandidateHarvest.class.getName());
+    private final Logger logger;
 
     /**
      * The <tt>Request</tt> created by the last call to
@@ -71,10 +69,12 @@ public class GoogleTurnCandidateHarvest
     public GoogleTurnCandidateHarvest(
             GoogleTurnCandidateHarvester harvester,
             HostCandidate hostCandidate,
-            String password)
+            String password,
+            Logger logger)
     {
-        super(harvester, hostCandidate);
+        super(harvester, hostCandidate, logger);
         this.password = password;
+        this.logger = logger.createChildLogger(GoogleTurnCandidateHarvest.class.getName());
     }
 
     /**

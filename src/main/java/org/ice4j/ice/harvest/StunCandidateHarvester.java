@@ -19,13 +19,13 @@ package org.ice4j.ice.harvest;
 
 import java.net.*;
 import java.util.*;
-import java.util.logging.*;
 
 import org.ice4j.*;
 import org.ice4j.ice.*;
 import org.ice4j.security.*;
 import org.ice4j.socket.*;
 import org.ice4j.stack.*;
+import org.jitsi.utils.logging2.Logger;
 
 /**
  * Implements a <tt>CandidateHarvester</tt> which gathers <tt>Candidate</tt>s
@@ -38,13 +38,6 @@ import org.ice4j.stack.*;
 public class StunCandidateHarvester
     extends AbstractCandidateHarvester
 {
-
-    /**
-     * The <tt>Logger</tt> used by the <tt>StunCandidateHarvester</tt> class and
-     * its instances for logging output.
-     */
-    private static final Logger logger
-        = Logger.getLogger(StunCandidateHarvester.class.getName());
 
     /**
      * The list of <tt>StunCandidateHarvest</tt>s which have been successfully
@@ -164,9 +157,9 @@ public class StunCandidateHarvester
      * @return a new <tt>StunCandidateHarvest</tt> instance which is to perform
      * STUN harvesting of the specified <tt>hostCandidate</tt>
      */
-    protected StunCandidateHarvest createHarvest(HostCandidate hostCandidate)
+    protected StunCandidateHarvest createHarvest(HostCandidate hostCandidate, Logger logger)
     {
-        return new StunCandidateHarvest(this, hostCandidate);
+        return new StunCandidateHarvest(this, hostCandidate, logger);
     }
 
     /**
@@ -237,9 +230,13 @@ public class StunCandidateHarvester
     @Override
     public Collection<LocalCandidate> harvest(Component component)
     {
-        if (logger.isLoggable(Level.FINE))
+        Logger logger = component.getParentStream().getParentAgent().getLogger()
+            .createChildLogger(StunCandidateHarvester.class.getName(),
+                Collections.singletonMap("component", component.getName()));
+
+        if (logger.isTraceEnabled())
         {
-            logger.fine("starting " + component.toShortString()
+            logger.trace("starting " + component.toShortString()
                             + " harvest for: " + toString());
         }
         stunStack = component.getParentStream().getParentAgent().getStunStack();
@@ -249,11 +246,11 @@ public class StunCandidateHarvester
             if ((cand instanceof HostCandidate)
                     && (cand.getTransport() == stunServer.getTransport()))
             {
-                startResolvingCandidate((HostCandidate) cand);
+                startResolvingCandidate((HostCandidate) cand, logger);
             }
         }
 
-        waitForResolutionEnd();
+        waitForResolutionEnd(logger);
 
         /*
          * Report the LocalCandidates gathered by this CandidateHarvester so
@@ -279,7 +276,7 @@ public class StunCandidateHarvester
             completedHarvests.clear();
         }
 
-        logger.finest(
+        logger.trace(
                 "Completed " + component.toShortString() + " harvest: "
                     + toString() + ". Found " + candidates.size()
                     + " candidates: " + listCandidates(candidates));
@@ -303,15 +300,16 @@ public class StunCandidateHarvester
      * waiting for resolution.
      *
      * @param hostCand the <tt>HostCandidate</tt> that we'd like to resolve.
+     * @param logger
      */
-    private void startResolvingCandidate(HostCandidate hostCand)
+    private void startResolvingCandidate(HostCandidate hostCand, Logger logger)
     {
         //first of all, make sure that the STUN server and the Candidate
         //address are of the same type and that they can communicate.
         if (!hostCand.getTransportAddress().canReach(stunServer))
             return;
 
-        HostCandidate cand = getHostCandidate(hostCand);
+        HostCandidate cand = getHostCandidate(hostCand, logger);
 
         if (cand == null)
         {
@@ -321,11 +319,11 @@ public class StunCandidateHarvester
             return;
         }
 
-        StunCandidateHarvest harvest = createHarvest(cand);
+        StunCandidateHarvest harvest = createHarvest(cand, logger);
 
         if (harvest == null)
         {
-            logger.warning("failed to create harvest");
+            logger.warn("failed to create harvest");
             return;
         }
 
@@ -342,13 +340,12 @@ public class StunCandidateHarvester
             catch (Exception ex)
             {
                 started = false;
-                if (logger.isLoggable(Level.INFO))
+                if (logger.isInfoEnabled())
                 {
-                    logger.log(
-                            Level.INFO,
+                    logger.info(
                             "Failed to start resolving host candidate "
-                                + hostCand,
-                            ex);
+                                + hostCand);
+                    logger.info(ex);
                 }
             }
             finally
@@ -358,7 +355,7 @@ public class StunCandidateHarvester
                     try
                     {
                         startedHarvests.remove(harvest);
-                        logger.warning(
+                        logger.warn(
                                 "harvest did not start, removed: " + harvest);
                     }
                     finally
@@ -384,7 +381,7 @@ public class StunCandidateHarvester
      * Blocks the current thread until all resolutions in this harvester
      * have terminated one way or another.
      */
-    private void waitForResolutionEnd()
+    private void waitForResolutionEnd(Logger logger)
     {
         synchronized(startedHarvests)
         {
@@ -439,7 +436,7 @@ public class StunCandidateHarvester
      * @param hostCand HostCandidate
      * @return HostCandidate
      */
-    protected HostCandidate getHostCandidate(HostCandidate hostCand)
+    protected HostCandidate getHostCandidate(HostCandidate hostCand, Logger logger)
     {
         HostCandidate cand;
 

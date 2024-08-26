@@ -18,7 +18,6 @@
 package org.ice4j.ice.harvest;
 
 import java.lang.reflect.*;
-import java.util.logging.*;
 
 import org.ice4j.*;
 import org.ice4j.attribute.*;
@@ -26,6 +25,7 @@ import org.ice4j.ice.*;
 import org.ice4j.message.*;
 import org.ice4j.socket.*;
 import org.ice4j.stack.*;
+import org.jitsi.utils.logging2.Logger;
 
 /**
  * Represents the harvesting of TURN <tt>Candidates</tt> for a specific
@@ -42,8 +42,7 @@ public class TurnCandidateHarvest
      * The <tt>Logger</tt> used by the <tt>TurnCandidateHarvest</tt> class and
      * its instances for logging output.
      */
-    private static final Logger logger
-        = Logger.getLogger(TurnCandidateHarvest.class.getName());
+    private final Logger logger;
 
     /**
      * The <tt>Request</tt> created by the last call to
@@ -64,9 +63,11 @@ public class TurnCandidateHarvest
      */
     public TurnCandidateHarvest(
             TurnCandidateHarvester harvester,
-            HostCandidate hostCandidate)
+            HostCandidate hostCandidate,
+            Logger logger)
     {
-        super(harvester, hostCandidate);
+        super(harvester, hostCandidate, logger);
+        this.logger = logger.createChildLogger(TurnCandidateHarvest.class.getName());
     }
 
     /**
@@ -104,10 +105,8 @@ public class TurnCandidateHarvest
         }
         catch (StunException sex)
         {
-            logger.log(
-                    Level.INFO,
-                    "Failed to send TURN Refresh request to delete Allocation",
-                    sex);
+            logger.info("Failed to send TURN Refresh request to delete Allocation");
+            logger.info(sex);
         }
     }
 
