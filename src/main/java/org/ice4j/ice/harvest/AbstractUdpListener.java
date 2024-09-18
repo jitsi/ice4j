@@ -82,6 +82,13 @@ public abstract class AbstractUdpListener
     public static int BYTES_TO_LEAVE_AT_END_OF_PACKET = 0;
 
     /**
+     * Whether to enable the push API. With the push API packets carrying payload are pushed to the application
+     * instead of being made available through a DatagramSocket API. See push-api.md.
+     */
+
+    public static boolean USE_PUSH_API = false;
+
+    /**
      * Returns the list of {@link TransportAddress}es, one for each allowed IP
      * address found on each allowed network interface, with the given port.
      *
@@ -259,7 +266,7 @@ public abstract class AbstractUdpListener
 
         thread = new Thread(() ->
         {
-            if (AgentConfig.config.getUsePushApi())
+            if (USE_PUSH_API)
             {
                 AbstractUdpListener.this.runInHarvesterThreadPush();
             }
@@ -788,7 +795,7 @@ public abstract class AbstractUdpListener
             p.setSocketAddress(remoteAddress);
 
             // We use a different memory model with the push API.
-            if (AgentConfig.config.getUsePushApi())
+            if (USE_PUSH_API)
             {
                 BufferPool.returnBuffer.invoke(buf);
             }

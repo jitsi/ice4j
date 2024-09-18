@@ -4,9 +4,10 @@ instead of making them available for reading from a virtual DatagramSocket. This
 handled by different threads, and is intended to reduce the workload and delay.
 
 # Use
-First, the API has to be enabled in configuration by setting `ice4j.use-push-api=true`.
+First, the API has to be enabled by setting `AbstractUdpListener.USE_PUSH_API` to true. This needs to be done before any
+`SinglePortUdpHarvester`s are created.
 
-Then, a callback for payload packets needs to be configured for each `Component` using `setBufferCallback()`.
+A callback for payload packets needs to be configured for each `Component` using `setBufferCallback()`.
 
 Finally, sending data should be done via `Component.send(byte[] data, int offset, int length)` instead of one of the
 virtual sockets.

@@ -24,6 +24,7 @@ import java.util.*;
 import java.util.concurrent.*;
 
 import org.ice4j.*;
+import org.ice4j.ice.harvest.*;
 import org.ice4j.socket.*;
 import org.ice4j.util.*;
 import org.jetbrains.annotations.*;
@@ -1276,7 +1277,7 @@ public class Component
         {
             logger.warn(
                     "The push API is used while no buffer callback has been set, dropping a packet (use-push-api="
-                            + AgentConfig.config.getUsePushApi() + ").");
+                            + AbstractUdpListener.USE_PUSH_API + ").");
             BufferPool.returnBuffer.invoke(buffer);
             return;
         }
