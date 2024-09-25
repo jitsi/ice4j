@@ -1004,4 +1004,10 @@ class ConnectivityCheckClient
             }
         }
     }
+
+    public boolean isStopped() {
+        synchronized (paceMakers) {
+            return stopped;
+        }
+    }
 }
