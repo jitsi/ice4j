@@ -1728,7 +1728,8 @@ public class Agent
             //
             // Local addition: if we're already stopped, we're never going to send the
             // check for the triggered pair, so don't enqueue it.
-            if (connCheckClient.isStopped()) {
+            if (connCheckClient.isStopped())
+            {
                 return false;
             }
             if (triggerPair.getParentComponent().getSelectedPair() == null)

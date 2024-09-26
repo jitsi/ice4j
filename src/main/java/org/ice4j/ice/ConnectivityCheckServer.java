@@ -159,10 +159,13 @@ class ConnectivityCheckServer
 
         Response response;
 
-        if (respond) {
+        if (respond)
+        {
             response = MessageFactory.createBindingResponse(
                     request, evt.getRemoteAddress());
-        } else {
+        }
+        else
+        {
             response = MessageFactory.createBindingErrorResponse(
                     ErrorCodeAttribute.FORBIDDEN,
                     "Cannot add new remote candidates in current ICE state");
