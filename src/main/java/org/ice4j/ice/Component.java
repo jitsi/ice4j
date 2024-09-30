@@ -161,16 +161,6 @@ public class Component
     private BufferHandler bufferCallback = null;
 
     /**
-     * The local socket address of the last packet received via {@link #handleBuffer(Buffer)}.
-     */
-    private SocketAddress lastLocalAddress = null;
-
-    /**
-     * The remote socket address of the last packet received via {@link #handleBuffer(Buffer)}.
-     */
-    private SocketAddress lastRemoteAddress = null;
-
-    /**
      * Creates a new <tt>Component</tt> with the specified <tt>componentID</tt>
      * as a child of the specified <tt>IceMediaStream</tt>.
      *
@@ -1212,46 +1202,16 @@ public class Component
     public void send(byte[] buffer, int offset, int length)
             throws IOException
     {
-        IceSocketWrapper socket;
-        SocketAddress remoteAddress;
-        if (lastRemoteAddress != null && lastLocalAddress != null)
+        CandidatePair selectedPair = getSelectedPair();
+        if (selectedPair == null)
         {
-            LocalCandidate localCandidate = null;
-            synchronized (localCandidates)
-            {
-                for (LocalCandidate l : localCandidates)
-                {
-                    if (lastLocalAddress.equals(l.getHostAddress()))
-                    {
-                        localCandidate = l;
-                    }
-                }
-            }
-            if (localCandidate == null)
-            {
-                throw new IOException("No local candidate found");
-            }
-
-            if (localCandidate.getBase() != null)
-            {
-                localCandidate = localCandidate.getBase();
-            }
-
-            socket = localCandidate.getCandidateIceSocketWrapper(lastRemoteAddress);
-            remoteAddress = lastRemoteAddress;
+            throw new IOException("No selected pair.");
         }
-        else
-        {
-            CandidatePair selectedPair = getSelectedPair();
-            LocalCandidate localCandidate = selectedPair == null ? null : selectedPair.getLocalCandidate();
-            remoteAddress = selectedPair == null ? null : selectedPair.getRemoteCandidate().getTransportAddress();
-            socket = localCandidate == null ? null : localCandidate.getCandidateIceSocketWrapper(remoteAddress);
-            if (localCandidate != null)
-            {
-                lastLocalAddress = localCandidate.getTransportAddress();
-                lastRemoteAddress = remoteAddress;
-            }
-        }
+
+        LocalCandidate localCandidate = selectedPair.getLocalCandidate();
+        SocketAddress remoteAddress = selectedPair.getRemoteCandidate().getTransportAddress();
+        IceSocketWrapper socket
+                = localCandidate == null ? null : localCandidate.getCandidateIceSocketWrapper(remoteAddress);
 
         if (socket == null)
         {
@@ -1270,8 +1230,6 @@ public class Component
     public void handleBuffer(@NotNull Buffer buffer)
     {
         BufferHandler bufferCallback = this.bufferCallback;
-        this.lastLocalAddress = buffer.getLocalAddress();
-        this.lastRemoteAddress = buffer.getRemoteAddress();
 
         if (bufferCallback == null)
         {

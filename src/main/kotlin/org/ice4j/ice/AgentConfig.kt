@@ -82,13 +82,6 @@ class AgentConfig {
         "ice4j.use-component-socket".from(configSource)
     }
 
-    /**
-     * Whether to enable the push API.
-     */
-    val usePushApi: Boolean by config {
-        "ice4j.use-push-api".from(configSource)
-    }
-
     companion object {
         @JvmField
         val config = AgentConfig()
