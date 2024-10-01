@@ -1209,6 +1209,10 @@ public class Component
         }
 
         LocalCandidate localCandidate = selectedPair.getLocalCandidate();
+        if (localCandidate != null && localCandidate.getBase() != null)
+        {
+            localCandidate = localCandidate.getBase();
+        }
         SocketAddress remoteAddress = selectedPair.getRemoteCandidate().getTransportAddress();
         IceSocketWrapper socket
                 = localCandidate == null ? null : localCandidate.getCandidateIceSocketWrapper(remoteAddress);
