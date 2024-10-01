@@ -153,12 +153,23 @@ class ConnectivityCheckServer
         remoteUfrag = username.substring(0, colon);
 
         //tell our address handler we saw a new remote address;
-        parentAgent.incomingCheckReceived(evt.getRemoteAddress(),
+        boolean respond = parentAgent.incomingCheckReceived(evt.getRemoteAddress(),
                 evt.getLocalAddress(), priority, remoteUfrag, localUFrag,
                 useCandidate);
 
-        Response response = MessageFactory.createBindingResponse(
-                        request, evt.getRemoteAddress());
+        Response response;
+
+        if (respond)
+        {
+            response = MessageFactory.createBindingResponse(
+                    request, evt.getRemoteAddress());
+        }
+        else
+        {
+            response = MessageFactory.createBindingErrorResponse(
+                    ErrorCodeAttribute.FORBIDDEN,
+                    "Cannot add new remote candidates in current ICE state");
+        }
 
         /* add USERNAME and MESSAGE-INTEGRITY attribute in the response */
 

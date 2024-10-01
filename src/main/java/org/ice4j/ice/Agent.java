@@ -1578,8 +1578,9 @@ public class Agent
      * @param useCandidate indicates whether the incoming check
      * {@link org.ice4j.message.Request} contained the USE-CANDIDATE ICE
      * attribute.
+     * @return Whether the response to the check should get a success response
      */
-    protected void incomingCheckReceived(TransportAddress remoteAddress,
+    protected boolean incomingCheckReceived(TransportAddress remoteAddress,
                                          TransportAddress localAddress,
                                          long             priority,
                                          String           remoteUFrag,
@@ -1593,7 +1594,7 @@ public class Agent
         {
             logger.info("No localAddress for this incoming checks: " +
                     localAddress);
-            return;
+            return false;
         }
 
         Component parentComponent = localCandidate.getParentComponent();
@@ -1639,9 +1640,10 @@ public class Agent
 
                 // We have been started, and have not failed (yet). If this is
                 // a new pair, handle it (even if we have already completed).
-                triggerCheck(triggeredPair);
+                return triggerCheck(triggeredPair);
             }
         }
+        return true;
     }
 
     /**
@@ -1651,8 +1653,9 @@ public class Agent
      *
      * @param triggerPair the pair containing the local and remote candidate
      * that we'd need to trigger a check for.
+     * @return Whether a triggered check was started
      */
-    private void triggerCheck(CandidatePair triggerPair)
+    private boolean triggerCheck(CandidatePair triggerPair)
     {
         //first check whether we already know about the remote address in case
         //we've just discovered a peer-reflexive candidate.
@@ -1702,7 +1705,7 @@ public class Agent
                     checkListStatesUpdated();
                 }
 
-                return;
+                return true;
             }
 
             // RFC 5245: If the state of that pair is In-Progress, the agent
@@ -1723,6 +1726,12 @@ public class Agent
             // Its state is set to Waiting [and it] is enqueued into the
             // triggered check queue.
             //
+            // Local addition: if we're already stopped, we're never going to send the
+            // check for the triggered pair, so don't enqueue it.
+            if (connCheckClient.isStopped())
+            {
+                return false;
+            }
             if (triggerPair.getParentComponent().getSelectedPair() == null)
                 logger.info("Add peer CandidatePair with new reflexive " +
                         "address to checkList: " + triggerPair.toRedactedString());
@@ -1749,6 +1758,8 @@ public class Agent
         checkList.scheduleTriggeredCheck(triggerPair);
         if (wasFrozen && !checkList.isFrozen())
             connCheckClient.startChecks(checkList);
+
+        return true;
     }
 
     /**
