@@ -1202,18 +1202,23 @@ public class Component
     public void send(byte[] buffer, int offset, int length)
             throws IOException
     {
-        CandidatePair selectedPair = getSelectedPair();
-        if (selectedPair == null)
+        CandidatePair pair = getSelectedPair();
+        if (pair == null)
         {
-            throw new IOException("No selected pair.");
+            logger.debug("No selected pair, will try valid for sending");
+            pair = parentStream.getValidPair(this);
+            if (pair == null)
+            {
+                throw new IOException("No valid pair.");
+            }
         }
 
-        LocalCandidate localCandidate = selectedPair.getLocalCandidate();
+        LocalCandidate localCandidate = pair.getLocalCandidate();
         if (localCandidate != null && localCandidate.getBase() != null)
         {
             localCandidate = localCandidate.getBase();
         }
-        SocketAddress remoteAddress = selectedPair.getRemoteCandidate().getTransportAddress();
+        SocketAddress remoteAddress = pair.getRemoteCandidate().getTransportAddress();
         IceSocketWrapper socket
                 = localCandidate == null ? null : localCandidate.getCandidateIceSocketWrapper(remoteAddress);
 
