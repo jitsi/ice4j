@@ -896,6 +896,13 @@ class ConnectivityCheckClient
         private final CheckList checkList;
 
         /**
+         * Whether this is the first time this {@link PaceMaker} has been run.
+         * We want to run the initial check for a checklist as soon as connectivity
+         * checking is started, with no delay.
+         */
+        private boolean firstRun = true;
+
+        /**
          * Creates a new {@link PaceMaker} for this
          * <tt>ConnectivityCheckClient</tt>.
          *
@@ -972,6 +979,13 @@ class ConnectivityCheckClient
          */
         protected Duration getDelayUntilNextRun()
         {
+            if (firstRun)
+            {
+                /* Run first check immediately. */
+                firstRun = false;
+                return Duration.ZERO;
+            }
+
             int activeCheckLists = parentAgent.getActiveCheckListCount();
 
             if (activeCheckLists < 1)
