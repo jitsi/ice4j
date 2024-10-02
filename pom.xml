@@ -360,21 +360,6 @@
     </profile>
 
     <profile>
-      <id>run-pseudotcp</id>
-      <build>
-        <plugins>
-          <plugin>
-            <groupId>org.codehaus.mojo</groupId>
-            <artifactId>exec-maven-plugin</artifactId>
-            <configuration>
-                <mainClass>test.IcePseudoTcp</mainClass>
-            </configuration>
-          </plugin>
-        </plugins>
-      </build>
-    </profile>
-
-    <profile>
       <id>run-dist</id>
       <build>
         <plugins>
