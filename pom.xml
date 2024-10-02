@@ -3,7 +3,7 @@
 
   <groupId>org.jitsi</groupId>
   <artifactId>ice4j</artifactId>
-  <version>3.1-SNAPSHOT</version>
+  <version>3.2-SNAPSHOT</version>
 
   <name>ice4j</name>
   <description>A Java implementation of the ICE protocol</description>
