@@ -944,12 +944,15 @@ class ConnectivityCheckClient
                             "Pair failed: "
                                 + pairToCheck.toShortString());
                         pairToCheck.setStateFailed();
-                        updateCheckListAndTimerStates(pairToCheck);
                     }
                     else
                     {
                         pairToCheck.setStateInProgress(transactionID);
                     }
+                }
+                if (pairToCheck.getState() == CandidatePairState.FAILED)
+                {
+                    updateCheckListAndTimerStates(pairToCheck);
                 }
             }
             else
