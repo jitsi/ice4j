@@ -18,12 +18,16 @@
 package org.ice4j.ice;
 
 import java.beans.*;
+import java.io.*;
 import java.net.*;
 import java.util.*;
 import java.util.concurrent.*;
 
 import org.ice4j.*;
+import org.ice4j.ice.harvest.*;
 import org.ice4j.socket.*;
+import org.ice4j.util.*;
+import org.jetbrains.annotations.*;
 import org.jitsi.utils.logging2.*;
 
 /**
@@ -39,7 +43,7 @@ import org.jitsi.utils.logging2.*;
  * @author Boris Grozev
  */
 public class Component
-    implements PropertyChangeListener
+    implements PropertyChangeListener, BufferHandler
 {
     /**
      * The component ID to use with RTP streams.
@@ -149,9 +153,12 @@ public class Component
     /**
      * The set of pairs which this component wants to keep alive.
      */
-    private final Set<CandidatePair> keepAlivePairs
-        = Collections.newSetFromMap(
-                new ConcurrentHashMap<CandidatePair, Boolean>());
+    private final Set<CandidatePair> keepAlivePairs = Collections.newSetFromMap(new ConcurrentHashMap<>());
+
+    /**
+     * External callback for the push API. Called with every packet received via {@link #handleBuffer(Buffer)}.
+     */
+    private BufferHandler bufferCallback = null;
 
     /**
      * Creates a new <tt>Component</tt> with the specified <tt>componentID</tt>
@@ -1187,5 +1194,78 @@ public class Component
     public Logger getLogger()
     {
         return logger;
+    }
+
+    /**
+     * Send a packet to the remote side. Uses the last used candidate pair to find the right socket and remote address.
+     */
+    public void send(byte[] buffer, int offset, int length)
+            throws IOException
+    {
+        CandidatePair pair = getSelectedPair();
+        if (pair == null)
+        {
+            logger.debug("No selected pair, will try valid for sending");
+            pair = parentStream.getValidPair(this);
+            if (pair == null)
+            {
+                throw new IOException("No valid pair.");
+            }
+        }
+
+        LocalCandidate localCandidate = pair.getLocalCandidate();
+        if (localCandidate != null && localCandidate.getBase() != null)
+        {
+            localCandidate = localCandidate.getBase();
+        }
+        SocketAddress remoteAddress = pair.getRemoteCandidate().getTransportAddress();
+        IceSocketWrapper socket
+                = localCandidate == null ? null : localCandidate.getCandidateIceSocketWrapper(remoteAddress);
+
+        if (socket == null)
+        {
+            throw new IOException("No socket found to send on.");
+        }
+
+        DatagramPacket p = new DatagramPacket(buffer, offset, length);
+        p.setSocketAddress(remoteAddress);
+        socket.send(p);
+    }
+
+    /**
+     * Handle a buffer that was received from one of the sockets and should be forwarded to the application.
+     */
+    @Override
+    public void handleBuffer(@NotNull Buffer buffer)
+    {
+        BufferHandler bufferCallback = this.bufferCallback;
+
+        if (bufferCallback == null)
+        {
+            logger.warn(
+                    "The push API is used while no buffer callback has been set, dropping a packet (use-push-api="
+                            + AbstractUdpListener.USE_PUSH_API + ").");
+            BufferPool.returnBuffer.invoke(buffer);
+            return;
+        }
+
+        try
+        {
+            bufferCallback.handleBuffer(buffer);
+        }
+        catch (Exception e)
+        {
+            logger.warn("Buffer handling failed", e);
+            BufferPool.returnBuffer.invoke(buffer);
+        }
+    }
+
+    /**
+     * Set the external callback to be used for the push API.
+     * @param bufferCallback the external callback
+     */
+    public void setBufferCallback(BufferHandler bufferCallback)
+    {
+        this.bufferCallback = bufferCallback;
     }
 }

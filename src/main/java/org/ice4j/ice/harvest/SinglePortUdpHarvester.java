@@ -21,6 +21,7 @@ import org.ice4j.*;
 import org.ice4j.ice.*;
 import org.ice4j.socket.*;
 import org.ice4j.stack.*;
+import org.ice4j.util.*;
 
 import java.io.*;
 import java.net.*;
@@ -30,8 +31,7 @@ import java.util.logging.*;
 
 /**
  * A harvester implementation which binds to a single <tt>DatagramSocket</tt>
- * and provides local candidates of type "host". It runs a thread
- * ({@link #thread}) which perpetually reads from the socket.
+ * and provides local candidates of type "host". It runs a thread which perpetually reads from the socket.
  *
  * When {@link #harvest(org.ice4j.ice.Component)} is called, this harvester
  * creates and adds to the component a
@@ -128,7 +128,7 @@ public class SinglePortUdpHarvester
      * local ufrag of {@code ufrag}, and if one is found it accepts the new
      * socket and adds it to the candidate.
      */
-    protected void maybeAcceptNewSession(Buffer buf,
+    protected MySocket maybeAcceptNewSession(Buffer buf,
                                          InetSocketAddress remoteAddress,
                                          String ufrag)
     {
@@ -136,7 +136,7 @@ public class SinglePortUdpHarvester
         if (candidate == null)
         {
             // A STUN Binding Request with an unknown USERNAME. Drop it.
-            return;
+            return null;
         }
 
         // This is a STUN Binding Request destined for this
@@ -144,24 +144,27 @@ public class SinglePortUdpHarvester
         try
         {
             // 1. Create a socket for this remote address
-            // 2. Set-up de-multiplexing for future datagrams
-            // with this address to this socket.
-            MySocket newSocket = addSocket(remoteAddress, ufrag);
+            // 2. Set-up de-multiplexing for future datagrams with this address to this socket.
+            MySocket newSocket = addSocket(
+                    remoteAddress,
+                    ufrag,
+                    candidate.getParentComponent());
 
             // 3. Let the candidate and its STUN stack no about the
             // new socket.
             candidate.addSocket(newSocket, remoteAddress);
 
-            // 4. Add the original datagram to the new socket.
-            newSocket.addBuffer(buf);
+            return newSocket;
         }
         catch (SocketException se)
         {
             logger.info("Could not create a socket: " + se);
+            return null;
         }
         catch (IOException ioe)
         {
             logger.info("Failed to handle new socket: " + ioe);
+            return null;
         }
     }
 

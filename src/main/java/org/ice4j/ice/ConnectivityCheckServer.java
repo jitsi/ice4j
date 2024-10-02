@@ -161,8 +161,7 @@ class ConnectivityCheckServer
 
         if (respond)
         {
-            response = MessageFactory.createBindingResponse(
-                    request, evt.getRemoteAddress());
+            response = MessageFactory.createBindingResponse(request, evt.getRemoteAddress());
         }
         else
         {
