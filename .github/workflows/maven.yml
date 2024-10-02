@@ -61,6 +61,27 @@ jobs:
           server-username: SONATYPE_USER
           server-password: SONATYPE_PW
 
+      - name: Install xmllint
+        shell: bash
+        run: |
+          sudo apt update
+          sudo apt install -y libxml2-utils
+
+      - name: Set tag Version
+        id: sets-tag-version
+        run: |
+          MVNVER=$(xmllint --xpath "/*[local-name()='project']/*[local-name()='version']/text()" pom.xml)
+          TAG_NAME="v${MVNVER/-SNAPSHOT/}"
+          echo "Tag name: ${TAG_NAME}"
+          echo "TAG_NAME=${TAG_NAME}" >> $GITHUB_OUTPUT
+
+      - name: Create Tag
+        uses: rickstaa/action-create-tag@v1.7.2
+        with:
+          tag_exists_error: false
+          tag: ${{ steps.sets-tag-version.outputs.TAG_NAME }}
+          message: "Automated tag"
+
       - name: Set version
         run: |
           VERSION=`git describe --match "v[0-9\.]*" --long --dirty --always`
