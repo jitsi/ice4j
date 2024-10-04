@@ -21,6 +21,7 @@ import org.jitsi.utils.logging2.*;
 
 import java.beans.*;
 import java.util.*;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  * A check list is a list of <tt>CandidatePair</tt>s with a state (i.e. a
@@ -56,6 +57,11 @@ public class CheckList
      * The state of this check list.
      */
     private CheckListState state = CheckListState.RUNNING;
+
+    /**
+     * Whether a PaceMaker has been started for this check list.
+     */
+    private AtomicBoolean paceMakerStarted = new AtomicBoolean(false);
 
     /**
      * The <tt>triggeredCheckQueue</tt> is a FIFO queue containing candidate
@@ -603,5 +609,10 @@ public class CheckList
     public IceMediaStream getParentStream()
     {
         return parentStream;
+    }
+
+    public boolean shouldStartPaceMaker()
+    {
+        return paceMakerStarted.compareAndSet(false, true);
     }
 }
