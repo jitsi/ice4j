@@ -344,6 +344,8 @@ class ConnectivityCheckClient
             {
                 logger.trace("checking pair " + candidatePair.toRedactedString() + " tid " + tran);
             }
+
+            return tran;
         }
         catch (NetAccessManager.SocketNotFoundException e)
         {
@@ -351,8 +353,6 @@ class ConnectivityCheckClient
         }
         catch (Exception ex)
         {
-            tran = null;
-
             IceSocketWrapper stunSocket = localCandidate.getStunSocket(null);
 
             if (stunSocket != null)
@@ -376,7 +376,7 @@ class ConnectivityCheckClient
             }
         }
 
-        return tran;
+        return null;
     }
 
     /**
@@ -956,6 +956,10 @@ class ConnectivityCheckClient
                     {
                         pairToCheck.setStateInProgress(transactionID);
                     }
+                }
+                if (pairToCheck.getState() == CandidatePairState.FAILED)
+                {
+                    updateCheckListAndTimerStates(pairToCheck);
                 }
             }
             else
