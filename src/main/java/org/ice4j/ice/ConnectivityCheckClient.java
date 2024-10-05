@@ -165,6 +165,12 @@ class ConnectivityCheckClient
      */
     public void startChecks(CheckList checkList)
     {
+        if (!checkList.shouldStartPaceMaker())
+        {
+            logger.debug("Checks for " + checkList.getName() + " already started");
+            return;
+        }
+        logger.debug("Start connectivity checks for " + checkList.getName());
         synchronized (paceMakers)
         {
             if (stopped)
@@ -925,10 +931,18 @@ class ConnectivityCheckClient
         {
             CandidatePair pairToCheck = checkList.popTriggeredCheck();
 
+            if (pairToCheck != null)
+            {
+                logger.trace("Starting triggered check " + pairToCheck.toRedactedString());
+            }
             //if there are no triggered checks, go for an ordinary one.
             if (pairToCheck == null)
             {
                 pairToCheck = checkList.getNextOrdinaryPairToCheck();
+                if (pairToCheck != null)
+                {
+                    logger.trace("Starting ordinary check " + pairToCheck.toRedactedString());
+                }
             }
 
             if (pairToCheck != null)
