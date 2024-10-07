@@ -6,6 +6,9 @@ This project provides a Java implementation of the ICE protocol that would be us
 
 ice4j is maintained by the [Jitsi](https://jitsi.org/) community. Use Jitsi's [community forum](https://community.jitsi.org) for questions and discussions.
 
+## Pseudo TCP
+The pseudo TCP implementation was moved it its own [project](https://github.com/jitsi/jitsi-pseudotcp).
+
 Thanks
 ------
 Work on this project was graciously funded by the [NLnet Foundation](https://nlnet.nl/). Thank you!
