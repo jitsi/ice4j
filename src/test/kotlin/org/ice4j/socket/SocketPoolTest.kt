@@ -16,10 +16,10 @@ import java.time.Clock
 import java.time.Duration
 import java.time.Instant
 
-class SocketPoolTest : ShouldSpec() {
-    private val loopbackAny = InetSocketAddress("127.0.0.1", 0)
-    private val loopbackDiscard = InetSocketAddress("127.0.0.1", 9)
+private val loopbackAny = InetSocketAddress("127.0.0.1", 0)
+private val loopbackDiscard = InetSocketAddress("127.0.0.1", 9)
 
+class SocketPoolTest : ShouldSpec() {
     init {
         context("Creating a new socket pool") {
             val pool = SocketPool(loopbackAny)
@@ -112,42 +112,9 @@ class SocketPoolTest : ShouldSpec() {
         }
 
         context("Test sending packets from multiple threads") {
-            val poolWarmup = SocketPool(loopbackAny, 1)
-            sendTimeOnAllSockets(poolWarmup)
-
-            val pool1 = SocketPool(loopbackAny, 1)
-            val elapsed11 = sendTimeOnAllSockets(pool1)
-            println("Send ${Sender.NUM_PACKETS} packets on 1 socket on one thread took $elapsed11")
-
-            val numProcessors = Runtime.getRuntime().availableProcessors()
-
-            val elapsed1N = sendTimeOnAllSockets(pool1, numProcessors)
-            println(
-                "Send ${Sender.NUM_PACKETS} packets on 1 socket on $numProcessors threads took $elapsed1N"
-            )
-
-            val poolN = SocketPool(loopbackAny, numProcessors)
-            val elapsedNN = sendTimeOnAllSockets(poolN, numProcessors)
-            println(
-                "Send ${Sender.NUM_PACKETS} packets on $numProcessors sockets on $numProcessors threads " +
-                    "took $elapsedNN"
-            )
-
-            val elapsedN2N = sendTimeOnAllSockets(poolN, 2 * numProcessors)
-            println(
-                "Send ${Sender.NUM_PACKETS} packets on $numProcessors sockets on ${2 * numProcessors} threads " +
-                    "took $elapsedN2N"
-            )
-
-            val pool2N = SocketPool(loopbackAny, 2 * numProcessors)
-            val elapsed2N2N = sendTimeOnAllSockets(pool2N, 2 * numProcessors)
-            println(
-                "Send ${Sender.NUM_PACKETS} packets on ${2 * numProcessors} sockets " +
-                    "on ${2 * numProcessors} threads took $elapsed2N2N"
-            )
+            testSending()
         }
     }
-
     private class Sender(
         private val count: Int,
         private val pool: SocketPool,
@@ -196,15 +163,58 @@ class SocketPoolTest : ShouldSpec() {
         }
     }
 
-    private fun sendTimeOnAllSockets(pool: SocketPool, numThreads: Int = pool.numSockets): Duration {
-        val threads = mutableListOf<Thread>()
-        Sender.resetElapsed()
-        repeat(numThreads) {
-            val thread = Thread(Sender(Sender.NUM_PACKETS / numThreads, pool, loopbackDiscard))
-            threads.add(thread)
-            thread.start()
+    companion object {
+        private fun sendTimeOnAllSockets(pool: SocketPool, numThreads: Int = pool.numSockets): Duration {
+            val threads = mutableListOf<Thread>()
+            Sender.resetElapsed()
+            repeat(numThreads) {
+                val thread = Thread(Sender(Sender.NUM_PACKETS / numThreads, pool, loopbackDiscard))
+                threads.add(thread)
+                thread.start()
+            }
+            threads.forEach { it.join() }
+            return Sender.elapsed
         }
-        threads.forEach { it.join() }
-        return Sender.elapsed
+
+        fun testSending() {
+            val poolWarmup = SocketPool(loopbackAny, 1)
+            sendTimeOnAllSockets(poolWarmup)
+
+            val pool1 = SocketPool(loopbackAny, 1)
+            val elapsed11 = sendTimeOnAllSockets(pool1)
+            println("Send ${Sender.NUM_PACKETS} packets on 1 socket on one thread took $elapsed11")
+
+            val numProcessors = Runtime.getRuntime().availableProcessors()
+
+            val elapsed1N = sendTimeOnAllSockets(pool1, numProcessors)
+            println(
+                "Send ${Sender.NUM_PACKETS} packets on 1 socket on $numProcessors threads took $elapsed1N"
+            )
+
+            val poolN = SocketPool(loopbackAny, numProcessors)
+            val elapsedNN = sendTimeOnAllSockets(poolN, numProcessors)
+            println(
+                "Send ${Sender.NUM_PACKETS} packets on $numProcessors sockets on $numProcessors threads " +
+                    "took $elapsedNN"
+            )
+
+            val elapsedN2N = sendTimeOnAllSockets(poolN, 2 * numProcessors)
+            println(
+                "Send ${Sender.NUM_PACKETS} packets on $numProcessors sockets on ${2 * numProcessors} threads " +
+                    "took $elapsedN2N"
+            )
+
+            val pool2N = SocketPool(loopbackAny, 2 * numProcessors)
+            val elapsed2N2N = sendTimeOnAllSockets(pool2N, 2 * numProcessors)
+            println(
+                "Send ${Sender.NUM_PACKETS} packets on ${2 * numProcessors} sockets " +
+                    "on ${2 * numProcessors} threads took $elapsed2N2N"
+            )
+        }
+
+        @JvmStatic
+        fun main(args: Array<String>) {
+            testSending()
+        }
     }
 }
