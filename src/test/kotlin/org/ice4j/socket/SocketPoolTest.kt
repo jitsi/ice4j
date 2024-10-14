@@ -123,8 +123,8 @@ class SocketPoolTest : ShouldSpec() {
         private val buf = ByteArray(BUFFER_SIZE)
 
         private fun sendToSocket(count: Int) {
-            pool.getSendSocket().use {
-                for (i in 0 until count) {
+            for (i in 0 until count) {
+                pool.getSendSocket().use {
                     it.socket.send(DatagramPacket(buf, BUFFER_SIZE, destAddr))
                 }
             }
