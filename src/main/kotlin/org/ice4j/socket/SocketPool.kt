@@ -121,10 +121,10 @@ class SocketPool(
     }
 
     private fun returnSendSocket(socket: DatagramSocket) {
-        semaphore.release()
         synchronized(availableSockets) {
             availableSockets.addLast(socket)
         }
+        semaphore.release()
     }
 
     fun close() {
