@@ -34,13 +34,14 @@ class SocketPoolTest : ShouldSpec() {
         context("Getting multiple send sockets from a pool") {
             val numSockets = 4
             val pool = SocketPool(loopbackAny, numSockets)
-            val holders = mutableListOf<SocketPool.SocketHolder>()
+            val sockets = mutableListOf<DatagramSocket>()
             should("be possible") {
                 repeat(numSockets) {
-                    holders.add(pool.getSendSocket())
+                    sockets.add(pool.sendSocket)
                 }
             }
-            holders.forEach { it.close() }
+            // All sockets should be distinct
+            sockets.toSet().size shouldBe sockets.size
             pool.close()
         }
 
@@ -48,16 +49,15 @@ class SocketPoolTest : ShouldSpec() {
             val numSockets = 4
             val pool = SocketPool(loopbackAny, numSockets)
             val local = pool.receiveSocket.localSocketAddress
-            val holders = mutableListOf<SocketPool.SocketHolder>()
+            val sockets = mutableListOf<DatagramSocket>()
             repeat(numSockets) {
-                holders.add(pool.getSendSocket())
+                sockets.add(pool.sendSocket)
             }
-            holders.forEachIndexed { i, it ->
+            sockets.forEachIndexed { i, it ->
                 val buf = i.toString().toByteArray()
                 val packet = DatagramPacket(buf, buf.size, local)
-                it.socket.send(packet)
+                it.send(packet)
             }
-            holders.forEach { it.close() }
 
             should("be received") {
                 for (i in 0 until numSockets) {
@@ -69,6 +69,7 @@ class SocketPoolTest : ShouldSpec() {
                     packet.socketAddress shouldBe local
                 }
             }
+            pool.close()
         }
 
         context("The number of send sockets") {
@@ -79,9 +80,7 @@ class SocketPoolTest : ShouldSpec() {
 
             repeat(2 * numSockets) {
                 // This should cycle through all the available send sockets
-                pool.getSendSocket().use { holder ->
-                    sockets.add(holder.socket)
-                }
+                sockets.add(pool.sendSocket)
             }
 
             should("be correct") {
@@ -124,9 +123,8 @@ class SocketPoolTest : ShouldSpec() {
 
         private fun sendToSocket(count: Int) {
             for (i in 0 until count) {
-                pool.getSendSocket().use {
-                    it.socket.send(DatagramPacket(buf, BUFFER_SIZE, destAddr))
-                }
+                val socket = pool.sendSocket
+                socket.send(DatagramPacket(buf, BUFFER_SIZE, destAddr))
             }
         }
 

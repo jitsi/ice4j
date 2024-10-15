@@ -15,12 +15,11 @@
  */
 package org.ice4j.socket
 
-import java.io.Closeable
 import java.net.DatagramSocket
 import java.net.DatagramSocketImpl
 import java.net.SocketAddress
 import java.nio.channels.DatagramChannel
-import java.util.concurrent.Semaphore
+import java.util.concurrent.atomic.AtomicInteger
 
 /** A pool of datagram sockets all bound on the same port.
  *
@@ -56,8 +55,6 @@ class SocketPool(
             Runtime.getRuntime().availableProcessors()
         }
 
-    private val semaphore = Semaphore(numSockets)
-
     private val sockets = buildList {
         val multipleSockets = numSockets > 1
         var bindAddr = address
@@ -74,7 +71,7 @@ class SocketPool(
         }
     }
 
-    private val availableSockets = ArrayDeque(sockets)
+    private val sockIndex = AtomicInteger(0)
 
     /** The socket on which packets will be received. */
     val receiveSocket: DatagramSocket
@@ -83,48 +80,33 @@ class SocketPool(
         //  sockets, spreading load?
         get() = sockets.last()
 
-    interface SocketHolder : Closeable {
-        val socket: DatagramSocket
-    }
-
-    /** Socket holder with autocloseable semantics, to ensure the socket is returned. */
-    private inner class MySocketHolder : SocketHolder {
-        override val socket = acquireSendSocket()
-        private var closed = false
-        override fun close() {
-            if (!closed) {
-                returnSendSocket(socket)
-                closed = true
+    /** Gets a socket on which packets can be sent, chosen from among all the available send sockets. */
+    val sendSocket: DatagramSocket
+        get() {
+            if (numSockets == 1) {
+                return sockets.first()
             }
+            return sockets[nextIndex()]
         }
-    }
 
-    /** Trivial socket holder that gives out a single unique socket. */
-    private inner class TrivialSocketHolder : SocketHolder {
-        override val socket = sockets.first()
-        override fun close() {}
-    }
-
-    /** Gets a send socket holder.  Should be used with Kotlin [use] or Java try-with-resources.  May block. */
-    fun getSendSocket(): SocketHolder {
-        if (numSockets == 1) {
-            return TrivialSocketHolder()
+    private fun nextIndex(): Int {
+        val nextIdx = sockIndex.incrementAndGet()
+        if (nextIdx < numSockets) {
+            return nextIdx
         }
-        return MySocketHolder()
-    }
-
-    private fun acquireSendSocket(): DatagramSocket {
-        semaphore.acquire()
-        synchronized(availableSockets) {
-            return availableSockets.removeFirst()
+        /* Try to modulo the counter, but be prepared to lose. */
+        val mod = nextIdx.rem(numSockets)
+        if (sockIndex.compareAndSet(nextIdx, mod)) {
+            return mod
         }
-    }
-
-    private fun returnSendSocket(socket: DatagramSocket) {
-        synchronized(availableSockets) {
-            availableSockets.addLast(socket)
-        }
-        semaphore.release()
+        do {
+            val cur = sockIndex.get()
+            if (cur < numSockets) {
+                break
+            }
+            val curMod = cur.rem(numSockets)
+        } while (!sockIndex.compareAndSet(cur, curMod))
+        return mod
     }
 
     fun close() {
