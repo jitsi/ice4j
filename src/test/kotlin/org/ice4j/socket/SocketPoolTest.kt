@@ -203,7 +203,7 @@ class SocketPoolTest : ShouldSpec() {
             val elapsed = sendTimeOnAllSockets(pool, numThreads, numPackets)
             if (!warmup) {
                 println(
-                    "Send ${Sender.NUM_PACKETS} packets on $numSockets sockets on $numThreads threads " +
+                    "Send $numPackets packets on $numSockets sockets on $numThreads threads " +
                         "took $elapsed"
                 )
             }
