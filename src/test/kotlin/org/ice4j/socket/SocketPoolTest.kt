@@ -246,6 +246,7 @@ class SocketPoolTest : ShouldSpec() {
                 } else {
                     Sender.NUM_PACKETS
                 }
+                testSendingOnce(numThreads = numThreads, numSockets = numSockets, numPackets = 10000, warmup = true)
                 testSendingOnce(numThreads = numThreads, numSockets = numSockets, numPackets = numPackets)
             } else {
                 testSending()
