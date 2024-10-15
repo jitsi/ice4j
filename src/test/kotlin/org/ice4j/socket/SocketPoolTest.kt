@@ -177,11 +177,15 @@ class SocketPoolTest : ShouldSpec() {
     }
 
     companion object {
-        private fun sendTimeOnAllSockets(pool: SocketPool, numThreads: Int = pool.numSockets): Duration {
+        private fun sendTimeOnAllSockets(
+            pool: SocketPool,
+            numThreads: Int = pool.numSockets,
+            numPackets: Int = Sender.NUM_PACKETS
+        ): Duration {
             val threads = mutableListOf<Thread>()
             Sender.reset(numThreads)
             repeat(numThreads) {
-                val thread = Thread(Sender(Sender.NUM_PACKETS / numThreads, pool, loopbackDiscard))
+                val thread = Thread(Sender(numPackets / numThreads, pool, loopbackDiscard))
                 threads.add(thread)
                 thread.start()
             }
@@ -189,9 +193,14 @@ class SocketPoolTest : ShouldSpec() {
             return Sender.elapsed
         }
 
-        fun testSendingOnce(numSockets: Int, numThreads: Int, warmup: Boolean = false) {
+        private fun testSendingOnce(
+            numSockets: Int,
+            numThreads: Int,
+            numPackets: Int = Sender.NUM_PACKETS,
+            warmup: Boolean = false
+        ) {
             val pool = SocketPool(loopbackAny, numSockets)
-            val elapsed = sendTimeOnAllSockets(pool, numThreads)
+            val elapsed = sendTimeOnAllSockets(pool, numThreads, numPackets)
             if (!warmup) {
                 println(
                     "Send ${Sender.NUM_PACKETS} packets on $numSockets sockets on $numThreads threads " +
@@ -229,7 +238,18 @@ class SocketPoolTest : ShouldSpec() {
 
         @JvmStatic
         fun main(args: Array<String>) {
-            testSending()
+            if (args.size >= 2) {
+                val numThreads = args[0].toInt()
+                val numSockets = args[1].toInt()
+                val numPackets = if (args.size > 2) {
+                    args[2].toInt()
+                } else {
+                    Sender.NUM_PACKETS
+                }
+                testSendingOnce(numThreads = numThreads, numSockets = numSockets, numPackets = numPackets)
+            } else {
+                testSending()
+            }
         }
     }
 }
