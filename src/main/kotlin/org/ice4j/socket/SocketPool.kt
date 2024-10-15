@@ -19,7 +19,7 @@ import java.net.DatagramSocket
 import java.net.DatagramSocketImpl
 import java.net.SocketAddress
 import java.nio.channels.DatagramChannel
-import java.util.concurrent.atomic.AtomicInteger
+import java.util.concurrent.atomic.AtomicLong
 
 /** A pool of datagram sockets all bound on the same port.
  *
@@ -71,7 +71,7 @@ class SocketPool(
         }
     }
 
-    private val sockIndex = AtomicInteger(0)
+    private val sockIndex = AtomicLong(0)
 
     /** The socket on which packets will be received. */
     val receiveSocket: DatagramSocket
@@ -90,23 +90,8 @@ class SocketPool(
         }
 
     private fun nextIndex(): Int {
-        val nextIdx = sockIndex.incrementAndGet()
-        if (nextIdx < numSockets) {
-            return nextIdx
-        }
-        /* Try to modulo the counter, but be prepared to lose. */
-        val mod = nextIdx.rem(numSockets)
-        if (sockIndex.compareAndSet(nextIdx, mod)) {
-            return mod
-        }
-        do {
-            val cur = sockIndex.get()
-            if (cur < numSockets) {
-                break
-            }
-            val curMod = cur.rem(numSockets)
-        } while (!sockIndex.compareAndSet(cur, curMod))
-        return mod
+        val nextIdx = sockIndex.getAndIncrement()
+        return nextIdx.rem(numSockets).toInt()
     }
 
     fun close() {
