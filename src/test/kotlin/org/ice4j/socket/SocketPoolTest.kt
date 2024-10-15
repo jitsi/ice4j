@@ -15,6 +15,7 @@ import java.net.SocketAddress
 import java.time.Clock
 import java.time.Duration
 import java.time.Instant
+import java.util.concurrent.CyclicBarrier
 
 private val loopbackAny = InetSocketAddress("127.0.0.1", 0)
 private val loopbackDiscard = InetSocketAddress("127.0.0.1", 9)
@@ -129,14 +130,11 @@ class SocketPoolTest : ShouldSpec() {
         }
 
         override fun run() {
-            val startTime: Instant = clock.instant()
+            barrier.await()
 
+            start()
             sendToSocket(count)
-
-            val endTime: Instant = clock.instant()
-
-            val myElapsed: Duration = Duration.between(startTime, endTime)
-            setElapsed(myElapsed)
+            end()
         }
 
         companion object {
@@ -144,19 +142,36 @@ class SocketPoolTest : ShouldSpec() {
             const val NUM_PACKETS = 600000
             private val clock = Clock.systemUTC()
 
-            var elapsed: Duration = Duration.ZERO
-                private set
+            private var start = Instant.MAX
+            private var end = Instant.MIN
 
-            fun setElapsed(myElapsed: Duration) {
+            val elapsed: Duration
+                get() = Duration.between(start, end)
+
+            fun start() {
+                val now = clock.instant()
                 synchronized(this) {
-                    if (elapsed < myElapsed) {
-                        elapsed = myElapsed
+                    if (start.isAfter(now)) {
+                        start = now
                     }
                 }
             }
 
-            fun resetElapsed() {
-                elapsed = Duration.ZERO
+            fun end() {
+                val now = clock.instant()
+                synchronized(this) {
+                    if (end.isBefore(now)) {
+                        end = now
+                    }
+                }
+            }
+
+            private var barrier: CyclicBarrier = CyclicBarrier(1)
+
+            fun reset(numThreads: Int) {
+                barrier = CyclicBarrier(numThreads)
+                start = Instant.MAX
+                end = Instant.MIN
             }
         }
     }
@@ -164,7 +179,7 @@ class SocketPoolTest : ShouldSpec() {
     companion object {
         private fun sendTimeOnAllSockets(pool: SocketPool, numThreads: Int = pool.numSockets): Duration {
             val threads = mutableListOf<Thread>()
-            Sender.resetElapsed()
+            Sender.reset(numThreads)
             repeat(numThreads) {
                 val thread = Thread(Sender(Sender.NUM_PACKETS / numThreads, pool, loopbackDiscard))
                 threads.add(thread)
@@ -185,25 +200,30 @@ class SocketPoolTest : ShouldSpec() {
         }
 
         fun testSending() {
-            testSendingOnce(1, 1, warmup = true)
-
-            testSendingOnce(1, 1)
-
             val numProcessors = Runtime.getRuntime().availableProcessors()
 
+            testSendingOnce(1, 1, warmup = true)
+            testSendingOnce(2 * numProcessors, 2 * numProcessors, warmup = true)
+
+            testSendingOnce(1, 1)
             testSendingOnce(1, numProcessors)
+            testSendingOnce(1, 2 * numProcessors)
+            testSendingOnce(1, 4 * numProcessors)
+            testSendingOnce(1, 8 * numProcessors)
 
             testSendingOnce(numProcessors, numProcessors)
-
             testSendingOnce(numProcessors, 2 * numProcessors)
+            testSendingOnce(numProcessors, 4 * numProcessors)
+            testSendingOnce(numProcessors, 8 * numProcessors)
 
             testSendingOnce(2 * numProcessors, 2 * numProcessors)
-
             testSendingOnce(2 * numProcessors, 4 * numProcessors)
+            testSendingOnce(2 * numProcessors, 8 * numProcessors)
 
             testSendingOnce(4 * numProcessors, 4 * numProcessors)
-
             testSendingOnce(4 * numProcessors, 8 * numProcessors)
+
+            testSendingOnce(8 * numProcessors, 8 * numProcessors)
         }
 
         @JvmStatic
