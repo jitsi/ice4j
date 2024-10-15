@@ -239,8 +239,8 @@ class SocketPoolTest : ShouldSpec() {
         @JvmStatic
         fun main(args: Array<String>) {
             if (args.size >= 2) {
-                val numThreads = args[0].toInt()
-                val numSockets = args[1].toInt()
+                val numSockets = args[0].toInt()
+                val numThreads = args[1].toInt()
                 val numPackets = if (args.size > 2) {
                     args[2].toInt()
                 } else {
