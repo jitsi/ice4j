@@ -15,6 +15,7 @@
  */
 package org.ice4j.socket
 
+import java.net.DatagramPacket
 import java.net.DatagramSocket
 import java.net.DatagramSocketImpl
 import java.net.SocketAddress
@@ -80,8 +81,12 @@ class SocketPool(
         //  sockets, spreading load?
         get() = sockets.last()
 
+    fun send(packet: DatagramPacket) {
+        sendSocket.send(packet)
+    }
+
     /** Gets a socket on which packets can be sent, chosen from among all the available send sockets. */
-    val sendSocket: DatagramSocket
+    internal val sendSocket: DatagramSocket
         get() {
             if (numSockets == 1) {
                 return sockets.first()

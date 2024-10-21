@@ -124,8 +124,7 @@ class SocketPoolTest : ShouldSpec() {
 
         private fun sendToSocket(count: Int) {
             for (i in 0 until count) {
-                val socket = pool.sendSocket
-                socket.send(DatagramPacket(buf, BUFFER_SIZE, destAddr))
+                pool.send(DatagramPacket(buf, BUFFER_SIZE, destAddr))
             }
         }
 
