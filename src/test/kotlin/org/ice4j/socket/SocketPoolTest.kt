@@ -20,6 +20,7 @@ import java.util.concurrent.CyclicBarrier
 private val loopbackAny = InetSocketAddress("127.0.0.1", 0)
 private val loopbackDiscard = InetSocketAddress("127.0.0.1", 9)
 
+@OptIn(io.kotest.common.ExperimentalKotest::class)
 class SocketPoolTest : ShouldSpec() {
     init {
         context("Creating a new socket pool") {
