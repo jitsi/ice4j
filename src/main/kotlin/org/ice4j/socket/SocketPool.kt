@@ -57,7 +57,7 @@ class SocketPool(
             requestedNumSockets
         } else {
             // TODO: set this to 1 in situations where pools aren't needed?
-            Runtime.getRuntime().availableProcessors()
+            2 * Runtime.getRuntime().availableProcessors()
         }
 
     private val sockets = buildList {
