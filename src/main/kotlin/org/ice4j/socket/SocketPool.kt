@@ -20,7 +20,7 @@ import java.net.DatagramSocket
 import java.net.DatagramSocketImpl
 import java.net.SocketAddress
 import java.nio.channels.DatagramChannel
-import java.util.concurrent.atomic.AtomicLong
+import java.util.concurrent.atomic.AtomicInteger
 
 /** A pool of datagram sockets all bound on the same port.
  *
@@ -48,6 +48,11 @@ class SocketPool(
         require(requestedNumSockets >= 0) { "RequestedNumSockets must be >= 0" }
     }
 
+    internal data class SocketAndIndex(
+        val socket: DatagramSocket,
+        var count: Int = 0
+    )
+
     val numSockets: Int =
         if (requestedNumSockets != 0) {
             requestedNumSockets
@@ -68,38 +73,43 @@ class SocketPool(
             if (i == 0 && multipleSockets) {
                 bindAddr = sock.localSocketAddress
             }
-            add(sock)
+            add(SocketAndIndex(sock, 0))
         }
     }
-
-    private val sockIndex = AtomicLong(0)
 
     /** The socket on which packets will be received. */
     val receiveSocket: DatagramSocket
         // On all platforms I've tested, the last-bound socket is the one which receives packets.
         // TODO: should we support Linux's flavor of SO_REUSEPORT, in which packets can be received on *all* the
         //  sockets, spreading load?
-        get() = sockets.last()
+        get() = sockets.last().socket
 
     fun send(packet: DatagramPacket) {
-        sendSocket.send(packet)
+        val sendSocket = getSendSocket()
+        sendSocket.socket.send(packet)
+        returnSocket(sendSocket)
     }
 
     /** Gets a socket on which packets can be sent, chosen from among all the available send sockets. */
-    internal val sendSocket: DatagramSocket
-        get() {
-            if (numSockets == 1) {
-                return sockets.first()
-            }
-            return sockets[nextIndex()]
+    internal fun getSendSocket(): SocketAndIndex {
+        if (numSockets == 1) {
+            return sockets.first()
         }
+        synchronized(sockets) {
+            val min = sockets.minBy { it.count }
+            min.count++
 
-    private fun nextIndex(): Int {
-        val nextIdx = sockIndex.getAndIncrement()
-        return nextIdx.rem(numSockets).toInt()
+            return min
+        }
+    }
+
+    internal fun returnSocket(socket: SocketAndIndex) {
+        synchronized(sockets) {
+            socket.count--
+        }
     }
 
     fun close() {
-        sockets.forEach { it.close() }
+        sockets.forEach { it.socket.close() }
     }
 }

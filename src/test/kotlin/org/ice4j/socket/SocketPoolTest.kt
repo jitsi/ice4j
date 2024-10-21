@@ -39,7 +39,7 @@ class SocketPoolTest : ShouldSpec() {
             val sockets = mutableListOf<DatagramSocket>()
             should("be possible") {
                 repeat(numSockets) {
-                    sockets.add(pool.sendSocket)
+                    sockets.add(pool.getSendSocket().socket)
                 }
             }
             // All sockets should be distinct
@@ -53,7 +53,7 @@ class SocketPoolTest : ShouldSpec() {
             val local = pool.receiveSocket.localSocketAddress
             val sockets = mutableListOf<DatagramSocket>()
             repeat(numSockets) {
-                sockets.add(pool.sendSocket)
+                sockets.add(pool.getSendSocket().socket)
             }
             sockets.forEachIndexed { i, it ->
                 val buf = i.toString().toByteArray()
@@ -82,12 +82,14 @@ class SocketPoolTest : ShouldSpec() {
 
             repeat(2 * numSockets) {
                 // This should cycle through all the available send sockets
-                sockets.add(pool.sendSocket)
+                sockets.add(pool.getSendSocket().socket)
             }
 
             should("be correct") {
                 sockets.size shouldBe numSockets
             }
+
+            pool.close()
         }
 
         val disableIfOnlyOneCore: (TestCase) -> Enabled = {
