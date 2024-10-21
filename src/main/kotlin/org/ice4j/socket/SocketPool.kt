@@ -20,7 +20,6 @@ import java.net.DatagramSocket
 import java.net.DatagramSocketImpl
 import java.net.SocketAddress
 import java.nio.channels.DatagramChannel
-import java.util.concurrent.atomic.AtomicInteger
 
 /** A pool of datagram sockets all bound on the same port.
  *
@@ -48,7 +47,7 @@ class SocketPool(
         require(requestedNumSockets >= 0) { "RequestedNumSockets must be >= 0" }
     }
 
-    internal data class SocketAndIndex(
+    internal class SocketAndIndex(
         val socket: DatagramSocket,
         var count: Int = 0
     )
