@@ -114,7 +114,15 @@ class SocketPoolTest : ShouldSpec() {
             elapsedN shouldBeLessThan elapsed1 // Very weak test
         }
 
-        context("Test sending packets from multiple threads") {
+        val enableOnlyIfPropertySet: (TestCase) -> Enabled = {
+            if (System.getProperty("doPerfTests") != null) {
+                Enabled.enabled
+            } else {
+                Enabled.disabled("Set \"doPerfTests\" property to enable SocketPool performance tests")
+            }
+        }
+
+        context("Test sending packets from multiple threads").config(enabledOrReasonIf = enableOnlyIfPropertySet) {
             testSending()
         }
     }
