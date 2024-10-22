@@ -268,6 +268,7 @@ public abstract class AbstractUdpListener
         {
             logMessage += " (asked for " + receiveBufferSize + ")";
         }
+        logMessage += "; socket pool size " + socketPool.getNumSockets();
         logger.info(logMessage);
 
         thread = new Thread(() ->
