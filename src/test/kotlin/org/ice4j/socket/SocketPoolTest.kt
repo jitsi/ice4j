@@ -107,7 +107,7 @@ class SocketPoolTest : ShouldSpec() {
             val pool1 = SocketPool(loopbackAny, 1)
             val elapsed1 = sendTimeOnAllSockets(pool1)
 
-            // 0 means pick the default value, currently 2 * Runtime.getRuntime().availableProcessors().
+            // 0 means pick the default value, currently Runtime.getRuntime().availableProcessors().
             val poolN = SocketPool(loopbackAny, 0)
             val elapsedN = sendTimeOnAllSockets(poolN)
 
