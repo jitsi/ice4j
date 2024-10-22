@@ -240,7 +240,7 @@ public abstract class AbstractUdpListener
                                 );
         }
 
-        socketPool = new SocketPool( tempAddress, 0 );
+        socketPool = new SocketPool( tempAddress, config.udpSocketPoolSize() );
 
         receiveSocket = socketPool.getReceiveSocket();
 
