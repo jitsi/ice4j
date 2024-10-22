@@ -19,7 +19,6 @@ package org.ice4j.ice.harvest;
 
 import org.ice4j.*;
 import org.ice4j.attribute.*;
-import org.ice4j.ice.*;
 import org.ice4j.message.*;
 import org.ice4j.socket.*;
 import org.ice4j.util.*;
@@ -37,7 +36,7 @@ import java.util.logging.Logger;
 import static org.ice4j.ice.harvest.HarvestConfig.config;
 
 /**
- * A class which holds a {@link DatagramSocket} and runs a thread
+ * A class which holds a {@link SocketPool} and runs a thread
  * ({@link #thread}) which perpetually reads from it.
  *
  * When a datagram from an unknown source is received, it is parsed as a STUN
@@ -197,12 +196,17 @@ public abstract class AbstractUdpListener
     protected final TransportAddress localAddress;
 
     /**
-     * The "main" socket that this harvester reads from.
+     * The pool of sockets available for writing.
      */
-    private final DatagramSocket socket;
+    private final SocketPool socketPool;
 
     /**
-     * The thread reading from {@link #socket}.
+     * The "main" socket that this harvester reads from.
+     */
+    private final DatagramSocket receiveSocket;
+
+    /**
+     * The thread reading from {@link #receiveSocket}.
      */
     private final Thread thread;
 
@@ -236,12 +240,14 @@ public abstract class AbstractUdpListener
                                 );
         }
 
-        socket = new DatagramSocket( tempAddress );
+        socketPool = new SocketPool( tempAddress, config.udpSocketPoolSize() );
+
+        receiveSocket = socketPool.getReceiveSocket();
 
         Integer receiveBufferSize = config.udpReceiveBufferSize();
         if (receiveBufferSize != null)
         {
-            socket.setReceiveBufferSize(receiveBufferSize);
+            receiveSocket.setReceiveBufferSize(receiveBufferSize);
         }
 
         /* Update the port number if needed. */
@@ -249,7 +255,7 @@ public abstract class AbstractUdpListener
         {
             tempAddress = new TransportAddress(
                     tempAddress.getAddress(),
-                    socket.getLocalPort(),
+                    receiveSocket.getLocalPort(),
                     tempAddress.getTransport()
             );
         }
@@ -257,11 +263,12 @@ public abstract class AbstractUdpListener
 
         String logMessage
             = "Initialized AbstractUdpListener with address " + this.localAddress;
-        logMessage += ". Receive buffer size " + socket.getReceiveBufferSize();
+        logMessage += ". Receive buffer size " + receiveSocket.getReceiveBufferSize();
         if (receiveBufferSize != null)
         {
             logMessage += " (asked for " + receiveBufferSize + ")";
         }
+        logMessage += "; socket pool size " + socketPool.getNumSockets();
         logger.info(logMessage);
 
         thread = new Thread(() ->
@@ -292,11 +299,11 @@ public abstract class AbstractUdpListener
     public void close()
     {
         close = true;
-        socket.close(); // causes socket#receive to stop blocking.
+        socketPool.close(); // causes socket#receive to stop blocking.
     }
 
     /**
-     * Perpetually reads datagrams from {@link #socket} and handles them
+     * Perpetually reads datagrams from {@link #receiveSocket} and handles them
      * accordingly.
      *
      * It is important that this blocks are little as possible (except on
@@ -326,7 +333,7 @@ public abstract class AbstractUdpListener
 
             try
             {
-                socket.receive(pkt);
+                receiveSocket.receive(pkt);
             }
             catch (IOException ioe)
             {
@@ -376,13 +383,13 @@ public abstract class AbstractUdpListener
         {
             candidateSocket.close();
         }
-        socket.close();
+        socketPool.close();
     }
 
     /**
      * Read packets from the socket and forward them via the push API. Note that the memory model here is different
      * than the other case. Specifically, we:
-     * 1. Receive from {@link #socket} into a fixed buffer
+     * 1. Receive from {@link #receiveSocket} into a fixed buffer
      * 2. Obtain a buffer of the required size using {@link BufferPool#getBuffer}
      * 3. Copy the data into the buffer and either
      * 3.1 Call the associated {@link BufferHandler} if the packet is payload
@@ -410,7 +417,7 @@ public abstract class AbstractUdpListener
 
             try
             {
-                socket.receive(pkt);
+                receiveSocket.receive(pkt);
                 receivedTime = clock.instant();
             }
             catch (IOException ioe)
@@ -467,7 +474,7 @@ public abstract class AbstractUdpListener
         {
             candidateSocket.close();
         }
-        socket.close();
+        socketPool.close();
     }
 
     private Buffer bufferFromPacket(DatagramPacket p, Instant receivedTime)
@@ -478,7 +485,7 @@ public abstract class AbstractUdpListener
         System.arraycopy(p.getData(), p.getOffset(), buffer.getBuffer(), off, p.getLength());
         buffer.setOffset(off);
         buffer.setLength(p.getLength());
-        buffer.setLocalAddress(socket.getLocalSocketAddress());
+        buffer.setLocalAddress(receiveSocket.getLocalSocketAddress());
         buffer.setRemoteAddress(p.getSocketAddress());
         buffer.setReceivedTime(receivedTime);
 
@@ -808,14 +815,14 @@ public abstract class AbstractUdpListener
         /**
          * {@inheritDoc}
          *
-         * Delegates to the actual socket of the harvester.
+         * Delegates to the socket pool.
          */
         @Override
         public void send(DatagramPacket p)
             throws IOException
         {
             p.setSocketAddress(remoteAddress);
-            socket.send(p);
+            socketPool.send(p);
         }
     }
 }

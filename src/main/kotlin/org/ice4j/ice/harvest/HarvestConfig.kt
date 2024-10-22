@@ -41,6 +41,12 @@ class HarvestConfig {
     }
     fun udpReceiveBufferSize() = udpReceiveBufferSize
 
+    val udpSocketPoolSize: Int by config {
+        "ice4j.harvest.udp.socket-pool-size".from(configSource)
+    }
+
+    fun udpSocketPoolSize() = udpSocketPoolSize
+
     val useIpv6: Boolean by config {
         "org.ice4j.ipv6.DISABLED".from(configSource)
             .transformedBy { !it }

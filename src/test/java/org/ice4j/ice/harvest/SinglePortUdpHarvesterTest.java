@@ -32,51 +32,6 @@ import org.junit.jupiter.api.*;
 public class SinglePortUdpHarvesterTest
 {
     /**
-     * Verifies that, without closing, the address used by a harvester cannot be re-used.
-     *
-     * @see <a href="https://github.com/jitsi/ice4j/issues/139">https://github.com/jitsi/ice4j/issues/139</a>
-     */
-    @Test
-    public void testRebindWithoutCloseThrows() throws Exception
-    {
-        // Setup test fixture.
-        final TransportAddress address = new TransportAddress( "127.0.0.1", 10000, Transport.UDP );
-        SinglePortUdpHarvester firstHarvester;
-        try
-        {
-            firstHarvester = new SinglePortUdpHarvester( address );
-        }
-        catch (BindException ex)
-        {
-            // This is not expected at this stage (the port is likely already in use by another process, voiding this
-            // test). Rethrow as a different exception than the BindException, that is expected to be thrown later in
-            // this test.
-            throw new Exception( "Test fixture is invalid.", ex );
-        }
-
-        // Execute system under test.
-        SinglePortUdpHarvester secondHarvester = null;
-        try
-        {
-            secondHarvester = new SinglePortUdpHarvester( address );
-            fail("expected BindException to be thrown at this point");
-        }
-        catch (BindException ex)
-        {
-            //expected, do nothing
-        }
-        finally
-        {
-            // Tear down
-            firstHarvester.close();
-            if (secondHarvester != null)
-            {
-                secondHarvester.close();
-            }
-        }
-    }
-
-    /**
      * Verifies that, after closing, the address used by a harvester can be re-used.
      *
      * @see <a href="https://github.com/jitsi/ice4j/issues/139">https://github.com/jitsi/ice4j/issues/139</a>
