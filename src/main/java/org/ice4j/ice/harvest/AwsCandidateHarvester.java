@@ -21,6 +21,8 @@ import org.ice4j.*;
 
 import java.io.*;
 import java.net.*;
+import java.util.Collections;
+import java.util.Map;
 import java.util.logging.*;
 
 /**
@@ -52,10 +54,28 @@ public class AwsCandidateHarvester
         = "http://169.254.169.254/latest/meta-data/local-ipv4";
 
     /**
-     * The URL to use to test whether we are running on Amazon EC2.
+     * The URL to get IMDSv2 API token for further meta-data requests.
      */
-    private static final String EC2_TEST_URL
-        = "http://169.254.169.254/latest/meta-data/";
+    private static final String IMDS_API_TOKEN_URL
+            = "http://169.254.169.254/latest/api/token";
+
+    /**
+     * The HTTP header name to provide session token.
+     */
+    private static final String EC2_METADATA_TOKEN_HEADER
+            = "X-aws-ec2-metadata-token";
+
+    /**
+     * The HTTP header name to request session token TTL.
+     */
+    private static final String EC2_METADATA_TOKEN_TTL_HEADER
+            = "X-aws-ec2-metadata-token-ttl-seconds";
+
+    /**
+     * The default session token TTL value.
+     */
+    private static final String EC2_METADATA_TOKEN_DEFAULT_TTL
+            = "21600";
 
     /**
      * Whether we are running on Amazon EC2.
@@ -103,8 +123,11 @@ public class AwsCandidateHarvester
 
         try
         {
-            localIPStr = fetch(LOCAL_IP_URL);
-            publicIPStr = fetch(PUBLIC_IP_URL);
+            String metaDataToken = fetch(IMDS_API_TOKEN_URL,
+                    Collections.singletonMap(EC2_METADATA_TOKEN_TTL_HEADER, EC2_METADATA_TOKEN_DEFAULT_TTL), "PUT");
+            Map<String, String> tokenHeader = Collections.singletonMap(EC2_METADATA_TOKEN_HEADER, metaDataToken);
+            localIPStr = fetch(LOCAL_IP_URL, tokenHeader);
+            publicIPStr = fetch(PUBLIC_IP_URL, tokenHeader);
 
             //now let's cross our fingers and hope that what we got above are
             //real IP addresses
@@ -183,11 +206,10 @@ public class AwsCandidateHarvester
     {
         try
         {
-            URLConnection conn = new URL(EC2_TEST_URL).openConnection();
-            conn.setConnectTimeout(500); //don't hang for too long
-            conn.getContent();
+            String metaDataToken = fetch(IMDS_API_TOKEN_URL,
+                    Collections.singletonMap(EC2_METADATA_TOKEN_TTL_HEADER, EC2_METADATA_TOKEN_DEFAULT_TTL), "PUT");
 
-            return true;
+            return metaDataToken != null;
         }
         catch(Exception exc)
         {
@@ -201,14 +223,38 @@ public class AwsCandidateHarvester
      *
      * @param url the URL we'd like to open and query.
      *
+     * @param headers the HTTP headers to put into the request.
+     *
+     * @throws Exception if anything goes wrong.
+     */
+    private static String fetch(String url, Map<String, String> headers)
+            throws Exception
+    {
+        return fetch(url, headers, "GET");
+    }
+
+    /**
+     * Retrieves the content at the specified <tt>url</tt>. No more, no less.
+     *
+     * @param url the URL we'd like to open and query.
+     *
+     * @param headers the HTTP headers to put into the request.
+     *
+     * @param method the HTTP method we'd like to use.
+     *
      * @return the String we retrieved from the URL.
      *
      * @throws Exception if anything goes wrong.
      */
-    private static String fetch(String url)
+    private static String fetch(String url, Map<String, String> headers, String method)
         throws Exception
     {
-        URLConnection conn = new URL(url).openConnection();
+        HttpURLConnection conn = (HttpURLConnection) (new URL(url).openConnection());
+        for (Map.Entry<String, String> header : headers.entrySet())
+        {
+            conn.setRequestProperty(header.getKey(), header.getValue());
+        }
+        conn.setRequestMethod(method);
         BufferedReader in = new BufferedReader(new InputStreamReader(
                     conn.getInputStream(), "UTF-8"));
 
