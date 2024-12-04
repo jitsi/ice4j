@@ -265,6 +265,10 @@ public class AwsCandidateHarvester
             builder.setHeader(header.getKey(), header.getValue());
         }
         HttpResponse<String> response = httpClient.send(builder.build(), HttpResponse.BodyHandlers.ofString());
+        if (response.statusCode() != 200)
+        {
+            throw new Exception("Failed to fetch " + url + ". Response code: " + response.statusCode());
+        }
         return response.body();
     }
 }
