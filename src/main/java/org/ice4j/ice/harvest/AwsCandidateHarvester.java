@@ -21,6 +21,7 @@ import org.ice4j.*;
 
 import java.net.*;
 import java.net.http.*;
+import java.time.*;
 import java.util.*;
 import java.util.logging.*;
 
@@ -44,7 +45,9 @@ public class AwsCandidateHarvester
      * The <tt>HttpClient</tt> used by the <tt>AwsCandidateHarvester</tt>
      * class and its instances for making requests to IMDS.
      */
-    private static final HttpClient httpClient = HttpClient.newHttpClient();
+    private static final HttpClient httpClient = HttpClient.newBuilder()
+            .connectTimeout(Duration.ofMillis(500))
+            .build();
 
     /**
      * The URL where one obtains AWS public addresses.
