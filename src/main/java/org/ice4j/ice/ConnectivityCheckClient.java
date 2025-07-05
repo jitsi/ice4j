@@ -144,7 +144,7 @@ class ConnectivityCheckClient
 
         if (streamsWithPendingConnectivityEstablishment.size() > 0)
         {
-            logger.info("Start connectivity checks.");
+            logger.debug("Start connectivity checks.");
             startChecks(
                     streamsWithPendingConnectivityEstablishment
                         .get(0).getCheckList());
@@ -730,7 +730,7 @@ class ConnectivityCheckClient
 
         if (validPair.getParentComponent().getSelectedPair() == null)
         {
-            logger.info("IsControlling: "  + parentAgent.isControlling() +
+            logger.debug("IsControlling: "  + parentAgent.isControlling() +
                 " USE-CANDIDATE:" +
                     (request.containsAttribute(Attribute.USE_CANDIDATE) ||
                         checkedPair.useCandidateSent())

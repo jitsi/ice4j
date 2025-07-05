@@ -494,8 +494,8 @@ public class CandidatePair
     {
         return
                 "CandidatePair (State=" + getState() + " Priority=" + getPriority()
-                        + "):\n\tLocalCandidate=" + getLocalCandidate()
-                        + "\n\tRemoteCandidate=" + getRemoteCandidate().toRedactedString();
+                        + ", LocalCandidate=" + getLocalCandidate()
+                        + ", RemoteCandidate=" + getRemoteCandidate().toRedactedString() + ")";
     }
 
     /**

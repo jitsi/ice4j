@@ -745,9 +745,7 @@ public class Agent
             //trigger a check for those candidate pairs.
             if (this.preDiscoveredPairsQueue.size() > 0)
             {
-                logger.info(
-                        "Trigger checks for pairs that were received before "
-                            + "running state");
+                logger.debug("Trigger checks for pairs that were received before running state");
 
                 for (CandidatePair cp : preDiscoveredPairsQueue)
                 {
@@ -959,7 +957,7 @@ public class Agent
 
             for (IceMediaStream stream : streams)
             {
-                logger.info("Init checklist for stream " + stream.getName());
+                logger.debug("Init checklist for stream " + stream.getName());
                 stream.setMaxCheckListSize(maxCheckListSizePerStream);
                 stream.initCheckList();
             }
@@ -1808,7 +1806,7 @@ public class Agent
               && !parentStream.validListContainsNomineeForComponent(
                       parentComponent))
         {
-            logger.info("verify if nominated pair answer again");
+            logger.debug("verify if nominated pair answer again");
             pair.nominate();
             parentStream.getCheckList().scheduleTriggeredCheck(pair);
         }
@@ -1899,8 +1897,7 @@ public class Agent
             }
             else if (checkListState == CheckListState.COMPLETED)
             {
-                logger.info("CheckList of stream " + stream.getName() +
-                        " is COMPLETED");
+                logger.debug("CheckList of stream " + stream.getName() + " is COMPLETED");
                 atLeastOneListSucceeded = true;
             }
         }
@@ -1979,7 +1976,7 @@ public class Agent
                 if (selectedPair == null)
                 {
                     buf.append("none (conn checks failed)");
-                    logger.info(buf.toString());
+                    logger.debug(buf.toString());
                     continue;
                 }
 
@@ -2007,7 +2004,7 @@ public class Agent
                         buf.append(")");
                     }
                 }
-                logger.info(buf.toString());
+                logger.debug(buf.toString());
             }
         }
     }
