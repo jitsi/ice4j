@@ -1703,6 +1703,16 @@ public class Agent
                     checkListStatesUpdated();
                 }
 
+                if (getState() == IceProcessingState.TERMINATED
+                        && knownPair.getParentComponent().getKeepAliveStrategy() != KeepAliveStrategy.ALL_SUCCEEDED)
+                {
+                    // After we've terminated, only respond for the selected pair
+                    CandidatePair selected
+                            = getSelectedPair(knownPair.getParentComponent().getParentStream().getName());
+                    return selected != null
+                            && knownPair.getRemoteCandidate().getTransportAddress().equals(
+                                    selected.getRemoteCandidate().getTransportAddress());
+                }
                 return true;
             }
 
