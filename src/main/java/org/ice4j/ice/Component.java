@@ -225,6 +225,11 @@ public class Component
         mediaStream.addPairChangeListener(this);
     }
 
+    public KeepAliveStrategy getKeepAliveStrategy()
+    {
+        return keepAliveStrategy;
+    }
+
     /**
      * Add a local candidate to this component. The method should only be
      * accessed and local candidates added by the candidate harvesters
