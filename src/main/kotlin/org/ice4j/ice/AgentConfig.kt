@@ -83,7 +83,6 @@ class AgentConfig {
     }
 
     val sendToLastReceivedFromAddress: Boolean by config {
-        "org.ice4j.ice.SEND_TO_LAST_RECEIVED_FROM".from(configSource)
         "ice4j.send-to-last-received-from-address".from(configSource)
     }
 
