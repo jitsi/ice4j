@@ -19,6 +19,7 @@ package org.ice4j.ice;
 
 import java.beans.*;
 import java.io.*;
+import java.lang.ref.*;
 import java.net.*;
 import java.util.*;
 import java.util.concurrent.*;
@@ -164,6 +165,12 @@ public class Component
      * The remote address of the last received payload packet.
      */
     private SocketAddress lastReceivedFrom = null;
+
+    /**
+     * A reference to the last {@link CandidatePair} that was used to send a packet to. If the remote address that
+     * we receive payload from changes, this reference is cleared.
+     */
+    private WeakReference<CandidatePair> lastUsedPair = new WeakReference<>(null);
 
     /**
      * Creates a new <tt>Component</tt> with the specified <tt>componentID</tt>
@@ -1212,7 +1219,13 @@ public class Component
     public void send(byte[] buffer, int offset, int length)
             throws IOException
     {
-        CandidatePair pair = findPair(lastReceivedFrom);
+        CandidatePair pair = lastUsedPair.get();
+        if (pair == null)
+        {
+            pair = findPair(lastReceivedFrom);
+            lastUsedPair = new WeakReference<>(pair);
+        }
+
         if (pair == null)
         {
             throw new IOException("No valid pair.");
@@ -1294,7 +1307,12 @@ public class Component
 
         try
         {
-            lastReceivedFrom = buffer.getRemoteAddress();
+            SocketAddress remoteAddress = buffer.getRemoteAddress();
+            if (remoteAddress == null || !remoteAddress.equals(lastReceivedFrom))
+            {
+                lastUsedPair = new WeakReference<>(null);
+                lastReceivedFrom = buffer.getRemoteAddress();
+            }
             bufferCallback.handleBuffer(buffer);
         }
         catch (Exception e)
