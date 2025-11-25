@@ -19,6 +19,7 @@ package org.ice4j.ice;
 
 import java.beans.*;
 import java.io.*;
+import java.lang.ref.*;
 import java.net.*;
 import java.util.*;
 import java.util.concurrent.*;
@@ -159,6 +160,17 @@ public class Component
      * External callback for the push API. Called with every packet received via {@link #handleBuffer(Buffer)}.
      */
     private BufferHandler bufferCallback = null;
+
+    /**
+     * The remote address of the last received payload packet.
+     */
+    private SocketAddress lastReceivedFrom = null;
+
+    /**
+     * A reference to the last {@link CandidatePair} that was used to send a packet to. If the remote address that
+     * we receive payload from changes, this reference is cleared.
+     */
+    private WeakReference<CandidatePair> lastUsedPair = new WeakReference<>(null);
 
     /**
      * Creates a new <tt>Component</tt> with the specified <tt>componentID</tt>
@@ -1207,17 +1219,59 @@ public class Component
     public void send(byte[] buffer, int offset, int length)
             throws IOException
     {
-        CandidatePair pair = getSelectedPair();
+        CandidatePair pair = lastUsedPair.get();
+        if (pair == null)
+        {
+            pair = findPair(lastReceivedFrom);
+            lastUsedPair = new WeakReference<>(pair);
+        }
+
+        if (pair == null)
+        {
+            throw new IOException("No valid pair.");
+        }
+
+        AddressAndSocket addressAndSocket = getAddressAndSocket(pair);
+        if (addressAndSocket == null)
+        {
+            throw new IOException("No valid socket.");
+        }
+
+        DatagramPacket p = new DatagramPacket(buffer, offset, length);
+        p.setSocketAddress(addressAndSocket.remoteAddress);
+        addressAndSocket.socket.send(p);
+    }
+
+    private CandidatePair findPair(SocketAddress remoteAddress)
+    {
+        CandidatePair pair = null;
+        if (AgentConfig.config.getSendToLastReceivedFromAddress() && remoteAddress != null)
+        {
+            for (CandidatePair keepAlivePair : keepAlivePairs)
+            {
+                if (keepAlivePair.getState() == CandidatePairState.SUCCEEDED
+                        && remoteAddress.equals(keepAlivePair.getRemoteCandidate().getTransportAddress()))
+                {
+                    pair = keepAlivePair;
+                    break;
+                }
+            }
+        }
+        if (pair == null)
+        {
+            pair = getSelectedPair();
+        }
         if (pair == null)
         {
             logger.debug("No selected pair, will try valid for sending");
             pair = parentStream.getValidPair(this);
-            if (pair == null)
-            {
-                throw new IOException("No valid pair.");
-            }
         }
 
+        return pair;
+    }
+
+    private AddressAndSocket getAddressAndSocket(CandidatePair pair)
+    {
         LocalCandidate localCandidate = pair.getLocalCandidate();
         if (localCandidate != null && localCandidate.getBase() != null)
         {
@@ -1229,12 +1283,9 @@ public class Component
 
         if (socket == null)
         {
-            throw new IOException("No socket found to send on.");
+            return null;
         }
-
-        DatagramPacket p = new DatagramPacket(buffer, offset, length);
-        p.setSocketAddress(remoteAddress);
-        socket.send(p);
+        return new AddressAndSocket(remoteAddress, socket);
     }
 
     /**
@@ -1256,6 +1307,12 @@ public class Component
 
         try
         {
+            SocketAddress remoteAddress = buffer.getRemoteAddress();
+            if (remoteAddress == null || !remoteAddress.equals(lastReceivedFrom))
+            {
+                lastUsedPair = new WeakReference<>(null);
+                lastReceivedFrom = buffer.getRemoteAddress();
+            }
             bufferCallback.handleBuffer(buffer);
         }
         catch (Exception e)
@@ -1272,5 +1329,17 @@ public class Component
     public void setBufferCallback(BufferHandler bufferCallback)
     {
         this.bufferCallback = bufferCallback;
+    }
+
+    private static class AddressAndSocket
+    {
+        private final SocketAddress remoteAddress;
+        private final IceSocketWrapper socket;
+
+        private AddressAndSocket(SocketAddress remoteAddress, IceSocketWrapper socket)
+        {
+            this.remoteAddress = remoteAddress;
+            this.socket = socket;
+        }
     }
 }

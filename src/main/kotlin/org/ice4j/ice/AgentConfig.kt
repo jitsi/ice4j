@@ -82,6 +82,10 @@ class AgentConfig {
         "ice4j.use-component-socket".from(configSource)
     }
 
+    val sendToLastReceivedFromAddress: Boolean by config {
+        "ice4j.send-to-last-received-from-address".from(configSource)
+    }
+
     companion object {
         @JvmField
         val config = AgentConfig()
