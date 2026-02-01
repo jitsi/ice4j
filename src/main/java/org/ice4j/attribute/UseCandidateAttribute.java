@@ -122,4 +122,15 @@ public class UseCandidateAttribute
     {
         return "USE-CANDIDATE";
     }
+
+    /**
+     * Returns a string representation of the USE-CANDIDATE attribute.
+     *
+     * @return a string in format: USE-CANDIDATE{}
+     */
+    @Override
+    public String toString()
+    {
+        return getName() + "{}";
+    }
 }

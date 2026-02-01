@@ -1323,6 +1323,18 @@ public abstract class Message
     @Override
     public String toString()
     {
+        return toString(false);
+    }
+
+    /**
+     * Returns a <tt>String</tt> representation of this message.
+     *
+     * @param printParameters if true, includes the attributes in the string
+     * representation; if false, only includes basic message information
+     * @return  a <tt>String</tt> representation of this message.
+     */
+    public String toString(boolean printParameters)
+    {
         StringBuilder stringBuilder = new StringBuilder();
 
         stringBuilder.append(getName());
@@ -1330,6 +1342,11 @@ public abstract class Message
         stringBuilder.append(Integer.toHexString(getMessageType()));
         stringBuilder.append(")[attrib.count=");
         stringBuilder.append(getAttributeCount());
+        if (printParameters)
+        {
+            stringBuilder.append(" attrib=");
+            stringBuilder.append(attributes.values());
+        }
         stringBuilder.append(" len=");
         stringBuilder.append((int) this.getDataLength());
 

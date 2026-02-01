@@ -166,4 +166,15 @@ public class LifetimeAttribute
     {
         return lifetime;
     }
+
+    /**
+     * Returns a string representation of the lifetime attribute.
+     *
+     * @return a string in format: LIFETIME{seconds}
+     */
+    @Override
+    public String toString()
+    {
+        return getName() + "{" + lifetime + "}";
+    }
 }
