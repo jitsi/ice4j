@@ -1712,7 +1712,8 @@ public class Agent
                     boolean respond = selected != null
                             && knownPair.getRemoteCandidate().getTransportAddress().equals(
                                     selected.getRemoteCandidate().getTransportAddress());
-                    if (!respond) {
+                    if (!respond)
+                    {
                         logger.warn("Received connectivity check on non-selected pair " +
                                 knownPair.toRedactedString() + " when ICE processing is terminated");
                     }
