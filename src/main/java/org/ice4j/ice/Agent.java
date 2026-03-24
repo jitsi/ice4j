@@ -1744,7 +1744,7 @@ public class Agent
             if (connCheckClient.isStopped())
             {
                 logger.warn("Received check for unknown candidate pair " + triggerPair.toRedactedString() +
-                        "when client is stopped.");
+                        " when client is stopped.");
                 return false;
             }
             if (triggerPair.getParentComponent().getSelectedPair() == null)
