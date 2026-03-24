@@ -1709,9 +1709,14 @@ public class Agent
                     // After we've terminated, only respond for the selected pair
                     CandidatePair selected
                             = getSelectedPair(knownPair.getParentComponent().getParentStream().getName());
-                    return selected != null
+                    boolean respond = selected != null
                             && knownPair.getRemoteCandidate().getTransportAddress().equals(
                                     selected.getRemoteCandidate().getTransportAddress());
+                    if (!respond) {
+                        logger.warn("Received connectivity check on non-selected pair " +
+                                knownPair.toRedactedString() + " when ICE processing is terminated");
+                    }
+                    return respond;
                 }
                 return true;
             }
@@ -1738,6 +1743,8 @@ public class Agent
             // check for the triggered pair, so don't enqueue it.
             if (connCheckClient.isStopped())
             {
+                logger.warn("Received check for unknown candidate pair " + triggerPair.toRedactedString() +
+                        "when client is stopped.");
                 return false;
             }
             if (triggerPair.getParentComponent().getSelectedPair() == null)
