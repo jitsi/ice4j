@@ -19,6 +19,8 @@ package org.ice4j.attribute;
 
 import java.util.*;
 
+import org.ice4j.util.StringUtils;
+
 /**
  * The USERNAME attribute is used for message integrity.
  * The value of USERNAME is a variable length value.
@@ -161,5 +163,33 @@ public class UsernameAttribute extends Attribute
             return false;
 
         return true;
+    }
+
+    /**
+     * Returns a string representation of the username attribute.
+     * If the username is readable UTF-8 text and <= 128 characters, it's shown as text.
+     * Otherwise, it's shown as hex.
+     *
+     * @return a string in format: USERNAME{text} or USERNAME{hex:...}
+     */
+    @Override
+    public String toString()
+    {
+        if (username == null)
+        {
+            return getName() + "{}";
+        }
+
+        String printable = StringUtils.bytesToPrintableString(username);
+        
+        // Check if it's printable text or hex representation
+        if (printable.length() > 0 && username.length <= 128 && StringUtils.isPrintable(username))
+        {
+            return getName() + "{" + printable + "}";
+        }
+        else
+        {
+            return getName() + "{hex:" + printable + "}";
+        }
     }
 }

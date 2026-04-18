@@ -124,4 +124,15 @@ public class XorOnlyAttribute
 
         return true;
     }
+
+    /**
+     * Returns a string representation of the XOR-ONLY attribute.
+     *
+     * @return a string with the attribute name
+     */
+    @Override
+    public String toString()
+    {
+        return getName();
+    }
 }

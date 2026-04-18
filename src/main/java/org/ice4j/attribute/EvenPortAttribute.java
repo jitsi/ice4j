@@ -157,4 +157,15 @@ public class EvenPortAttribute extends Attribute
     {
         return rFlag;
     }
+
+    /**
+     * Returns a string representation of the even port attribute.
+     *
+     * @return a string in format: EVEN-PORT{reserveNextPort=true/false}
+     */
+    @Override
+    public String toString()
+    {
+        return getName() + "{reserveNextPort=" + rFlag + "}";
+    }
 }
