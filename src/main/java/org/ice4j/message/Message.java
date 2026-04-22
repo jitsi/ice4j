@@ -1142,15 +1142,24 @@ public abstract class Message
 
         offset += TRANSACTION_ID_LENGTH;
 
+        boolean sawMessageIntegrity = false;
+
         while (offset - Message.HEADER_LENGTH < length)
         {
             Attribute att = AttributeDecoder.decode(
                 binMessage, offset, (char)(length - offset));
 
-            performAttributeSpecificActions(att, binMessage,
-                originalOffset, offset);
+            /* "With the exception of the FINGERPRINT
+                attribute, which appears after MESSAGE-INTEGRITY, agents MUST ignore
+                all other attributes that follow MESSAGE-INTEGRITY." */
+            if (!sawMessageIntegrity || att.getAttributeType() == Attribute.FINGERPRINT)
+            {
+                performAttributeSpecificActions(att, binMessage,
+                        originalOffset, offset);
 
-            message.putAttribute(att);
+                message.putAttribute(att);
+            }
+
             offset += att.getDataLength() + Attribute.HEADER_LENGTH;
 
             //now also skip any potential padding that might have come with
@@ -1158,6 +1167,11 @@ public abstract class Message
             if ((att.getDataLength() % 4) > 0)
             {
                 offset += (4 - (att.getDataLength() % 4));
+            }
+
+            if (att.getAttributeType() == Attribute.MESSAGE_INTEGRITY)
+            {
+                sawMessageIntegrity = true;
             }
         }
 
