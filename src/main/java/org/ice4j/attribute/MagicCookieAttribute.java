@@ -148,4 +148,15 @@ public class MagicCookieAttribute
             ((attributeValue[2] << 8) & 0x0000ff00) +
             (attributeValue[3] & 0x000000ff);
     }
+
+    /**
+     * Returns a string representation of the magic cookie attribute.
+     *
+     * @return a string in format: MAGIC-COOKIE{value=0xXXXXXXXX}
+     */
+    @Override
+    public String toString()
+    {
+        return getName() + "{value=0x" + Integer.toHexString(value).toUpperCase() + "}";
+    }
 }

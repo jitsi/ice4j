@@ -184,5 +184,21 @@ public class RequestedAddressFamilyAttribute extends Attribute
             return false;
         }
     }
-    
+
+    /**
+     * Returns a string representation of the requested address family attribute.
+     *
+     * @return a string in format: REQUESTED-ADDRESS-FAMILY{family=IPv4/IPv6}
+     */
+    @Override
+    public String toString()
+    {
+        String familyName = "UNKNOWN";
+        if (family == IPv4)
+            familyName = "IPv4";
+        else if (family == IPv6)
+            familyName = "IPv6";
+        
+        return getName() + "{family=" + familyName + "(" + family + ")}";
+    }
 }

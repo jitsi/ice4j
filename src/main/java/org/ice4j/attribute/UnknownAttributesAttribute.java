@@ -233,4 +233,23 @@ public class UnknownAttributesAttribute extends Attribute
             addAttributeID(attributeID);
         }
     }
+
+    /**
+     * Returns a string representation of the unknown attributes attribute.
+     *
+     * @return a string in format: UNKNOWN-ATTRIBUTES{[0xXXXX, 0xXXXX, ...]}
+     */
+    @Override
+    public String toString()
+    {
+        StringBuilder sb = new StringBuilder(getName() + "{");
+        for (int i = 0; i < unknownAttributes.size(); i++) {
+            Character unknownAttribute = unknownAttributes.get(i);
+            if (i != 0)
+                sb.append(", ");
+            sb.append(String.format("0x%04x", (int) unknownAttribute));
+        }
+        sb.append("}");
+        return sb.toString();
+    }
 }

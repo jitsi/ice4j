@@ -19,6 +19,8 @@ package org.ice4j.attribute;
 
 import java.util.*;
 
+import org.ice4j.util.StringUtils;
+
 /**
  * The SOFTWARE attribute contains a textual description of the software
  * being used by the software or the client, including manufacturer and version number.
@@ -164,5 +166,33 @@ public class SoftwareAttribute
             return false;
 
         return true;
+    }
+
+    /**
+     * Returns a string representation of the software attribute.
+     * If the software is readable UTF-8 text and <= 128 characters, it's shown as text.
+     * Otherwise, it's shown as hex.
+     *
+     * @return a string in format: SOFTWARE{text} or SOFTWARE{hex:...}
+     */
+    @Override
+    public String toString()
+    {
+        if (software == null)
+        {
+            return getName() + "{}";
+        }
+
+        String printable = StringUtils.bytesToPrintableString(software);
+        
+        // Check if it's printable text or hex representation
+        if (printable.length() > 0 && software.length <= 128 && StringUtils.isPrintable(software))
+        {
+            return getName() + "{" + printable + "}";
+        }
+        else
+        {
+            return getName() + "{hex:" + printable + "}";
+        }
     }
 }

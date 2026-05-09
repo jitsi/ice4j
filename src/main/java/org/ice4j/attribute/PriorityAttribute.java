@@ -182,4 +182,15 @@ public class PriorityAttribute
         else
             this.priority = priority;
     }
+
+    /**
+     * Returns a string representation of the priority attribute.
+     *
+     * @return a string in format: PRIORITY{value}
+     */
+    @Override
+    public String toString()
+    {
+        return getName() + "{" + priority + "}";
+    }
 }
