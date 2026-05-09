@@ -667,4 +667,14 @@ public class AttributeFactory
         return attribute;
     }
 
+    /**
+     * Creates a DontFragmentAttribute
+     *
+     * @return the new instance of DontFragmentAttribute
+     */
+    public static DontFragmentAttribute createDontFragmentAttribute()
+    {
+        DontFragmentAttribute attribute = new DontFragmentAttribute();
+        return attribute;
+    }
 }
