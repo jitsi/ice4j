@@ -743,7 +743,12 @@ class ConnectivityCheckClient
         if (parentAgent.isControlling()
                 && request.containsAttribute(Attribute.USE_CANDIDATE))
         {
-            if (validPair.getParentComponent().getSelectedPair() == null)
+            // Normally nomination is confirmed only once, while there is no selected pair yet. During an
+            // in-place ICE restart we keep the old selected pair in use (make-before-break), so we must also
+            // confirm the nomination of the new pair while a selected pair still exists;
+            // handleNominationConfirmed() then swaps the selected pair over.
+            if (validPair.getParentComponent().getSelectedPair() == null
+                    || validPair.getParentComponent().isIceRestarting())
             {
                 logger.info("Nomination confirmed for pair: "
                     + validPair.toRedactedShortString()
@@ -1040,6 +1045,19 @@ class ConnectivityCheckClient
     public boolean isStopped() {
         synchronized (paceMakers) {
             return stopped;
+        }
+    }
+
+    /**
+     * Clears the {@code stopped} flag so that checks can be started again after a
+     * previous {@link #stop()}, as part of an in-place ICE restart (see
+     * {@link Agent#restartIce()}). {@link #stop()} left {@code stopped == true}
+     * and removed all {@link PaceMaker}s; a subsequent {@link #startChecks()}
+     * recreates them. Must be called before {@code startChecks()}.
+     */
+    void restart() {
+        synchronized (paceMakers) {
+            stopped = false;
         }
     }
 }

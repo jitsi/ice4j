@@ -110,6 +110,17 @@ public class Component
     private CandidatePair selectedPair;
 
     /**
+     * Whether an in-place ICE restart (see {@link Agent#restartIce()}) is
+     * currently in progress for this component. While {@code true} the existing
+     * {@link #selectedPair} is kept in use for sending media (make-before-break),
+     * and the normal set-once nomination guard in
+     * {@link CheckList#handleNominationConfirmed(CandidatePair)} is relaxed so
+     * that the first pair nominated during the restart replaces the selected
+     * pair. Reset to {@code false} as soon as that swap happens.
+     */
+    private volatile boolean iceRestarting = false;
+
+    /**
      * The default <tt>RemoteCandidate</tt> for this component or in other
      * words, the candidate that we would have used to communicate with the
      * remote peer if we hadn't been using ICE.
@@ -1053,6 +1064,26 @@ public class Component
     public CandidatePair getSelectedPair()
     {
         return selectedPair;
+    }
+
+    /**
+     * @return whether an in-place ICE restart is currently in progress for this
+     * component. See {@link #iceRestarting}.
+     */
+    protected boolean isIceRestarting()
+    {
+        return iceRestarting;
+    }
+
+    /**
+     * Sets whether an in-place ICE restart is in progress for this component.
+     * See {@link #iceRestarting}.
+     *
+     * @param iceRestarting the new value.
+     */
+    protected void setIceRestarting(boolean iceRestarting)
+    {
+        this.iceRestarting = iceRestarting;
     }
 
     /**

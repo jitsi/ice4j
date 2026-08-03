@@ -369,6 +369,36 @@ public class IceMediaStream
     }
 
     /**
+     * Prepares this stream for an in-place ICE restart (see
+     * {@link Agent#restartIce()}). Clears the valid list (so the stale nominee
+     * from the previous run no longer blocks a fresh nomination) and resets the
+     * check list state back to {@link CheckListState#RUNNING}, and marks each
+     * component as ICE-restarting so that the first pair nominated during the
+     * restart replaces the currently selected pair. The currently selected pair
+     * is intentionally left in place so media keeps flowing on it until the new
+     * pair is nominated (make-before-break). The caller is expected to have set
+     * the new remote credentials/candidates, and to rebuild the check list pairs
+     * via {@link #initCheckList()} afterwards.
+     */
+    protected void restart()
+    {
+        synchronized (validList)
+        {
+            validList.clear();
+        }
+
+        for (Component component : getComponents())
+        {
+            if (component.getSelectedPair() != null)
+            {
+                component.setIceRestarting(true);
+            }
+        }
+
+        checkList.restart();
+    }
+
+    /**
      * Creates and adds to <tt>checkList</tt> all the <tt>CandidatePair</tt>s
      * in all <tt>Component</tt>s of this stream.
      *

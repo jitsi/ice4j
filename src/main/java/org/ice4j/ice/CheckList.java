@@ -131,6 +131,26 @@ public class CheckList
     }
 
     /**
+     * Resets this check list so that connectivity checks can be run again on it
+     * as part of an in-place ICE restart (see {@link Agent#restartIce()}). Moves
+     * the state back to {@link CheckListState#RUNNING}, clears the
+     * {@code paceMakerStarted} latch so a new {@code PaceMaker} can be scheduled
+     * and empties the triggered-check queue. The pairs themselves are rebuilt by
+     * {@link IceMediaStream#initCheckList()}; this method does not touch them.
+     */
+    protected void restart()
+    {
+        paceMakerStarted.set(false);
+
+        synchronized (triggeredCheckQueue)
+        {
+            triggeredCheckQueue.clear();
+        }
+
+        setState(CheckListState.RUNNING);
+    }
+
+    /**
      * Adds <tt>pair</tt> to the local triggered check queue unless it's already
      * there. Additionally, the method sets the pair's state to {@link
      * CandidatePairState#WAITING}.
@@ -406,12 +426,23 @@ public class CheckList
 
         if (cmp.getSelectedPair() != null)
         {
-            return;
+            // Normally nomination is set-once. During an in-place ICE restart we
+            // deliberately keep the old selected pair in use for sending until a
+            // new pair is nominated (make-before-break), and then swap to it here.
+            if (!cmp.isIceRestarting())
+            {
+                return;
+            }
+            logger.info("Swapping selected pair for stream " + cmp.toShortString()
+                    + " after ICE restart: " + nominatedPair.toRedactedShortString());
+            cmp.setIceRestarting(false);
         }
-
-        logger.info(
-                "Selected pair for stream " + cmp.toShortString() + ": "
-                    + nominatedPair.toRedactedShortString());
+        else
+        {
+            logger.info(
+                    "Selected pair for stream " + cmp.toShortString() + ": "
+                        + nominatedPair.toRedactedShortString());
+        }
 
         cmp.setSelectedPair(nominatedPair);
 

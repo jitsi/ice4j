@@ -760,6 +760,75 @@ public class Agent
     }
 
     /**
+     * Performs an in-place ICE restart on this already-established agent: re-runs
+     * connectivity checks against (possibly new) remote credentials/candidates
+     * while keeping the same local credentials and, crucially, keeping the
+     * currently selected pair in use for sending media until a new pair is
+     * nominated (make-before-break).
+     * <p>
+     * This is the peer-driven counterpart to creating a brand new agent for an
+     * ICE restart. The caller is expected to have already applied the new remote
+     * ufrag/password (via {@link IceMediaStream#setRemoteUfrag(String)} /
+     * {@link IceMediaStream#setRemotePassword(String)}) and any signalled remote
+     * candidates before calling this method; new peer-reflexive remote addresses
+     * are also discovered from the incoming checks as usual.
+     * <p>
+     * Concretely this: cancels any pending (or already fired) termination so the
+     * agent is not torn down; re-arms the connectivity check client (whose
+     * {@code stop()} on termination had disabled it); resets each stream (clears
+     * the valid list so the stale nominee no longer blocks a fresh nomination,
+     * moves the check list back to RUNNING, and flags each component so the first
+     * pair nominated during the restart replaces the selected pair); rebuilds the
+     * check lists; moves the agent back to {@link IceProcessingState#RUNNING};
+     * and starts the checks.
+     */
+    public void restartIce()
+    {
+        synchronized (startLock)
+        {
+            logger.info("Restarting ICE (in-place) on the existing agent.");
+
+            // Cancel any pending/completed termination so the agent (and its
+            // check client, which terminate() stops) is not torn down.
+            synchronized (terminationFutureSyncRoot)
+            {
+                if (terminationFuture != null)
+                {
+                    terminationFuture.cancel(true);
+                    terminationFuture = null;
+                }
+            }
+
+            shutdown = false;
+
+            // Re-enable the check client (terminate() had stopped it).
+            connCheckClient.restart();
+
+            // Reset each stream for the restart (keeps the selected pair).
+            for (IceMediaStream stream : getStreams())
+            {
+                stream.restart();
+            }
+
+            try
+            {
+                initCheckLists();
+            }
+            catch (ArithmeticException e)
+            {
+                setState(IceProcessingState.FAILED);
+                return;
+            }
+
+            //change state before we actually send checks so that we don't
+            //miss responses and hence the possibility to nominate a pair.
+            setState(IceProcessingState.RUNNING);
+
+            connCheckClient.startChecks();
+        }
+    }
+
+    /**
      * <tt>Free()</tt>s and removes from this agent components or entire streams
      * if they do not contain remote candidates. A possible reason for this
      * could be the fact that the remote party canceled some of the streams or
