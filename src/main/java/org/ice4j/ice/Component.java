@@ -20,6 +20,7 @@ package org.ice4j.ice;
 import java.beans.*;
 import java.io.*;
 import java.net.*;
+import java.time.*;
 import java.util.*;
 import java.util.concurrent.*;
 
@@ -155,6 +156,23 @@ public class Component
      * that compound operations such as check-then-add are atomic), while iteration is lock-free.
      */
     private final Set<CandidatePair> keepAlivePairs = Collections.newSetFromMap(new ConcurrentHashMap<>());
+
+    /**
+     * The time at which each keep-alive pair currently in the FAILED state first failed (since it was last
+     * SUCCEEDED). Used to remove pairs which have been failed for too long, see {@link #failedKeepAlivePairTimeout}.
+     */
+    private final Map<CandidatePair, Instant> keepAlivePairsFailedSince = new ConcurrentHashMap<>();
+
+    /**
+     * How long a keep-alive pair (other than the selected pair) may stay FAILED before it is removed from
+     * {@link #keepAlivePairs}. Zero or negative disables the removal.
+     */
+    private final Duration failedKeepAlivePairTimeout = AgentConfig.config.getKeepAliveFailedPairTimeout();
+
+    /**
+     * The clock used to measure how long keep-alive pairs have been failed. Replaceable for tests.
+     */
+    private Clock clock = Clock.systemUTC();
 
     /**
      * External callback for the push API. Called with every packet received via {@link #handleBuffer(Buffer)}.
@@ -900,6 +918,7 @@ public class Component
 
         getParentStream().removePairStateChangeListener(this);
         keepAlivePairs.clear();
+        keepAlivePairsFailedSince.clear();
         if (componentSocket != null)
         {
             componentSocket.close();
@@ -1070,8 +1089,65 @@ public class Component
                 }
             }
             keepAlivePairs.add(pair);
+            if (pair.getState() == CandidatePairState.FAILED)
+            {
+                // A pair which is added while already failed gets the full timeout from now.
+                keepAlivePairsFailedSince.put(pair, clock.instant());
+            }
+            else
+            {
+                keepAlivePairsFailedSince.remove(pair);
+            }
             return true;
         }
+    }
+
+    /**
+     * Handles a keep-alive pair transitioning to (or staying in) the FAILED state: removes it from the set of
+     * keep-alive pairs if it has been failed for longer than {@link #failedKeepAlivePairTimeout}. The selected pair
+     * is never removed. Keep-alive checks continue to be sent to a failed pair until it is removed, so it can recover
+     * (which resets the timer).
+     */
+    private void maybeRemoveFailedKeepAlivePair(CandidatePair pair)
+    {
+        synchronized (keepAlivePairs)
+        {
+            if (!keepAlivePairs.contains(pair) || pair.equals(selectedPair))
+            {
+                return;
+            }
+
+            Instant now = clock.instant();
+            Instant failedSince = keepAlivePairsFailedSince.putIfAbsent(pair, now);
+            if (failedSince == null)
+            {
+                // This is the first failure, start the timer.
+                return;
+            }
+
+            if (failedKeepAlivePairTimeout.isZero() || failedKeepAlivePairTimeout.isNegative())
+            {
+                // Removal is disabled. We still track the failure above.
+                return;
+            }
+
+            Duration failedFor = Duration.between(failedSince, now);
+            if (failedFor.compareTo(failedKeepAlivePairTimeout) >= 0)
+            {
+                keepAlivePairs.remove(pair);
+                keepAlivePairsFailedSince.remove(pair);
+                logger.info("Removing keep-alive pair " + pair.toRedactedShortString()
+                        + ", failed for " + failedFor.toMillis() + " ms.");
+            }
+        }
+    }
+
+    /**
+     * Sets the clock used to measure how long keep-alive pairs have been failed. For tests.
+     */
+    void setClock(Clock clock)
+    {
+        this.clock = Objects.requireNonNull(clock);
     }
 
     /**
@@ -1229,8 +1305,15 @@ public class Component
             CandidatePairState newState
                 = (CandidatePairState) event.getNewValue();
 
-            if (CandidatePairState.SUCCEEDED.equals(newState))
+            if (CandidatePairState.FAILED.equals(newState))
             {
+                maybeRemoveFailedKeepAlivePair(pair);
+            }
+            else if (CandidatePairState.SUCCEEDED.equals(newState))
+            {
+                // The pair recovered (or succeeded for the first time).
+                keepAlivePairsFailedSince.remove(pair);
+
                 if (keepAliveStrategy == KeepAliveStrategy.ALL_SUCCEEDED)
                 {
                     addToKeepAlive = true;

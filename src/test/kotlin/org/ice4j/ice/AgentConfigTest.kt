@@ -31,6 +31,7 @@ class AgentConfigTest : ConfigTest() {
             config.maxConsentFreshnessRetransmissions shouldBe 30
             config.maxCheckListSize shouldBe 100
             config.terminationDelay shouldBe 3.secs
+            config.keepAliveFailedPairTimeout shouldBe 30.secs
         }
         context("Setting via legacy config (system properties)") {
             withLegacyConfig(legacyConfig) {
@@ -50,6 +51,7 @@ class AgentConfigTest : ConfigTest() {
                 config.maxConsentFreshnessRetransmissions shouldBe 6000
                 config.terminationDelay shouldBe 6.secs
                 config.maxCheckListSize shouldBe 6000
+                config.keepAliveFailedPairTimeout shouldBe 6.secs
             }
         }
         context("Legacy config must take precedence") {
@@ -83,5 +85,6 @@ private val newConfig = """
     ice4j.consent-freshness.max-retransmissions = 6000 
     ice4j.ice.max-check-list-size = 6000
     ice4j.ice.termination-delay = 6 seconds
+    ice4j.keep-alive.failed-pair-timeout = 6 seconds
     
 """.trimIndent()

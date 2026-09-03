@@ -21,6 +21,7 @@ import static org.junit.jupiter.api.Assertions.*;
 
 import java.io.*;
 import java.net.*;
+import java.time.*;
 import java.util.*;
 
 import org.ice4j.*;
@@ -46,6 +47,9 @@ public class ComponentKeepAliveTest
 
     private int nextRemotePort = 20000;
 
+    /** The current time as seen by the component. */
+    private Instant now = Instant.parse("2026-01-01T00:00:00Z");
+
     private void setUp(KeepAliveStrategy strategy)
         throws IOException
     {
@@ -57,6 +61,7 @@ public class ComponentKeepAliveTest
         // Create the component directly on the stream rather than via Agent.createComponent(), which would harvest
         // candidates on the real network interfaces.
         component = stream.createComponent(strategy, false);
+        component.setClock(Clock.fixed(now, ZoneOffset.UTC));
 
         host = new HostCandidate(new IceUdpSocketWrapper(localSocket), component);
         component.addLocalCandidate(host);
@@ -95,6 +100,12 @@ public class ComponentKeepAliveTest
     private CandidatePair createPair(LocalCandidate local, RemoteCandidate remote)
     {
         return agent.createCandidatePair(local, remote);
+    }
+
+    private void advance(Duration duration)
+    {
+        now = now.plus(duration);
+        component.setClock(Clock.fixed(now, ZoneOffset.UTC));
     }
 
     private Set<CandidatePair> keepAlivePairs()
@@ -177,5 +188,98 @@ public class ComponentKeepAliveTest
 
         component.setSelectedPair(pairA);
         assertEquals(Collections.singleton(pairA), keepAlivePairs());
+    }
+
+    /**
+     * A non-selected pair which stays failed for the configured timeout (30 seconds by default) is removed. Failures
+     * are reported on every keep-alive interval while the pair is failed.
+     */
+    @Test
+    public void testFailedPairIsRemovedAfterTimeout()
+        throws IOException
+    {
+        setUp(KeepAliveStrategy.ALL_SUCCEEDED);
+        CandidatePair selected = createPair(host, createRemoteCandidate(1000));
+        CandidatePair backup = createPair(host, createRemoteCandidate(2000));
+        selected.setStateSucceeded();
+        backup.setStateSucceeded();
+        component.setSelectedPair(selected);
+        assertEquals(new HashSet<>(Arrays.asList(selected, backup)), keepAlivePairs());
+
+        backup.setStateFailed();
+        assertTrue(keepAlivePairs().contains(backup), "Not removed on first failure");
+
+        advance(Duration.ofSeconds(15));
+        backup.setStateFailed();
+        assertTrue(keepAlivePairs().contains(backup), "Not removed before the timeout");
+
+        advance(Duration.ofSeconds(15));
+        backup.setStateFailed();
+        assertEquals(Collections.singleton(selected), keepAlivePairs(), "Removed once failed for the timeout");
+    }
+
+    @Test
+    public void testSelectedPairIsNeverRemoved()
+        throws IOException
+    {
+        setUp(KeepAliveStrategy.ALL_SUCCEEDED);
+        CandidatePair selected = createPair(host, createRemoteCandidate(1000));
+        selected.setStateSucceeded();
+        component.setSelectedPair(selected);
+
+        for (int i = 0; i < 10; i++)
+        {
+            selected.setStateFailed();
+            advance(Duration.ofSeconds(15));
+        }
+        assertEquals(Collections.singleton(selected), keepAlivePairs());
+    }
+
+    /**
+     * A pair which recovers (succeeds again) before the timeout is kept, and the timer restarts on its next failure.
+     */
+    @Test
+    public void testRecoveredPairIsKept()
+        throws IOException
+    {
+        setUp(KeepAliveStrategy.ALL_SUCCEEDED);
+        CandidatePair selected = createPair(host, createRemoteCandidate(1000));
+        CandidatePair backup = createPair(host, createRemoteCandidate(2000));
+        selected.setStateSucceeded();
+        backup.setStateSucceeded();
+        component.setSelectedPair(selected);
+
+        backup.setStateFailed();
+        advance(Duration.ofSeconds(15));
+        backup.setStateSucceeded();
+        advance(Duration.ofSeconds(15));
+
+        // 30 seconds since the first failure, but it recovered in between.
+        backup.setStateFailed();
+        assertTrue(keepAlivePairs().contains(backup));
+        advance(Duration.ofSeconds(15));
+        backup.setStateFailed();
+        assertTrue(keepAlivePairs().contains(backup));
+        advance(Duration.ofSeconds(15));
+        backup.setStateFailed();
+        assertFalse(keepAlivePairs().contains(backup));
+    }
+
+    /**
+     * A failed pair which is not a keep-alive pair (it never succeeded) is not affected.
+     */
+    @Test
+    public void testFailedNonKeepAlivePairIsIgnored()
+        throws IOException
+    {
+        setUp(KeepAliveStrategy.ALL_SUCCEEDED);
+        CandidatePair pair = createPair(host, createRemoteCandidate(1000));
+        pair.setStateFailed();
+        advance(Duration.ofMinutes(5));
+        pair.setStateFailed();
+        assertTrue(keepAlivePairs().isEmpty());
+
+        pair.setStateSucceeded();
+        assertEquals(Collections.singleton(pair), keepAlivePairs());
     }
 }
