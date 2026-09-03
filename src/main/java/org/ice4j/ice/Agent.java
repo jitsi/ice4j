@@ -1723,7 +1723,8 @@ public class Agent
             if (connCheckClient.isStopped())
             {
                 // Connectivity checks are over, so the triggered check which we would schedule below would never be
-                // sent (and the pair would be left in the Waiting state forever). Just decide whether to respond.
+                // sent (and the pair would be left in the Waiting state forever).
+                recheckPairAfterTermination(knownPair);
                 return shouldRespondAfterTermination(knownPair);
             }
         }
@@ -1791,6 +1792,60 @@ public class Agent
                     knownPair.toRedactedString() + " when ICE processing is terminated");
         }
         return respond;
+    }
+
+    /**
+     * Handles a connectivity check received, after ICE processing has terminated, on a known pair which is not in the
+     * SUCCEEDED state. If the pair is one we would keep alive had it succeeded (see
+     * {@link Component#wantsKeepAlive(CandidatePair)}), the remote side checking it suggests that it wants to use it,
+     * e.g. because it has become available again after it failed and was removed from the keep-alive pairs. Add it to
+     * the keep-alive pairs and check it: if our check succeeds the pair becomes SUCCEEDED and usable; otherwise it
+     * will be removed again once it has been failed for long enough.
+     * <p>
+     * This is rate-limited by the fact that the pair is only re-checked when it is added to the keep-alive set, and
+     * a pair is not re-added for a while after it has been removed.
+     */
+    private void recheckPairAfterTermination(CandidatePair pair)
+    {
+        Component component = pair.getParentComponent();
+        if (!performConsentFreshness)
+        {
+            // Without consent freshness checks the pair could never become SUCCEEDED (or FAILED) again.
+            return;
+        }
+        if (component.wantsKeepAlive(pair) && component.addKeepAlivePair(pair))
+        {
+            logger.info("Re-checking pair " + pair.toRedactedShortString()
+                    + " after receiving a connectivity check on it.");
+            sendKeepAlive(pair);
+        }
+    }
+
+    /**
+     * Sends a keep-alive to a pair: a consent freshness check (a STUN Binding request) if consent freshness is
+     * enabled, and a STUN Binding indication otherwise.
+     */
+    private void sendKeepAlive(CandidatePair pair)
+    {
+        if (performConsentFreshness)
+        {
+            TransactionID transactionID = connCheckClient.startCheckForPair(
+                pair,
+                (int) config.getConsentFreshnessOriginalWaitInterval().toMillis(),
+                (int) config.getConsentFreshnessMaxWaitInterval().toMillis(),
+                config.getMaxConsentFreshnessRetransmissions());
+            if (transactionID == null)
+            {
+                // The check could not be sent (e.g. the socket is gone). Treat it like a check which timed out, so
+                // that the pair is eventually removed from the keep-alive pairs.
+                logger.debug(() -> "Failed to send keep-alive for pair " + pair.toRedactedShortString());
+                pair.setStateFailed();
+            }
+        }
+        else
+        {
+            connCheckClient.sendBindingIndicationForPair(pair);
+        }
     }
 
     /**
@@ -2667,13 +2722,6 @@ public class Agent
     private final class StunKeepAliveRunner extends PeriodicRunnable
     {
         private final long consentFreshnessInterval = config.getConsentFreshnessInterval().toMillis();
-        private final int originalConsentFreshnessWaitInterval
-                = (int) config.getConsentFreshnessOriginalWaitInterval().toMillis();
-
-        private final int maxConsentFreshnessWaitInterval
-                = (int) config.getConsentFreshnessMaxWaitInterval().toMillis();
-
-        private final int consentFreshnessMaxRetransmissions = config.getMaxConsentFreshnessRetransmissions();
 
         private int keepAliveSent = 0;
 
@@ -2729,19 +2777,7 @@ public class Agent
                     {
                         if (pair != null)
                         {
-                            if (performConsentFreshness)
-                            {
-                                connCheckClient.startCheckForPair(
-                                    pair,
-                                    originalConsentFreshnessWaitInterval,
-                                    maxConsentFreshnessWaitInterval,
-                                    consentFreshnessMaxRetransmissions);
-                            }
-                            else
-                            {
-                                connCheckClient
-                                    .sendBindingIndicationForPair(pair);
-                            }
+                            Agent.this.sendKeepAlive(pair);
                         }
                     }
                 }

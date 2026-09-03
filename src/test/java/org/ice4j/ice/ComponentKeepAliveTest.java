@@ -304,4 +304,65 @@ public class ComponentKeepAliveTest
         pair.setStateSucceeded();
         assertEquals(Collections.singleton(pair), keepAlivePairs());
     }
+
+    @Test
+    public void testWantsKeepAlive()
+        throws IOException
+    {
+        setUp(KeepAliveStrategy.ALL_SUCCEEDED);
+        assertTrue(component.wantsKeepAlive(createPair(host, createRemoteCandidate(1000))));
+        tearDown();
+
+        setUp(KeepAliveStrategy.SELECTED_ONLY);
+        assertFalse(component.wantsKeepAlive(createPair(host, createRemoteCandidate(1000))));
+        tearDown();
+
+        setUp(KeepAliveStrategy.SELECTED_AND_TCP);
+        assertFalse(component.wantsKeepAlive(createPair(host, createRemoteCandidate(1000))), "UDP pair");
+    }
+
+    /**
+     * A pair which is not SUCCEEDED can be added explicitly (this is used to re-check a pair on which the remote side
+     * sends a check after ICE has terminated). It is subject to the same removal once it has been failed for too
+     * long, and equivalent pairs are still deduplicated.
+     */
+    @Test
+    public void testExplicitlyAddedFailedPair()
+        throws IOException
+    {
+        setUp(KeepAliveStrategy.ALL_SUCCEEDED);
+        CandidatePair selected = createPair(host, createRemoteCandidate(1000));
+        selected.setStateSucceeded();
+        component.setSelectedPair(selected);
+
+        RemoteCandidate remote = createRemoteCandidate(2000);
+        CandidatePair failed = createPair(host, remote);
+        failed.setStateFailed();
+        assertFalse(keepAlivePairs().contains(failed));
+
+        assertTrue(component.addKeepAlivePair(failed));
+        assertFalse(component.addKeepAlivePair(failed), "Already present");
+        assertFalse(component.addKeepAlivePair(createPair(mapped, remote)), "Equivalent pair present");
+        assertEquals(new HashSet<>(Arrays.asList(selected, failed)), keepAlivePairs());
+
+        // If the check we send fails, the pair is removed again after the timeout.
+        failed.setStateFailed();
+        advance(Duration.ofSeconds(15));
+        failed.setStateFailed();
+        advance(Duration.ofSeconds(15));
+        failed.setStateFailed();
+        assertEquals(Collections.singleton(selected), keepAlivePairs());
+
+        // It is not added again for re-checking until the timeout has passed since it was removed.
+        assertFalse(component.addKeepAlivePair(failed), "Recently removed");
+        advance(Duration.ofSeconds(29));
+        assertFalse(component.addKeepAlivePair(failed), "Recently removed");
+        advance(Duration.ofSeconds(1));
+
+        // If the check succeeds, it stays.
+        assertTrue(component.addKeepAlivePair(failed));
+        failed.setStateSucceeded();
+        advance(Duration.ofMinutes(5));
+        assertEquals(new HashSet<>(Arrays.asList(selected, failed)), keepAlivePairs());
+    }
 }

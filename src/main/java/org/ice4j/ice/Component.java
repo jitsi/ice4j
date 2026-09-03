@@ -170,6 +170,12 @@ public class Component
     private final Duration failedKeepAlivePairTimeout = AgentConfig.config.getKeepAliveFailedPairTimeout();
 
     /**
+     * The time at which pairs were removed from {@link #keepAlivePairs} because they had been failed for too long.
+     * Such a pair is not added again (for re-checking) until {@link #failedKeepAlivePairTimeout} has passed.
+     */
+    private final Map<CandidatePair, Instant> keepAlivePairsRemovedAt = new ConcurrentHashMap<>();
+
+    /**
      * The clock used to measure how long keep-alive pairs have been failed. Replaceable for tests.
      */
     private Clock clock = Clock.systemUTC();
@@ -919,6 +925,7 @@ public class Component
         getParentStream().removePairStateChangeListener(this);
         keepAlivePairs.clear();
         keepAlivePairsFailedSince.clear();
+        keepAlivePairsRemovedAt.clear();
         if (componentSocket != null)
         {
             componentSocket.close();
@@ -1071,7 +1078,7 @@ public class Component
      * (see {@link #isEquivalentForKeepAlive(CandidatePair, CandidatePair)}).
      * @return {@code true} if the pair was added.
      */
-    private boolean addKeepAlivePair(CandidatePair pair)
+    boolean addKeepAlivePair(CandidatePair pair)
     {
         synchronized (keepAlivePairs)
         {
@@ -1088,11 +1095,26 @@ public class Component
                     return false;
                 }
             }
+            Instant now = clock.instant();
+            if (pair.getState() != CandidatePairState.SUCCEEDED)
+            {
+                // A pair which has not succeeded is added in order to re-check it. Don't do that too often for a
+                // pair which we have recently removed.
+                keepAlivePairsRemovedAt.values().removeIf(t -> !t.plus(failedKeepAlivePairTimeout).isAfter(now));
+                if (keepAlivePairsRemovedAt.containsKey(pair))
+                {
+                    logger.debug(() -> "Not adding keep-alive pair " + pair.toRedactedShortString()
+                            + ", it was recently removed.");
+                    return false;
+                }
+            }
+
             keepAlivePairs.add(pair);
+            keepAlivePairsRemovedAt.remove(pair);
             if (pair.getState() == CandidatePairState.FAILED)
             {
                 // A pair which is added while already failed gets the full timeout from now.
-                keepAlivePairsFailedSince.put(pair, clock.instant());
+                keepAlivePairsFailedSince.put(pair, now);
             }
             else
             {
@@ -1136,6 +1158,7 @@ public class Component
             {
                 keepAlivePairs.remove(pair);
                 keepAlivePairsFailedSince.remove(pair);
+                keepAlivePairsRemovedAt.put(pair, now);
                 logger.info("Removing keep-alive pair " + pair.toRedactedShortString()
                         + ", failed for " + failedFor.toMillis() + " ms.");
             }
@@ -1148,6 +1171,29 @@ public class Component
     void setClock(Clock clock)
     {
         this.clock = Objects.requireNonNull(clock);
+    }
+
+    /**
+     * @return {@code true} if this component's keep-alive strategy calls for keeping {@code pair} alive (once it
+     * succeeds), not counting the selected pair which is always kept alive.
+     */
+    boolean wantsKeepAlive(CandidatePair pair)
+    {
+        switch (keepAliveStrategy)
+        {
+        case ALL_SUCCEEDED:
+            return true;
+        case SELECTED_AND_TCP:
+            Transport transport = pair.getLocalCandidate().getTransport();
+            // Pairs with a remote TCP port 9 cannot be checked. Instead, the corresponding pair with the peer
+            // reflexive candidate needs to be checked. However, we observe such pairs transitioning into the SUCCEEDED
+            // state. Ignore them.
+            return (transport == Transport.TCP || transport == Transport.SSLTCP)
+                && pair.getRemoteCandidate().getTransportAddress().getPort() != 9;
+        case SELECTED_ONLY:
+        default:
+            return false;
+        }
     }
 
     /**
@@ -1329,27 +1375,7 @@ public class Component
             {
                 // The pair recovered (or succeeded for the first time).
                 keepAlivePairsFailedSince.remove(pair);
-
-                if (keepAliveStrategy == KeepAliveStrategy.ALL_SUCCEEDED)
-                {
-                    addToKeepAlive = true;
-                }
-                else if (keepAliveStrategy == KeepAliveStrategy.SELECTED_AND_TCP)
-                {
-                    Transport transport
-                        = pair.getLocalCandidate().getTransport();
-                    addToKeepAlive = transport == Transport.TCP
-                        || transport == Transport.SSLTCP;
-
-                    // Pairs with a remote TCP port 9 cannot be checked.
-                    // Instead, the corresponding pair with the peer reflexive
-                    // candidate needs to be checked. However, we observe
-                    // such pairs transitioning into the SUCCEEDED state.
-                    // Ignore them.
-                    addToKeepAlive
-                        &= pair.getRemoteCandidate()
-                                .getTransportAddress().getPort() != 9;
-                }
+                addToKeepAlive = wantsKeepAlive(pair);
             }
         }
 
