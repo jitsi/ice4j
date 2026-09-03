@@ -151,7 +151,8 @@ public class Component
     private final KeepAliveStrategy keepAliveStrategy;
 
     /**
-     * The set of pairs which this component wants to keep alive.
+     * The set of pairs which this component wants to keep alive. Modifications are synchronized on the set itself (so
+     * that compound operations such as check-then-add are atomic), while iteration is lock-free.
      */
     private final Set<CandidatePair> keepAlivePairs = Collections.newSetFromMap(new ConcurrentHashMap<>());
 
@@ -1025,13 +1026,71 @@ public class Component
      */
     protected void setSelectedPair(CandidatePair pair)
     {
-        if (keepAliveStrategy == KeepAliveStrategy.SELECTED_ONLY)
+        synchronized (keepAlivePairs)
         {
-            keepAlivePairs.clear();
-        }
-        keepAlivePairs.add(pair);
+            // Set the selected pair before adding it to the set, so that it is recognized as selected by any
+            // concurrent operation on the set.
+            this.selectedPair = pair;
 
-        this.selectedPair = pair;
+            if (keepAliveStrategy == KeepAliveStrategy.SELECTED_ONLY)
+            {
+                keepAlivePairs.clear();
+            }
+            else
+            {
+                // The selected pair takes the place of any equivalent pair (e.g. the host pair when the selected pair
+                // uses the mapped address of the same socket).
+                keepAlivePairs.removeIf(
+                    existing -> !existing.equals(pair) && isEquivalentForKeepAlive(existing, pair));
+            }
+            keepAlivePairs.add(pair);
+        }
+    }
+
+    /**
+     * Adds {@code pair} to the set of keep-alive pairs, unless the set already contains it or a pair equivalent to it
+     * (see {@link #isEquivalentForKeepAlive(CandidatePair, CandidatePair)}).
+     * @return {@code true} if the pair was added.
+     */
+    private boolean addKeepAlivePair(CandidatePair pair)
+    {
+        synchronized (keepAlivePairs)
+        {
+            if (keepAlivePairs.contains(pair))
+            {
+                return false;
+            }
+            for (CandidatePair existing : keepAlivePairs)
+            {
+                if (isEquivalentForKeepAlive(existing, pair))
+                {
+                    logger.debug(() -> "Not adding keep-alive pair " + pair.toRedactedShortString()
+                            + ", equivalent to " + existing.toRedactedShortString());
+                    return false;
+                }
+            }
+            keepAlivePairs.add(pair);
+            return true;
+        }
+    }
+
+    /**
+     * Two pairs are equivalent for the purpose of keep-alives when they use the same local socket (i.e. their local
+     * candidates have the same base) to reach the same remote address. This is the case for the pair with a host
+     * candidate and the pair with a server reflexive (or otherwise mapped) candidate derived from it. Keeping both
+     * alive is redundant.
+     */
+    private static boolean isEquivalentForKeepAlive(CandidatePair a, CandidatePair b)
+    {
+        return getBaseAddress(a).equals(getBaseAddress(b))
+            && a.getRemoteCandidate().getTransportAddress().equals(b.getRemoteCandidate().getTransportAddress());
+    }
+
+    private static TransportAddress getBaseAddress(CandidatePair pair)
+    {
+        LocalCandidate local = pair.getLocalCandidate();
+        LocalCandidate base = local.getBase();
+        return (base != null ? base : local).getTransportAddress();
     }
 
     /**
@@ -1195,9 +1254,9 @@ public class Component
             }
         }
 
-        if (addToKeepAlive && !keepAlivePairs.contains(pair))
+        if (addToKeepAlive)
         {
-            keepAlivePairs.add(pair);
+            addKeepAlivePair(pair);
         }
     }
 
