@@ -1703,21 +1703,9 @@ public class Agent
                     checkListStatesUpdated();
                 }
 
-                if (getState() == IceProcessingState.TERMINATED
-                        && knownPair.getParentComponent().getKeepAliveStrategy() != KeepAliveStrategy.ALL_SUCCEEDED)
+                if (getState() == IceProcessingState.TERMINATED)
                 {
-                    // After we've terminated, only respond for the selected pair
-                    CandidatePair selected
-                            = getSelectedPair(knownPair.getParentComponent().getParentStream().getName());
-                    boolean respond = selected != null
-                            && knownPair.getRemoteCandidate().getTransportAddress().equals(
-                                    selected.getRemoteCandidate().getTransportAddress());
-                    if (!respond)
-                    {
-                        logger.warn("Received connectivity check on non-selected pair " +
-                                knownPair.toRedactedString() + " when ICE processing is terminated");
-                    }
-                    return respond;
+                    return shouldRespondAfterTermination(knownPair);
                 }
                 return true;
             }
@@ -1730,6 +1718,13 @@ public class Agent
                     = knownPair.getConnectivityCheckTransaction();
 
                 getStunStack().cancelTransaction(checkTransaction);
+            }
+
+            if (connCheckClient.isStopped())
+            {
+                // Connectivity checks are over, so the triggered check which we would schedule below would never be
+                // sent (and the pair would be left in the Waiting state forever). Just decide whether to respond.
+                return shouldRespondAfterTermination(knownPair);
             }
         }
         else
@@ -1776,6 +1771,26 @@ public class Agent
             connCheckClient.startChecks(checkList);
 
         return true;
+    }
+
+    /**
+     * Decides whether to respond to a connectivity check received on a known pair after ICE processing has
+     * terminated. We only respond to checks on pairs whose remote address we are keeping alive (with the
+     * {@link KeepAliveStrategy#SELECTED_ONLY} strategy this is just the selected pair). A remote endpoint which checks
+     * a pair we do not keep alive (e.g. because its address has changed due to a NAT rebinding, or because the pair
+     * is not among the ones we keep alive) fails its consent checks on that pair and stops using it, or restarts ICE,
+     * instead of continuing on a pair we will not use.
+     */
+    private boolean shouldRespondAfterTermination(CandidatePair knownPair)
+    {
+        boolean respond = knownPair.getParentComponent().hasKeepAlivePairForRemoteAddress(
+                knownPair.getRemoteCandidate().getTransportAddress());
+        if (!respond)
+        {
+            logger.warn("Received connectivity check on non-keep-alive pair " +
+                    knownPair.toRedactedString() + " when ICE processing is terminated");
+        }
+        return respond;
     }
 
     /**

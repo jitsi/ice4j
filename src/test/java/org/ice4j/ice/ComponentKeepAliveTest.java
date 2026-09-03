@@ -190,6 +190,28 @@ public class ComponentKeepAliveTest
         assertEquals(Collections.singleton(pairA), keepAlivePairs());
     }
 
+    @Test
+    public void testHasKeepAlivePairForRemoteAddress()
+        throws IOException
+    {
+        setUp(KeepAliveStrategy.SELECTED_ONLY);
+        RemoteCandidate remoteA = createRemoteCandidate(1000);
+        RemoteCandidate remoteB = createRemoteCandidate(2000);
+        CandidatePair pairA = createPair(host, remoteA);
+        CandidatePair pairB = createPair(host, remoteB);
+        pairA.setStateSucceeded();
+        pairB.setStateSucceeded();
+        assertFalse(component.hasKeepAlivePairForRemoteAddress(remoteA.getTransportAddress()));
+
+        component.setSelectedPair(pairA);
+        assertTrue(component.hasKeepAlivePairForRemoteAddress(remoteA.getTransportAddress()));
+        assertFalse(component.hasKeepAlivePairForRemoteAddress(remoteB.getTransportAddress()));
+
+        // The equivalent pair with the mapped candidate has the same remote address.
+        createPair(mapped, remoteA).setStateSucceeded();
+        assertTrue(component.hasKeepAlivePairForRemoteAddress(remoteA.getTransportAddress()));
+    }
+
     /**
      * A non-selected pair which stays failed for the configured timeout (30 seconds by default) is removed. Failures
      * are reported on every keep-alive interval while the pair is failed.

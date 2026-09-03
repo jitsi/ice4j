@@ -1151,6 +1151,22 @@ public class Component
     }
 
     /**
+     * @return {@code true} if one of the pairs which this component keeps alive has {@code remoteAddress} as its
+     * remote address.
+     */
+    boolean hasKeepAlivePairForRemoteAddress(TransportAddress remoteAddress)
+    {
+        for (CandidatePair pair : keepAlivePairs)
+        {
+            if (pair.getRemoteCandidate().getTransportAddress().equals(remoteAddress))
+            {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /**
      * Two pairs are equivalent for the purpose of keep-alives when they use the same local socket (i.e. their local
      * candidates have the same base) to reach the same remote address. This is the case for the pair with a host
      * candidate and the pair with a server reflexive (or otherwise mapped) candidate derived from it. Keeping both
