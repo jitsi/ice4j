@@ -94,6 +94,13 @@ class AgentConfig {
         "ice4j.keep-alive.failed-pair-timeout".from(configSource)
     }
 
+    /**
+     * The maximum number of pairs to keep alive per component. Zero or negative means no limit.
+     */
+    val maxKeepAlivePairs: Int by config {
+        "ice4j.keep-alive.max-pairs".from(configSource)
+    }
+
     companion object {
         @JvmField
         val config = AgentConfig()

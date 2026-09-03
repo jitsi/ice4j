@@ -365,4 +365,113 @@ public class ComponentKeepAliveTest
         advance(Duration.ofMinutes(5));
         assertEquals(new HashSet<>(Arrays.asList(selected, failed)), keepAlivePairs());
     }
+
+    /** Creates {@code count} pairs with distinct remote addresses and increasing priorities, and succeeds them. */
+    private List<CandidatePair> fillKeepAlivePairs(int count)
+    {
+        List<CandidatePair> pairs = new ArrayList<>();
+        for (int i = 1; i <= count; i++)
+        {
+            CandidatePair pair = createPair(host, createRemoteCandidate(1000L * i));
+            pair.setStateSucceeded();
+            pairs.add(pair);
+        }
+        assertEquals(new HashSet<>(pairs), keepAlivePairs());
+        return pairs;
+    }
+
+    /**
+     * At most ice4j.keep-alive.max-pairs (10 by default) pairs are kept alive. When the set is full, a new pair with
+     * a higher priority than the lowest-priority pair replaces it, and a new pair with a lower priority is not added.
+     */
+    @Test
+    public void testMaxPairsEvictsLowestPriority()
+        throws IOException
+    {
+        setUp(KeepAliveStrategy.ALL_SUCCEEDED);
+        List<CandidatePair> pairs = fillKeepAlivePairs(10);
+        assertTrue(pairs.get(0).getPriority() < pairs.get(9).getPriority());
+
+        CandidatePair low = createPair(host, createRemoteCandidate(500));
+        low.setStateSucceeded();
+        assertFalse(keepAlivePairs().contains(low), "Lower priority than all existing pairs, not added");
+        assertEquals(10, keepAlivePairs().size());
+
+        CandidatePair high = createPair(host, createRemoteCandidate(20000));
+        high.setStateSucceeded();
+        Set<CandidatePair> expected = new HashSet<>(pairs.subList(1, 10));
+        expected.add(high);
+        assertEquals(expected, keepAlivePairs(), "Lowest priority pair evicted");
+    }
+
+    /**
+     * A failed pair is evicted before any succeeded pair, regardless of priority.
+     */
+    @Test
+    public void testMaxPairsEvictsFailedFirst()
+        throws IOException
+    {
+        setUp(KeepAliveStrategy.ALL_SUCCEEDED);
+        List<CandidatePair> pairs = fillKeepAlivePairs(10);
+        CandidatePair failed = pairs.get(5);
+        failed.setStateFailed();
+        assertTrue(keepAlivePairs().contains(failed), "Still present, not failed for long enough");
+
+        CandidatePair low = createPair(host, createRemoteCandidate(500));
+        low.setStateSucceeded();
+        Set<CandidatePair> expected = new HashSet<>(pairs);
+        expected.remove(failed);
+        expected.add(low);
+        assertEquals(expected, keepAlivePairs());
+    }
+
+    /**
+     * The selected pair is always kept alive, even if the set is full and its priority is the lowest.
+     */
+    @Test
+    public void testSelectedPairAlwaysAdded()
+        throws IOException
+    {
+        setUp(KeepAliveStrategy.ALL_SUCCEEDED);
+        List<CandidatePair> pairs = fillKeepAlivePairs(10);
+
+        CandidatePair selected = createPair(host, createRemoteCandidate(50));
+        selected.setStateSucceeded();
+        assertFalse(keepAlivePairs().contains(selected));
+
+        component.setSelectedPair(selected);
+        Set<CandidatePair> expected = new HashSet<>(pairs.subList(1, 10));
+        expected.add(selected);
+        assertEquals(expected, keepAlivePairs());
+
+        // And it is not evicted by a higher priority pair.
+        CandidatePair high = createPair(host, createRemoteCandidate(20000));
+        high.setStateSucceeded();
+        assertTrue(keepAlivePairs().contains(selected));
+        assertTrue(keepAlivePairs().contains(high));
+        assertEquals(10, keepAlivePairs().size());
+    }
+
+    /**
+     * A pair which has not succeeded (added for re-checking) may only displace a failed pair, never a succeeded one,
+     * regardless of its priority.
+     */
+    @Test
+    public void testRecheckedPairDoesNotEvictSucceededPair()
+        throws IOException
+    {
+        setUp(KeepAliveStrategy.ALL_SUCCEEDED);
+        List<CandidatePair> pairs = fillKeepAlivePairs(10);
+
+        CandidatePair high = createPair(host, createRemoteCandidate(20000));
+        assertFalse(component.addKeepAlivePair(high), "Set full of succeeded pairs");
+        assertEquals(new HashSet<>(pairs), keepAlivePairs());
+
+        pairs.get(3).setStateFailed();
+        assertTrue(component.addKeepAlivePair(high), "Failed pair can be displaced");
+        Set<CandidatePair> expected = new HashSet<>(pairs);
+        expected.remove(pairs.get(3));
+        expected.add(high);
+        assertEquals(expected, keepAlivePairs());
+    }
 }

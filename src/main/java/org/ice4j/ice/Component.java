@@ -170,10 +170,15 @@ public class Component
     private final Duration failedKeepAlivePairTimeout = AgentConfig.config.getKeepAliveFailedPairTimeout();
 
     /**
-     * The time at which pairs were removed from {@link #keepAlivePairs} because they had been failed for too long.
-     * Such a pair is not added again (for re-checking) until {@link #failedKeepAlivePairTimeout} has passed.
+     * The time at which pairs were removed from {@link #keepAlivePairs} because they had been failed for too long (or
+     * evicted). Such a pair is not added again (for re-checking) until {@link #failedKeepAlivePairTimeout} has passed.
      */
     private final Map<CandidatePair, Instant> keepAlivePairsRemovedAt = new ConcurrentHashMap<>();
+
+    /**
+     * The maximum number of pairs in {@link #keepAlivePairs}. Zero or negative means no limit.
+     */
+    private final int maxKeepAlivePairs = AgentConfig.config.getMaxKeepAlivePairs();
 
     /**
      * The clock used to measure how long keep-alive pairs have been failed. Replaceable for tests.
@@ -1070,12 +1075,26 @@ public class Component
                     existing -> !existing.equals(pair) && isEquivalentForKeepAlive(existing, pair));
             }
             keepAlivePairs.add(pair);
+
+            // The selected pair is always added. Make room for it if necessary.
+            while (maxKeepAlivePairs > 0 && keepAlivePairs.size() > maxKeepAlivePairs)
+            {
+                CandidatePair evict = findKeepAlivePairToEvict();
+                if (evict == null)
+                {
+                    break;
+                }
+                removeKeepAlivePair(evict, "to make room for the selected pair.");
+            }
         }
     }
 
     /**
      * Adds {@code pair} to the set of keep-alive pairs, unless the set already contains it or a pair equivalent to it
-     * (see {@link #isEquivalentForKeepAlive(CandidatePair, CandidatePair)}).
+     * (see {@link #isEquivalentForKeepAlive(CandidatePair, CandidatePair)}), or the set is full and no pair can be
+     * evicted to make room. A failed pair can always be evicted. A succeeded pair can only be evicted for a pair which
+     * has succeeded and has a higher priority, so that remote peers can not displace working pairs by advertising
+     * high-priority candidates for pairs which have not succeeded.
      * @return {@code true} if the pair was added.
      */
     boolean addKeepAlivePair(CandidatePair pair)
@@ -1109,6 +1128,22 @@ public class Component
                 }
             }
 
+            if (maxKeepAlivePairs > 0 && keepAlivePairs.size() >= maxKeepAlivePairs)
+            {
+                CandidatePair evict = findKeepAlivePairToEvict();
+                boolean canEvict = evict != null
+                    && (keepAlivePairsFailedSince.containsKey(evict)
+                        || (pair.getState() == CandidatePairState.SUCCEEDED
+                            && evict.getPriority() < pair.getPriority()));
+                if (!canEvict)
+                {
+                    logger.debug(() -> "Not adding keep-alive pair " + pair.toRedactedShortString()
+                            + ", already keeping alive " + keepAlivePairs.size() + " pairs.");
+                    return false;
+                }
+                removeKeepAlivePair(evict, "to make room for " + pair.toRedactedShortString());
+            }
+
             keepAlivePairs.add(pair);
             keepAlivePairsRemovedAt.remove(pair);
             if (pair.getState() == CandidatePairState.FAILED)
@@ -1122,6 +1157,58 @@ public class Component
             }
             return true;
         }
+    }
+
+    /**
+     * Removes a pair from the set of keep-alive pairs. Must be called with the lock on {@link #keepAlivePairs} held.
+     * @param reason a description of the reason for the removal, for logging.
+     */
+    private void removeKeepAlivePair(CandidatePair pair, String reason)
+    {
+        keepAlivePairs.remove(pair);
+        keepAlivePairsFailedSince.remove(pair);
+        keepAlivePairsRemovedAt.put(pair, clock.instant());
+        logger.info("Removing keep-alive pair " + pair.toRedactedShortString() + " " + reason);
+    }
+
+    /**
+     * Finds the keep-alive pair to evict when the set is full: a currently failed pair if there is one (the one which
+     * failed first), otherwise the pair with the lowest priority. The selected pair is never evicted.
+     * @return the pair to evict, or {@code null} if there is no candidate.
+     */
+    private CandidatePair findKeepAlivePairToEvict()
+    {
+        CandidatePair evict = null;
+        Instant evictFailedSince = null;
+        for (CandidatePair candidate : keepAlivePairs)
+        {
+            if (candidate.equals(selectedPair))
+            {
+                continue;
+            }
+            Instant failedSince = keepAlivePairsFailedSince.get(candidate);
+            boolean better;
+            if (evict == null)
+            {
+                better = true;
+            }
+            else if (failedSince != null || evictFailedSince != null)
+            {
+                // Prefer to evict failed pairs, and among those the one which failed first.
+                better = failedSince != null
+                    && (evictFailedSince == null || failedSince.isBefore(evictFailedSince));
+            }
+            else
+            {
+                better = candidate.getPriority() < evict.getPriority();
+            }
+            if (better)
+            {
+                evict = candidate;
+                evictFailedSince = failedSince;
+            }
+        }
+        return evict;
     }
 
     /**
@@ -1156,11 +1243,7 @@ public class Component
             Duration failedFor = Duration.between(failedSince, now);
             if (failedFor.compareTo(failedKeepAlivePairTimeout) >= 0)
             {
-                keepAlivePairs.remove(pair);
-                keepAlivePairsFailedSince.remove(pair);
-                keepAlivePairsRemovedAt.put(pair, now);
-                logger.info("Removing keep-alive pair " + pair.toRedactedShortString()
-                        + ", failed for " + failedFor.toMillis() + " ms.");
+                removeKeepAlivePair(pair, "failed for " + failedFor.toMillis() + " ms.");
             }
         }
     }
