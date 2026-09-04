@@ -20,6 +20,7 @@ package org.ice4j.ice;
 import java.beans.*;
 import java.io.*;
 import java.net.*;
+import java.time.*;
 import java.util.*;
 import java.util.concurrent.*;
 
@@ -151,9 +152,38 @@ public class Component
     private final KeepAliveStrategy keepAliveStrategy;
 
     /**
-     * The set of pairs which this component wants to keep alive.
+     * The set of pairs which this component wants to keep alive. Modifications are synchronized on the set itself (so
+     * that compound operations such as check-then-add are atomic), while iteration is lock-free.
      */
     private final Set<CandidatePair> keepAlivePairs = Collections.newSetFromMap(new ConcurrentHashMap<>());
+
+    /**
+     * The time at which each keep-alive pair currently in the FAILED state first failed (since it was last
+     * SUCCEEDED). Used to remove pairs which have been failed for too long, see {@link #failedKeepAlivePairTimeout}.
+     */
+    private final Map<CandidatePair, Instant> keepAlivePairsFailedSince = new ConcurrentHashMap<>();
+
+    /**
+     * How long a keep-alive pair (other than the selected pair) may stay FAILED before it is removed from
+     * {@link #keepAlivePairs}. Zero or negative disables the removal.
+     */
+    private final Duration failedKeepAlivePairTimeout = AgentConfig.config.getKeepAliveFailedPairTimeout();
+
+    /**
+     * The time at which pairs were removed from {@link #keepAlivePairs} because they had been failed for too long (or
+     * evicted). Such a pair is not added again (for re-checking) until {@link #failedKeepAlivePairTimeout} has passed.
+     */
+    private final Map<CandidatePair, Instant> keepAlivePairsRemovedAt = new ConcurrentHashMap<>();
+
+    /**
+     * The maximum number of pairs in {@link #keepAlivePairs}. Zero or negative means no limit.
+     */
+    private final int maxKeepAlivePairs = AgentConfig.config.getMaxKeepAlivePairs();
+
+    /**
+     * The clock used to measure how long keep-alive pairs have been failed. Replaceable for tests.
+     */
+    private Clock clock = Clock.systemUTC();
 
     /**
      * External callback for the push API. Called with every packet received via {@link #handleBuffer(Buffer)}.
@@ -899,6 +929,8 @@ public class Component
 
         getParentStream().removePairStateChangeListener(this);
         keepAlivePairs.clear();
+        keepAlivePairsFailedSince.clear();
+        keepAlivePairsRemovedAt.clear();
         if (componentSocket != null)
         {
             componentSocket.close();
@@ -1025,13 +1057,261 @@ public class Component
      */
     protected void setSelectedPair(CandidatePair pair)
     {
-        if (keepAliveStrategy == KeepAliveStrategy.SELECTED_ONLY)
+        synchronized (keepAlivePairs)
         {
-            keepAlivePairs.clear();
-        }
-        keepAlivePairs.add(pair);
+            // Set the selected pair before adding it to the set, so that it is recognized as selected by any
+            // concurrent operation on the set.
+            this.selectedPair = pair;
 
-        this.selectedPair = pair;
+            if (keepAliveStrategy == KeepAliveStrategy.SELECTED_ONLY)
+            {
+                keepAlivePairs.clear();
+            }
+            else
+            {
+                // The selected pair takes the place of any equivalent pair (e.g. the host pair when the selected pair
+                // uses the mapped address of the same socket).
+                keepAlivePairs.removeIf(
+                    existing -> !existing.equals(pair) && isEquivalentForKeepAlive(existing, pair));
+            }
+            keepAlivePairs.add(pair);
+
+            // The selected pair is always added. Make room for it if necessary.
+            while (maxKeepAlivePairs > 0 && keepAlivePairs.size() > maxKeepAlivePairs)
+            {
+                CandidatePair evict = findKeepAlivePairToEvict();
+                if (evict == null)
+                {
+                    break;
+                }
+                removeKeepAlivePair(evict, "to make room for the selected pair.");
+            }
+        }
+    }
+
+    /**
+     * Adds {@code pair} to the set of keep-alive pairs, unless the set already contains it or a pair equivalent to it
+     * (see {@link #isEquivalentForKeepAlive(CandidatePair, CandidatePair)}), or the set is full and no pair can be
+     * evicted to make room. A failed pair can always be evicted. A succeeded pair can only be evicted for a pair which
+     * has succeeded and has a higher priority, so that remote peers can not displace working pairs by advertising
+     * high-priority candidates for pairs which have not succeeded.
+     * @return {@code true} if the pair was added.
+     */
+    boolean addKeepAlivePair(CandidatePair pair)
+    {
+        synchronized (keepAlivePairs)
+        {
+            if (keepAlivePairs.contains(pair))
+            {
+                return false;
+            }
+            for (CandidatePair existing : keepAlivePairs)
+            {
+                if (isEquivalentForKeepAlive(existing, pair))
+                {
+                    logger.debug(() -> "Not adding keep-alive pair " + pair.toRedactedShortString()
+                            + ", equivalent to " + existing.toRedactedShortString());
+                    return false;
+                }
+            }
+            Instant now = clock.instant();
+            if (pair.getState() != CandidatePairState.SUCCEEDED)
+            {
+                // A pair which has not succeeded is added in order to re-check it. Don't do that too often for a
+                // pair which we have recently removed.
+                keepAlivePairsRemovedAt.values().removeIf(t -> !t.plus(failedKeepAlivePairTimeout).isAfter(now));
+                if (keepAlivePairsRemovedAt.containsKey(pair))
+                {
+                    logger.debug(() -> "Not adding keep-alive pair " + pair.toRedactedShortString()
+                            + ", it was recently removed.");
+                    return false;
+                }
+            }
+
+            if (maxKeepAlivePairs > 0 && keepAlivePairs.size() >= maxKeepAlivePairs)
+            {
+                CandidatePair evict = findKeepAlivePairToEvict();
+                boolean canEvict = evict != null
+                    && (keepAlivePairsFailedSince.containsKey(evict)
+                        || (pair.getState() == CandidatePairState.SUCCEEDED
+                            && evict.getPriority() < pair.getPriority()));
+                if (!canEvict)
+                {
+                    logger.debug(() -> "Not adding keep-alive pair " + pair.toRedactedShortString()
+                            + ", already keeping alive " + keepAlivePairs.size() + " pairs.");
+                    return false;
+                }
+                removeKeepAlivePair(evict, "to make room for " + pair.toRedactedShortString());
+            }
+
+            keepAlivePairs.add(pair);
+            keepAlivePairsRemovedAt.remove(pair);
+            if (pair.getState() == CandidatePairState.FAILED)
+            {
+                // A pair which is added while already failed gets the full timeout from now.
+                keepAlivePairsFailedSince.put(pair, now);
+            }
+            else
+            {
+                keepAlivePairsFailedSince.remove(pair);
+            }
+            return true;
+        }
+    }
+
+    /**
+     * Removes a pair from the set of keep-alive pairs. Must be called with the lock on {@link #keepAlivePairs} held.
+     * @param reason a description of the reason for the removal, for logging.
+     */
+    private void removeKeepAlivePair(CandidatePair pair, String reason)
+    {
+        keepAlivePairs.remove(pair);
+        keepAlivePairsFailedSince.remove(pair);
+        keepAlivePairsRemovedAt.put(pair, clock.instant());
+        logger.info("Removing keep-alive pair " + pair.toRedactedShortString() + " " + reason);
+    }
+
+    /**
+     * Finds the keep-alive pair to evict when the set is full: a currently failed pair if there is one (the one which
+     * failed first), otherwise the pair with the lowest priority. The selected pair is never evicted.
+     * @return the pair to evict, or {@code null} if there is no candidate.
+     */
+    private CandidatePair findKeepAlivePairToEvict()
+    {
+        CandidatePair evict = null;
+        Instant evictFailedSince = null;
+        for (CandidatePair candidate : keepAlivePairs)
+        {
+            if (candidate.equals(selectedPair))
+            {
+                continue;
+            }
+            Instant failedSince = keepAlivePairsFailedSince.get(candidate);
+            boolean better;
+            if (evict == null)
+            {
+                better = true;
+            }
+            else if (failedSince != null || evictFailedSince != null)
+            {
+                // Prefer to evict failed pairs, and among those the one which failed first.
+                better = failedSince != null
+                    && (evictFailedSince == null || failedSince.isBefore(evictFailedSince));
+            }
+            else
+            {
+                better = candidate.getPriority() < evict.getPriority();
+            }
+            if (better)
+            {
+                evict = candidate;
+                evictFailedSince = failedSince;
+            }
+        }
+        return evict;
+    }
+
+    /**
+     * Handles a keep-alive pair transitioning to (or staying in) the FAILED state: removes it from the set of
+     * keep-alive pairs if it has been failed for longer than {@link #failedKeepAlivePairTimeout}. The selected pair
+     * is never removed. Keep-alive checks continue to be sent to a failed pair until it is removed, so it can recover
+     * (which resets the timer).
+     */
+    private void maybeRemoveFailedKeepAlivePair(CandidatePair pair)
+    {
+        synchronized (keepAlivePairs)
+        {
+            if (!keepAlivePairs.contains(pair) || pair.equals(selectedPair))
+            {
+                return;
+            }
+
+            Instant now = clock.instant();
+            Instant failedSince = keepAlivePairsFailedSince.putIfAbsent(pair, now);
+            if (failedSince == null)
+            {
+                // This is the first failure, start the timer.
+                return;
+            }
+
+            if (failedKeepAlivePairTimeout.isZero() || failedKeepAlivePairTimeout.isNegative())
+            {
+                // Removal is disabled. We still track the failure above.
+                return;
+            }
+
+            Duration failedFor = Duration.between(failedSince, now);
+            if (failedFor.compareTo(failedKeepAlivePairTimeout) >= 0)
+            {
+                removeKeepAlivePair(pair, "failed for " + failedFor.toMillis() + " ms.");
+            }
+        }
+    }
+
+    /**
+     * Sets the clock used to measure how long keep-alive pairs have been failed. For tests.
+     */
+    void setClock(Clock clock)
+    {
+        this.clock = Objects.requireNonNull(clock);
+    }
+
+    /**
+     * @return {@code true} if this component's keep-alive strategy calls for keeping {@code pair} alive (once it
+     * succeeds), not counting the selected pair which is always kept alive.
+     */
+    boolean wantsKeepAlive(CandidatePair pair)
+    {
+        switch (keepAliveStrategy)
+        {
+        case ALL_SUCCEEDED:
+            return true;
+        case SELECTED_AND_TCP:
+            Transport transport = pair.getLocalCandidate().getTransport();
+            // Pairs with a remote TCP port 9 cannot be checked. Instead, the corresponding pair with the peer
+            // reflexive candidate needs to be checked. However, we observe such pairs transitioning into the SUCCEEDED
+            // state. Ignore them.
+            return (transport == Transport.TCP || transport == Transport.SSLTCP)
+                && pair.getRemoteCandidate().getTransportAddress().getPort() != 9;
+        case SELECTED_ONLY:
+        default:
+            return false;
+        }
+    }
+
+    /**
+     * @return {@code true} if one of the pairs which this component keeps alive has {@code remoteAddress} as its
+     * remote address.
+     */
+    boolean hasKeepAlivePairForRemoteAddress(TransportAddress remoteAddress)
+    {
+        for (CandidatePair pair : keepAlivePairs)
+        {
+            if (pair.getRemoteCandidate().getTransportAddress().equals(remoteAddress))
+            {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /**
+     * Two pairs are equivalent for the purpose of keep-alives when they use the same local socket (i.e. their local
+     * candidates have the same base) to reach the same remote address. This is the case for the pair with a host
+     * candidate and the pair with a server reflexive (or otherwise mapped) candidate derived from it. Keeping both
+     * alive is redundant.
+     */
+    private static boolean isEquivalentForKeepAlive(CandidatePair a, CandidatePair b)
+    {
+        return getBaseAddress(a).equals(getBaseAddress(b))
+            && a.getRemoteCandidate().getTransportAddress().equals(b.getRemoteCandidate().getTransportAddress());
+    }
+
+    private static TransportAddress getBaseAddress(CandidatePair pair)
+    {
+        LocalCandidate local = pair.getLocalCandidate();
+        LocalCandidate base = local.getBase();
+        return (base != null ? base : local).getTransportAddress();
     }
 
     /**
@@ -1170,34 +1450,21 @@ public class Component
             CandidatePairState newState
                 = (CandidatePairState) event.getNewValue();
 
-            if (CandidatePairState.SUCCEEDED.equals(newState))
+            if (CandidatePairState.FAILED.equals(newState))
             {
-                if (keepAliveStrategy == KeepAliveStrategy.ALL_SUCCEEDED)
-                {
-                    addToKeepAlive = true;
-                }
-                else if (keepAliveStrategy == KeepAliveStrategy.SELECTED_AND_TCP)
-                {
-                    Transport transport
-                        = pair.getLocalCandidate().getTransport();
-                    addToKeepAlive = transport == Transport.TCP
-                        || transport == Transport.SSLTCP;
-
-                    // Pairs with a remote TCP port 9 cannot be checked.
-                    // Instead, the corresponding pair with the peer reflexive
-                    // candidate needs to be checked. However, we observe
-                    // such pairs transitioning into the SUCCEEDED state.
-                    // Ignore them.
-                    addToKeepAlive
-                        &= pair.getRemoteCandidate()
-                                .getTransportAddress().getPort() != 9;
-                }
+                maybeRemoveFailedKeepAlivePair(pair);
+            }
+            else if (CandidatePairState.SUCCEEDED.equals(newState))
+            {
+                // The pair recovered (or succeeded for the first time).
+                keepAlivePairsFailedSince.remove(pair);
+                addToKeepAlive = wantsKeepAlive(pair);
             }
         }
 
-        if (addToKeepAlive && !keepAlivePairs.contains(pair))
+        if (addToKeepAlive)
         {
-            keepAlivePairs.add(pair);
+            addKeepAlivePair(pair);
         }
     }
 

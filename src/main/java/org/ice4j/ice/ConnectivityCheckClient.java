@@ -884,7 +884,16 @@ class ConnectivityCheckClient
         CandidatePair pair
             = (CandidatePair) ev.getTransactionID() .getApplicationData();
 
-        logger.info("timeout for pair: " + pair.toRedactedShortString() + ", failing.");
+        if (pair.getState() == CandidatePairState.FAILED)
+        {
+            // Keep-alive checks are sent to pairs that have already failed (so they can recover). Don't log at
+            // INFO every time such a check times out again.
+            logger.debug(() -> "timeout for pair: " + pair.toRedactedShortString() + ", already failed.");
+        }
+        else
+        {
+            logger.info("timeout for pair: " + pair.toRedactedShortString() + ", failing.");
+        }
         pair.setStateFailed();
         updateCheckListAndTimerStates(pair);
     }

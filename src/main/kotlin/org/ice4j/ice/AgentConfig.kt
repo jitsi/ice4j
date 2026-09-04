@@ -86,6 +86,21 @@ class AgentConfig {
         "ice4j.send-to-last-received-from-address".from(configSource)
     }
 
+    /**
+     * How long a keep-alive pair (other than the selected pair) may stay in the FAILED state before it is removed
+     * from the set of keep-alive pairs. Zero or negative disables the removal.
+     */
+    val keepAliveFailedPairTimeout: Duration by config {
+        "ice4j.keep-alive.failed-pair-timeout".from(configSource)
+    }
+
+    /**
+     * The maximum number of pairs to keep alive per component. Zero or negative means no limit.
+     */
+    val maxKeepAlivePairs: Int by config {
+        "ice4j.keep-alive.max-pairs".from(configSource)
+    }
+
     companion object {
         @JvmField
         val config = AgentConfig()
