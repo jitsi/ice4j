@@ -46,7 +46,11 @@ class StaticMappingCandidateHarvesterTest : ShouldSpec() {
             every { logger } returns createLogger()
             every { componentID } returns Component.RTP
             every { localCandidates } returns listOf(
-                hostCandidate1, hostCandidate2, hostCandidate3, srflxCandidate1, srflxCandidate2
+                hostCandidate1,
+                hostCandidate2,
+                hostCandidate3,
+                srflxCandidate1,
+                srflxCandidate2
             )
             every { addLocalCandidate(any()) } returns true
         }
