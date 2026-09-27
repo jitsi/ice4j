@@ -20,6 +20,7 @@ package org.ice4j.attribute;
 import java.util.*;
 
 import org.ice4j.*;
+import org.ice4j.util.StringUtils;
 
 /**
  * The RESERVATION-TOKEN attribute contains a token that identifies a
@@ -235,12 +236,12 @@ public class ReservationTokenAttribute
     /**
      * Returns a string representation of the token.
      *
-     * @return a hex string representing the token.
+     * @return a hex string representing the token in format: RESERVATION-TOKEN{hexValue}
      */
     @Override
     public String toString()
     {
-        return ReservationTokenAttribute.toString(this.reservationToken);
+        return getName() + "{" + StringUtils.formatBytesToHex(this.reservationToken) + "}";
     }
     
     /**
@@ -249,22 +250,28 @@ public class ReservationTokenAttribute
      * @param reservationToken the Reservation Token to convert into
      *            <tt>String</tt>.
      * 
-     * @return a hex string representing the token.
+     * @return a hex string representing the token in format: 0xAABBCCDD...
+     * @deprecated Use {@link StringUtils#formatBytesToHex(byte[])} instead
      */
+    @Deprecated
     public static String toString(byte[] reservationToken)
     {
-        StringBuilder idStr = new StringBuilder();
-
-        idStr.append("0x");
-        for (int i = 0; i < reservationToken.length; i++)
-        {
-            if ((reservationToken[i] & 0xFF) <= 15)
-                idStr.append("0");
-
-            idStr.append(Integer.toHexString(
-                reservationToken[i] & 0xFF).toUpperCase());
-        }
-        return idStr.toString();
+        return "0x" + StringUtils.formatBytesToHex(reservationToken);
+    }
+    
+    /**
+     * Converts a byte array to a hex string without the "0x" prefix.
+     * 
+     * @param reservationToken the Reservation Token to convert into
+     *            <tt>String</tt>.
+     * 
+     * @return a hex string representing the token.
+     * @deprecated Use {@link StringUtils#formatBytesToHex(byte[])} instead
+     */
+    @Deprecated
+    public static String toHexString(byte[] reservationToken)
+    {
+        return StringUtils.formatBytesToHex(reservationToken);
     }
     
     /**

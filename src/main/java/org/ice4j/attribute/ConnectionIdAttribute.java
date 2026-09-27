@@ -172,4 +172,14 @@ public class ConnectionIdAttribute
         this.connectionIdValue = connectionIdValue;
     }
 
+    /**
+     * Returns a string representation of the connection ID attribute.
+     *
+     * @return a string in format: CONNECTION-ID{value}
+     */
+    @Override
+    public String toString()
+    {
+        return getName() + "{" + connectionIdValue + "}";
+    }
 }

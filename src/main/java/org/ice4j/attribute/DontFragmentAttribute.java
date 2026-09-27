@@ -117,4 +117,15 @@ public class DontFragmentAttribute extends Attribute
             throw new StunException("length invalid");
         }
     }
+
+    /**
+     * Returns a string representation of the DONT-FRAGMENT attribute.
+     *
+     * @return a string in format: DONT-FRAGMENT{}
+     */
+    @Override
+    public String toString()
+    {
+        return getName() + "{}";
+    }
 }

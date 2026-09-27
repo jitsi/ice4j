@@ -535,4 +535,16 @@ public class ErrorCodeAttribute extends Attribute
                             0, reasonBytes.length);
         setReasonPhrase(new String(reasonBytes));
     }
+
+    /**
+     * Returns a string representation of the error code attribute.
+     *
+     * @return a string in format: ERROR-CODE{code=XXX reason phrase}
+     */
+    @Override
+    public String toString()
+    {
+        return getName() + "{code=" + getErrorCode() + 
+               (getReasonPhrase() != null ? " reason=" + getReasonPhrase() : "") + "}";
+    }
 }

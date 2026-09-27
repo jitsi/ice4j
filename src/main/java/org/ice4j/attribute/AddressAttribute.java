@@ -329,4 +329,35 @@ abstract class AddressAttribute extends Attribute
             throw new StunException(e);
         }
     }
+
+    /**
+     * Returns a string representation of this address attribute in format:
+     * - IPv4: ATTRIBUTE-NAME{address:port}
+     * - IPv6: ATTRIBUTE-NAME{[address]:port}
+     *
+     * @return a string representation of this attribute
+     */
+    @Override
+    public String toString()
+    {
+        if (address == null)
+        {
+            return getName() + "{}";
+        }
+
+        StringBuilder sb = new StringBuilder();
+        sb.append(getName()).append("{");
+        
+        if (getFamily() == ADDRESS_FAMILY_IPV6)
+        {
+            sb.append("[").append(address.getHostAddress()).append("]");
+        }
+        else
+        {
+            sb.append(address.getHostAddress());
+        }
+        
+        sb.append(":").append(address.getPort()).append("}");
+        return sb.toString();
+    }
 }

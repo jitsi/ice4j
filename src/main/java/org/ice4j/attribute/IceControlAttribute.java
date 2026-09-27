@@ -182,4 +182,15 @@ public abstract class IceControlAttribute
     {
         return tieBreaker;
     }
+
+    /**
+     * Returns a string representation of the ICE control attribute.
+     *
+     * @return a string in format: ICE-CONTROLLING{tiebreaker} or ICE-CONTROLLED{tiebreaker}
+     */
+    @Override
+    public String toString()
+    {
+        return getName() + "{" + tieBreaker + "}";
+    }
 }

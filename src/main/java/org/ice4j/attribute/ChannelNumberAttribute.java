@@ -178,4 +178,15 @@ public class ChannelNumberAttribute extends Attribute
         }
         return false;
     }
+
+    /**
+     * Returns a string representation of the channel number attribute.
+     *
+     * @return a string in format: CHANNEL-NUMBER{value}
+     */
+    @Override
+    public String toString()
+    {
+        return getName() + "{" + (int)channelNumber + "}";
+    }
 }
