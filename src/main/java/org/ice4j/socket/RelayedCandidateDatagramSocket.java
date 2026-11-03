@@ -20,6 +20,7 @@ package org.ice4j.socket;
 import java.io.*;
 import java.net.*;
 import java.util.*;
+import java.util.concurrent.*;
 import java.util.logging.*;
 
 import org.ice4j.*;
@@ -86,6 +87,18 @@ public class RelayedCandidateDatagramSocket
      * CreatePermission request.
      */
     private static final long PERMISSION_LIFETIME = 300 /* seconds */ * 1000L;
+
+    /**
+     * The default value of {@link #permissionRetryInitialDelay}, used if the
+     * configured value is invalid.
+     */
+    private static final long DEFAULT_PERMISSION_RETRY_INITIAL_DELAY = 1000;
+
+    /**
+     * The default value of {@link #permissionRetryMaxDelay}, used if the
+     * configured value is invalid.
+     */
+    private static final long DEFAULT_PERMISSION_RETRY_MAX_DELAY = 30_000;
 
     /**
      * The time in milliseconds before a TURN permission expires that a
@@ -178,6 +191,19 @@ public class RelayedCandidateDatagramSocket
     private final TurnCandidateHarvest turnCandidateHarvest;
 
     /**
+     * The delay in milliseconds before a CreatePermission <tt>Request</tt>
+     * which failed with a transient error is retried. It doubles on each
+     * consecutive failure up to {@link #permissionRetryMaxDelay}.
+     */
+    private final long permissionRetryInitialDelay;
+
+    /**
+     * The maximum delay in milliseconds between retries of a CreatePermission
+     * <tt>Request</tt>.
+     */
+    private final long permissionRetryMaxDelay;
+
+    /**
      * Initializes a new <tt>RelayedCandidateDatagramSocket</tt> instance which
      * is to be the <tt>socket</tt> of a specific <tt>RelayedCandidate</tt>
      * harvested by a specific <tt>TurnCandidateHarvest</tt>.
@@ -198,6 +224,24 @@ public class RelayedCandidateDatagramSocket
 
         this.relayedCandidate = relayedCandidate;
         this.turnCandidateHarvest = turnCandidateHarvest;
+
+        long initialDelay
+            = HarvestConfig.config.getTurnPermissionRetryInitialDelay()
+                .toMillis();
+        long maxDelay
+            = HarvestConfig.config.getTurnPermissionRetryMaxDelay().toMillis();
+
+        if ((initialDelay <= 0) || (maxDelay < initialDelay))
+        {
+            logger.warning(
+                    "Invalid TURN permission retry delays (initial="
+                        + initialDelay + " ms, max=" + maxDelay
+                        + " ms), using the defaults.");
+            initialDelay = DEFAULT_PERMISSION_RETRY_INITIAL_DELAY;
+            maxDelay = DEFAULT_PERMISSION_RETRY_MAX_DELAY;
+        }
+        permissionRetryInitialDelay = initialDelay;
+        permissionRetryMaxDelay = maxDelay;
 
         this.turnCandidateHarvest
                 .harvester
@@ -655,12 +699,135 @@ public class RelayedCandidateDatagramSocket
             setChannelNumberIsConfirmed(request, false);
             break;
         case Message.CREATEPERMISSION_REQUEST:
-            setChannelBound(request, false);
+            processCreatePermissionFailure(response, request);
             break;
         default:
             break;
         }
         return false;
+    }
+
+    /**
+     * Handles the failure of a CreatePermission <tt>Request</tt> (an error
+     * <tt>Response</tt> or a transaction timeout) by updating the retry state
+     * of the <tt>Channel</tt> for the peer in question and dropping the
+     * <tt>DatagramPacket</tt>s queued for it.
+     * <p>
+     * The queued packets are dropped (as an unreliable datagram socket may)
+     * so that the queue for a peer the server never permits does not grow
+     * without bound, and so that stale packets are not delivered after a
+     * backoff. Consequently a retry happens only when a new packet is sent to
+     * the peer after the backoff has elapsed. Permanent errors such as 403
+     * Forbidden are never retried.
+     *
+     * @param response the error <tt>Response</tt> to <tt>request</tt> or
+     * <tt>null</tt> if the transaction failed without a response
+     * @param request the CreatePermission <tt>Request</tt> which failed
+     */
+    private void processCreatePermissionFailure(
+            Response response,
+            Request request)
+    {
+        XorPeerAddressAttribute peerAddressAttribute
+            = (XorPeerAddressAttribute)
+                request.getAttribute(Attribute.XOR_PEER_ADDRESS);
+        byte[] transactionID = request.getTransactionID();
+        TransportAddress peerAddress
+            = peerAddressAttribute.getAddress(transactionID);
+
+        synchronized (packetsToSend)
+        {
+            Channel channel = findChannel(peerAddress);
+
+            /*
+             * Ignore a failure of a transaction other than the one we are
+             * waiting for, e.g. a late failure of a request which has been
+             * superseded by a forced re-bind.
+             */
+            if ((channel == null) || !channel.isBindingWith(transactionID))
+            {
+                logger.fine(
+                        "Ignoring a CreatePermission failure for peer "
+                            + peerAddress.toRedactedString()
+                            + " which we are not waiting for.");
+                return;
+            }
+
+            channel.setBound(false, transactionID);
+
+            int droppedPacketCount = 0;
+            Iterator<DatagramPacket> it = packetsToSend.iterator();
+
+            while (it.hasNext())
+            {
+                DatagramPacket p = it.next();
+
+                if (channel.peerAddressEquals(
+                        new TransportAddress(
+                                p.getAddress(),
+                                p.getPort(),
+                                Transport.UDP)))
+                {
+                    it.remove();
+                    droppedPacketCount++;
+                }
+            }
+            channel.bindFailed(response, droppedPacketCount);
+            packetsToSend.notifyAll();
+        }
+    }
+
+    /**
+     * Finds the <tt>Channel</tt> in {@link #channels} for a specific peer
+     * <tt>TransportAddress</tt>. The caller must hold the
+     * {@link #packetsToSend} lock.
+     *
+     * @param peerAddress the <tt>TransportAddress</tt> of the peer
+     * @return the <tt>Channel</tt> for <tt>peerAddress</tt> or <tt>null</tt>
+     * if there is none
+     */
+    private Channel findChannel(TransportAddress peerAddress)
+    {
+        for (Channel channel : channels)
+        {
+            if (channel.peerAddressEquals(peerAddress))
+                return channel;
+        }
+        return null;
+    }
+
+    /**
+     * Determines whether the error <tt>Response</tt> to a CreatePermission
+     * <tt>Request</tt> indicates a condition which will not change if the
+     * request is retried.
+     *
+     * @param response the error <tt>Response</tt> or <tt>null</tt> if the
+     * transaction failed without a response
+     * @return <tt>true</tt> if retrying the request is pointless
+     */
+    private static boolean isPermanentCreatePermissionError(Response response)
+    {
+        if (response == null)
+            return false;
+
+        ErrorCodeAttribute errorCodeAttribute
+            = (ErrorCodeAttribute) response.getAttribute(Attribute.ERROR_CODE);
+
+        if (errorCodeAttribute == null)
+            return false;
+
+        switch (errorCodeAttribute.getErrorCode())
+        {
+        case 400: // Bad Request
+        case 401: // Unauthorized. The harvest only forwards a 401 here if it
+                  // could not retry with credentials, see
+                  // StunCandidateHarvest#processUnauthorized.
+        case 403: // Forbidden: the server does not allow the peer address
+        case 443: // Peer Address Family Mismatch
+            return true;
+        default:
+            return false;
+        }
     }
 
     /**
@@ -915,26 +1082,13 @@ public class RelayedCandidateDatagramSocket
                      * Get a channel to the peer which is to receive the
                      * packetToSend.
                      */
-                    int channelCount = channels.size();
                     TransportAddress peerAddress
                         = new TransportAddress(
                                 packetToSend.getAddress(),
                                 packetToSend.getPort(),
                                 Transport.UDP);
-                    Channel channel = null;
+                    Channel channel = findChannel(peerAddress);
 
-                    for (int channelIndex = 0;
-                            channelIndex < channelCount;
-                            channelIndex++)
-                    {
-                        Channel aChannel = channels.get(channelIndex);
-
-                        if (aChannel.peerAddressEquals(peerAddress))
-                        {
-                            channel = aChannel;
-                            break;
-                        }
-                    }
                     if (channel == null)
                     {
                         channel = new Channel(peerAddress);
@@ -985,6 +1139,18 @@ public class RelayedCandidateDatagramSocket
                                         sex);
                             }
                         }
+                        break;
+                    }
+                    else if (channel.isFailed() || channel.isBackingOff())
+                    {
+                        /*
+                         * Either we have given up on obtaining a permission
+                         * for this peer (the TURN server refused it with a
+                         * permanent error), or a recent attempt has failed and
+                         * we are backing off before trying again. Either way
+                         * packetToSend cannot be delivered now, so drop it.
+                         */
+                        packetsToSend.remove(packetToSendIndex);
                         break;
                     }
                     else if (forceBind || !channel.isBinding())
@@ -1101,20 +1267,12 @@ public class RelayedCandidateDatagramSocket
 
         synchronized (packetsToSend)
         {
-            int channelCount = channels.size();
+            Channel channel = findChannel(peerAddress);
 
-            for (int channelIndex = 0;
-                    channelIndex < channelCount;
-                    channelIndex++)
+            if (channel != null)
             {
-                Channel channel = channels.get(channelIndex);
-
-                if (channel.peerAddressEquals(peerAddress))
-                {
-                    channel.setBound(bound, transactionID);
-                    packetsToSend.notifyAll();
-                    break;
-                }
+                channel.setBound(bound, transactionID);
+                packetsToSend.notifyAll();
             }
         }
     }
@@ -1142,22 +1300,14 @@ public class RelayedCandidateDatagramSocket
 
         synchronized (packetsToSend)
         {
-            int channelCount = channels.size();
+            Channel channel = findChannel(peerAddress);
 
-            for (int channelIndex = 0;
-                    channelIndex < channelCount;
-                    channelIndex++)
+            if (channel != null)
             {
-                Channel channel = channels.get(channelIndex);
-
-                if (channel.peerAddressEquals(peerAddress))
-                {
-                    channel.setChannelNumberIsConfirmed(
-                            channelNumberIsConfirmed,
-                            transactionID);
-                    packetsToSend.notifyAll();
-                    break;
-                }
+                channel.setChannelNumberIsConfirmed(
+                        channelNumberIsConfirmed,
+                        transactionID);
+                packetsToSend.notifyAll();
             }
         }
     }
@@ -1181,6 +1331,42 @@ public class RelayedCandidateDatagramSocket
          * <tt>Request</tt> has been sent to bind/install this <tt>Channel</tt>.
          */
         private byte[] bindingTransactionID;
+
+        /**
+         * The number of consecutive CreatePermission attempts for this
+         * <tt>Channel</tt> which have failed. Used for logging.
+         */
+        private int consecutiveBindFailures = 0;
+
+        /**
+         * The delay in milliseconds which was applied after the latest failed
+         * CreatePermission attempt, or <tt>0</tt> if there is no current
+         * series of failures. Doubles on each consecutive failure up to
+         * {@link #permissionRetryMaxDelay}.
+         */
+        private long currentRetryDelay = 0;
+
+        /**
+         * The indicator which determines whether {@link #backoffEndNanos} is
+         * valid, i.e. whether a CreatePermission attempt has failed and the
+         * backoff before retrying has not been observed to have elapsed yet.
+         */
+        private boolean inBackoff = false;
+
+        /**
+         * The value of {@link System#nanoTime()} (a monotonic clock, so wall
+         * clock steps do not affect the backoff) at which the backoff after the
+         * latest failed CreatePermission attempt ends. Valid only while
+         * {@link #inBackoff} is <tt>true</tt>.
+         */
+        private long backoffEndNanos;
+
+        /**
+         * The indicator which determines whether binding/installing this
+         * <tt>Channel</tt> has been given up on because the TURN server
+         * rejected the permission with a permanent error.
+         */
+        private boolean failed = false;
 
         /**
          * The indication which determines whether a confirmation has been
@@ -1306,6 +1492,109 @@ public class RelayedCandidateDatagramSocket
                             channelBindRequest);
                 }
             }
+        }
+
+        /**
+         * Notifies this <tt>Channel</tt> that its latest CreatePermission
+         * <tt>Request</tt> has failed and updates its retry state accordingly.
+         *
+         * @param response the error <tt>Response</tt> or <tt>null</tt> if the
+         * transaction failed without a response (e.g. it timed out)
+         * @param droppedPacketCount the number of queued packets to the peer
+         * of this <tt>Channel</tt> which have been dropped because of the
+         * failure (for logging)
+         */
+        public void bindFailed(Response response, int droppedPacketCount)
+        {
+            consecutiveBindFailures++;
+
+            if (isPermanentCreatePermissionError(response))
+            {
+                failed = true;
+                logger.warning(
+                        "TURN server " + turnCandidateHarvest.harvester.stunServer
+                            + " refused a permission for peer "
+                            + peerAddress.toRedactedString()
+                            + " with error "
+                            + (int) ((ErrorCodeAttribute) response.getAttribute(
+                                    Attribute.ERROR_CODE)).getErrorCode()
+                            + ". Giving up on it and dropping packets to it"
+                            + " (" + droppedPacketCount + " dropped now).");
+            }
+            else
+            {
+                currentRetryDelay
+                    = (currentRetryDelay == 0)
+                        ? permissionRetryInitialDelay
+                        : Math.min(
+                                currentRetryDelay * 2,
+                                permissionRetryMaxDelay);
+                inBackoff = true;
+                backoffEndNanos
+                    = System.nanoTime()
+                        + TimeUnit.MILLISECONDS.toNanos(currentRetryDelay);
+
+                String message
+                    = "Failed to create a TURN permission on "
+                        + turnCandidateHarvest.harvester.stunServer
+                        + " for peer " + peerAddress.toRedactedString()
+                        + " (" + consecutiveBindFailures
+                        + " consecutive failures, " + droppedPacketCount
+                        + " packets dropped). Will retry when a packet is"
+                        + " next sent to it after " + currentRetryDelay
+                        + " ms.";
+
+                // Log the first failure of a series at INFO and the rest at
+                // FINE to avoid flooding the log during an outage.
+                if (consecutiveBindFailures == 1)
+                    logger.info(message);
+                else
+                    logger.fine(message);
+            }
+        }
+
+        /**
+         * Determines whether a CreatePermission <tt>Request</tt> with a
+         * specific transaction ID is the one this <tt>Channel</tt> is waiting
+         * for a result of.
+         *
+         * @param transactionID the ID of the transaction to check
+         * @return <tt>true</tt> if this instance is binding/installing itself
+         * with the transaction identified by <tt>transactionID</tt>
+         */
+        public boolean isBindingWith(byte[] transactionID)
+        {
+            return
+                (bindingTransactionID != null)
+                    && Arrays.equals(bindingTransactionID, transactionID);
+        }
+
+        /**
+         * Determines whether this <tt>Channel</tt> is backing off after a
+         * failed CreatePermission attempt, i.e. whether it is too early to
+         * attempt to bind/install it again.
+         *
+         * @return <tt>true</tt> if the backoff after the latest failure has
+         * not elapsed yet; otherwise, <tt>false</tt>
+         */
+        public boolean isBackingOff()
+        {
+            if (inBackoff && (System.nanoTime() - backoffEndNanos >= 0))
+                inBackoff = false;
+            return inBackoff;
+        }
+
+        /**
+         * Determines whether binding/installing this <tt>Channel</tt> has been
+         * given up on.
+         *
+         * @return <tt>true</tt> if no further attempts to bind/install this
+         * <tt>Channel</tt> are to be made and packets to its peer are to be
+         * dropped
+         */
+        public boolean isFailed()
+        {
+            return failed;
         }
 
         /**
@@ -1511,7 +1800,7 @@ public class RelayedCandidateDatagramSocket
          * as bound/installed; otherwise, <tt>false</tt>
          * @param boundTransactionID an array of <tt>byte</tt>s which represents
          * the ID of the transaction with which the confirmation about the
-         * binding/installing has arrived
+         * binding/installing has arrived (currently unused)
          */
         public void setBound(boolean bound, byte[] boundTransactionID)
         {
@@ -1519,6 +1808,13 @@ public class RelayedCandidateDatagramSocket
             {
                 bindingTransactionID = null;
                 this.bound = bound;
+            }
+            if (bound)
+            {
+                // A successful binding ends any series of failures.
+                consecutiveBindFailures = 0;
+                currentRetryDelay = 0;
+                inBackoff = false;
             }
         }
 
