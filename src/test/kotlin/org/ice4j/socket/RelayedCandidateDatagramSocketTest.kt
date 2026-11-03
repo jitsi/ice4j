@@ -75,8 +75,11 @@ class RelayedCandidateDatagramSocketTest : ConfigTest() {
 
     private val harvest = object : TurnCandidateHarvest(harvester, host) {
         override fun sendRequest(socket: RelayedCandidateDatagramSocket, request: Request): ByteArray {
+            // Like the real thing (via StunStack.sendRequest), use a transaction ID of our own, not the request's.
+            val transactionID = TransactionID.createNewTransactionID().bytes
+            request.transactionID = transactionID
             requests.add(request)
-            return request.transactionID
+            return transactionID
         }
 
         // Don't try to send a Refresh to the (non-existent) TURN server when the socket is closed.

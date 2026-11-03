@@ -488,6 +488,41 @@ public class TurnCandidateHarvest
     }
 
     /**
+     * Notifies this <tt>TurnCandidateHarvest</tt> that a specific
+     * <tt>Request</tt> has been retried in response to a 401 Unauthorized or
+     * 438 Stale Nonce challenge.
+     *
+     * @param request the <tt>Request</tt> which has been retried
+     * @param retryRequest the new <tt>Request</tt> which has been sent in place
+     * of <tt>request</tt>
+     * @param retryTransactionID the <tt>TransactionID</tt> of
+     * <tt>retryRequest</tt>
+     * @see StunCandidateHarvest#processRetry(Request, Request, TransactionID)
+     */
+    @Override
+    protected void processRetry(
+            Request request,
+            Request retryRequest,
+            TransactionID retryTransactionID)
+    {
+        super.processRetry(request, retryRequest, retryTransactionID);
+
+        /*
+         * TurnCandidateHarvest uses the applicationData of TransactionID to
+         * deliver the results of Requests sent by
+         * RelayedCandidateDatagramSocket back to it. The socket tracks its
+         * Requests by transaction ID, so it has to learn the ID of the retry.
+         */
+        Object applicationData = retryTransactionID.getApplicationData();
+
+        if (applicationData instanceof RelayedCandidateDatagramSocket)
+        {
+            ((RelayedCandidateDatagramSocket) applicationData)
+                .processRetry(request, retryRequest);
+        }
+    }
+
+    /**
      * Handles a specific STUN success <tt>Response</tt> to a specific STUN
      * <tt>Request</tt>.
      *

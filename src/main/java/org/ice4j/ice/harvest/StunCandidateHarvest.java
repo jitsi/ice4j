@@ -695,8 +695,37 @@ public class StunCandidateHarvest
             }
             retryRequestTransactionID
                 = sendRequest(retryRequest, false, retryRequestTransactionID);
+            if (retryRequestTransactionID != null)
+            {
+                processRetry(
+                        request,
+                        retryRequest,
+                        retryRequestTransactionID);
+            }
         }
         return (retryRequestTransactionID != null);
+    }
+
+    /**
+     * Notifies this <tt>StunCandidateHarvest</tt> that a specific
+     * <tt>Request</tt> has been retried (as a new STUN transaction) in response
+     * to a 401 Unauthorized or 438 Stale Nonce challenge. The error
+     * <tt>Response</tt> which triggered the retry is not reported through
+     * {@link #processErrorOrFailure(Response, Request, TransactionID)}; the
+     * result of the retry will be reported instead.
+     *
+     * @param request the <tt>Request</tt> which has been retried
+     * @param retryRequest the new <tt>Request</tt> which has been sent in place
+     * of <tt>request</tt>
+     * @param retryTransactionID the <tt>TransactionID</tt> of
+     * <tt>retryRequest</tt> which carries the <tt>applicationData</tt> of the
+     * <tt>TransactionID</tt> of <tt>request</tt>
+     */
+    protected void processRetry(
+            Request request,
+            Request retryRequest,
+            TransactionID retryTransactionID)
+    {
     }
 
     /**

@@ -742,7 +742,9 @@ public class RelayedCandidateDatagramSocket
             /*
              * Ignore a failure of a transaction other than the one we are
              * waiting for, e.g. a late failure of a request which has been
-             * superseded by a forced re-bind.
+             * superseded by a forced re-bind. (If the harvest has retried the
+             * request after a 401/438 challenge, processRetry has updated the
+             * transaction we are waiting for.)
              */
             if ((channel == null) || !channel.isBindingWith(transactionID))
             {
@@ -827,6 +829,42 @@ public class RelayedCandidateDatagramSocket
             return true;
         default:
             return false;
+        }
+    }
+
+    /**
+     * Notifies this <tt>RelayedCandidateDatagramSocket</tt> that a specific
+     * <tt>Request</tt> it has sent has been retried by the
+     * <tt>TurnCandidateHarvest</tt> as a new STUN transaction in response to a
+     * 401 Unauthorized or 438 Stale Nonce challenge. The result of the retry
+     * will be reported through {@link #processSuccess(Response, Request)} or
+     * {@link #processErrorOrFailure(Response, Request)} with
+     * <tt>retryRequest</tt>, so the <tt>Channel</tt> waiting for the result of
+     * <tt>request</tt> has to wait for <tt>retryRequest</tt> instead.
+     *
+     * @param request the <tt>Request</tt> sent by this instance which has been
+     * retried
+     * @param retryRequest the new <tt>Request</tt> which has been sent in place
+     * of <tt>request</tt>
+     */
+    public void processRetry(Request request, Request retryRequest)
+    {
+        if (request.getMessageType() != Message.CREATEPERMISSION_REQUEST)
+            return;
+
+        XorPeerAddressAttribute peerAddressAttribute
+            = (XorPeerAddressAttribute)
+                request.getAttribute(Attribute.XOR_PEER_ADDRESS);
+        byte[] transactionID = request.getTransactionID();
+        TransportAddress peerAddress
+            = peerAddressAttribute.getAddress(transactionID);
+
+        synchronized (packetsToSend)
+        {
+            Channel channel = findChannel(peerAddress);
+
+            if ((channel != null) && channel.isBindingWith(transactionID))
+                channel.bindingRetried(retryRequest.getTransactionID());
         }
     }
 
@@ -1448,11 +1486,16 @@ public class RelayedCandidateDatagramSocket
 
             createPermissionRequest.setTransactionID(
                     createPermissionTransactionID);
-            turnCandidateHarvest.sendRequest(
-                    RelayedCandidateDatagramSocket.this,
-                    createPermissionRequest);
 
-            bindingTransactionID = createPermissionTransactionID;
+            /*
+             * The StunStack assigns the transaction its own ID (and sets it
+             * on the request), so remember the ID actually used in order to
+             * be able to recognize the result of the transaction.
+             */
+            bindingTransactionID
+                = turnCandidateHarvest.sendRequest(
+                        RelayedCandidateDatagramSocket.this,
+                        createPermissionRequest);
             bindingTimeStamp = System.currentTimeMillis();
 
             if (channelDataIsPreferred)
@@ -1492,6 +1535,20 @@ public class RelayedCandidateDatagramSocket
                             channelBindRequest);
                 }
             }
+        }
+
+        /**
+         * Notifies this <tt>Channel</tt> that the CreatePermission
+         * <tt>Request</tt> it is waiting for has been retried as a new
+         * transaction (after a 401/438 challenge), so that the result of the
+         * new transaction is recognized as the result of the binding.
+         *
+         * @param retryTransactionID the ID of the new transaction
+         */
+        public void bindingRetried(byte[] retryTransactionID)
+        {
+            bindingTransactionID = retryTransactionID;
+            bindingTimeStamp = System.currentTimeMillis();
         }
 
         /**
