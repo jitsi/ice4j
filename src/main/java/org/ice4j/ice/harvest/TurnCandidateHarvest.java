@@ -489,11 +489,11 @@ public class TurnCandidateHarvest
 
     /**
      * Notifies this <tt>TurnCandidateHarvest</tt> that a specific
-     * <tt>Request</tt> has been retried in response to a 401 Unauthorized or
-     * 438 Stale Nonce challenge.
+     * <tt>Request</tt> is about to be retried in response to a 401 Unauthorized
+     * or 438 Stale Nonce challenge.
      *
-     * @param request the <tt>Request</tt> which has been retried
-     * @param retryRequest the new <tt>Request</tt> which has been sent in place
+     * @param request the <tt>Request</tt> which is being retried
+     * @param retryRequest the new <tt>Request</tt> which is to be sent in place
      * of <tt>request</tt>
      * @param retryTransactionID the <tt>TransactionID</tt> of
      * <tt>retryRequest</tt>

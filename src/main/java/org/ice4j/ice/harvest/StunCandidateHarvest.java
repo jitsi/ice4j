@@ -673,49 +673,46 @@ public class StunCandidateHarvest
 
         if (retryRequest != null)
         {
+            byte[] retryRequestTransactionIDAsBytes
+                = retryRequest.getTransactionID();
+
+            retryRequestTransactionID
+                = (retryRequestTransactionIDAsBytes == null)
+                    ? TransactionID.createNewTransactionID()
+                    : TransactionID.createTransactionID(
+                            harvester.getStunStack(),
+                            retryRequestTransactionIDAsBytes);
             if (requestTransactionID != null)
             {
-                Object applicationData
-                    = requestTransactionID.getApplicationData();
-
-                if (applicationData != null)
-                {
-                    byte[] retryRequestTransactionIDAsBytes
-                        = retryRequest.getTransactionID();
-
-                    retryRequestTransactionID
-                        = (retryRequestTransactionIDAsBytes == null)
-                            ? TransactionID.createNewTransactionID()
-                            : TransactionID.createTransactionID(
-                                    harvester.getStunStack(),
-                                    retryRequestTransactionIDAsBytes);
-                    retryRequestTransactionID.setApplicationData(
-                            applicationData);
-                }
+                retryRequestTransactionID.setApplicationData(
+                        requestTransactionID.getApplicationData());
             }
+
+            /*
+             * Notify before sending: the response to the retry may otherwise
+             * arrive (on another thread) before the notification.
+             */
+            processRetry(request, retryRequest, retryRequestTransactionID);
+
             retryRequestTransactionID
                 = sendRequest(retryRequest, false, retryRequestTransactionID);
-            if (retryRequestTransactionID != null)
-            {
-                processRetry(
-                        request,
-                        retryRequest,
-                        retryRequestTransactionID);
-            }
         }
         return (retryRequestTransactionID != null);
     }
 
     /**
      * Notifies this <tt>StunCandidateHarvest</tt> that a specific
-     * <tt>Request</tt> has been retried (as a new STUN transaction) in response
-     * to a 401 Unauthorized or 438 Stale Nonce challenge. The error
+     * <tt>Request</tt> is about to be retried (as a new STUN transaction) in
+     * response to a 401 Unauthorized or 438 Stale Nonce challenge. The error
      * <tt>Response</tt> which triggered the retry is not reported through
      * {@link #processErrorOrFailure(Response, Request, TransactionID)}; the
-     * result of the retry will be reported instead.
+     * result of the retry will be reported instead. (Should sending the retry
+     * fail, the failure is reported for the original <tt>request</tt>.)
+     * Called before the retry is sent so that the notification cannot be
+     * overtaken by the response to the retry.
      *
-     * @param request the <tt>Request</tt> which has been retried
-     * @param retryRequest the new <tt>Request</tt> which has been sent in place
+     * @param request the <tt>Request</tt> which is being retried
+     * @param retryRequest the new <tt>Request</tt> which is to be sent in place
      * of <tt>request</tt>
      * @param retryTransactionID the <tt>TransactionID</tt> of
      * <tt>retryRequest</tt> which carries the <tt>applicationData</tt> of the

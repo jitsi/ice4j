@@ -834,17 +834,19 @@ public class RelayedCandidateDatagramSocket
 
     /**
      * Notifies this <tt>RelayedCandidateDatagramSocket</tt> that a specific
-     * <tt>Request</tt> it has sent has been retried by the
+     * <tt>Request</tt> it has sent is about to be retried by the
      * <tt>TurnCandidateHarvest</tt> as a new STUN transaction in response to a
      * 401 Unauthorized or 438 Stale Nonce challenge. The result of the retry
      * will be reported through {@link #processSuccess(Response, Request)} or
      * {@link #processErrorOrFailure(Response, Request)} with
      * <tt>retryRequest</tt>, so the <tt>Channel</tt> waiting for the result of
-     * <tt>request</tt> has to wait for <tt>retryRequest</tt> instead.
+     * <tt>request</tt> has to wait for <tt>retryRequest</tt> instead. (Should
+     * sending the retry fail, the failure is reported with <tt>request</tt>,
+     * which the <tt>Channel</tt> continues to recognize.)
      *
-     * @param request the <tt>Request</tt> sent by this instance which has been
+     * @param request the <tt>Request</tt> sent by this instance which is being
      * retried
-     * @param retryRequest the new <tt>Request</tt> which has been sent in place
+     * @param retryRequest the new <tt>Request</tt> which is to be sent in place
      * of <tt>request</tt>
      */
     public void processRetry(Request request, Request retryRequest)
@@ -1371,6 +1373,14 @@ public class RelayedCandidateDatagramSocket
         private byte[] bindingTransactionID;
 
         /**
+         * The ID of the transaction which {@link #bindingTransactionID} has
+         * replaced because the harvest retried the CreatePermission
+         * <tt>Request</tt> after a 401/438 challenge, or <tt>null</tt>. Its
+         * failure is still recognized in case sending the retry failed.
+         */
+        private byte[] supersededBindingTransactionID;
+
+        /**
          * The number of consecutive CreatePermission attempts for this
          * <tt>Channel</tt> which have failed. Used for logging.
          */
@@ -1496,6 +1506,7 @@ public class RelayedCandidateDatagramSocket
                 = turnCandidateHarvest.sendRequest(
                         RelayedCandidateDatagramSocket.this,
                         createPermissionRequest);
+            supersededBindingTransactionID = null;
             bindingTimeStamp = System.currentTimeMillis();
 
             if (channelDataIsPreferred)
@@ -1547,6 +1558,7 @@ public class RelayedCandidateDatagramSocket
          */
         public void bindingRetried(byte[] retryTransactionID)
         {
+            supersededBindingTransactionID = bindingTransactionID;
             bindingTransactionID = retryTransactionID;
             bindingTimeStamp = System.currentTimeMillis();
         }
@@ -1622,8 +1634,12 @@ public class RelayedCandidateDatagramSocket
         public boolean isBindingWith(byte[] transactionID)
         {
             return
-                (bindingTransactionID != null)
-                    && Arrays.equals(bindingTransactionID, transactionID);
+                ((bindingTransactionID != null)
+                        && Arrays.equals(bindingTransactionID, transactionID))
+                    || ((supersededBindingTransactionID != null)
+                        && Arrays.equals(
+                                supersededBindingTransactionID,
+                                transactionID));
         }
 
         /**
@@ -1864,6 +1880,7 @@ public class RelayedCandidateDatagramSocket
             if (bindingTransactionID != null)
             {
                 bindingTransactionID = null;
+                supersededBindingTransactionID = null;
                 this.bound = bound;
             }
             if (bound)
