@@ -67,6 +67,20 @@ class HarvestConfig {
     }
     fun timeout() = timeout
 
+    /**
+     * The delay before a TURN CreatePermission request which failed with a transient error (e.g. a timeout) is retried.
+     * The retry is made when a packet is next sent to the peer after the delay. The delay doubles on each consecutive
+     * failure, up to [turnPermissionRetryMaxDelay].
+     */
+    val turnPermissionRetryInitialDelay: Duration by config {
+        "ice4j.harvest.turn.permission-retry.initial-delay".from(configSource)
+    }
+
+    /** The maximum delay between retries of a TURN CreatePermission request. */
+    val turnPermissionRetryMaxDelay: Duration by config {
+        "ice4j.harvest.turn.permission-retry.max-delay".from(configSource)
+    }
+
     val stunMappingCandidateHarvesterAddresses: List<String> by config {
         "org.ice4j.ice.harvest.STUN_MAPPING_HARVESTER_ADDRESSES".from(configSource)
             .convertFrom<String> { it.split(",") }
