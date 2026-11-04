@@ -443,7 +443,6 @@ public class NetAccessManager
      * Stops <tt>NetAccessManager</tt> and all of its active
      * <tt>MessageProcessingTask</tt>.
      */
-    @SuppressWarnings("unchecked")
     public void stop()
     {
         // Mark NetAccessManager as stopped, it will immediately result in
@@ -459,24 +458,46 @@ public class NetAccessManager
         }
         activeTasks.clear();
 
-        for (Object o : new Object[]{udpConnectors, tcpConnectors})
-        {
-            Map<TransportAddress, Map<TransportAddress, Connector>>
-                connectorsMap
-                    = (Map<TransportAddress, Map<TransportAddress, Connector>>)o;
+        // Collect the connectors under the map locks, but stop them only
+        // after the locks have been released. Stopping a connector closes its
+        // socket, and closing a RelayedCandidateDatagramSocket takes that
+        // socket's send lock, which its send thread holds while calling
+        // sendMessage() and hence getConnector(), which takes the map lock.
+        // Stopping under the map lock would therefore be a lock-order
+        // inversion and could deadlock (see removeSocket(), which already
+        // stops outside the lock).
+        //
+        // The connectors are left in the maps: closing a relayed candidate's
+        // socket sends a TURN Refresh through the host candidate's connector
+        // to delete the allocation, which needs getConnector() to still find
+        // it. Stopping a connector twice (e.g. via a later removeSocket()) is
+        // harmless.
+        List<Connector> connectorsToStop = new ArrayList<>();
 
+        for (Map<TransportAddress, Map<TransportAddress, Connector>>
+                connectorsMap : Arrays.asList(udpConnectors, tcpConnectors))
+        {
             synchronized (connectorsMap)
             {
                 for (Map<TransportAddress, Connector> connectorsForLocalAddress
                         : connectorsMap.values())
                 {
-                    for (Connector connector : connectorsForLocalAddress.values())
-                    {
-                        connector.stop();
-                    }
+                    connectorsToStop.addAll(connectorsForLocalAddress.values());
                 }
             }
+        }
 
+        for (Connector connector : connectorsToStop)
+        {
+            try
+            {
+                connector.stop();
+            }
+            catch (RuntimeException e)
+            {
+                // Keep stopping the remaining connectors.
+                logger.log(Level.WARNING, "Failed to stop " + connector, e);
+            }
         }
     }
 
