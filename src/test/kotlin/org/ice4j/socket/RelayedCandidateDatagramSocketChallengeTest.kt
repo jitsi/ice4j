@@ -17,6 +17,7 @@ package org.ice4j.socket
 
 import io.kotest.core.test.TestCase
 import io.kotest.core.test.TestResult
+import io.kotest.matchers.longs.shouldBeGreaterThanOrEqual
 import io.kotest.matchers.nulls.shouldBeNull
 import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
@@ -195,7 +196,8 @@ class RelayedCandidateDatagramSocketChallengeTest : ConfigTest() {
                     sendAndAwaitChallengedRequests(peerA)
 
                     // The 500 to the second retry fails the binding, so once the backoff has elapsed a new packet
-                    // must trigger a new CreatePermission (now with credentials, so it is answered with a 500 too).
+                    // must trigger a new CreatePermission, and not before. The timer starts before the 500 is even
+                    // sent, so the elapsed time is a lower bound on the backoff.
                     val start = System.nanoTime()
                     while (awaitCreatePermission(peerA, 20) == null) {
                         if (System.nanoTime() - start > TimeUnit.SECONDS.toNanos(5)) {
@@ -203,6 +205,7 @@ class RelayedCandidateDatagramSocketChallengeTest : ConfigTest() {
                         }
                         sendTo(peerA)
                     }
+                    TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - start) shouldBeGreaterThanOrEqual 100L
                 }
             }
             should("not be retried after a permanent failure of the retry") {

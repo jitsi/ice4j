@@ -1580,7 +1580,9 @@ public class RelayedCandidateDatagramSocket
             if (isPermanentCreatePermissionError(response))
             {
                 failed = true;
-                logger.warning(
+                // INFO rather than WARNING: a TURN server refusing a private
+                // peer address is normal, and happens once per such peer.
+                logger.info(
                         "TURN server " + turnCandidateHarvest.harvester.stunServer
                             + " refused a permission for peer "
                             + peerAddress.toRedactedString()
