@@ -17,6 +17,10 @@
  */
 package org.ice4j.ice;
 
+import org.ice4j.socket.*;
+
+import java.net.*;
+
 /**
  * Helpers for tests outside the {@code org.ice4j.ice} package which need access to package-private functionality.
  */
@@ -33,5 +37,22 @@ public final class ComponentTestUtils
     public static Component createComponent(IceMediaStream stream, KeepAliveStrategy keepAliveStrategy)
     {
         return stream.createComponent(keepAliveStrategy, false);
+    }
+
+    /**
+     * @return the socket which a component uses to send to a remote address through one of its local candidates,
+     * or {@code null} if no candidate has one.
+     */
+    public static IceSocketWrapper getCandidateSocket(Component component, SocketAddress remoteAddress)
+    {
+        for (LocalCandidate candidate : component.getLocalCandidates())
+        {
+            IceSocketWrapper socket = candidate.getCandidateIceSocketWrapper(remoteAddress);
+            if (socket != null)
+            {
+                return socket;
+            }
+        }
+        return null;
     }
 }

@@ -47,6 +47,16 @@ class HarvestConfig {
 
     fun udpSocketPoolSize() = udpSocketPoolSize
 
+    val udpReceiveEcn: Boolean by config {
+        "ice4j.harvest.udp.receive-ecn".from(configSource)
+    }
+    fun udpReceiveEcn() = udpReceiveEcn
+
+    val udpSendEct1: Boolean by config {
+        "ice4j.harvest.udp.send-ect1".from(configSource)
+    }
+    fun udpSendEct1() = udpSendEct1
+
     val useIpv6: Boolean by config {
         "org.ice4j.ipv6.DISABLED".from(configSource)
             .transformedBy { !it }

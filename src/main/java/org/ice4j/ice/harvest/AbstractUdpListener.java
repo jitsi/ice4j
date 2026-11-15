@@ -201,7 +201,8 @@ public abstract class AbstractUdpListener
     private final SocketPool socketPool;
 
     /**
-     * The "main" socket that this harvester reads from.
+     * One of the pool's sockets, used for the address the pool is bound to. Packets are read with
+     * {@link SocketPool#receive(DatagramPacket)}, not from this socket.
      */
     private final DatagramSocket receiveSocket;
 
@@ -240,14 +241,15 @@ public abstract class AbstractUdpListener
                                 );
         }
 
-        socketPool = new SocketPool( tempAddress, config.udpSocketPoolSize() );
+        socketPool = new SocketPool(
+            tempAddress, config.udpSocketPoolSize(), config.udpReceiveEcn(), config.udpSendEct1() );
 
         receiveSocket = socketPool.getReceiveSocket();
 
         Integer receiveBufferSize = config.udpReceiveBufferSize();
         if (receiveBufferSize != null)
         {
-            receiveSocket.setReceiveBufferSize(receiveBufferSize);
+            socketPool.setReceiveBufferSize(receiveBufferSize);
         }
 
         /* Update the port number if needed. */
@@ -263,12 +265,14 @@ public abstract class AbstractUdpListener
 
         String logMessage
             = "Initialized AbstractUdpListener with address " + this.localAddress;
-        logMessage += ". Receive buffer size " + receiveSocket.getReceiveBufferSize();
+        logMessage += ". Receive buffer size " + socketPool.getReceiveBufferSize();
         if (receiveBufferSize != null)
         {
             logMessage += " (asked for " + receiveBufferSize + ")";
         }
         logMessage += "; socket pool size " + socketPool.getNumSockets();
+        logMessage += "; receives ECN " + socketPool.getReceivesEcn();
+        logMessage += "; sends ECT(1) " + socketPool.getSendsEct1();
         logger.info(logMessage);
 
         thread = new Thread(() ->
@@ -333,7 +337,7 @@ public abstract class AbstractUdpListener
 
             try
             {
-                receiveSocket.receive(pkt);
+                socketPool.receive(pkt);
             }
             catch (IOException ioe)
             {
@@ -405,6 +409,7 @@ public abstract class AbstractUdpListener
         InetSocketAddress remoteAddress;
         Clock clock = Clock.systemUTC();
         Instant receivedTime;
+        int ecn;
 
         do
         {
@@ -417,7 +422,7 @@ public abstract class AbstractUdpListener
 
             try
             {
-                receiveSocket.receive(pkt);
+                ecn = socketPool.receive(pkt);
                 receivedTime = clock.instant();
             }
             catch (IOException ioe)
@@ -441,7 +446,7 @@ public abstract class AbstractUdpListener
                     continue;
                 }
 
-                Buffer buffer = bufferFromPacket(pkt, receivedTime);
+                Buffer buffer = bufferFromPacket(pkt, receivedTime, ecn);
                 MySocket newSocket = maybeAcceptNewSession(buffer, remoteAddress, ufrag);
                 if (newSocket == null)
                 {
@@ -454,7 +459,7 @@ public abstract class AbstractUdpListener
             }
             else
             {
-                Buffer buf = bufferFromPacket(pkt, receivedTime);
+                Buffer buf = bufferFromPacket(pkt, receivedTime, ecn);
                 if (StunDatagramPacketFilter.isStunPacket(pkt))
                 {
                     // STUN packets are made available to the DatagramSocket-based API used by ice4j internally.
@@ -477,7 +482,7 @@ public abstract class AbstractUdpListener
         socketPool.close();
     }
 
-    private Buffer bufferFromPacket(DatagramPacket p, Instant receivedTime)
+    private Buffer bufferFromPacket(DatagramPacket p, Instant receivedTime, int ecn)
     {
         int off = BYTES_TO_LEAVE_AT_START_OF_PACKET;
         Buffer buffer = BufferPool.getBuffer.invoke(off + p.getLength() + BYTES_TO_LEAVE_AT_END_OF_PACKET);
@@ -488,6 +493,7 @@ public abstract class AbstractUdpListener
         buffer.setLocalAddress(receiveSocket.getLocalSocketAddress());
         buffer.setRemoteAddress(p.getSocketAddress());
         buffer.setReceivedTime(receivedTime);
+        buffer.setEcn(ecn);
 
         return buffer;
     }
@@ -821,8 +827,28 @@ public abstract class AbstractUdpListener
         public void send(DatagramPacket p)
             throws IOException
         {
+            send(p, false);
+        }
+
+        /**
+         * Sends a packet through the socket pool.
+         *
+         * @param ect1 whether to send it with the ECT(1) marking. Without {@link #supportsEct1()} it is sent without
+         * the marking.
+         */
+        public void send(DatagramPacket p, boolean ect1)
+            throws IOException
+        {
             p.setSocketAddress(remoteAddress);
-            socketPool.send(p);
+            socketPool.send(p, ect1);
+        }
+
+        /**
+         * @return whether {@link #send(DatagramPacket, boolean)} can send a packet with the ECT(1) marking.
+         */
+        public boolean supportsEct1()
+        {
+            return socketPool.getSendsEct1();
         }
     }
 }
