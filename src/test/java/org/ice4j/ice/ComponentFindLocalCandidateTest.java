@@ -34,6 +34,9 @@ public class ComponentFindLocalCandidateTest
 {
     private static final long TIMEOUT_MS = 5000;
 
+    /** The address of the mapped candidates in the tests with two candidates that have the same address. */
+    private static final TransportAddress MAPPED_ADDRESS = new TransportAddress("203.0.113.1", 10000, Transport.UDP);
+
     private Agent agent;
     private Component component;
 
@@ -97,7 +100,10 @@ public class ComponentFindLocalCandidateTest
             try
             {
                 inIteration.await(TIMEOUT_MS, TimeUnit.MILLISECONDS);
-                component.addLocalCandidate(other);
+                if (!component.addLocalCandidate(other))
+                {
+                    throw new IllegalStateException("addLocalCandidate returned false");
+                }
                 added.countDown();
             }
             catch (Throwable t)
@@ -116,13 +122,82 @@ public class ComponentFindLocalCandidateTest
 
         adder.join(TIMEOUT_MS);
         assertFalse(adder.isAlive(), "The adding thread did not finish");
-        assertNull(adderError.get());
+        assertNull(adderError.get(), () -> "The adding thread failed: " + adderError.get());
         assertEquals(2, component.getLocalCandidateCount());
     }
 
     /**
-     * Waits until the adding thread either completes the add or blocks on a monitor (i.e. it waits for the lock
-     * which the iterating thread holds).
+     * When two candidates have the same address, {@code findLocalCandidate} returns the one with the requested base,
+     * even if it is not the first one in the list.
+     */
+    @Test
+    public void testBaseMatchIsPreferred()
+    {
+        HostCandidate hostA = addHostCandidate("192.0.2.1");
+        HostCandidate hostB = addHostCandidate("192.0.2.2");
+        ServerReflexiveCandidate mappedA = addMappedCandidate(hostA);
+        ServerReflexiveCandidate mappedB = addMappedCandidate(hostB);
+
+        assertTrue(
+                indexOf(mappedA) < indexOf(mappedB),
+                "Test precondition: the candidate with the other base must come first");
+
+        assertSame(mappedB, component.findLocalCandidate(MAPPED_ADDRESS, hostB));
+        assertSame(mappedA, component.findLocalCandidate(MAPPED_ADDRESS, hostA));
+        assertSame(hostA, component.findLocalCandidate(hostA.getTransportAddress()));
+    }
+
+    /**
+     * When no candidate has both the requested address and the requested base, {@code findLocalCandidate} returns the
+     * first candidate with the requested address. Without a base, it also returns the first candidate with the
+     * requested address.
+     */
+    @Test
+    public void testFallbackToAddressMatch()
+    {
+        HostCandidate hostA = addHostCandidate("192.0.2.1");
+        HostCandidate hostB = addHostCandidate("192.0.2.2");
+        ServerReflexiveCandidate mappedA = addMappedCandidate(hostA);
+        ServerReflexiveCandidate mappedB = addMappedCandidate(hostB);
+
+        assertTrue(
+                indexOf(mappedA) < indexOf(mappedB),
+                "Test precondition: the candidates must stay in the order in which they were added");
+
+        // A base which is not in the component.
+        HostCandidate otherBase
+                = new HostCandidate(new TransportAddress("192.0.2.3", 10000, Transport.UDP), component);
+
+        assertSame(mappedA, component.findLocalCandidate(MAPPED_ADDRESS, otherBase));
+        assertSame(mappedA, component.findLocalCandidate(MAPPED_ADDRESS));
+    }
+
+    private HostCandidate addHostCandidate(String address)
+    {
+        HostCandidate host = new HostCandidate(new TransportAddress(address, 10000, Transport.UDP), component);
+        assertTrue(component.addLocalCandidate(host));
+        return host;
+    }
+
+    private ServerReflexiveCandidate addMappedCandidate(HostCandidate base)
+    {
+        ServerReflexiveCandidate mapped = new ServerReflexiveCandidate(
+                MAPPED_ADDRESS,
+                base,
+                null,
+                CandidateExtendedType.STATICALLY_MAPPED_CANDIDATE);
+        assertTrue(component.addLocalCandidate(mapped));
+        return mapped;
+    }
+
+    private int indexOf(LocalCandidate candidate)
+    {
+        return component.getLocalCandidates().indexOf(candidate);
+    }
+
+    /**
+     * Waits until the adding thread either completes the add or blocks on a monitor (normally the lock which the
+     * iterating thread holds).
      */
     private static void awaitAddedOrBlocked(CountDownLatch added, Thread adder)
     {
