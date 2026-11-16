@@ -997,32 +997,45 @@ public class Component
      */
     public LocalCandidate findLocalCandidate(TransportAddress address, LocalCandidate base)
     {
-        for (LocalCandidate localCandidate : localCandidates)
+        // The first candidate matching `address` regardless of `base`. Fall
+        // back to it if no candidate matches both `address` and `base`.
+        LocalCandidate addressMatch = null;
+
+        // Other threads may add or remove local candidates at the same time
+        // (e.g. a peer reflexive candidate found while processing another
+        // connectivity check response), so iterate with the lock held. Keep
+        // the locked section to plain field reads: do not log or call
+        // toString() in it.
+        synchronized (localCandidates)
         {
-            if (localCandidate.getTransportAddress().equals(address))
+            for (LocalCandidate localCandidate : localCandidates)
             {
-                if (base == null || base.equals(localCandidate.getBase()))
+                if (localCandidate.getTransportAddress().equals(address))
                 {
-                    return localCandidate;
+                    if (base == null || base.equals(localCandidate.getBase()))
+                    {
+                        return localCandidate;
+                    }
+                    if (addressMatch == null)
+                    {
+                        addressMatch = localCandidate;
+                    }
                 }
             }
         }
-        // In case the above loop failed to find a result because `base` was
-        // specified, fallback to the original behavior and return the first
-        // candidate matching `address` regardless of `base`.
-        for (LocalCandidate localCandidate : localCandidates)
+
+        // Build the log message without the lock held. Candidate.toString()
+        // can call getRelatedCandidate(), which calls findLocalCandidate()
+        // again and caches the result.
+        if (addressMatch != null)
         {
-            if (localCandidate.getTransportAddress().equals(address))
-            {
-                logger.warn("Returning a candidate matching the address, "
-                        + "while no candidates match both address ("
-                        + address + ") and base (" + base +"): " + localCandidate
-                        + " with base " + localCandidate.getBase());
-                return localCandidate;
-            }
+            logger.warn("Returning a candidate matching the address, "
+                    + "while no candidates match both address ("
+                    + address + ") and base (" + base +"): " + addressMatch
+                    + " with base " + addressMatch.getBase());
         }
 
-        return null;
+        return addressMatch;
     }
 
     /**
