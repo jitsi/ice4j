@@ -26,9 +26,10 @@ import org.ice4j.*;
 import org.junit.jupiter.api.*;
 
 /**
- * Tests {@link Component#findLocalCandidate(TransportAddress, LocalCandidate)} when another thread adds a local
- * candidate at the same time, e.g. a peer reflexive candidate discovered while processing a different connectivity
- * check response.
+ * Tests {@link Component#findLocalCandidate(TransportAddress, LocalCandidate)}: the preference for a candidate with
+ * the requested base, the fallback to a candidate that matches only the address, and a lookup while another thread
+ * adds a local candidate (e.g. a peer reflexive candidate discovered while processing a different connectivity check
+ * response).
  */
 public class ComponentFindLocalCandidateTest
 {

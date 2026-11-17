@@ -986,7 +986,9 @@ public class Component
      * Returns the local <tt>LocalCandidate</tt> with the specified
      * <tt>address</tt> if it belongs to this component or <tt>null</tt>
      * if it doesn't. If {@code base} is also specified, tries to find a
-     * candidate whose base matches {@code base}.
+     * candidate whose base matches {@code base}. If no candidate matches both
+     * {@code address} and {@code base}, logs a warning and returns the first
+     * (highest-priority) candidate that matches {@code address}.
      *
      * @param address the {@link TransportAddress} we are looking for.
      * @param base an optional base to match.
@@ -1003,9 +1005,7 @@ public class Component
 
         // Other threads may add or remove local candidates at the same time
         // (e.g. a peer reflexive candidate found while processing another
-        // connectivity check response), so iterate with the lock held. Keep
-        // the locked section to plain field reads: do not log or call
-        // toString() in it.
+        // connectivity check response), so iterate with the lock held.
         synchronized (localCandidates)
         {
             for (LocalCandidate localCandidate : localCandidates)
@@ -1024,9 +1024,9 @@ public class Component
             }
         }
 
-        // Build the log message without the lock held. Candidate.toString()
-        // can call getRelatedCandidate(), which calls findLocalCandidate()
-        // again and caches the result.
+        // Prefer to build the log message after releasing the lock, to keep
+        // the critical section short. Candidate.toString() can look up the
+        // related candidate, which calls findLocalCandidate() again.
         if (addressMatch != null)
         {
             logger.warn("Returning a candidate matching the address, "
