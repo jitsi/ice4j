@@ -524,7 +524,11 @@ public class IceMediaStream
      */
     public LocalCandidate findLocalCandidate(TransportAddress address, LocalCandidate base)
     {
-        for (Component component : components.values())
+        // Iterate over a copy, because components may be added or removed by
+        // other threads. The lookups in the components then run without the
+        // lock of the components map, so that no lock is held while a
+        // component takes its own locks.
+        for (Component component : getComponents())
         {
             LocalCandidate localCandidate
                     = component.findLocalCandidate(address, base);
@@ -552,7 +556,9 @@ public class IceMediaStream
      */
     public RemoteCandidate findRemoteCandidate(TransportAddress remoteAddress)
     {
-        for ( Component cmp : components.values())
+        // Iterate over a copy, because components may be added or removed by
+        // other threads.
+        for (Component cmp : getComponents())
         {
             RemoteCandidate cnd = cmp.findRemoteCandidate(remoteAddress);
 
