@@ -1051,11 +1051,16 @@ public class Component
      */
     public RemoteCandidate findRemoteCandidate(TransportAddress remoteAddress)
     {
-        for (RemoteCandidate remoteCnd : remoteCandidates)
+        // Other threads may add remote candidates at the same time, so
+        // iterate with the lock held.
+        synchronized (remoteCandidates)
         {
-            if (remoteCnd.getTransportAddress().equals(remoteAddress))
+            for (RemoteCandidate remoteCnd : remoteCandidates)
             {
-                return remoteCnd;
+                if (remoteCnd.getTransportAddress().equals(remoteAddress))
+                {
+                    return remoteCnd;
+                }
             }
         }
 
