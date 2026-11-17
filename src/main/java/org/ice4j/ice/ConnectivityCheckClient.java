@@ -603,15 +603,33 @@ class ConnectivityCheckClient
             //This peer reflexive candidate is then added to the list of local
             //candidates for the media stream, so that it would be available for
             //updated offers.
-            checkedPair.getParentComponent().addLocalCandidate(
-                    peerReflexiveCandidate);
+            boolean added
+                = checkedPair.getParentComponent().addLocalCandidate(
+                        peerReflexiveCandidate);
 
             //However, the peer reflexive candidate is not paired with other
             //remote candidates. This is not necessary; a valid pair will be
             //generated from it momentarily
             validLocalCandidate = peerReflexiveCandidate;
 
-            if (checkedPair.getParentComponent().getSelectedPair() == null)
+            if (!added)
+            {
+                // Another thread added an equivalent candidate (same address
+                // and base) after the lookup above, so the new candidate was
+                // rejected as redundant. Use the candidate which is in the
+                // component, so that the valid pair does not refer to a
+                // candidate which the component does not know about.
+                LocalCandidate existing
+                    = checkedPair.getParentComponent().findLocalCandidate(
+                            mappedAddress,
+                            peerReflexiveCandidate.getBase());
+
+                if (existing != null)
+                {
+                    validLocalCandidate = existing;
+                }
+            }
+            else if (checkedPair.getParentComponent().getSelectedPair() == null)
             {
                 logger.info("Receive a peer-reflexive candidate: "
                     + peerReflexiveCandidate.getTransportAddress().toRedactedString()
