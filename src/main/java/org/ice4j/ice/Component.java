@@ -1051,8 +1051,9 @@ public class Component
      */
     public RemoteCandidate findRemoteCandidate(TransportAddress remoteAddress)
     {
-        // Other threads may add remote candidates at the same time, so
-        // iterate with the lock held.
+        // Other threads may modify the remote candidates at the same time, so
+        // iterate with the lock held. The lock is only used for getters and
+        // equals() here, so holding it does not nest other locks.
         synchronized (remoteCandidates)
         {
             for (RemoteCandidate remoteCnd : remoteCandidates)

@@ -602,14 +602,16 @@ class ConnectivityCheckClient
 
             //This peer reflexive candidate is then added to the list of local
             //candidates for the media stream, so that it would be available for
-            //updated offers.
+            //updated offers. (Unless the component already has an equivalent
+            //candidate, see below.)
             boolean added
                 = checkedPair.getParentComponent().addLocalCandidate(
                         peerReflexiveCandidate);
 
             //However, the peer reflexive candidate is not paired with other
             //remote candidates. This is not necessary; a valid pair will be
-            //generated from it momentarily
+            //generated from it momentarily (or from the equivalent candidate
+            //that is already in the component, see below).
             validLocalCandidate = peerReflexiveCandidate;
 
             if (!added)
@@ -618,7 +620,9 @@ class ConnectivityCheckClient
                 // and base) after the lookup above, so the new candidate was
                 // rejected as redundant. Use the candidate which is in the
                 // component, so that the valid pair does not refer to a
-                // candidate which the component does not know about.
+                // candidate which the component does not know about. If the
+                // candidate was removed again in the meantime (e.g. the
+                // component was freed), keep the new candidate.
                 LocalCandidate existing
                     = checkedPair.getParentComponent().findLocalCandidate(
                             mappedAddress,
@@ -628,6 +632,11 @@ class ConnectivityCheckClient
                 {
                     validLocalCandidate = existing;
                 }
+
+                logger.debug(
+                    "A peer-reflexive candidate for "
+                        + mappedAddress.toRedactedString()
+                        + " was already added, using the existing one.");
             }
             else if (checkedPair.getParentComponent().getSelectedPair() == null)
             {

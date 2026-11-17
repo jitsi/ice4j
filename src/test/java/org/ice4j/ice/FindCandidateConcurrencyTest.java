@@ -28,8 +28,13 @@ import org.junit.jupiter.api.*;
 /**
  * Tests that the candidate lookups of {@link Component}, {@link IceMediaStream} and {@link Agent} do not fail when
  * another thread adds a candidate, a component or a media stream while the lookup iterates. Each test pauses the
- * lookup in the middle of its iteration (inside {@code getTransportAddress()} of the first candidate it visits), makes
+ * lookup while its iterator is active (inside {@code getTransportAddress()} of the first candidate it visits), makes
  * the change from a second thread, and then lets the lookup continue.
+ * <p>
+ * {@code Component.findRemoteCandidate} holds the lock of the remote candidates while it iterates, so the change
+ * blocks until the lookup is done. The stream and agent lookups iterate over a copy, so the change must complete
+ * while the lookup is paused. The tests require this, so that they fail if a lookup holds the lock of the map of the
+ * components or of the streams during the lookups in its children.
  */
 public class FindCandidateConcurrencyTest
 {
@@ -45,6 +50,7 @@ public class FindCandidateConcurrencyTest
     private final CountDownLatch inIteration = new CountDownLatch(1);
     private final CountDownLatch changed = new CountDownLatch(1);
     private volatile Thread changer;
+    private volatile boolean changeBlockAllowed;
 
     @BeforeEach
     public void setUp()
@@ -67,7 +73,8 @@ public class FindCandidateConcurrencyTest
 
         runWhileChanging(
                 () -> assertNull(component.findRemoteCandidate(UNKNOWN)),
-                () -> component.addRemoteCandidate(createRemoteCandidate(component, "192.0.2.2")));
+                () -> component.addRemoteCandidate(createRemoteCandidate(component, "192.0.2.2")),
+                true);
 
         assertEquals(2, component.getRemoteCandidateCount());
     }
@@ -80,7 +87,10 @@ public class FindCandidateConcurrencyTest
         addPausingLocalCandidate(createComponent(stream));
         createComponent(stream);
 
-        runWhileChanging(() -> assertNull(stream.findLocalCandidate(UNKNOWN, null)), () -> createComponent(stream));
+        runWhileChanging(
+                () -> assertNull(stream.findLocalCandidate(UNKNOWN, null)),
+                () -> createComponent(stream),
+                false);
 
         assertEquals(3, stream.getComponentCount());
     }
@@ -94,7 +104,7 @@ public class FindCandidateConcurrencyTest
         first.addRemoteCandidate(createPausingRemoteCandidate(first, "192.0.2.1"));
         createComponent(stream);
 
-        runWhileChanging(() -> assertNull(stream.findRemoteCandidate(UNKNOWN)), () -> createComponent(stream));
+        runWhileChanging(() -> assertNull(stream.findRemoteCandidate(UNKNOWN)), () -> createComponent(stream), false);
 
         assertEquals(3, stream.getComponentCount());
     }
@@ -106,7 +116,10 @@ public class FindCandidateConcurrencyTest
         addPausingLocalCandidate(createComponent(agent.createMediaStream("a")));
         createComponent(agent.createMediaStream("b"));
 
-        runWhileChanging(() -> assertNull(agent.findLocalCandidate(UNKNOWN, null)), () -> agent.createMediaStream("c"));
+        runWhileChanging(
+                () -> assertNull(agent.findLocalCandidate(UNKNOWN, null)),
+                () -> agent.createMediaStream("c"),
+                false);
 
         assertEquals(3, agent.getStreamCount());
     }
@@ -119,17 +132,21 @@ public class FindCandidateConcurrencyTest
         first.addRemoteCandidate(createPausingRemoteCandidate(first, "192.0.2.1"));
         createComponent(agent.createMediaStream("b"));
 
-        runWhileChanging(() -> assertNull(agent.findRemoteCandidate(UNKNOWN)), () -> agent.createMediaStream("c"));
+        runWhileChanging(
+                () -> assertNull(agent.findRemoteCandidate(UNKNOWN)),
+                () -> agent.createMediaStream("c"),
+                false);
 
         assertEquals(3, agent.getStreamCount());
     }
 
     /**
      * Runs {@code lookup} on the current thread and {@code change} on a second thread. The change starts when the
-     * lookup is paused in the middle of its iteration, and the lookup continues when the change is complete or when
-     * the second thread is blocked (by a lock which the lookup holds).
+     * lookup is paused while its iterator is active. The lookup continues when the change is complete. If
+     * {@code changeMayBlock} is true, the lookup also continues when the second thread is blocked by a lock which
+     * the lookup holds. If it is false, a blocked second thread fails the test.
      */
-    private void runWhileChanging(Runnable lookup, Runnable change)
+    private void runWhileChanging(Runnable lookup, Runnable change, boolean changeMayBlock)
         throws Exception
     {
         AtomicReference<Throwable> changeError = new AtomicReference<>();
@@ -152,14 +169,21 @@ public class FindCandidateConcurrencyTest
                 changed.countDown();
             }
         }, "changer");
+        thread.setDaemon(true);
         changer = thread;
+        changeBlockAllowed = changeMayBlock;
 
         pausedThread.set(Thread.currentThread());
         thread.start();
 
-        assertDoesNotThrow(lookup::run);
-
-        thread.join(TIMEOUT_MS);
+        try
+        {
+            assertDoesNotThrow(lookup::run);
+        }
+        finally
+        {
+            thread.join(TIMEOUT_MS);
+        }
         assertFalse(thread.isAlive(), "The changing thread did not finish");
         assertNull(changeError.get(), () -> "The changing thread failed: " + changeError.get());
     }
@@ -180,9 +204,17 @@ public class FindCandidateConcurrencyTest
         while (System.currentTimeMillis() < deadline)
         {
             Thread thread = changer;
-            if (changed.getCount() == 0 || (thread != null && thread.getState() == Thread.State.BLOCKED))
+            if (changed.getCount() == 0)
             {
                 return;
+            }
+            if (thread != null && thread.getState() == Thread.State.BLOCKED)
+            {
+                if (changeBlockAllowed)
+                {
+                    return;
+                }
+                fail("The change is blocked by a lock which the lookup holds");
             }
             try
             {
@@ -194,7 +226,7 @@ public class FindCandidateConcurrencyTest
                 return;
             }
         }
-        fail("The changing thread neither completed nor blocked");
+        fail("The changing thread did not complete in time");
     }
 
     private static Component createComponent(IceMediaStream stream)

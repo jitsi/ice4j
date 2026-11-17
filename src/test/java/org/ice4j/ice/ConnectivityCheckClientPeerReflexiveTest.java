@@ -30,7 +30,8 @@ import org.junit.jupiter.api.*;
 
 /**
  * Tests how {@link ConnectivityCheckClient} handles a success response with a mapped address that matches no local
- * candidate, when another thread adds an equivalent peer reflexive candidate to the component at the same time.
+ * candidate: the normal case, and the case in which another thread adds an equivalent peer reflexive candidate to
+ * the component in the time between the lookup and the add (simulated with a hook in the agent).
  */
 public class ConnectivityCheckClientPeerReflexiveTest
 {
@@ -62,24 +63,40 @@ public class ConnectivityCheckClientPeerReflexiveTest
     }
 
     /**
-     * Two responses with the same mapped address are processed at the same time. Each one finds no local candidate
-     * for the mapped address, so each one creates a peer reflexive candidate. {@code Component.addLocalCandidate}
-     * rejects the second one as redundant. The valid pair of the second response must refer to the candidate which
-     * is in the component, not to the rejected one.
+     * A response with a mapped address that matches no local candidate adds a peer reflexive candidate to the
+     * component, and the valid pair uses it.
+     */
+    @Test
+    public void testValidPairUsesNewPeerReflexiveCandidate()
+        throws Exception
+    {
+        HostCandidate host = addHostCandidate();
+        RemoteCandidate remote = createRemoteCandidate();
+
+        ConnectivityCheckClient client = new ConnectivityCheckClient(agent, scheduler, executor);
+        client.processResponse(createSuccessResponseEvent(host, remote));
+
+        assertEquals(1, agent.validatedPairs.size(), "Exactly one pair must have been validated");
+        LocalCandidate validLocal = agent.validatedPairs.get(0).getLocalCandidate();
+        assertInstanceOf(PeerReflexiveCandidate.class, validLocal);
+        assertEquals(MAPPED_ADDRESS, validLocal.getTransportAddress());
+        assertTrue(component.getLocalCandidates().contains(validLocal));
+        assertEquals(2, component.getLocalCandidateCount());
+    }
+
+    /**
+     * A response with a mapped address that matches no local candidate is processed. Between the lookup and
+     * {@code Component.addLocalCandidate}, another thread adds an equivalent peer reflexive candidate (simulated by a
+     * hook in {@code TestAgent.findLocalCandidate}). {@code addLocalCandidate} then rejects the candidate of this
+     * response as redundant. The valid pair must refer to the candidate that is in the component, not to the
+     * rejected one.
      */
     @Test
     public void testValidPairUsesCandidateOfComponentWhenPeerReflexiveCandidateIsRedundant()
         throws Exception
     {
-        HostCandidate host = new HostCandidate(new TransportAddress("192.0.2.1", 10000, Transport.UDP), component);
-        assertTrue(component.addLocalCandidate(host));
-        RemoteCandidate remote = new RemoteCandidate(
-                new TransportAddress("192.0.2.50", 20000, Transport.UDP),
-                component,
-                CandidateType.HOST_CANDIDATE,
-                "1",
-                1000,
-                null);
+        HostCandidate host = addHostCandidate();
+        RemoteCandidate remote = createRemoteCandidate();
 
         // The candidate which the other thread adds in the time between the lookup and the add of this thread.
         PeerReflexiveCandidate concurrentlyAdded = new PeerReflexiveCandidate(MAPPED_ADDRESS, component, host, 1000);
@@ -89,11 +106,30 @@ public class ConnectivityCheckClientPeerReflexiveTest
         ConnectivityCheckClient client = new ConnectivityCheckClient(agent, scheduler, executor);
         client.processResponse(createSuccessResponseEvent(host, remote));
 
+        assertTrue(agent.hookRan.get(), "The hook did not run, the lookup in the client may have moved");
         assertEquals(1, agent.validatedPairs.size(), "Exactly one pair must have been validated");
         LocalCandidate validLocal = agent.validatedPairs.get(0).getLocalCandidate();
         assertSame(concurrentlyAdded, validLocal, "The valid pair must use the candidate that is in the component");
         assertTrue(component.getLocalCandidates().contains(validLocal));
         assertEquals(2, component.getLocalCandidateCount());
+    }
+
+    private HostCandidate addHostCandidate()
+    {
+        HostCandidate host = new HostCandidate(new TransportAddress("192.0.2.1", 10000, Transport.UDP), component);
+        assertTrue(component.addLocalCandidate(host));
+        return host;
+    }
+
+    private RemoteCandidate createRemoteCandidate()
+    {
+        return new RemoteCandidate(
+                new TransportAddress("192.0.2.50", 20000, Transport.UDP),
+                component,
+                CandidateType.HOST_CANDIDATE,
+                "1",
+                1000,
+                null);
     }
 
     private StunResponseEvent createSuccessResponseEvent(HostCandidate local, RemoteCandidate remote)
@@ -130,7 +166,8 @@ public class ConnectivityCheckClientPeerReflexiveTest
 
         final List<CandidatePair> validatedPairs = Collections.synchronizedList(new ArrayList<>());
 
-        private final AtomicBoolean lookupDone = new AtomicBoolean();
+        /** Whether the hook has run. */
+        final AtomicBoolean hookRan = new AtomicBoolean();
 
         TestAgent()
         {
@@ -141,7 +178,7 @@ public class ConnectivityCheckClientPeerReflexiveTest
         public LocalCandidate findLocalCandidate(TransportAddress address, LocalCandidate base)
         {
             Runnable hook = beforeLookupReturnsNull;
-            if (hook != null && MAPPED_ADDRESS.equals(address) && lookupDone.compareAndSet(false, true))
+            if (hook != null && MAPPED_ADDRESS.equals(address) && hookRan.compareAndSet(false, true))
             {
                 // Simulate that the lookup finished before the other thread added its candidate.
                 hook.run();

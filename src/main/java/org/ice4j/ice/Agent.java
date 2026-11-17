@@ -1465,7 +1465,9 @@ public class Agent
             LocalCandidate base)
     {
         // Iterate over a copy, because streams may be added or removed by
-        // other threads.
+        // other threads. The lookups in the streams then run without the
+        // lock of the streams map, so that no lock is held while a stream
+        // or a component takes its own locks.
         for (IceMediaStream stream : getStreams())
         {
             LocalCandidate localCandidate
@@ -1493,7 +1495,9 @@ public class Agent
     public RemoteCandidate findRemoteCandidate(TransportAddress remoteAddress)
     {
         // Iterate over a copy, because streams may be added or removed by
-        // other threads.
+        // other threads. The lookups in the streams then run without the
+        // lock of the streams map, so that no lock is held while a stream
+        // or a component takes its own locks.
         for (IceMediaStream stream : getStreams())
         {
             RemoteCandidate cnd = stream.findRemoteCandidate(remoteAddress);
