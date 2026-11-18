@@ -25,6 +25,7 @@ import java.nio.charset.*;
 
 import org.ice4j.*;
 import org.ice4j.socket.*;
+import org.ice4j.util.Buffer;
 import org.junit.jupiter.api.*;
 
 /**
@@ -180,6 +181,31 @@ public class ComponentSendTest
 
         send("hello");
         assertEquals("hello", receive(remoteA));
+        assertNothingReceived(remoteB);
+    }
+
+    /**
+     * A late payload packet on a non-selected pair must not move ordinary sends away from the selected pair. This is
+     * the default behavior that prevents multi-path environments (for example VPN + public NAT) from turning a stray
+     * inbound packet into one-way audio.
+     */
+    @Test
+    public void testLastReceivedPayloadDoesNotOverrideSelectedPairByDefault()
+        throws IOException
+    {
+        pairA.setStateSucceeded();
+        stream.addToValidList(pairA);
+        pairB.setStateSucceeded();
+        stream.addToValidList(pairB);
+        component.setSelectedPair(pairA);
+
+        component.setBufferCallback(buffer -> {});
+        Buffer latePayload = new Buffer(new byte[] { 1, 2, 3 }, 0, 3);
+        latePayload.setRemoteAddress(remoteB.getLocalSocketAddress());
+        component.handleBuffer(latePayload);
+
+        send("still-to-selected");
+        assertEquals("still-to-selected", receive(remoteA));
         assertNothingReceived(remoteB);
     }
 
