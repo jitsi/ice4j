@@ -25,6 +25,7 @@ import javax.crypto.spec.*;
 
 import org.ice4j.message.*;
 import org.ice4j.stack.*;
+import org.ice4j.util.StringUtils;
 
 /**
  * The MESSAGE-INTEGRITY attribute contains an HMAC-SHA1 [RFC2104] of
@@ -360,5 +361,17 @@ public class MessageIntegrityAttribute
             return false;
 
         return true;
+    }
+
+    /**
+     * Returns a string representation of the message integrity attribute.
+     * MESSAGE-INTEGRITY contains HMAC-SHA1 hash, which is always displayed in hex format.
+     *
+     * @return a string in format: MESSAGE_INTEGRITY{hexvalue}
+     */
+    @Override
+    public String toString()
+    {
+        return getName() + "{" + StringUtils.formatBytesToHex(hmacSha1Content) + "}";
     }
 }

@@ -20,6 +20,7 @@ package org.ice4j.attribute;
 import java.util.*;
 
 import org.ice4j.*;
+import org.ice4j.util.StringUtils;
 
 /**
  * The REALM attribute contains a text which meets the grammar for
@@ -154,5 +155,33 @@ public class RealmAttribute extends Attribute
             return false;
 
         return true;
+    }
+
+    /**
+     * Returns a string representation of the realm attribute.
+     * If the realm is readable UTF-8 text and <= 128 characters, it's shown as text.
+     * Otherwise, it's shown as hex.
+     *
+     * @return a string in format: REALM{text} or REALM{hex:...}
+     */
+    @Override
+    public String toString()
+    {
+        if (realm == null)
+        {
+            return getName() + "{}";
+        }
+
+        String printable = StringUtils.bytesToPrintableString(realm);
+        
+        // Check if it's printable text or hex representation
+        if (printable.length() > 0 && realm.length <= 128 && StringUtils.isPrintable(realm))
+        {
+            return getName() + "{" + printable + "}";
+        }
+        else
+        {
+            return getName() + "{hex:" + printable + "}";
+        }
     }
 }

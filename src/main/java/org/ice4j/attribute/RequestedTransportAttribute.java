@@ -172,4 +172,20 @@ public class RequestedTransportAttribute extends Attribute
     {
         return transportProtocol;
     }
+
+    /**
+     * Returns a string representation of the requested transport attribute.
+     *
+     * @return a string in format: REQUESTED-TRANSPORT{protocol=UDP/TCP}
+     */
+    @Override
+    public String toString() {
+        String protocolName = "UNKNOWN";
+        if (transportProtocol == UDP)
+            protocolName = "UDP";
+        else if (transportProtocol == TCP)
+            protocolName = "TCP";
+
+        return getName() + "{protocol=" + protocolName + "(" + transportProtocol + ")}";
+    }
 }

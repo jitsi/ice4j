@@ -218,4 +218,15 @@ public class ChangeRequestAttribute
          setChangeIpFlag((attributeValue[offset] & 4) > 0);
          setChangePortFlag((attributeValue[offset] & 0x2) > 0);
      }
+
+    /**
+     * Returns a string representation of the change request attribute.
+     *
+     * @return a string in format: CHANGE-REQUEST{changeIP=X, changePort=Y}
+     */
+    @Override
+    public String toString()
+    {
+        return getName() + "{changeIP=" + changeIpFlag + ", changePort=" + changePortFlag + "}";
+    }
 }

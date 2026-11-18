@@ -142,4 +142,17 @@ public class OptionalAttribute
              || Arrays.equals(((OptionalAttribute)obj).
                               attributeValue, attributeValue));
     }
+
+    /**
+     * Returns a string representation of the optional attribute.
+     *
+     * @return a string in format: Unknown Attribute{type=0xXXXX length=N}
+     */
+    @Override
+    public String toString()
+    {
+        int length = (attributeValue != null) ? attributeValue.length : 0;
+        return getName() + "{type=0x" + Integer.toHexString(getAttributeType()).toUpperCase() +
+                " length=" + length + " bytes}";
+    }
 }

@@ -20,6 +20,7 @@ package org.ice4j.attribute;
 import java.util.*;
 
 import org.ice4j.*;
+import org.ice4j.util.StringUtils;
 
 /**
  * The DATA attribute contains the data the client wants to relay to the TURN
@@ -185,5 +186,40 @@ public class DataAttribute
             return false;
 
         return true;
+    }
+
+    /**
+     * Returns a string representation of the data attribute.
+     * If the data is readable UTF-8 text and <= 64 characters, it's shown as text.
+     * Otherwise, it's shown as hex with length information.
+     *
+     * @return a string in format: DATA{text}, DATA{hex:...} or DATA{length=N bytes}
+     */
+    @Override
+    public String toString()
+    {
+        if (data == null || data.length == 0)
+        {
+            return getName() + "{length=0 bytes}";
+        }
+
+        String printable = StringUtils.bytesToPrintableString(data);
+        
+        // Check if it's printable text and not too long
+        if (printable.length() > 0 && data.length <= 64 && StringUtils.isPrintable(data))
+        {
+            return getName() + "{" + printable + "}";
+        }
+        else
+        {
+            // Show hex with length info for better debugging
+            String hex = StringUtils.formatBytesToHex(data);
+            // Limit hex output to avoid very long strings
+            if (hex.length() > 64)
+            {
+                hex = hex.substring(0, 60) + "...";
+            }
+            return getName() + "{hex:" + hex + ", length=" + data.length + " bytes}";
+        }
     }
 }

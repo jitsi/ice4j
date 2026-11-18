@@ -20,6 +20,7 @@ package org.ice4j.attribute;
 import java.util.*;
 
 import org.ice4j.*;
+import org.ice4j.util.StringUtils;
 
 /**
  * The NONCE attribute is used for authentication.
@@ -144,5 +145,33 @@ public class NonceAttribute extends Attribute
             (att.getAttributeType() == getAttributeType()
                 && att.getDataLength() == getDataLength()
                 && Arrays.equals(att.nonce, nonce));
+    }
+
+    /**
+     * Returns a string representation of the nonce attribute.
+     * If the nonce is readable UTF-8 text and <= 128 characters, it's shown as text.
+     * Otherwise, it's shown as hex.
+     *
+     * @return a string in format: NONCE{text} or NONCE{hex:...}
+     */
+    @Override
+    public String toString()
+    {
+        if (nonce == null)
+        {
+            return getName() + "{}";
+        }
+
+        String printable = StringUtils.bytesToPrintableString(nonce);
+        
+        // Check if it's printable text or hex representation
+        if (printable.length() > 0 && nonce.length <= 128 && StringUtils.isPrintable(nonce))
+        {
+            return getName() + "{" + printable + "}";
+        }
+        else
+        {
+            return getName() + "{hex:" + printable + "}";
+        }
     }
 }

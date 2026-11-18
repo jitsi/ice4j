@@ -21,6 +21,7 @@ import java.util.zip.*;
 
 import org.ice4j.*;
 import org.ice4j.stack.*;
+import org.ice4j.util.StringUtils;
 
 /**
  * The FINGERPRINT attribute is used to distinguish STUN packets from packets
@@ -255,5 +256,17 @@ public class FingerprintAttribute
         xorCRC32[3] = (byte)((byte) (crc        & 0xff) ^ XOR_MASK[3]);
 
         return xorCRC32;
+    }
+
+    /**
+     * Returns a string representation of the fingerprint attribute.
+     * FINGERPRINT contains CRC-32 checksum, which is always displayed in hex format.
+     *
+     * @return a string in format: FINGERPRINT{hexvalue}
+     */
+    @Override
+    public String toString()
+    {
+        return getName() + "{" + StringUtils.formatBytesToHex(crc) + "}";
     }
 }
