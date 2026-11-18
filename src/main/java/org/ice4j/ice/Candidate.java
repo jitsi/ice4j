@@ -774,7 +774,18 @@ public abstract class Candidate<T extends Candidate<?>>
 
     private String toString(boolean redacted)
     {
-        StringBuilder buff = new StringBuilder("candidate:");
+        return "candidate:" + toAttributeValue();
+    }
+
+    /**
+     * Returns a <tt>String</tt> represnation of this <tt>Candidate</tt>
+     * suitable for use as an SDP attribute value.
+     *
+     * @return a <tt>String</tt> representing th SDP attribute value of this
+     * <tt>Candidate</tt>.
+     */
+    public String toAttributeValue() {
+        StringBuilder buff = new StringBuilder();
 
         buff.append(getFoundation());
         buff.append(" ").append(getParentComponent().getComponentID());
@@ -805,6 +816,10 @@ public abstract class Candidate<T extends Candidate<?>>
                 buff.append(relAddr.getHostAddress());
             }
             buff.append(" rport ").append(relAddr.getPort());
+        }
+
+        if(getTcpType() != null) {
+            buff.append(" tcptype ").append(getTcpType());
         }
 
         return buff.toString();
