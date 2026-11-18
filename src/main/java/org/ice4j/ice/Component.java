@@ -1487,11 +1487,39 @@ public class Component
     }
 
     /**
+     * The candidate pair which {@link #send(byte[], int, int)} last sent on.
+     */
+    private volatile CandidatePair lastSendPair;
+
+    /**
+     * The number of times {@link #lastSendPair} has changed.
+     */
+    private volatile int sendPairChangeCount = 0;
+
+    /**
+     * Synchronizes changes of {@link #lastSendPair} and {@link #sendPairChangeCount}.
+     */
+    private final Object sendPairSyncRoot = new Object();
+
+    /**
      * Send a packet to the remote side. Uses {@link #findPair(SocketAddress)} to find the right socket and remote
      * address. The pair is determined for every packet (rather than cached), so that we switch to the selected pair
      * as soon as one is selected, even if we had been sending to a different pair before that.
      */
     public void send(byte[] buffer, int offset, int length)
+            throws IOException
+    {
+        send(buffer, offset, length, false);
+    }
+
+    /**
+     * Send a packet to the remote side, see {@link #send(byte[], int, int)}.
+     *
+     * @param ect1 whether to send the packet with the ECT(1) marking (RFC 9331). If the socket which the packet is
+     * sent on cannot mark packets (see {@link #supportsEct1()}) the packet is sent without the marking, and a
+     * warning is logged the first time.
+     */
+    public void send(byte[] buffer, int offset, int length, boolean ect1)
             throws IOException
     {
         CandidatePair pair = findPair(lastReceivedFrom);
@@ -1506,9 +1534,53 @@ public class Component
             throw new IOException("No valid socket.");
         }
 
+        if (pair != lastSendPair)
+        {
+            synchronized (sendPairSyncRoot)
+            {
+                if (pair != lastSendPair)
+                {
+                    lastSendPair = pair;
+                    sendPairChangeCount++;
+                }
+            }
+        }
+
         DatagramPacket p = new DatagramPacket(buffer, offset, length);
         p.setSocketAddress(addressAndSocket.remoteAddress);
-        addressAndSocket.socket.send(p);
+        if (ect1)
+        {
+            addressAndSocket.socket.send(p, true);
+        }
+        else
+        {
+            addressAndSocket.socket.send(p);
+        }
+    }
+
+    /**
+     * @return the number of times the candidate pair which {@link #send(byte[], int, int)} sends on has changed,
+     * counting the first pair it sent on. An application can compare this with the value it last saw to find out,
+     * at little cost, that packets now take a different path.
+     */
+    public int getSendPairChangeCount()
+    {
+        return sendPairChangeCount;
+    }
+
+    /**
+     * @return whether a packet sent now with {@link #send(byte[], int, int, boolean)} can be sent with the ECT(1)
+     * marking. This depends on the candidate pair in use, so it can change.
+     */
+    public boolean supportsEct1()
+    {
+        CandidatePair pair = findPair(lastReceivedFrom);
+        if (pair == null)
+        {
+            return false;
+        }
+        AddressAndSocket addressAndSocket = getAddressAndSocket(pair);
+        return addressAndSocket != null && addressAndSocket.socket.supportsEct1();
     }
 
     /**

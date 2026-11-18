@@ -31,6 +31,8 @@ class HarvestConfigTest : ConfigTest() {
             config.useLinkLocalAddresses shouldBe true
             config.udpReceiveBufferSize shouldBe null
             config.udpSocketPoolSize shouldBe 0
+            config.udpReceiveEcn shouldBe false
+            config.udpSendEct1 shouldBe false
             config.stunMappingCandidateHarvesterAddresses shouldBe emptyList()
         }
         context("Setting via legacy config (system properties)") {
@@ -52,6 +54,8 @@ class HarvestConfigTest : ConfigTest() {
                 config.useLinkLocalAddresses shouldBe false
                 config.udpReceiveBufferSize shouldBe 666
                 config.udpSocketPoolSize shouldBe 3
+                config.udpReceiveEcn shouldBe true
+                config.udpSendEct1 shouldBe true
                 config.stunMappingCandidateHarvesterAddresses shouldBe listOf("stun1.new:666", "stun2.new")
             }
         }
@@ -158,6 +162,8 @@ private val newConfigNonDefault = """
             receive-buffer-size = 666
             use-dynamic-ports = false
             socket-pool-size = 3
+            receive-ecn = true
+            send-ect1 = true
         }
         mapping {
           stun {

@@ -19,6 +19,7 @@ package org.ice4j.socket;
 
 import java.io.*;
 import java.net.*;
+import java.util.logging.*;
 
 /**
  * Abstract socket wrapper that define a socket that could be UDP, TCP...
@@ -27,6 +28,14 @@ import java.net.*;
  */
 public abstract class IceSocketWrapper
 {
+    private static final Logger logger = Logger.getLogger(IceSocketWrapper.class.getName());
+
+    /**
+     * Whether a warning has been logged about a request to send as ECT(1), see
+     * {@link #send(DatagramPacket, boolean)}.
+     */
+    private boolean warnedOfEct1 = false;
+
     /**
      * Sends a <tt>DatagramPacket</tt> from this socket
      * It is a utility method to provide a common way to send for both
@@ -39,6 +48,39 @@ public abstract class IceSocketWrapper
      */
     public abstract void send(DatagramPacket p)
         throws IOException;
+
+    /**
+     * Sends a <tt>DatagramPacket</tt> from this socket, with the ECT(1) marking (RFC 9331) if requested and this
+     * socket supports it, see {@link #supportsEct1()}.
+     *
+     * This implementation cannot mark packets. It sends the packet without the marking, and logs a warning the first
+     * time the marking is requested.
+     *
+     * @param p <tt>DatagramPacket</tt> to send
+     * @param ect1 whether to send the packet with the ECT(1) marking
+     * @throws IOException if something goes wrong
+     */
+    public void send(DatagramPacket p, boolean ect1)
+        throws IOException
+    {
+        if (ect1 && !warnedOfEct1)
+        {
+            warnedOfEct1 = true;
+            logger.warning(
+                "A packet was to be sent as ECT(1) on a socket which cannot (" + getClass().getSimpleName() + ", "
+                    + getLocalSocketAddress() + "), sending it without the marking. This is logged once for each "
+                    + "socket.");
+        }
+        send(p);
+    }
+
+    /**
+     * @return whether {@link #send(DatagramPacket, boolean)} can send a packet with the ECT(1) marking.
+     */
+    public boolean supportsEct1()
+    {
+        return false;
+    }
 
     /**
      * Receives a <tt>DatagramPacket</tt> from this socket.

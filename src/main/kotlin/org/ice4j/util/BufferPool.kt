@@ -42,7 +42,13 @@ class Buffer @JvmOverloads constructor(
     var localAddress: SocketAddress? = null,
     /** The remote address from which the packet was received */
     var remoteAddress: SocketAddress? = null
-)
+) {
+    /**
+     * The ECN field (RFC 3168) of the IP header the packet was received with: 0 (Not-ECT), 1 (ECT(1)), 2 (ECT(0)) or
+     * 3 (CE). It is 0 if the socket the packet was received on can not report it.
+     */
+    var ecn: Int = 0
+}
 
 interface BufferHandler {
     fun handleBuffer(buffer: Buffer)

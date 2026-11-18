@@ -212,6 +212,52 @@ public class SinglePortUdpHarvester
      * Implements a <tt>Candidate</tt> for the purposes of this
      * <tt>SinglePortUdpHarvester</tt>.
      */
+    /**
+     * The wrapper of the socket of a candidate, which can send packets with the ECT(1) marking if the harvester's
+     * sockets can.
+     */
+    private static class Ect1SocketWrapper
+        extends IceUdpSocketWrapper
+    {
+        /**
+         * The socket which the wrapped socket delegates to.
+         */
+        private final MySocket mySocket;
+
+        private Ect1SocketWrapper(DatagramSocket delegate, MySocket mySocket)
+        {
+            super(delegate);
+            this.mySocket = mySocket;
+        }
+
+        /**
+         * {@inheritDoc}
+         */
+        @Override
+        public void send(DatagramPacket p, boolean ect1)
+            throws IOException
+        {
+            if (ect1 && mySocket.supportsEct1())
+            {
+                // The wrapped socket does nothing with a packet to send but hand it to this one.
+                mySocket.send(p, true);
+            }
+            else
+            {
+                super.send(p, ect1);
+            }
+        }
+
+        /**
+         * {@inheritDoc}
+         */
+        @Override
+        public boolean supportsEct1()
+        {
+            return mySocket.supportsEct1();
+        }
+    }
+
     private class MyCandidate
         extends HostCandidate
     {
@@ -363,7 +409,9 @@ public class SinglePortUdpHarvester
 
             // Socket to add to the candidate
             IceSocketWrapper candidateSocket
-                = new IceUdpSocketWrapper(multiplexing);
+                = socket instanceof MySocket
+                    ? new Ect1SocketWrapper(multiplexing, (MySocket) socket)
+                    : new IceUdpSocketWrapper(multiplexing);
 
             // STUN-only filtered socket to add to the StunStack
             IceSocketWrapper stunSocket
