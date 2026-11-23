@@ -384,7 +384,10 @@ public class Agent
         IceMediaStream mediaStream
             = new IceMediaStream(Agent.this, mediaStreamName);
 
-        mediaStreams.put(mediaStreamName, mediaStream);
+        synchronized (mediaStreams)
+        {
+            mediaStreams.put(mediaStreamName, mediaStream);
+        }
 
         // Since we add a new stream, we must wait to add the component and the
         // remote candidates before starting to "RUN" this Agent.
@@ -1461,7 +1464,11 @@ public class Agent
             TransportAddress address,
             LocalCandidate base)
     {
-        for (IceMediaStream stream : mediaStreams.values())
+        // Iterate over a copy, because streams may be added or removed by
+        // other threads. The lookups in the streams then run without the
+        // lock of the streams map, so that no lock is held while a stream
+        // or a component takes its own locks.
+        for (IceMediaStream stream : getStreams())
         {
             LocalCandidate localCandidate
                     = stream.findLocalCandidate(address, base);
@@ -1487,7 +1494,11 @@ public class Agent
      */
     public RemoteCandidate findRemoteCandidate(TransportAddress remoteAddress)
     {
-        for (IceMediaStream stream : mediaStreams.values())
+        // Iterate over a copy, because streams may be added or removed by
+        // other threads. The lookups in the streams then run without the
+        // lock of the streams map, so that no lock is held while a stream
+        // or a component takes its own locks.
+        for (IceMediaStream stream : getStreams())
         {
             RemoteCandidate cnd = stream.findRemoteCandidate(remoteAddress);
 
