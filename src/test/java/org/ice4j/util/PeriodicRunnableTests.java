@@ -1,9 +1,9 @@
 package org.ice4j.util;
 
 import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.Mockito.*;
 
 import java.time.*;
+import java.util.*;
 import java.util.concurrent.*;
 import org.jitsi.utils.concurrent.*;
 import org.junit.jupiter.api.*;
@@ -22,12 +22,7 @@ public class PeriodicRunnableTests
     void beforeEach()
     {
         timer = new FakeScheduledExecutorService();
-        executor = mock(ExecutorService.class);
-        when(executor.submit(any(Runnable.class))).thenAnswer(a ->
-        {
-            ((Runnable)a.getArgument(0)).run();
-            return CompletableFuture.completedFuture(null);
-        });
+        executor = new DirectExecutorService();
     }
 
     @Test
@@ -159,5 +154,52 @@ public class PeriodicRunnableTests
             timer.run();
         }
         assertEquals(4, latch.getCount());
+    }
+
+    /**
+     * An {@link ExecutorService} that runs each task on the calling thread,
+     * before {@code execute} or {@code submit} returns.
+     */
+    private static class DirectExecutorService
+        extends AbstractExecutorService
+    {
+        private boolean shutdown = false;
+
+        @Override
+        public void execute(Runnable command)
+        {
+            command.run();
+        }
+
+        @Override
+        public void shutdown()
+        {
+            shutdown = true;
+        }
+
+        @Override
+        public List<Runnable> shutdownNow()
+        {
+            shutdown = true;
+            return Collections.emptyList();
+        }
+
+        @Override
+        public boolean isShutdown()
+        {
+            return shutdown;
+        }
+
+        @Override
+        public boolean isTerminated()
+        {
+            return shutdown;
+        }
+
+        @Override
+        public boolean awaitTermination(long timeout, TimeUnit unit)
+        {
+            return shutdown;
+        }
     }
 }
